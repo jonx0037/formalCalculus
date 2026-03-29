@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import * as d3 from 'd3';
 import { useResizeObserver } from './shared/useResizeObserver';
 import { useD3 } from './shared/useD3';
@@ -26,34 +26,30 @@ export default function GradientDescentSequenceExplorer() {
   const [x0, setX0] = useState(3.0);
   const [playing, setPlaying] = useState(false);
   const [step, setStep] = useState(MAX_STEPS);
-  const animRef = useRef<number>(0);
 
   const path = useMemo(() => computeGDPath(x0, eta, MAX_STEPS), [x0, eta]);
   const visiblePath = path.slice(0, step + 1);
 
-  // Animation
+  // Animation — single setInterval, no overlapping RAF chains
   useEffect(() => {
     if (!playing) return;
+
     setStep(0);
     let current = 0;
-    const tick = () => {
+
+    const intervalId = setInterval(() => {
       current++;
-      if (current > path.length - 1) {
+      if (current >= path.length) {
         setPlaying(false);
-        return;
+      } else {
+        setStep(current);
       }
-      setStep(current);
-      animRef.current = requestAnimationFrame(tick);
-    };
-    // Slow down: one step every ~120ms
-    const interval = setInterval(() => {
-      tick();
     }, 120);
+
     return () => {
-      clearInterval(interval);
-      cancelAnimationFrame(animRef.current);
+      clearInterval(intervalId);
     };
-  }, [playing, path.length]);
+  }, [playing, path]);
 
   const handlePlayPause = useCallback(() => {
     if (playing) {
@@ -162,10 +158,11 @@ export default function GradientDescentSequenceExplorer() {
     [visiblePath, width, height],
   );
 
-  // Determine convergence status
+  // Determine convergence from the contraction factor r = |1 - 2η|
   const lastX = visiblePath[visiblePath.length - 1];
-  const converges = Math.abs(lastX) < 100;
   const rate = Math.abs(1 - 2 * eta);
+  const converges = rate < 1;
+  const oscillates = (1 - 2 * eta) < 0; // negative factor means sign-alternating
 
   return (
     <div ref={containerRef} className="w-full my-6">
@@ -224,7 +221,11 @@ export default function GradientDescentSequenceExplorer() {
         <span>xₜ = {lastX.toFixed(4)}</span>
         <span>|xₜ| = {Math.abs(lastX).toFixed(4)}</span>
         <span style={{ color: converges ? convergenceColors.linear : '#D97706' }}>
-          {converges ? `Converges (r = |1−2η| = ${rate.toFixed(2)})` : 'Diverges!'}
+          {converges
+            ? `Converges${oscillates ? ' (oscillating)' : ''} (r = ${rate.toFixed(2)})`
+            : rate === 1
+              ? 'Oscillates (does not converge)'
+              : 'Diverges!'}
         </span>
       </div>
     </div>

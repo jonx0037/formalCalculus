@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, type ChangeEvent } from 'react';
 import * as d3 from 'd3';
 import { useResizeObserver } from './shared/useResizeObserver';
 import { useD3 } from './shared/useD3';
@@ -31,7 +31,7 @@ export default function EpsilonNExplorer() {
     [selectedIdx, epsilon],
   );
 
-  const handleEpsilonChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleEpsilonChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
     setEpsilonLog(Number(e.target.value));
   }, []);
 

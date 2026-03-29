@@ -116,15 +116,16 @@ export default function CurriculumGraph() {
       .style('opacity', 0.5)
       .attr('marker-end', 'url(#arrow)');
 
-    // Node groups
+    // Node groups — use SVG <a> for published topics (proper links, right-click, etc.)
     const nodeGroups = g.selectAll('.node')
       .data(nodes)
-      .join('g')
+      .join('a')
       .attr('class', 'node')
+      .attr('href', (d) => d.status === 'published' ? d.url : null)
       .style('cursor', (d) => d.status === 'published' ? 'pointer' : 'default')
-      .on('click', (_event, d) => {
-        if (d.status === 'published') {
-          window.location.href = d.url;
+      .on('click', (event, d) => {
+        if (d.status !== 'published') {
+          event.preventDefault();
         }
       });
 
@@ -152,7 +153,7 @@ export default function CurriculumGraph() {
       .style('pointer-events', 'none');
 
     // Drag behavior
-    const drag = d3.drag<SVGGElement, GraphNode>()
+    const drag = d3.drag<SVGAElement, GraphNode>()
       .on('start', (event, d) => {
         if (!event.active) simulation.alphaTarget(0.3).restart();
         d.fx = d.x;
