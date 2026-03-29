@@ -1,6 +1,6 @@
 {
   "nodes": [
-    { "id": "sequences-limits", "label": "Sequences, Limits & Convergence", "domain": "limits-continuity", "status": "planned", "url": "/topics/sequences-limits" },
+    { "id": "sequences-limits", "label": "Sequences, Limits & Convergence", "domain": "limits-continuity", "status": "published", "url": "/topics/sequences-limits" },
     { "id": "epsilon-delta", "label": "Epsilon-Delta & Continuity", "domain": "limits-continuity", "status": "planned", "url": "/topics/epsilon-delta" },
     { "id": "completeness-compactness", "label": "Completeness & Compactness", "domain": "limits-continuity", "status": "planned", "url": "/topics/completeness-compactness" },
     { "id": "uniform-convergence", "label": "Uniform Convergence", "domain": "limits-continuity", "status": "planned", "url": "/topics/uniform-convergence" },

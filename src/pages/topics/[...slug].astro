@@ -1,5 +1,5 @@
 ---
-import { getCollection } from 'astro:content';
+import { getCollection, render } from 'astro:content';
 import TopicLayout from '../../layouts/TopicLayout.astro';
 
 export async function getStaticPaths() {
@@ -11,7 +11,7 @@ export async function getStaticPaths() {
 }
 
 const { topic } = Astro.props;
-const { Content } = await topic.render();
+const { Content } = await render(topic);
 ---
 
 <TopicLayout frontmatter={topic.data}>

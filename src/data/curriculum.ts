@@ -13,9 +13,8 @@ export const tracks: Track[] = [
     title: 'Limits & Continuity',
     description: 'The rigorous foundation — epsilon-delta definitions, convergence, completeness.',
     domain: 'limits-continuity',
-    published: [],
+    published: ['Sequences, Limits & Convergence'],
     planned: [
-      'Sequences, Limits & Convergence',
       'Epsilon-Delta & Continuity',
       'Completeness & Compactness',
       'Uniform Convergence',

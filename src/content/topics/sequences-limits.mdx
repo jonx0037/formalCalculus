@@ -1,0 +1,535 @@
+---
+title: "Sequences, Limits & Convergence"
+subtitle: "The rigorous foundation of calculus — making 'arbitrarily close' precise with the ε-N definition, and the convergence theorems that guarantee your algorithms actually converge"
+status: "published"
+difficulty: "foundational"
+prerequisites: []
+tags:
+  - "calculus"
+  - "sequences"
+  - "limits"
+  - "convergence"
+  - "epsilon-n"
+  - "bolzano-weierstrass"
+  - "cauchy-sequences"
+  - "completeness"
+domain: "limits-continuity"
+videoId: null
+notebookPath: "notebooks/sequences-limits/01_sequences_limits.ipynb"
+githubUrl: "https://github.com/jonx0037/formalCalculus/blob/main/src/content/topics/sequences-limits.mdx"
+datePublished: 2026-03-29
+estimatedReadTime: 40
+abstract: "A sequence in ℝ is a function a: ℕ → ℝ. We say (aₙ) converges to L if for every ε > 0, there exists N ∈ ℕ such that n ≥ N implies |aₙ - L| < ε. This definition — the ε-N definition — is where calculus becomes rigorous. The Monotone Convergence Theorem guarantees that every bounded monotone sequence converges, the Squeeze Theorem lets us establish limits by trapping a sequence between two convergent bounds, and the Algebra of Limits lets us decompose complex limits into simpler pieces. The Bolzano-Weierstrass Theorem — every bounded sequence has a convergent subsequence — is the compactness result that underpins the existence of minimizers in optimization. Cauchy sequences provide a criterion for convergence that does not require knowing the limit in advance, and the completeness of ℝ (every Cauchy sequence converges) is the structural property that makes calculus work. For machine learning, gradient descent θₜ₊₁ = θₜ - η∇f(θₜ) defines a sequence whose convergence is the entire point; the rate of convergence — sublinear O(1/n) for SGD, linear O(rⁿ) for GD on strongly convex functions, quadratic for Newton's method — determines practical algorithm selection. The Robbins-Monro conditions on learning rate schedules (Σηₜ = ∞, Σηₜ² < ∞) are statements about series convergence that we formalize here."
+formalmlConnections:
+  - topic: "gradient-descent"
+    site: "formalml"
+    relationship: "Gradient descent defines a sequence θₜ in ℝᵈ whose convergence analysis — rates, conditions, step-size requirements — rests directly on the sequence convergence theory developed here."
+  - topic: "pac-learning"
+    site: "formalml"
+    relationship: "The convergence of empirical risk R̂ₙ(h) → R(h) as n → ∞ is a sequence convergence result. Uniform convergence of empirical processes (Glivenko-Cantelli) extends this to function classes."
+  - topic: "random-walks"
+    site: "formalml"
+    relationship: "MCMC sampling produces a sequence of states whose convergence to the target distribution is characterized by mixing time — how many steps until the sequence is 'close enough.'"
+  - topic: "concentration-inequalities"
+    site: "formalml"
+    relationship: "Concentration inequalities quantify convergence rates for sequences of random variables — how fast empirical averages converge to expectations."
+  - topic: "measure-theoretic-probability"
+    site: "formalml"
+    relationship: "Modes of convergence in probability (a.s., in probability, in distribution, in Lᵖ) generalize the sequence convergence concepts introduced here to random variable sequences."
+connections: []
+references:
+  - type: "book"
+    title: "Understanding Analysis"
+    authors: "Abbott"
+    year: 2015
+    note: "Chapters 2–3 develop sequences and limits with exceptional clarity — the gold standard for rigorous-but-accessible real analysis"
+  - type: "book"
+    title: "Principles of Mathematical Analysis"
+    authors: "Rudin"
+    year: 1976
+    note: "Chapter 3 on numerical sequences and series — the definitive reference for the completeness-centric approach"
+  - type: "book"
+    title: "Analysis I"
+    authors: "Tao"
+    year: 2016
+    note: "Chapters 5–6 construct ℝ via Cauchy sequences and develop limits from first principles — ideal for readers who want to see the foundations built from scratch"
+  - type: "book"
+    title: "Convex Optimization"
+    authors: "Boyd & Vandenberghe"
+    year: 2004
+    note: "Sections 9.2–9.3 on gradient descent convergence rates — direct application of sequence convergence theory"
+  - type: "paper"
+    title: "A Stochastic Approximation Method"
+    authors: "Robbins & Monro"
+    year: 1951
+    url: "https://doi.org/10.1214/aoms/1177729586"
+    note: "The original Robbins-Monro conditions for SGD convergence — the learning rate schedule conditions are series convergence statements"
+---
+
+import TheoremBlock from '../../components/ui/TheoremBlock.astro';
+import SequenceGalleryExplorer from '../../components/viz/SequenceGalleryExplorer.tsx';
+import EpsilonNExplorer from '../../components/viz/EpsilonNExplorer.tsx';
+import ConvergenceTheoremsExplorer from '../../components/viz/ConvergenceTheoremsExplorer.tsx';
+import CauchyExplorer from '../../components/viz/CauchyExplorer.tsx';
+import GradientDescentSequenceExplorer from '../../components/viz/GradientDescentSequenceExplorer.tsx';
+
+## Overview & Motivation
+
+You've watched a training loss curve drop toward zero and level off. You've seen gradient descent "converge." You've tuned a learning rate schedule until the optimizer "settles down." But what do any of these phrases actually *mean*?
+
+When we say a sequence of iterates $\theta_1, \theta_2, \theta_3, \ldots$ converges, we're making a precise mathematical claim: no matter how tight a tolerance you specify — a billionth, a trillionth, any positive number at all — there is some point in the sequence past which every single term stays within that tolerance of the limit. This is the $\varepsilon$-$N$ definition, and it is where calculus becomes rigorous.
+
+In this topic, we build the complete machinery of sequence convergence from scratch. We start with what a sequence *is*, move to the $\varepsilon$-$N$ definition that makes "arbitrarily close" precise, prove the core convergence theorems that let us *establish* limits without computing them directly, and develop the Cauchy criterion that lets us *detect* convergence without even knowing the limit. Every theorem here has a direct application to machine learning — gradient descent convergence, optimizer guarantees, and the learning rate conditions that make stochastic methods work.
+
+## Sequences in ℝ
+
+We begin with the most basic object in analysis: a sequence.
+
+<TheoremBlock type="definition" number={1} title="Sequence">
+A **sequence** in $\mathbb{R}$ is a function $a: \mathbb{N} \to \mathbb{R}$. We write $(a_n)_{n=1}^{\infty}$ or simply $(a_n)$ for the sequence, where $a_n = a(n)$ denotes the $n$-th term.
+</TheoremBlock>
+
+The notation is important: $(a_n)$ with parentheses denotes the *entire sequence* as an object, while $a_n$ without parentheses denotes a *single term*. We'll be careful about this distinction throughout.
+
+Here are four sequences that appear constantly in machine learning:
+
+- $a_n = 1/n$ — the simplest decaying sequence. Learning rate schedules like $\eta_t = c/t$ produce sublinear convergence rates for SGD.
+- $a_n = (1 + 1/n)^n$ — converges to Euler's number $e \approx 2.718$. The natural exponential shows up in softmax, cross-entropy loss, and the exponential family of distributions.
+- $a_n = 0.9^n$ — geometric (exponential) decay. This is the momentum coefficient in Adam ($\beta_1 = 0.9$), the discount factor in reinforcement learning, and the convergence rate of gradient descent on strongly convex functions.
+- $a_n = (-1)^n / n$ — oscillates but converges to $0$. SGD with noisy gradients exhibits exactly this kind of oscillating convergence.
+
+<SequenceGalleryExplorer client:visible />
+
+<TheoremBlock type="definition" number={2} title="Bounded Sequence">
+A sequence $(a_n)$ is **bounded** if there exists $M > 0$ such that $|a_n| \leq M$ for all $n \in \mathbb{N}$. Equivalently, the range $\{a_n : n \in \mathbb{N}\}$ is a bounded subset of $\mathbb{R}$.
+</TheoremBlock>
+
+<TheoremBlock type="definition" number={3} title="Monotone Sequence">
+A sequence $(a_n)$ is **increasing** (or non-decreasing) if $a_n \leq a_{n+1}$ for all $n$. It is **decreasing** (or non-increasing) if $a_n \geq a_{n+1}$ for all $n$. A sequence that is either increasing or decreasing is called **monotone**.
+</TheoremBlock>
+
+Among our examples: $(1/n)$ is decreasing, $(1 + 1/n)^n$ is increasing (a non-trivial fact we'll use later), $(0.9^n)$ is decreasing, and $((-1)^n/n)$ is neither increasing nor decreasing — it oscillates. Monotonicity is a powerful structural property: as we'll prove shortly, any bounded monotone sequence *must* converge.
+
+## The ε-N Definition of Convergence
+
+We now make the informal idea of "getting arbitrarily close" fully rigorous. This is the definition that separates calculus from hand-waving.
+
+### Building the intuition
+
+Consider the sequence $a_n = 1/n$. Intuitively, the terms $1, 1/2, 1/3, 1/4, \ldots$ are "approaching $0$." But what does "approaching" mean precisely?
+
+Here's the key idea: pick any tolerance — say $\varepsilon = 0.1$. Then past $n = 10$, every term satisfies $|a_n - 0| = 1/n < 0.1$. Pick a tighter tolerance, $\varepsilon = 0.01$. Then past $n = 100$, every term satisfies $|a_n - 0| < 0.01$. No matter how small a positive $\varepsilon$ you choose, there is always some index $N$ past which all terms lie within $\varepsilon$ of $0$.
+
+### The formal definition
+
+<TheoremBlock type="definition" number={4} title="Convergence of a Sequence">
+A sequence $(a_n)$ **converges** to $L \in \mathbb{R}$ if for every $\varepsilon > 0$, there exists $N \in \mathbb{N}$ such that
+
+$$n \geq N \implies |a_n - L| < \varepsilon.$$
+
+We write $\lim_{n \to \infty} a_n = L$, or $(a_n) \to L$, or $a_n \to L$ as $n \to \infty$.
+
+A sequence that does not converge is called **divergent**.
+</TheoremBlock>
+
+Read it carefully: the quantifier structure is $\forall \varepsilon > 0,\ \exists N \in \mathbb{N}:\ n \geq N \Rightarrow |a_n - L| < \varepsilon$. The order matters: $\varepsilon$ is chosen first (by an adversary, if you like), and *then* we must produce an $N$ that works for that $\varepsilon$. Different values of $\varepsilon$ may require different values of $N$ — and smaller $\varepsilon$ generally requires larger $N$.
+
+![The ε-N definition visualized for three values of ε](/images/topics/sequences-limits/epsilon-n-definition.png)
+
+<EpsilonNExplorer client:visible />
+
+### A complete proof from the definition
+
+<TheoremBlock type="example" number={1} title="Proof that lim 1/n = 0">
+**Claim:** $\lim_{n \to \infty} 1/n = 0$.
+
+**Proof.** Let $\varepsilon > 0$ be given. We need to find $N \in \mathbb{N}$ such that $n \geq N$ implies $|1/n - 0| < \varepsilon$.
+
+Since $|1/n - 0| = 1/n$, the condition $1/n < \varepsilon$ is equivalent to $n > 1/\varepsilon$. By the Archimedean property of $\mathbb{R}$, there exists $N \in \mathbb{N}$ with $N > 1/\varepsilon$.
+
+Then for all $n \geq N$:
+
+$$|a_n - 0| = \frac{1}{n} \leq \frac{1}{N} < \varepsilon.$$
+
+Since $\varepsilon > 0$ was arbitrary, we have $\lim_{n \to \infty} 1/n = 0$. $\square$
+</TheoremBlock>
+
+Notice the structure: let $\varepsilon > 0$ be given, choose $N$ in terms of $\varepsilon$, verify the bound. Every $\varepsilon$-$N$ proof follows this template. The creative part is choosing $N$ — often this requires algebraic manipulation of the target inequality $|a_n - L| < \varepsilon$ to isolate $n$.
+
+### Two fundamental properties of convergent sequences
+
+<TheoremBlock type="proposition" number={1} title="Uniqueness of Limits">
+If $(a_n)$ converges, the limit is unique. That is, if $a_n \to L$ and $a_n \to M$, then $L = M$.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+Suppose $a_n \to L$ and $a_n \to M$. Let $\varepsilon > 0$ be given. Since $a_n \to L$, there exists $N_1$ such that $n \geq N_1$ implies $|a_n - L| < \varepsilon/2$. Since $a_n \to M$, there exists $N_2$ such that $n \geq N_2$ implies $|a_n - M| < \varepsilon/2$.
+
+Let $N = \max(N_1, N_2)$. For any $n \geq N$, by the triangle inequality:
+
+$$|L - M| = |L - a_n + a_n - M| \leq |a_n - L| + |a_n - M| < \frac{\varepsilon}{2} + \frac{\varepsilon}{2} = \varepsilon.$$
+
+Since $|L - M| < \varepsilon$ for every $\varepsilon > 0$, and $|L - M| \geq 0$ is a fixed non-negative number, we must have $|L - M| = 0$, i.e., $L = M$.
+</TheoremBlock>
+
+This proof uses a technique you'll see throughout analysis: to show a non-negative quantity equals zero, show it's less than every positive number. The triangle inequality $|x + y| \leq |x| + |y|$ is the workhorse — it lets us split a distance into two pieces we can control separately.
+
+<TheoremBlock type="proposition" number={2} title="Convergent Implies Bounded">
+Every convergent sequence is bounded.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+Suppose $a_n \to L$. Apply the definition with $\varepsilon = 1$: there exists $N$ such that $n \geq N$ implies $|a_n - L| < 1$, which gives $|a_n| < |L| + 1$ for all $n \geq N$.
+
+Set $M = \max(|a_1|, |a_2|, \ldots, |a_{N-1}|, |L| + 1)$. Then $|a_n| \leq M$ for all $n \in \mathbb{N}$.
+</TheoremBlock>
+
+The converse is false — the sequence $(-1)^n$ is bounded (by $M = 1$) but not convergent. Boundedness is necessary for convergence, but not sufficient. We need additional structure (like monotonicity) to guarantee convergence.
+
+## Convergence Theorems
+
+With the definition established, we now prove three theorems that are the main tools for *establishing* that a sequence converges. In practice, very few limits are proved directly from the $\varepsilon$-$N$ definition — instead, we use these theorems.
+
+<TheoremBlock type="theorem" number={1} title="Monotone Convergence Theorem">
+Every bounded, monotone sequence in $\mathbb{R}$ converges.
+
+More precisely: if $(a_n)$ is increasing and bounded above, then $\lim_{n \to \infty} a_n = \sup\{a_n : n \in \mathbb{N}\}$. If $(a_n)$ is decreasing and bounded below, then $\lim_{n \to \infty} a_n = \inf\{a_n : n \in \mathbb{N}\}$.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+We prove the increasing case; the decreasing case follows by considering $(-a_n)$.
+
+Let $(a_n)$ be increasing and bounded above. The set $S = \{a_n : n \in \mathbb{N}\}$ is non-empty and bounded above, so by the **completeness axiom** (least upper bound property of $\mathbb{R}$), $s = \sup S$ exists.
+
+We claim $a_n \to s$. Let $\varepsilon > 0$. Since $s$ is the *least* upper bound of $S$, the number $s - \varepsilon$ is not an upper bound. Therefore, there exists $N \in \mathbb{N}$ such that $a_N > s - \varepsilon$.
+
+Since $(a_n)$ is increasing, for all $n \geq N$:
+
+$$s - \varepsilon < a_N \leq a_n \leq s < s + \varepsilon.$$
+
+The first inequality uses our choice of $N$, the second uses $n \geq N$ with monotonicity, the third uses $s = \sup S$. Together: $|a_n - s| < \varepsilon$ for all $n \geq N$.
+</TheoremBlock>
+
+This proof reveals something deep: the Monotone Convergence Theorem is really a theorem about the completeness of $\mathbb{R}$. In the rational numbers $\mathbb{Q}$, the sequence $1, 1.4, 1.41, 1.414, \ldots$ (decimal approximations to $\sqrt{2}$) is increasing and bounded above, but it does not converge in $\mathbb{Q}$ — the limit $\sqrt{2}$ is irrational. The real numbers were *constructed* to fill these gaps.
+
+**Why this matters for ML:** Most gradient descent convergence proofs follow this pattern. If you can show that the loss sequence $f(\theta_1), f(\theta_2), \ldots$ is decreasing (which requires a sufficiently small step size) and bounded below (e.g., $f \geq 0$), the Monotone Convergence Theorem guarantees that the loss converges to some value. Whether that value is the *global* minimum is a separate question.
+
+<TheoremBlock type="theorem" number={2} title="Squeeze Theorem">
+Let $(a_n)$, $(b_n)$, and $(c_n)$ be sequences satisfying $a_n \leq b_n \leq c_n$ for all $n$ (or for all $n$ past some index). If $\lim_{n \to \infty} a_n = \lim_{n \to \infty} c_n = L$, then $\lim_{n \to \infty} b_n = L$.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+Let $\varepsilon > 0$. Since $a_n \to L$, there exists $N_1$ such that $n \geq N_1$ implies $|a_n - L| < \varepsilon$, i.e., $L - \varepsilon < a_n$. Since $c_n \to L$, there exists $N_2$ such that $n \geq N_2$ implies $|c_n - L| < \varepsilon$, i.e., $c_n < L + \varepsilon$.
+
+Let $N = \max(N_1, N_2)$. For $n \geq N$:
+
+$$L - \varepsilon < a_n \leq b_n \leq c_n < L + \varepsilon,$$
+
+so $|b_n - L| < \varepsilon$.
+</TheoremBlock>
+
+The Squeeze Theorem is how we prove convergence rates: if we can trap the error $|a_n - L|$ between zero and a sequence that decays at a known rate, the Squeeze Theorem tells us $|a_n - L|$ decays at least that fast.
+
+<TheoremBlock type="theorem" number={3} title="Algebra of Limits">
+If $a_n \to A$ and $b_n \to B$, then:
+
+1. $(a_n + b_n) \to A + B$
+2. $(a_n \cdot b_n) \to A \cdot B$
+3. $(a_n / b_n) \to A/B$, provided $B \neq 0$
+4. $(c \cdot a_n) \to c \cdot A$ for any constant $c \in \mathbb{R}$
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+We prove part (2), the product rule, which is the most instructive case.
+
+Since $a_n \to A$, the sequence $(a_n)$ is bounded (Proposition 2): there exists $M > 0$ with $|a_n| \leq M$ for all $n$.
+
+Let $\varepsilon > 0$. Choose $N_1$ such that $n \geq N_1$ implies $|a_n - A| < \varepsilon/(2|B| + 1)$. Choose $N_2$ such that $n \geq N_2$ implies $|b_n - B| < \varepsilon/(2M)$.
+
+For $n \geq \max(N_1, N_2)$:
+
+$$|a_n b_n - AB| = |a_n b_n - a_n B + a_n B - AB| \leq |a_n||b_n - B| + |B||a_n - A|$$
+
+$$< M \cdot \frac{\varepsilon}{2M} + |B| \cdot \frac{\varepsilon}{2|B| + 1} < \frac{\varepsilon}{2} + \frac{\varepsilon}{2} = \varepsilon.$$
+
+The key trick: we added and subtracted $a_n B$ to create two pieces — one controlled by $|b_n - B|$ (using the bound on $a_n$) and one controlled by $|a_n - A|$ (using the known value of $B$).
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={1}>
+These three theorems are exactly the tools that gradient descent convergence proofs use. **Monotone Convergence** handles the "loss is decreasing and bounded below" argument. **Squeeze** establishes convergence rates by bounding the error between known decay rates. **Algebra of Limits** lets us decompose complex update rules into simpler pieces whose limits we already know.
+</TheoremBlock>
+
+![Convergence theorems visualized](/images/topics/sequences-limits/convergence-theorems.png)
+
+<ConvergenceTheoremsExplorer client:visible />
+
+## Subsequences & Bolzano-Weierstrass
+
+Sometimes a sequence doesn't converge, but parts of it do. This observation leads to one of the most important theorems in analysis.
+
+<TheoremBlock type="definition" number={5} title="Subsequence">
+A **subsequence** of $(a_n)$ is a sequence $(a_{n_k})_{k=1}^{\infty}$ where $n_1 < n_2 < n_3 < \cdots$ is a strictly increasing sequence of natural numbers.
+</TheoremBlock>
+
+For example, the even-indexed terms $a_2, a_4, a_6, \ldots$ form a subsequence. So do the terms at prime indices $a_2, a_3, a_5, a_7, a_{11}, \ldots$. The key constraint is that the indices $n_k$ must be strictly increasing — we must move forward through the original sequence.
+
+<TheoremBlock type="proposition" number={3} title="Subsequences Inherit Limits">
+If $(a_n) \to L$, then every subsequence $(a_{n_k}) \to L$.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+Let $\varepsilon > 0$. Since $a_n \to L$, there exists $N$ such that $n \geq N$ implies $|a_n - L| < \varepsilon$.
+
+Since $n_1 < n_2 < n_3 < \cdots$ is strictly increasing with $n_k \in \mathbb{N}$, a simple induction shows $n_k \geq k$ for all $k$. Therefore, for $k \geq N$, we have $n_k \geq k \geq N$, so $|a_{n_k} - L| < \varepsilon$.
+</TheoremBlock>
+
+The contrapositive gives a powerful divergence test: if two subsequences converge to *different* limits, the original sequence diverges. For $(-1)^n$, the even terms $(a_{2k}) = (1, 1, 1, \ldots) \to 1$ and the odd terms $(a_{2k+1}) = (-1, -1, -1, \ldots) \to -1$. Since the subsequential limits disagree, $(-1)^n$ diverges.
+
+<TheoremBlock type="theorem" number={4} title="Bolzano-Weierstrass Theorem">
+Every bounded sequence in $\mathbb{R}$ has a convergent subsequence.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+Let $(a_n)$ be bounded, so $a_n \in [c, d]$ for some interval $[c, d]$. We construct a convergent subsequence by repeated bisection.
+
+**Step 1.** Bisect $[c, d]$ into $[c, m]$ and $[m, d]$ where $m = (c + d)/2$. At least one half contains infinitely many terms of $(a_n)$ (if both halves contained only finitely many, the total would be finite, contradicting the fact that the sequence has infinitely many terms). Choose the half $[c_1, d_1]$ containing infinitely many terms. Pick $n_1$ such that $a_{n_1} \in [c_1, d_1]$.
+
+**Step 2.** Bisect $[c_1, d_1]$ into two halves. Again, at least one half contains infinitely many terms of $(a_n)$. Choose that half $[c_2, d_2]$ and pick $n_2 > n_1$ such that $a_{n_2} \in [c_2, d_2]$.
+
+**Continuing inductively:** At step $k$, we have an interval $[c_k, d_k]$ of length $(d - c)/2^k$ containing infinitely many terms, and an index $n_k$ with $a_{n_k} \in [c_k, d_k]$.
+
+**Convergence.** The nested intervals $[c_k, d_k]$ satisfy $c_1 \leq c_2 \leq \cdots$ (increasing left endpoints) and $d_1 \geq d_2 \geq \cdots$ (decreasing right endpoints), and $d_k - c_k = (d - c)/2^k \to 0$. By the Monotone Convergence Theorem, both $(c_k)$ and $(d_k)$ converge, and they must converge to the same limit $L$ (since their difference tends to $0$).
+
+Since $c_k \leq a_{n_k} \leq d_k$ for all $k$, the Squeeze Theorem gives $a_{n_k} \to L$.
+</TheoremBlock>
+
+![Bolzano-Weierstrass: extracting a convergent subsequence by bisection](/images/topics/sequences-limits/bolzano-weierstrass.png)
+
+<TheoremBlock type="remark" number={2}>
+Bolzano-Weierstrass is the one-dimensional version of the **compactness** argument that guarantees the existence of minimizers in optimization. Here's the connection: if $f: K \to \mathbb{R}$ is continuous and $K \subset \mathbb{R}^d$ is closed and bounded (compact), then $f$ attains its minimum on $K$. The proof works by taking a sequence $(\mathbf{x}_n)$ in $K$ with $f(\mathbf{x}_n) \to \inf_K f$, extracting a convergent subsequence by Bolzano-Weierstrass (generalized to $\mathbb{R}^d$), and using continuity to show the subsequential limit is a minimizer.
+
+In machine learning, this is why we often restrict the parameter space (weight decay, norm constraints, compact domains) — compactness guarantees that minimizers *exist*.
+</TheoremBlock>
+
+## Cauchy Sequences & Completeness
+
+The $\varepsilon$-$N$ definition requires us to know the limit $L$ in advance. But in practice, we often want to prove convergence *without* knowing the limit — for instance, we want to show that gradient descent converges to *some* critical point without identifying which one. The Cauchy criterion solves this problem.
+
+<TheoremBlock type="definition" number={6} title="Cauchy Sequence">
+A sequence $(a_n)$ is a **Cauchy sequence** if for every $\varepsilon > 0$, there exists $N \in \mathbb{N}$ such that
+
+$$m, n \geq N \implies |a_m - a_n| < \varepsilon.$$
+
+In words: the terms of the sequence get arbitrarily close *to each other*, not just to some external limit.
+</TheoremBlock>
+
+Compare with the convergence definition: convergence says terms get close to $L$; Cauchy says terms get close to each other. The Cauchy condition is intrinsic — it refers only to the sequence itself.
+
+<TheoremBlock type="proposition" number={4} title="Convergent Implies Cauchy">
+Every convergent sequence is Cauchy.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+Suppose $a_n \to L$. Let $\varepsilon > 0$. There exists $N$ such that $n \geq N$ implies $|a_n - L| < \varepsilon/2$. For $m, n \geq N$:
+
+$$|a_m - a_n| = |a_m - L + L - a_n| \leq |a_m - L| + |a_n - L| < \frac{\varepsilon}{2} + \frac{\varepsilon}{2} = \varepsilon.$$
+</TheoremBlock>
+
+The deep question is the converse: is every Cauchy sequence convergent? In $\mathbb{Q}$, the answer is **no** — the decimal approximations to $\sqrt{2}$ form a Cauchy sequence in $\mathbb{Q}$ that does not converge in $\mathbb{Q}$. But in $\mathbb{R}$, the answer is **yes**, and this is the whole point of the real number system.
+
+<TheoremBlock type="theorem" number={5} title="Completeness of ℝ">
+Every Cauchy sequence in $\mathbb{R}$ converges. Equivalently, $\mathbb{R}$ is a **complete** metric space.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+Let $(a_n)$ be Cauchy in $\mathbb{R}$.
+
+**Step 1: $(a_n)$ is bounded.** Apply the Cauchy condition with $\varepsilon = 1$: there exists $N$ such that $m, n \geq N$ implies $|a_m - a_n| < 1$. In particular, $|a_n| < |a_N| + 1$ for all $n \geq N$. Setting $M = \max(|a_1|, \ldots, |a_{N-1}|, |a_N| + 1)$, we get $|a_n| \leq M$ for all $n$.
+
+**Step 2: Extract a convergent subsequence.** Since $(a_n)$ is bounded, Bolzano-Weierstrass gives a subsequence $(a_{n_k})$ with $a_{n_k} \to L$ for some $L \in \mathbb{R}$.
+
+**Step 3: The full sequence converges to $L$.** Let $\varepsilon > 0$. Since $(a_n)$ is Cauchy, there exists $N_1$ such that $m, n \geq N_1$ implies $|a_m - a_n| < \varepsilon/2$. Since $a_{n_k} \to L$, there exists $K$ such that $k \geq K$ implies $|a_{n_k} - L| < \varepsilon/2$.
+
+Choose $k_0 \geq K$ with $n_{k_0} \geq N_1$ (possible since $n_k \to \infty$). For any $n \geq N_1$:
+
+$$|a_n - L| \leq |a_n - a_{n_{k_0}}| + |a_{n_{k_0}} - L| < \frac{\varepsilon}{2} + \frac{\varepsilon}{2} = \varepsilon.$$
+
+The first term is controlled by the Cauchy condition (both $n$ and $n_{k_0}$ are $\geq N_1$), and the second by the subsequential convergence.
+</TheoremBlock>
+
+![Cauchy sequences: convergent (Σ1/k²) vs non-convergent (harmonic series)](/images/topics/sequences-limits/cauchy-sequences.png)
+
+<CauchyExplorer client:visible />
+
+<TheoremBlock type="remark" number={3}>
+The Cauchy criterion is the tool of choice when you don't know the limit. In optimization, we often prove convergence by showing that successive iterates satisfy $\|\theta_{t+1} - \theta_t\| \to 0$ — this is close to (though not identical to) the Cauchy condition. The completeness of $\mathbb{R}$ (or $\mathbb{R}^d$) then guarantees that the iterates converge to *some* point, even though we may not have a closed-form expression for it.
+
+This is also why completeness matters for function spaces in machine learning. When we optimize over a function class $\mathcal{F}$, the class needs to be complete (or at least have compact sublevel sets) to guarantee that minimizing sequences converge to actual minimizers within $\mathcal{F}$, not to some function outside it.
+</TheoremBlock>
+
+## Rates of Convergence
+
+Knowing that a sequence converges is important, but often not enough. In practice, we need to know *how fast* it converges — the difference between $O(1/n)$ and $O(r^n)$ convergence is the difference between an algorithm that takes hours and one that takes seconds.
+
+<TheoremBlock type="definition" number={7} title="Rates of Convergence">
+Let $(a_n) \to L$ with errors $e_n = |a_n - L|$. The **rate of convergence** is classified as:
+
+- **Sublinear:** $e_n = O(1/n^p)$ for some $p > 0$ (errors decay polynomially).
+- **Linear:** $|e_{n+1}| \leq r \cdot |e_n|$ for some $0 < r < 1$ (errors decay by a constant factor each step).
+- **Superlinear:** $|e_{n+1}| / |e_n| \to 0$ (the ratio of successive errors tends to zero).
+- **Quadratic:** $|e_{n+1}| \leq C |e_n|^2$ for some $C > 0$ (errors are squared each step — extremely fast).
+</TheoremBlock>
+
+These rates form a strict hierarchy: quadratic $\Rightarrow$ superlinear $\Rightarrow$ linear $\Rightarrow$ sublinear (in terms of speed). The practical implications are dramatic:
+
+<TheoremBlock type="example" number={2} title="SGD on Convex Functions — Sublinear Rate">
+Stochastic gradient descent on a convex function with step size $\eta_t = c/\sqrt{t}$ achieves $\mathbb{E}[f(\bar{\theta}_T)] - f^* = O(1/\sqrt{T})$. This is sublinear: halving the error requires *quadrupling* the number of iterations. For SGD to reach $\varepsilon$-accuracy, we need $T = O(1/\varepsilon^2)$ steps.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={3} title="GD on Strongly Convex Functions — Linear Rate">
+Gradient descent on a $\mu$-strongly convex, $L$-smooth function with step size $\eta = 2/(\mu + L)$ achieves $f(\theta_t) - f^* \leq r^t (f(\theta_0) - f^*)$ where $r = (L - \mu)/(L + \mu) < 1$. This is linear (also called "geometric" or "exponential") convergence: each step reduces the error by the constant factor $r$. The **condition number** $\kappa = L/\mu$ determines how fast — $r = (\kappa - 1)/(\kappa + 1)$, so well-conditioned problems ($\kappa$ small) converge faster.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={4} title="Newton's Method — Quadratic Rate">
+Newton's method for solving $f'(x) = 0$ near a root achieves $|x_{t+1} - x^*| \leq C |x_t - x^*|^2$ once the iterates are sufficiently close to $x^*$. This is quadratic: if $|x_t - x^*| = 10^{-3}$, then $|x_{t+1} - x^*| \approx 10^{-6}$, and $|x_{t+2} - x^*| \approx 10^{-12}$. The number of correct digits *doubles* each step.
+</TheoremBlock>
+
+![Convergence rates on a log scale](/images/topics/sequences-limits/convergence-rates.png)
+
+## Connections to ML
+
+Everything we've developed — the $\varepsilon$-$N$ definition, the convergence theorems, the Cauchy criterion, convergence rates — is the mathematical engine behind optimization and learning theory in machine learning.
+
+### Gradient descent as a convergent sequence
+
+Consider minimizing $f(x) = x^2$. Gradient descent with step size $\eta$ produces the update $x_{t+1} = x_t - \eta \cdot 2x_t = (1 - 2\eta) x_t$. This is a geometric sequence:
+
+$$x_t = (1 - 2\eta)^t \cdot x_0.$$
+
+For $0 < \eta < 1$, we have $|1 - 2\eta| < 1$, so $x_t \to 0$ by the geometric series argument — the errors decay linearly with rate $r = |1 - 2\eta|$. For $\eta = 1$ or $\eta > 1$, the sequence diverges. Try it below:
+
+<GradientDescentSequenceExplorer client:visible />
+
+![Gradient descent on f(x) = x² for three learning rates](/images/topics/sequences-limits/gd-as-sequence.png)
+
+This is why the learning rate matters: too small and convergence is glacially slow ($r$ close to $1$), too large and the sequence diverges, and there's an optimal $\eta$ that minimizes $r$. For $f(x) = x^2$, the optimal is $\eta = 1/2$, giving $r = 0$ — convergence in one step.
+
+### Learning rate schedules & Robbins-Monro
+
+For stochastic gradient descent, a fixed learning rate doesn't work — the noise prevents convergence to a point. Instead, we need a *decaying* schedule $\eta_1, \eta_2, \eta_3, \ldots$ satisfying the **Robbins-Monro conditions**:
+
+$$\sum_{t=1}^{\infty} \eta_t = \infty \quad \text{and} \quad \sum_{t=1}^{\infty} \eta_t^2 < \infty.$$
+
+The first condition ($\sum \eta_t = \infty$) ensures the steps are large enough to reach the optimum from any starting point. The second ($\sum \eta_t^2 < \infty$) ensures the accumulated noise variance is finite, so the iterates settle down. Common schedules satisfying both: $\eta_t = c/t$ and $\eta_t = c/\sqrt{t}$.
+
+These are *series convergence* conditions — statements about infinite sums. We'll formalize series in **Series Convergence & Tests** *(coming soon)*, but the key point is that learning rate theory rests on the sequence and series machinery we've built here.
+
+![Learning rate schedules with Robbins-Monro conditions](/images/topics/sequences-limits/robbins-monro-schedules.png)
+
+### MCMC mixing
+
+Markov chain Monte Carlo (MCMC) sampling produces a sequence of states $X_1, X_2, X_3, \ldots$ that converges in distribution to a target distribution $\pi$. The **mixing time** — how many steps until the chain is "$\varepsilon$-close" to $\pi$ — is a convergence rate question. Fast-mixing chains have geometric (linear) convergence, while slowly-mixing chains may need $O(n^2)$ or worse steps. The formal framework of sequence convergence underlies the entire theory. See <a href="https://formalml.com/topics/random-walks" class="formalml-badge" target="_blank" rel="noopener">formalML</a> for the full treatment.
+
+### Empirical risk convergence
+
+Given $n$ training examples, the empirical risk $\hat{R}_n(h) = \frac{1}{n} \sum_{i=1}^{n} \ell(h(x_i), y_i)$ defines a sequence indexed by $n$. The law of large numbers tells us $\hat{R}_n(h) \to R(h)$ (the true risk) as $n \to \infty$ — this is a sequence convergence result. The uniform version — $\sup_{h \in \mathcal{H}} |\hat{R}_n(h) - R(h)| \to 0$ — is the Glivenko-Cantelli theorem, which is the foundation of PAC learning. See <a href="https://formalml.com/topics/pac-learning" class="formalml-badge" target="_blank" rel="noopener">formalML</a> for how this generalizes to function classes and VC dimension.
+
+## Computational Notes
+
+Here are the key computational patterns for working with sequences numerically.
+
+**Generating and testing sequences with NumPy:**
+
+```python
+import numpy as np
+
+# Generate sequence terms
+n = np.arange(1, 201)
+a_n = 1 / n                          # decaying
+b_n = (1 + 1/n)**n                   # approaching e
+c_n = np.cumprod(np.full(200, 0.9))  # geometric decay
+```
+
+**Numerical Cauchy criterion check:**
+
+```python
+def check_cauchy(seq, N, window=50):
+    """Check max |a_m - a_n| for m, n >= N."""
+    tail = seq[N:N+window]
+    max_gap = np.max(np.abs(tail[:, None] - tail[None, :]))
+    return max_gap
+
+# Cauchy: partial sums of 1/k^2
+partial_sums = np.cumsum(1 / n**2)
+print(f"Cauchy gap at N=100: {check_cauchy(partial_sums, 100):.6f}")
+
+# Not Cauchy: harmonic series
+harmonic = np.cumsum(1 / n)
+print(f"Harmonic gap at N=100: {check_cauchy(harmonic, 100):.4f}")
+```
+
+**Estimating convergence rate from iterates:**
+
+```python
+def estimate_rate(errors):
+    """Estimate convergence rate from error sequence."""
+    ratios = errors[1:] / errors[:-1]
+    avg_ratio = np.mean(ratios[-10:])  # use tail for stability
+    if avg_ratio < 0.01:
+        return 'superlinear'
+    elif avg_ratio < 0.95:
+        return f'linear (r ≈ {avg_ratio:.3f})'
+    else:
+        return 'sublinear'
+
+# GD on f(x) = x^2 with eta = 0.3
+x = 4.0
+errors = []
+for _ in range(50):
+    x = x - 0.3 * 2 * x  # GD update
+    errors.append(abs(x))
+
+print(estimate_rate(np.array(errors)))
+# → "linear (r ≈ 0.400)"
+```
+
+**Extracting iteration sequences from SciPy:**
+
+```python
+from scipy.optimize import minimize
+
+iterates = []
+def callback(xk):
+    iterates.append(xk.copy())
+
+result = minimize(lambda x: x[0]**2 + x[1]**2, x0=[3.0, 4.0],
+                  method='CG', callback=callback)
+# iterates now contains the full optimization path
+```
+
+## Connections & Further Reading
+
+### Where this leads within formalCalculus
+
+- **Epsilon-Delta & Continuity** *(coming soon)* extends the $\varepsilon$-$N$ framework to function limits and continuity. The $\varepsilon$-$\delta$ definition is the function-level analogue of what we did here for sequences.
+- **The Riemann Integral & FTC** *(coming soon)* defines the integral as a limit of Riemann sums — each sum is a term in a sequence, and convergence of that sequence *is* the integral.
+- **Series Convergence & Tests** *(coming soon)* treats partial sums of infinite series as sequences. The Robbins-Monro conditions from §8 are formalized as series convergence criteria.
+- **Completeness & Compactness** *(coming soon)* generalizes the Bolzano-Weierstrass theorem from $\mathbb{R}$ to $\mathbb{R}^n$ and introduces the Heine-Borel theorem — the compactness machinery that guarantees the existence of minimizers on closed bounded sets.
+
+### Where this leads in machine learning
+
+The convergence theory developed here is the direct foundation for:
+
+- <a href="https://formalml.com/topics/gradient-descent" class="formalml-badge" target="_blank" rel="noopener">formalML</a> **Gradient Descent** — convergence rates, step size conditions, and strong convexity.
+- <a href="https://formalml.com/topics/pac-learning" class="formalml-badge" target="_blank" rel="noopener">formalML</a> **PAC Learning** — uniform convergence of empirical processes.
+- <a href="https://formalml.com/topics/random-walks" class="formalml-badge" target="_blank" rel="noopener">formalML</a> **Random Walks & MCMC** — mixing time as a convergence rate.
+- <a href="https://formalml.com/topics/concentration-inequalities" class="formalml-badge" target="_blank" rel="noopener">formalML</a> **Concentration Inequalities** — quantitative convergence bounds.
+- <a href="https://formalml.com/topics/measure-theoretic-probability" class="formalml-badge" target="_blank" rel="noopener">formalML</a> **Measure-Theoretic Probability** — modes of convergence (a.s., in probability, in distribution).
+
+### References
+
+- **Abbott** (2015). *Understanding Analysis*. Chapters 2–3. The gold standard for rigorous-but-accessible treatment of sequences and limits.
+- **Rudin** (1976). *Principles of Mathematical Analysis*. Chapter 3. The definitive reference, terse but complete.
+- **Tao** (2016). *Analysis I*. Chapters 5–6. Builds the real numbers from Cauchy sequences — ideal for seeing the foundations from scratch.
+- **Boyd & Vandenberghe** (2004). *Convex Optimization*. Sections 9.2–9.3. Gradient descent convergence rates as direct applications.
+- **Robbins & Monro** (1951). <a href="https://doi.org/10.1214/aoms/1177729586" target="_blank" rel="noopener">"A Stochastic Approximation Method."</a> The original learning rate conditions for SGD convergence.

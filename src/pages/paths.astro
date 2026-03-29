@@ -2,6 +2,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { tracks } from '../data/curriculum';
 import TopicCard from '../components/ui/TopicCard.astro';
+import CurriculumGraph from '../components/viz/CurriculumGraph.tsx';
 import graphData from '../data/curriculum-graph.json';
 
 const domainLabels: Record<string, string> = {
@@ -44,6 +45,20 @@ for (const node of graphData.nodes) {
         topics it enables.
       </p>
     </header>
+
+    <!-- Interactive prerequisite DAG -->
+    <section class="mb-16">
+      <h2
+        class="text-xl font-bold mb-1"
+        style="font-family: var(--font-serif); color: var(--color-text-heading);"
+      >
+        Prerequisite Graph
+      </h2>
+      <p class="text-sm mb-4" style="color: var(--color-text-muted);">
+        The full dependency graph — arrows show prerequisites. Filled nodes are published topics.
+      </p>
+      <CurriculumGraph client:visible />
+    </section>
 
     {tracks.map((track) => {
       const nodes = nodesByDomain.get(track.domain) || [];
