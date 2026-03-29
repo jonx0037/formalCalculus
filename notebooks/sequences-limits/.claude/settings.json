@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -c \"import json; nb=json.load\\(open\\(''01_sequences_limits.ipynb''\\)\\); imports=[l.strip\\(\\) for c in nb[''cells''] if c[''cell_type'']==''code'' for l in c[''source''] if ''import'' in l]; print\\(''\\\\n''.join\\(imports\\)\\)\")",
+      "Bash(python3 -m venv .venv)",
+      "Bash(source .venv/bin/activate)",
+      "Bash(pip install:*)",
+      "Bash(python -m ipykernel install --user --name=sequences-limits --display-name=\"Sequences & Limits\")",
+      "Bash(python3 -c \":*)",
+      "Bash(python3:*)"
+    ]
+  }
+}

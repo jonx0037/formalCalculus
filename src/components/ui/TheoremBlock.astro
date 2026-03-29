@@ -1,0 +1,52 @@
+---
+interface Props {
+  type: 'definition' | 'theorem' | 'lemma' | 'proposition' | 'corollary' | 'proof' | 'remark' | 'example';
+  number?: number;
+  title?: string;
+}
+
+const { type, number, title } = Astro.props;
+
+const typeConfig: Record<string, { label: string; bgVar: string; borderVar: string; icon: string }> = {
+  definition: { label: 'Definition', bgVar: 'var(--color-definition-bg)', borderVar: 'var(--color-definition-border)', icon: '📐' },
+  theorem: { label: 'Theorem', bgVar: 'var(--color-theorem-bg)', borderVar: 'var(--color-theorem-border)', icon: '🔷' },
+  lemma: { label: 'Lemma', bgVar: 'var(--color-lemma-bg)', borderVar: 'var(--color-lemma-border)', icon: '🔶' },
+  proposition: { label: 'Proposition', bgVar: 'var(--color-theorem-bg)', borderVar: 'var(--color-theorem-border)', icon: '🔷' },
+  corollary: { label: 'Corollary', bgVar: 'var(--color-theorem-bg)', borderVar: 'var(--color-theorem-border)', icon: '🔷' },
+  proof: { label: 'Proof', bgVar: 'var(--color-proof-bg)', borderVar: 'var(--color-proof-border)', icon: '' },
+  remark: { label: 'Remark', bgVar: 'var(--color-remark-bg)', borderVar: 'var(--color-remark-border)', icon: '💡' },
+  example: { label: 'Example', bgVar: 'var(--color-example-bg)', borderVar: 'var(--color-example-border)', icon: '📝' },
+};
+
+const config = typeConfig[type];
+const headerText = [
+  config.label,
+  number !== undefined ? ` ${number}` : '',
+  title ? ` (${title})` : '',
+].join('');
+---
+
+<div
+  class="my-6 rounded-lg border-l-4 px-5 py-4"
+  style={`background: ${config.bgVar}; border-left-color: ${config.borderVar};`}
+>
+  {type !== 'proof' ? (
+    <p class="text-sm font-bold mb-2" style={`color: ${config.borderVar};`}>
+      {config.icon} {headerText}
+    </p>
+  ) : (
+    <p class="text-sm font-semibold italic mb-2" style="color: var(--color-text-muted);">
+      Proof.
+    </p>
+  )}
+
+  <div class="text-sm leading-relaxed" style="color: var(--color-text);">
+    <slot />
+  </div>
+
+  {type === 'proof' && (
+    <div class="text-right mt-2" style="color: var(--color-text-muted);">
+      ∎
+    </div>
+  )}
+</div>

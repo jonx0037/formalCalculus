@@ -1,0 +1,19 @@
+---
+import { getCollection } from 'astro:content';
+import TopicLayout from '../../layouts/TopicLayout.astro';
+
+export async function getStaticPaths() {
+  const topics = await getCollection('topics', (entry) => entry.data.status === 'published');
+  return topics.map((topic) => ({
+    params: { slug: topic.id },
+    props: { topic },
+  }));
+}
+
+const { topic } = Astro.props;
+const { Content } = await topic.render();
+---
+
+<TopicLayout frontmatter={topic.data}>
+  <Content />
+</TopicLayout>

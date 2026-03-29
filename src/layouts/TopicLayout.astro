@@ -1,0 +1,117 @@
+---
+import BaseLayout from './BaseLayout.astro';
+
+interface Props {
+  frontmatter: {
+    title: string;
+    subtitle: string;
+    difficulty: 'foundational' | 'intermediate' | 'advanced';
+    estimatedReadTime: number;
+    abstract: string;
+    domain: string;
+    datePublished: Date;
+    tags: string[];
+    formalmlConnections?: Array<{
+      topic: string;
+      site: string;
+      relationship: string;
+    }>;
+  };
+}
+
+const { frontmatter } = Astro.props;
+
+const difficultyColors = {
+  foundational: 'bg-green-100 text-green-800 border-green-300',
+  intermediate: 'bg-blue-100 text-blue-800 border-blue-300',
+  advanced: 'bg-purple-100 text-purple-800 border-purple-300',
+};
+
+const domainLabels: Record<string, string> = {
+  'limits-continuity': 'Limits & Continuity',
+  'single-variable': 'Single-Variable Calculus',
+  'multivar-differential': 'Multivariable Differential',
+  'multivar-integral': 'Multivariable Integral',
+  'series-approximation': 'Series & Approximation',
+  'odes': 'ODEs',
+  'measure-integration': 'Measure & Integration',
+  'functional-analysis': 'Functional Analysis',
+};
+---
+
+<BaseLayout title={frontmatter.title} description={frontmatter.abstract}>
+  <article class="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+    <!-- Header -->
+    <header class="mb-10">
+      <div class="flex items-center gap-3 mb-4 text-sm">
+        <a
+          href="/paths"
+          class="text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
+        >
+          {domainLabels[frontmatter.domain] || frontmatter.domain}
+        </a>
+        <span class="text-[var(--color-border)]">·</span>
+        <span
+          class={`px-2 py-0.5 rounded-full text-xs font-semibold border ${difficultyColors[frontmatter.difficulty]}`}
+        >
+          {frontmatter.difficulty}
+        </span>
+        <span class="text-[var(--color-border)]">·</span>
+        <span class="text-[var(--color-text-muted)]">{frontmatter.estimatedReadTime} min read</span>
+      </div>
+
+      <h1
+        class="text-3xl sm:text-4xl font-bold mb-3"
+        style="font-family: var(--font-serif); color: var(--color-text-heading);"
+      >
+        {frontmatter.title}
+      </h1>
+
+      <p class="text-lg" style="color: var(--color-text-muted);">
+        {frontmatter.subtitle}
+      </p>
+    </header>
+
+    <!-- Abstract -->
+    <div
+      class="mb-10 p-4 rounded-lg border"
+      style="background: var(--color-surface-alt); border-color: var(--color-border);"
+    >
+      <p class="text-sm leading-relaxed" style="color: var(--color-text);">
+        <strong>Abstract.</strong> {frontmatter.abstract}
+      </p>
+    </div>
+
+    <!-- formalML forward links -->
+    {frontmatter.formalmlConnections && frontmatter.formalmlConnections.length > 0 && (
+      <div
+        class="mb-10 p-4 rounded-lg border"
+        style="background: var(--color-definition-bg); border-color: var(--color-primary);"
+      >
+        <p class="text-sm font-semibold mb-2" style="color: var(--color-primary);">
+          Where this leads → formalML
+        </p>
+        <ul class="text-sm space-y-1" style="color: var(--color-text);">
+          {frontmatter.formalmlConnections.map((conn) => (
+            <li>
+              <a
+                href={`https://formalml.com/topics/${conn.topic}`}
+                class="formalml-badge"
+                target="_blank"
+                rel="noopener"
+              >
+                formalML
+              </a>{' '}
+              {conn.relationship}
+            </li>
+          ))}
+        </ul>
+      </div>
+    )}
+
+    <!-- Topic content (MDX) -->
+    <div class="topic-content">
+      <slot />
+    </div>
+  </article>
+</BaseLayout>
