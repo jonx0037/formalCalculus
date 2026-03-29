@@ -1,0 +1,542 @@
+---
+title: "Epsilon-Delta & Continuity"
+subtitle: "From sequence limits to function limits — the ε-δ definition, continuity, the Intermediate and Extreme Value Theorems, and the Lipschitz condition that controls gradient descent"
+status: "published"
+difficulty: "foundational"
+prerequisites:
+  - "sequences-limits"
+tags:
+  - "calculus"
+  - "limits"
+  - "continuity"
+  - "epsilon-delta"
+  - "intermediate-value-theorem"
+  - "extreme-value-theorem"
+  - "lipschitz"
+  - "uniform-continuity"
+domain: "limits-continuity"
+videoId: null
+notebookPath: "notebooks/epsilon-delta/02_epsilon_delta.ipynb"
+githubUrl: "https://github.com/jonx0037/formalCalculus/blob/main/src/content/topics/epsilon-delta.mdx"
+datePublished: 2026-03-29
+estimatedReadTime: 45
+abstract: "A function f has limit L at a if for every ε > 0, there exists δ > 0 such that 0 < |x - a| < δ implies |f(x) - L| < ε. This ε-δ definition extends the ε-N framework for sequences to arbitrary functions and serves as the foundation for all subsequent calculus. Continuity at a point means the limit equals the function value — equivalently, small perturbations in the input produce small perturbations in the output. The Intermediate Value Theorem guarantees that continuous functions on intervals cannot 'skip' values, which implies the existence of roots and decision boundaries. The Extreme Value Theorem guarantees that continuous functions on closed, bounded intervals attain their maximum and minimum — the theoretical foundation for the existence of optimal parameters in constrained optimization. Beyond pointwise continuity, Lipschitz continuity — |f(x) - f(y)| ≤ K|x - y| — quantifies how 'well-behaved' a function is. In machine learning, the Lipschitz constant of the loss gradient directly controls gradient descent convergence rates, spectral normalization enforces Lipschitz constraints on neural network layers for Wasserstein GANs, and the continuity properties of activation functions (ReLU is continuous but not differentiable; sigmoid is smooth with K = 1/4) determine whether gradient-based training is possible at all."
+formalmlConnections:
+  - topic: "convex-analysis"
+    site: "formalml"
+    relationship: "Convex functions on open sets are automatically continuous — a non-trivial theorem. Semicontinuity generalizes continuity for optimization, and the Lipschitz gradient condition (∇f is L-Lipschitz) is the key assumption in gradient descent convergence proofs."
+  - topic: "gradient-descent"
+    site: "formalml"
+    relationship: "The convergence rate of gradient descent on smooth functions depends on the Lipschitz constant of the gradient: step size η must satisfy η < 2/L for L-smooth functions. The continuity of the loss landscape is the minimal requirement for gradient-based optimization."
+  - topic: "pac-learning"
+    site: "formalml"
+    relationship: "Continuous hypothesis classes and the uniform convergence of empirical risk to true risk rely on continuity and compactness arguments developed here."
+connections:
+  - topic: "sequences-limits"
+    relationship: "The ε-δ definition of function limits extends the ε-N definition of sequence convergence. The Bolzano-Weierstrass Theorem (from sequences-limits) is used in the proof of the Extreme Value Theorem, and the sequential characterization of continuity bridges both frameworks."
+references:
+  - type: "book"
+    title: "Understanding Analysis"
+    authors: "Abbott"
+    year: 2015
+    note: "Chapter 4 develops continuity with the ε-δ definition and proves IVT and EVT — the primary reference for our exposition"
+  - type: "book"
+    title: "Principles of Mathematical Analysis"
+    authors: "Rudin"
+    year: 1976
+    note: "Chapter 4 on continuity — the definitive compact treatment of uniform continuity and compactness"
+  - type: "book"
+    title: "Analysis I"
+    authors: "Tao"
+    year: 2016
+    note: "Chapter 9 on continuous functions and Chapter 13 on uniform continuity — first-principles construction with careful scaffolding"
+  - type: "book"
+    title: "Convex Optimization"
+    authors: "Boyd & Vandenberghe"
+    year: 2004
+    note: "Section 2.2 on convex function continuity, Section 9.3 on Lipschitz gradient conditions for convergence"
+  - type: "paper"
+    title: "Wasserstein Generative Adversarial Networks"
+    authors: "Arjovsky, Chintala & Bottou"
+    year: 2017
+    url: "https://proceedings.mlr.press/v70/arjovsky17a.html"
+    note: "The 1-Lipschitz constraint on the WGAN critic is a direct application of Lipschitz continuity to generative modeling"
+  - type: "paper"
+    title: "Spectral Normalization for Generative Adversarial Networks"
+    authors: "Miyato, Kataoka, Koyama & Yoshida"
+    year: 2018
+    url: "https://arxiv.org/abs/1802.05957"
+    note: "Spectral normalization enforces the Lipschitz constraint by normalizing weight matrices by their spectral norm"
+---
+
+import TheoremBlock from '../../components/ui/TheoremBlock.astro';
+import EpsilonDeltaExplorer from '../../components/viz/EpsilonDeltaExplorer.tsx';
+import ContinuityTypesExplorer from '../../components/viz/ContinuityTypesExplorer.tsx';
+import IVTExplorer from '../../components/viz/IVTExplorer.tsx';
+import LipschitzExplorer from '../../components/viz/LipschitzExplorer.tsx';
+
+## Overview & Motivation
+
+Picture a loss function landscape — a surface where each point represents a set of model parameters and its height represents the loss. When we nudge the parameters slightly, does the loss change by a small, predictable amount? Or could it jump discontinuously, making gradient-based optimization impossible? If we know one set of parameters gives positive loss and another gives negative loss, must there be parameters that give exactly zero loss?
+
+These are questions about **continuity**, and the ε-δ framework we develop here makes them precise. Continuity is the minimal requirement for gradient-based optimization: if the loss function is not continuous, we cannot even define a meaningful gradient, let alone follow it downhill.
+
+In [Sequences, Limits & Convergence](/topics/sequences-limits), we made "arbitrarily close" precise for sequences with the ε-N definition: $|a_n - L| < \varepsilon$ for all $n \geq N$. Now we extend this framework to functions. Instead of asking "what happens as $n$ gets large?", we ask "what happens as $x$ approaches a point $a$?" The machinery is analogous — we still quantify "for every ε, there exists..." — but the ε-δ definition for functions is subtler because δ can depend on both ε *and* the point $a$.
+
+## The ε-δ Definition of a Function Limit
+
+### From intuition to precision
+
+We want to say "$f(x)$ approaches $L$ as $x$ approaches $a$." Informally, this means: as we take $x$ values closer and closer to $a$, the corresponding $f(x)$ values get closer and closer to $L$.
+
+Our first attempt at making this precise: "for $x$ close to $a$, $f(x)$ is close to $L$." But how close is "close"? We need to quantify *both* closeness conditions — and the key insight is that the first one (how close $x$ is to $a$) should be a *response* to the second one (how close we want $f(x)$ to be to $L$).
+
+This gives us the quantifier structure: *for every* closeness requirement on $f(x)$, *there exists* a sufficient closeness requirement on $x$.
+
+<TheoremBlock type="definition" number={1} title="Limit of a Function">
+Let $f$ be defined on an open interval containing $a$, except possibly at $a$ itself. We say $\lim_{x \to a} f(x) = L$ if for every $\varepsilon > 0$, there exists $\delta > 0$ such that
+
+$$0 < |x - a| < \delta \implies |f(x) - L| < \varepsilon.$$
+
+We write $f(x) \to L$ as $x \to a$.
+</TheoremBlock>
+
+The condition $0 < |x - a|$ is critical: we require $x \neq a$. The limit describes the behavior of $f$ *near* $a$, not *at* $a$. The function need not even be defined at $a$ — all that matters is what happens in every punctured neighborhood of $a$.
+
+Geometrically, the ε-δ definition says: draw a horizontal band of width $2\varepsilon$ centered at $L$. No matter how narrow this band, we can find a vertical band of width $2\delta$ centered at $a$ such that the function graph inside the vertical band stays inside the horizontal band. The intersection of these bands forms an "ε-δ box," and the function graph must stay inside the box.
+
+![The ε-δ definition](/images/topics/epsilon-delta/epsilon-delta-definition.png)
+
+### Worked examples
+
+<TheoremBlock type="example" number={1} title="Proof that lim(2x + 1) = 3 as x → 1">
+**Claim:** $\lim_{x \to 1} (2x + 1) = 3$.
+
+**Proof.** Let $\varepsilon > 0$ be given. We need to find $\delta > 0$ such that $0 < |x - 1| < \delta$ implies $|(2x + 1) - 3| < \varepsilon$.
+
+We work backward from the conclusion:
+
+$$|(2x + 1) - 3| = |2x - 2| = 2|x - 1|.$$
+
+So $|(2x + 1) - 3| < \varepsilon$ is equivalent to $2|x - 1| < \varepsilon$, which is $|x - 1| < \varepsilon/2$.
+
+Choose $\delta = \varepsilon / 2$. Then $0 < |x - 1| < \delta$ implies
+
+$$|(2x + 1) - 3| = 2|x - 1| < 2\delta = 2 \cdot \frac{\varepsilon}{2} = \varepsilon.$$
+
+$\square$
+</TheoremBlock>
+
+For linear functions, the algebra is clean: $\delta$ is simply $\varepsilon$ divided by the slope. But for nonlinear functions, we need to be more careful.
+
+<TheoremBlock type="example" number={2} title="Proof that lim x² = 4 as x → 2">
+**Claim:** $\lim_{x \to 2} x^2 = 4$.
+
+**Proof.** Let $\varepsilon > 0$ be given. We need $\delta > 0$ such that $0 < |x - 2| < \delta$ implies $|x^2 - 4| < \varepsilon$.
+
+Factor: $|x^2 - 4| = |x - 2| \cdot |x + 2|$. The challenge is that $|x + 2|$ depends on $x$, so we need to bound it. If we restrict $\delta \leq 1$, then $|x - 2| < 1$ means $1 < x < 3$, so $|x + 2| < 5$.
+
+Under this restriction: $|x^2 - 4| = |x - 2| \cdot |x + 2| < |x - 2| \cdot 5$.
+
+Choose $\delta = \min(1, \varepsilon/5)$. Then $0 < |x - 2| < \delta$ implies:
+- $\delta \leq 1$, so $|x + 2| < 5$
+- $\delta \leq \varepsilon/5$, so $|x - 2| < \varepsilon/5$
+
+Therefore $|x^2 - 4| = |x - 2| \cdot |x + 2| < \frac{\varepsilon}{5} \cdot 5 = \varepsilon$. $\square$
+</TheoremBlock>
+
+The "restrict δ first to bound a factor, then choose δ as a minimum" technique is the standard approach for polynomial and rational limits. The key step — bounding $|x + 2|$ by restricting to a neighborhood of $a$ — is where the real work happens.
+
+**A non-example:** Consider $f(x) = \sin(1/x)$ at $a = 0$. As $x \to 0$, the function oscillates between $-1$ and $+1$ infinitely often. For any candidate limit $L$ and any $\varepsilon < 1$, no matter how small we make $\delta$, the interval $(0, \delta)$ contains points where $f(x) = 1$ and points where $f(x) = -1$. No single $L$ can be within $\varepsilon$ of both. Therefore $\lim_{x \to 0} \sin(1/x)$ does not exist.
+
+<TheoremBlock type="proposition" number={1} title="Uniqueness of Limits">
+If $\lim_{x \to a} f(x)$ exists, it is unique. That is, if $\lim_{x \to a} f(x) = L_1$ and $\lim_{x \to a} f(x) = L_2$, then $L_1 = L_2$.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+Suppose $\lim_{x \to a} f(x) = L_1$ and $\lim_{x \to a} f(x) = L_2$ with $L_1 \neq L_2$. Set $\varepsilon = |L_1 - L_2| / 2 > 0$. By the limit definition, there exist $\delta_1, \delta_2 > 0$ such that:
+- $0 < |x - a| < \delta_1 \implies |f(x) - L_1| < \varepsilon$
+- $0 < |x - a| < \delta_2 \implies |f(x) - L_2| < \varepsilon$
+
+Let $\delta = \min(\delta_1, \delta_2)$ and pick any $x$ with $0 < |x - a| < \delta$. By the triangle inequality:
+
+$$|L_1 - L_2| \leq |f(x) - L_1| + |f(x) - L_2| < \varepsilon + \varepsilon = |L_1 - L_2|.$$
+
+This gives $|L_1 - L_2| < |L_1 - L_2|$, a contradiction. Therefore $L_1 = L_2$. $\square$
+</TheoremBlock>
+
+Try dragging the ε slider below to see the ε-δ box shrink around the limit. As ε decreases, δ must decrease too — the box tightens, but the function graph always stays inside it.
+
+<EpsilonDeltaExplorer client:visible />
+
+## One-Sided Limits and Limits at Infinity
+
+Sometimes we care about the behavior of $f$ as $x$ approaches $a$ from only one side. This is essential for functions with different behavior on the left and right — like the floor function at integers, or ReLU at 0.
+
+<TheoremBlock type="definition" number={2} title="Left-Hand Limit">
+We say $\lim_{x \to a^-} f(x) = L$ if for every $\varepsilon > 0$, there exists $\delta > 0$ such that
+
+$$a - \delta < x < a \implies |f(x) - L| < \varepsilon.$$
+</TheoremBlock>
+
+<TheoremBlock type="definition" number={3} title="Right-Hand Limit">
+We say $\lim_{x \to a^+} f(x) = L$ if for every $\varepsilon > 0$, there exists $\delta > 0$ such that
+
+$$a < x < a + \delta \implies |f(x) - L| < \varepsilon.$$
+</TheoremBlock>
+
+<TheoremBlock type="proposition" number={2} title="Two-Sided Limit from One-Sided Limits">
+$\lim_{x \to a} f(x) = L$ if and only if $\lim_{x \to a^-} f(x) = L$ and $\lim_{x \to a^+} f(x) = L$.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+**Forward direction.** If $\lim_{x \to a} f(x) = L$, then for every $\varepsilon > 0$ there exists $\delta > 0$ such that $0 < |x - a| < \delta$ implies $|f(x) - L| < \varepsilon$. This condition includes both $x \in (a - \delta, a)$ and $x \in (a, a + \delta)$, so both one-sided limits equal $L$.
+
+**Reverse direction.** Suppose both one-sided limits equal $L$. Given $\varepsilon > 0$, there exist $\delta_1, \delta_2 > 0$ such that:
+- $a - \delta_1 < x < a \implies |f(x) - L| < \varepsilon$
+- $a < x < a + \delta_2 \implies |f(x) - L| < \varepsilon$
+
+Set $\delta = \min(\delta_1, \delta_2)$. Then $0 < |x - a| < \delta$ means either $a - \delta < x < a$ or $a < x < a + \delta$, and in either case $|f(x) - L| < \varepsilon$. $\square$
+</TheoremBlock>
+
+<TheoremBlock type="definition" number={4} title="Limit at Infinity">
+We say $\lim_{x \to \infty} f(x) = L$ if for every $\varepsilon > 0$, there exists $M > 0$ such that
+
+$$x > M \implies |f(x) - L| < \varepsilon.$$
+
+Similarly, $\lim_{x \to -\infty} f(x) = L$ if for every $\varepsilon > 0$, there exists $M > 0$ such that $x < -M$ implies $|f(x) - L| < \varepsilon$.
+</TheoremBlock>
+
+![One-sided limits](/images/topics/epsilon-delta/one-sided-limits.png)
+
+**ML context:** One-sided limits appear at ReLU's kink at 0. The left-hand limit of $\text{ReLU}'(x)$ as $x \to 0^-$ is 0, and the right-hand limit as $x \to 0^+$ is 1. Since both one-sided limits of the function itself exist and equal 0, ReLU is continuous at 0 — even though it is not differentiable there. Limits at infinity describe the asymptotic behavior of sigmoid ($\sigma(x) \to 1$ as $x \to \infty$) and tanh ($\tanh(x) \to 1$ as $x \to \infty$).
+
+## Continuity at a Point
+
+A function is continuous at a point if there is no "break" in its graph there. The formal definition captures three conditions that must all hold.
+
+<TheoremBlock type="definition" number={5} title="Continuity at a Point">
+A function $f$ is **continuous at** $a$ if:
+1. $f(a)$ is defined,
+2. $\lim_{x \to a} f(x)$ exists, and
+3. $\lim_{x \to a} f(x) = f(a)$.
+
+Equivalently: for every $\varepsilon > 0$, there exists $\delta > 0$ such that $|x - a| < \delta$ implies $|f(x) - f(a)| < \varepsilon$.
+
+We say $f$ is **continuous on an interval** $I$ if $f$ is continuous at every point of $I$.
+</TheoremBlock>
+
+Notice the subtle difference from the limit definition: we write $|x - a| < \delta$ (not $0 < |x - a| < \delta$). For continuity, we include $x = a$ itself — and condition 3 ensures that $f(a)$ is the "right" value.
+
+The sequential characterization provides a powerful bridge back to Topic 1.
+
+<TheoremBlock type="theorem" number={1} title="Sequential Characterization of Continuity">
+A function $f$ is continuous at $a$ if and only if for every sequence $(x_n)$ with $x_n \to a$, we have $f(x_n) \to f(a)$.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+**Forward direction.** Assume $f$ is continuous at $a$, and let $(x_n)$ be a sequence with $x_n \to a$. Given $\varepsilon > 0$, by continuity there exists $\delta > 0$ such that $|x - a| < \delta$ implies $|f(x) - f(a)| < \varepsilon$. Since $x_n \to a$, there exists $N$ such that $n \geq N$ implies $|x_n - a| < \delta$. For such $n$, we have $|f(x_n) - f(a)| < \varepsilon$. This proves $f(x_n) \to f(a)$.
+
+**Reverse direction (contrapositive).** Assume $f$ is *not* continuous at $a$. Then there exists $\varepsilon_0 > 0$ such that for every $\delta > 0$, there is some $x$ with $|x - a| < \delta$ but $|f(x) - f(a)| \geq \varepsilon_0$. For each $n \in \mathbb{N}$, apply this with $\delta = 1/n$: there exists $x_n$ with $|x_n - a| < 1/n$ but $|f(x_n) - f(a)| \geq \varepsilon_0$. Then $x_n \to a$ (since $|x_n - a| < 1/n \to 0$) but $f(x_n) \not\to f(a)$ (since $|f(x_n) - f(a)| \geq \varepsilon_0$ for all $n$). $\square$
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={1} title="Bridge Between Topics 1 and 2">
+The sequential characterization is the bridge between sequence convergence (Topic 1) and function continuity (this topic). It lets us apply all the sequence-convergence theorems — Monotone Convergence, Squeeze, Bolzano-Weierstrass, the Algebra of Limits — in the function setting. When we need to prove something about a continuous function, we can often reduce it to a statement about convergent sequences, where we already have powerful tools.
+</TheoremBlock>
+
+## Algebra of Continuous Functions
+
+<TheoremBlock type="theorem" number={2} title="Algebra of Continuous Functions">
+If $f$ and $g$ are continuous at $a$, then so are:
+1. $f + g$ and $f - g$
+2. $f \cdot g$
+3. $f / g$ (provided $g(a) \neq 0$)
+4. $f \circ g$ (if $g$ is continuous at $a$ and $f$ is continuous at $g(a)$)
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+We prove this via the sequential characterization. Let $(x_n)$ be any sequence with $x_n \to a$. Since $f$ and $g$ are continuous at $a$, we have $f(x_n) \to f(a)$ and $g(x_n) \to g(a)$.
+
+**Sum:** By the Algebra of Limits for sequences (Theorem 3 from [Sequences, Limits & Convergence](/topics/sequences-limits)), $(f + g)(x_n) = f(x_n) + g(x_n) \to f(a) + g(a) = (f + g)(a)$.
+
+**Product:** Similarly, $f(x_n) \cdot g(x_n) \to f(a) \cdot g(a)$.
+
+**Quotient:** If $g(a) \neq 0$, then $f(x_n)/g(x_n) \to f(a)/g(a)$ by the quotient rule for sequences.
+
+**Composition:** If $g$ is continuous at $a$, then $g(x_n) \to g(a)$. If $f$ is continuous at $g(a)$, then $f(g(x_n)) \to f(g(a))$. This shows $(f \circ g)(x_n) \to (f \circ g)(a)$. $\square$
+</TheoremBlock>
+
+<TheoremBlock type="corollary" number={1} title="Continuity of Polynomials and Rational Functions">
+Every polynomial is continuous on $\mathbb{R}$. Every rational function $p(x)/q(x)$ is continuous on its domain (wherever $q(x) \neq 0$).
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={2} title="Continuity of Neural Networks">
+In machine learning, this theorem is why compositions of continuous layers produce continuous networks. If each activation function $\sigma_i$ is continuous and each affine map $W_i x + b_i$ is continuous (which it is, as a polynomial), then the full network
+
+$$f = \sigma_L \circ W_L \circ \cdots \circ \sigma_1 \circ W_1$$
+
+is continuous by iterated application of the composition rule. This is the minimal requirement for the network to have well-defined gradients almost everywhere.
+</TheoremBlock>
+
+## Types of Discontinuities
+
+Not all discontinuities are created equal. Understanding the classification tells us what can be "fixed" and what cannot.
+
+<TheoremBlock type="definition" number={6} title="Removable Discontinuity">
+A function $f$ has a **removable discontinuity** at $a$ if $\lim_{x \to a} f(x)$ exists, but either $f(a)$ is undefined or $f(a) \neq \lim_{x \to a} f(x)$. Redefining $f(a) = \lim_{x \to a} f(x)$ "removes" the discontinuity.
+</TheoremBlock>
+
+<TheoremBlock type="definition" number={7} title="Jump Discontinuity">
+A function $f$ has a **jump discontinuity** at $a$ if both one-sided limits $\lim_{x \to a^-} f(x)$ and $\lim_{x \to a^+} f(x)$ exist, but $\lim_{x \to a^-} f(x) \neq \lim_{x \to a^+} f(x)$.
+</TheoremBlock>
+
+<TheoremBlock type="definition" number={8} title="Essential Discontinuity">
+A function $f$ has an **essential discontinuity** at $a$ if at least one of the one-sided limits fails to exist (either diverges to infinity or oscillates).
+</TheoremBlock>
+
+Concrete examples:
+- **Removable:** $f(x) = \sin(x)/x$ at $x = 0$ — the limit is 1, but the function is undefined at 0.
+- **Jump:** $f(x) = \lfloor x \rfloor$ (floor function) at any integer — left and right limits differ by 1.
+- **Essential:** $f(x) = \sin(1/x)$ at $x = 0$ — infinite oscillation, no limit exists.
+
+![Continuity types](/images/topics/epsilon-delta/continuity-types.png)
+
+Explore the four types below. The ε-δ box shows *why* continuity fails for each type: for the continuous case, a valid δ always exists. For removable discontinuities, the limit exists but misses f(a). For jump discontinuities, no single δ-band can contain both sides. For essential discontinuities, the oscillation defeats any ε.
+
+<ContinuityTypesExplorer client:visible />
+
+## The Intermediate Value Theorem
+
+The IVT is one of the most intuitive theorems in analysis — a continuous function cannot "jump" over a value — but its proof requires the completeness of $\mathbb{R}$.
+
+<TheoremBlock type="theorem" number={3} title="Intermediate Value Theorem">
+Let $f: [a, b] \to \mathbb{R}$ be continuous. If $y$ is any value between $f(a)$ and $f(b)$, then there exists $c \in (a, b)$ such that $f(c) = y$.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+Without loss of generality, assume $f(a) < y < f(b)$ (the case $f(a) > y > f(b)$ follows by applying the argument to $-f$).
+
+Define $S = \{x \in [a, b] : f(x) \leq y\}$. This set is non-empty (it contains $a$, since $f(a) < y \leq y$) and bounded above by $b$. By the **completeness of $\mathbb{R}$** (the least upper bound property), $c = \sup S$ exists.
+
+We claim $f(c) = y$. We rule out the other two possibilities:
+
+**Case 1: $f(c) < y$.** Set $\varepsilon = y - f(c) > 0$. By continuity, there exists $\delta > 0$ such that $|x - c| < \delta$ implies $|f(x) - f(c)| < \varepsilon$, i.e., $f(x) < f(c) + \varepsilon = y$. Since $c < b$ (because $f(b) > y > f(c)$), the interval $(c, c + \delta')$ for $\delta' = \min(\delta, b - c)$ is non-empty, and every $x$ in this interval satisfies $f(x) < y$, hence $x \in S$. But then $c$ is not an upper bound of $S$ — contradiction with $c = \sup S$.
+
+**Case 2: $f(c) > y$.** Set $\varepsilon = f(c) - y > 0$. By continuity, there exists $\delta > 0$ such that $|x - c| < \delta$ implies $f(x) > f(c) - \varepsilon = y$. So no point in $(c - \delta, c)$ belongs to $S$. But $c = \sup S$ means every interval $(c - \delta, c)$ must contain points of $S$ — contradiction.
+
+Both cases lead to contradictions, so $f(c) = y$. $\square$
+</TheoremBlock>
+
+<TheoremBlock type="corollary" number={2} title="Root Existence">
+If $f$ is continuous on $[a, b]$ and $f(a) \cdot f(b) < 0$ (i.e., $f$ changes sign), then there exists $c \in (a, b)$ with $f(c) = 0$.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={3} title="IVT and Decision Boundaries">
+The IVT is the theoretical foundation of the **bisection method** for root-finding. More broadly, it guarantees the existence of decision boundaries: if a continuous classifier assigns a positive score to one data point and a negative score to another, the IVT guarantees that somewhere between them, the classifier outputs exactly zero — a decision boundary exists. This is why continuous classifiers always produce connected decision regions.
+</TheoremBlock>
+
+![IVT demonstration](/images/topics/epsilon-delta/ivt-demonstration.png)
+
+Drag the horizontal target line to see IVT in action. Toggle bisection mode to watch the algorithm narrow in on the root step by step.
+
+<IVTExplorer client:visible />
+
+## The Extreme Value Theorem
+
+<TheoremBlock type="theorem" number={4} title="Extreme Value Theorem">
+If $f: [a, b] \to \mathbb{R}$ is continuous, then $f$ attains its maximum and minimum on $[a, b]$. That is, there exist $c, d \in [a, b]$ such that $f(c) \leq f(x) \leq f(d)$ for all $x \in [a, b]$.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+We prove the maximum case; the minimum case follows by applying the argument to $-f$.
+
+**Step 1: $f$ is bounded above on $[a, b]$.** Suppose not. Then for each $n \in \mathbb{N}$, there exists $x_n \in [a, b]$ with $f(x_n) > n$. The sequence $(x_n)$ is bounded (all terms lie in $[a, b]$), so by the **Bolzano-Weierstrass Theorem** (from [Sequences, Limits & Convergence](/topics/sequences-limits)), there is a convergent subsequence $x_{n_k} \to x^* \in [a, b]$ (the interval is closed, so the limit stays in $[a, b]$). By continuity, $f(x_{n_k}) \to f(x^*)$. But $f(x_{n_k}) > n_k \to \infty$, which contradicts convergence. Therefore $f$ is bounded above.
+
+**Step 2: The supremum is attained.** Let $M = \sup_{x \in [a,b]} f(x)$, which exists by Step 1. By the definition of supremum, for each $n$ there exists $x_n \in [a, b]$ with $f(x_n) > M - 1/n$. Again by Bolzano-Weierstrass, extract a convergent subsequence $x_{n_k} \to d \in [a, b]$. By continuity, $f(d) = \lim f(x_{n_k})$. Since $M - 1/n_k < f(x_{n_k}) \leq M$ for all $k$, we get $f(d) = M$ by the Squeeze Theorem. $\square$
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={4} title="EVT and Optimization">
+The EVT is the **existence theorem for optimization**: it guarantees that $\min_{x \in [a,b]} f(x)$ has a solution when $f$ is continuous and the domain $[a, b]$ is compact (closed and bounded). In machine learning, regularization and weight clipping create compact parameter spaces — for example, constraining $\|\theta\| \leq C$ — precisely to ensure that minimizers exist. Without compactness, a continuous function may approach but never reach its infimum (think of $e^{-x}$ on $(0, \infty)$, which approaches 0 but never reaches it).
+</TheoremBlock>
+
+![EVT demonstration](/images/topics/epsilon-delta/evt-demonstration.png)
+
+## Uniform Continuity and Lipschitz Continuity
+
+So far, our notion of continuity is **pointwise**: at each point $a$, we find a δ that works for that specific $a$. But δ might shrink as $a$ moves — different points might need different δ values. **Uniform continuity** asks for a single δ that works everywhere simultaneously.
+
+<TheoremBlock type="definition" number={9} title="Uniform Continuity">
+A function $f$ is **uniformly continuous** on a set $D$ if for every $\varepsilon > 0$, there exists $\delta > 0$ such that for all $x, y \in D$:
+
+$$|x - y| < \delta \implies |f(x) - f(y)| < \varepsilon.$$
+</TheoremBlock>
+
+The key difference: in pointwise continuity, $\delta$ depends on both $\varepsilon$ and the point $a$. In uniform continuity, $\delta$ depends only on $\varepsilon$ — the same δ works for every pair of points in $D$.
+
+**Lipschitz continuity** goes further: it demands a *linear* relationship between input perturbation and output perturbation.
+
+<TheoremBlock type="definition" number={10} title="Lipschitz Continuity">
+A function $f$ is **Lipschitz continuous** with constant $K \geq 0$ on a set $D$ if
+
+$$|f(x) - f(y)| \leq K|x - y| \quad \text{for all } x, y \in D.$$
+
+The smallest such $K$ is called the **Lipschitz constant** of $f$ on $D$.
+</TheoremBlock>
+
+Geometrically, $f$ is $K$-Lipschitz if and only if at every point $(x_0, f(x_0))$, the graph of $f$ stays inside a cone with slopes $\pm K$. The Lipschitz constant is the steepest the function is allowed to be — anywhere.
+
+<TheoremBlock type="proposition" number={3} title="The Continuity Hierarchy">
+Lipschitz continuity $\Rightarrow$ uniform continuity $\Rightarrow$ (pointwise) continuity.
+
+Both converses are false.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+**Lipschitz $\Rightarrow$ uniform continuity.** Given $\varepsilon > 0$, choose $\delta = \varepsilon / K$. Then $|x - y| < \delta$ implies $|f(x) - f(y)| \leq K|x - y| < K \cdot \varepsilon/K = \varepsilon$. This $\delta$ depends only on $\varepsilon$ (not on $x$ or $y$), so $f$ is uniformly continuous.
+
+**Uniform continuity $\Rightarrow$ continuity.** Immediate: uniform continuity at every pair $(x, a)$ with $x$ near $a$ gives pointwise continuity at $a$.
+
+**Counterexample for first converse:** $f(x) = \sqrt{x}$ on $[0, 1]$ is uniformly continuous (continuous on a compact set — Heine-Cantor, Theorem 5 below) but not Lipschitz: $|f(x) - f(0)| / |x - 0| = 1/\sqrt{x} \to \infty$ as $x \to 0^+$.
+
+**Counterexample for second converse:** $f(x) = x^2$ on $\mathbb{R}$ is continuous but not uniformly continuous. For any $\delta > 0$, take $x = 1/\delta$ and $y = x + \delta/2$. Then $|x - y| = \delta/2 < \delta$ but $|f(x) - f(y)| = |x^2 - y^2| = |x - y| \cdot |x + y| > (\delta/2)(2/\delta) = 1$. So $\varepsilon = 1$ has no valid $\delta$. $\square$
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={5} title="Heine-Cantor Theorem">
+If $f$ is continuous on a compact set $K$ (closed and bounded in $\mathbb{R}$), then $f$ is uniformly continuous on $K$.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={5} title="Compactness Upgrades Continuity">
+The Heine-Cantor theorem explains why **compactness** is so important for optimization. On compact domains, continuity automatically gives us uniform continuity — uniform control over function behavior everywhere. This is the machinery behind many existence and approximation theorems in analysis and ML, and we will develop it fully in **Completeness & Compactness** *(coming soon)*.
+</TheoremBlock>
+
+![Lipschitz continuity](/images/topics/epsilon-delta/lipschitz-continuity.png)
+
+Drag the point along the function to see the Lipschitz cone follow. Adjust $K$ to see how the constraint tightens. For $\sqrt{x}$, notice how the cone fails near $x = 0$ — the slope blows up, so no finite $K$ works.
+
+<LipschitzExplorer client:visible />
+
+## Connections to ML
+
+### Activation function continuity
+
+The continuity properties of activation functions determine whether gradient-based training is possible at all.
+
+- **ReLU** $\sigma(x) = \max(0, x)$: Continuous everywhere (both one-sided limits agree at 0). Lipschitz with $K = 1$. Not differentiable at 0, but the subgradient exists.
+- **Sigmoid** $\sigma(x) = 1/(1 + e^{-x})$: Smooth (infinitely differentiable). Lipschitz with $K = 1/4$ (maximum slope at $x = 0$).
+- **Tanh** $\sigma(x) = \tanh(x)$: Smooth. Lipschitz with $K = 1$.
+- **GELU** $\sigma(x) = x \cdot \Phi(x)$: Smooth. Lipschitz with $K \approx 1.13$.
+- **Step function** $\sigma(x) = \mathbf{1}_{x > 0}$: Discontinuous at 0 (jump). Cannot be trained with gradient descent — gradients are zero almost everywhere.
+
+The step function illustrates why continuity matters: its discontinuity makes gradient-based optimization impossible, which is why smooth approximations (sigmoid, softmax) replaced it in neural network training. See <a href="https://formalml.com/topics/gradient-descent" class="formalml-badge" target="_blank" rel="noopener">formalML</a> **Gradient Descent** for the full convergence analysis.
+
+![Activation functions](/images/topics/epsilon-delta/activation-functions.png)
+
+### Loss landscape smoothness
+
+Different loss functions have different continuity properties, which determines which optimization methods apply:
+
+- **MSE** $\ell(y, \hat{y}) = (y - \hat{y})^2$: Smooth, Lipschitz gradient. Gradient descent converges.
+- **Hinge** $\ell(y, \hat{y}) = \max(0, 1 - y\hat{y})$: Continuous but not differentiable at $y\hat{y} = 1$. Subgradient methods work.
+- **Cross-entropy** $\ell(p) = -\log(p)$: Smooth on $(0, 1)$ but singular at $p = 0$ (loss $\to \infty$). Requires clipping or label smoothing.
+- **0-1 loss** $\ell(y, \hat{y}) = \mathbf{1}_{y \neq \hat{y}}$: Discontinuous. Not trainable with gradients — this is why we use continuous surrogates.
+
+See <a href="https://formalml.com/topics/convex-analysis" class="formalml-badge" target="_blank" rel="noopener">formalML</a> **Convex Analysis** for the full treatment of loss function properties.
+
+![Loss landscape continuity](/images/topics/epsilon-delta/loss-landscape-continuity.png)
+
+### Lipschitz constraints in GANs
+
+The Wasserstein GAN (WGAN) critic $D$ must be **1-Lipschitz** to ensure the Wasserstein distance $W_1(P_r, P_g) = \sup_{\|D\|_L \leq 1} \mathbb{E}_{x \sim P_r}[D(x)] - \mathbb{E}_{x \sim P_g}[D(x)]$ is well-defined (Kantorovich-Rubinstein duality). The original paper enforced this via weight clipping: $w \in [-c, c]$. Spectral normalization (Miyato et al., 2018) provides a tighter enforcement by normalizing each weight matrix $W$ by its spectral norm $\sigma(W)$:
+
+$$\bar{W} = W / \sigma(W)$$
+
+This ensures the Lipschitz constant of the network is at most 1, since the Lipschitz constant of a composition is bounded by the product of the layer-wise constants. The trade-off: smaller $K$ means a more constrained (less expressive) critic, but more stable training.
+
+### IVT and decision boundaries
+
+If a continuous classifier $f: \mathbb{R}^d \to \mathbb{R}$ assigns a positive score to one data point and a negative score to another, the IVT guarantees that along any continuous path between them, there exists a point where $f = 0$ — a **decision boundary**. This means continuous classifiers always produce well-defined, connected decision regions. Discontinuous classifiers can create "islands" with no clear boundary. See <a href="https://formalml.com/topics/pac-learning" class="formalml-badge" target="_blank" rel="noopener">formalML</a> **PAC Learning** for how continuity assumptions on hypothesis classes affect learnability.
+
+## Computational Notes
+
+### Evaluating limits numerically
+
+```python
+import numpy as np
+
+def numerical_limit(f, a, n_steps=20):
+    """Evaluate lim_{x->a} f(x) by approaching from both sides."""
+    h_values = [10**(-k * 0.5) for k in range(1, n_steps + 1)]
+    left = [f(a - h) for h in h_values]
+    right = [f(a + h) for h in h_values]
+    print(f"Left:  {left[-1]:.12f}")
+    print(f"Right: {right[-1]:.12f}")
+    return (left[-1] + right[-1]) / 2
+
+# Example: lim_{x->0} sin(x)/x = 1
+numerical_limit(lambda x: np.sin(x) / x, 0)
+```
+
+### Estimating Lipschitz constants
+
+```python
+def estimate_lipschitz(f, a, b, n=10000):
+    """Estimate the Lipschitz constant of f on [a, b]."""
+    x = np.linspace(a, b, n)
+    fx = f(x)
+    max_ratio = 0
+    for i in range(n - 1):
+        ratio = abs(fx[i+1] - fx[i]) / abs(x[i+1] - x[i])
+        max_ratio = max(max_ratio, ratio)
+    return max_ratio
+
+# sin(x) on [-pi, pi]: K should be close to 1
+K = estimate_lipschitz(np.sin, -np.pi, np.pi)
+print(f"Lipschitz constant of sin(x): {K:.4f}")
+```
+
+### Bisection root-finding
+
+```python
+def bisection(f, a, b, tol=1e-10, max_iter=100):
+    """Find root of f in [a, b] using the bisection method (IVT)."""
+    assert f(a) * f(b) < 0, "f must change sign on [a, b]"
+    for i in range(max_iter):
+        mid = (a + b) / 2
+        if abs(f(mid)) < tol or (b - a) / 2 < tol:
+            return mid, i + 1
+        if f(a) * f(mid) < 0:
+            b = mid
+        else:
+            a = mid
+    return (a + b) / 2, max_iter
+
+# Find root of x^3 - 2x - 2 in [0, 3]
+root, iters = bisection(lambda x: x**3 - 2*x - 2, 0, 3)
+print(f"Root: {root:.10f} (found in {iters} iterations)")
+```
+
+## Connections & Further Reading
+
+### Where this leads within formalCalculus
+
+- [**Sequences, Limits & Convergence**](/topics/sequences-limits) — the prerequisite. The ε-N definition that this topic extends, and the Bolzano-Weierstrass Theorem that powers the EVT proof.
+- **Completeness & Compactness** *(coming soon)* — generalizes EVT via compactness. The Heine-Cantor theorem (Theorem 5 above) is a preview of why compactness upgrades continuity to uniform continuity.
+- **Uniform Convergence** *(coming soon)* — when does uniform convergence of continuous functions produce a continuous limit? The sequential characterization bridges the answer.
+- **The Derivative & Chain Rule** *(coming soon)* — differentiability implies continuity (but not conversely — ReLU is continuous but not differentiable at 0). The derivative is itself a limit.
+- **The Riemann Integral & FTC** *(coming soon)* — continuous functions on $[a, b]$ are Riemann integrable. Continuity is the "easy" sufficient condition.
+- **Mean Value Theorem & Taylor Expansion** *(coming soon)* — MVT requires continuity on $[a, b]$ and differentiability on $(a, b)$.
+
+### Where this leads in machine learning
+
+- <a href="https://formalml.com/topics/convex-analysis" class="formalml-badge" target="_blank" rel="noopener">formalML</a> **Convex Analysis** — continuity of convex functions, semicontinuity, Lipschitz gradient conditions.
+- <a href="https://formalml.com/topics/gradient-descent" class="formalml-badge" target="_blank" rel="noopener">formalML</a> **Gradient Descent** — the Lipschitz gradient assumption controls convergence rates.
+- <a href="https://formalml.com/topics/pac-learning" class="formalml-badge" target="_blank" rel="noopener">formalML</a> **PAC Learning** — continuous hypothesis classes and uniform convergence of empirical processes.
+
+### References
+
+- **Abbott** (2015). *Understanding Analysis*. Chapter 4. Develops continuity with the ε-δ definition and proves IVT and EVT — our primary reference.
+- **Rudin** (1976). *Principles of Mathematical Analysis*. Chapter 4. The definitive compact treatment of uniform continuity and compactness.
+- **Tao** (2016). *Analysis I*. Chapters 9 and 13. First-principles construction with careful scaffolding for uniform continuity.
+- **Boyd & Vandenberghe** (2004). *Convex Optimization*. Sections 2.2, 9.3. Lipschitz gradient conditions for gradient descent convergence.
+- **Arjovsky, Chintala & Bottou** (2017). [Wasserstein Generative Adversarial Networks](https://proceedings.mlr.press/v70/arjovsky17a.html). The 1-Lipschitz constraint on the WGAN critic.
+- **Miyato et al.** (2018). [Spectral Normalization for GANs](https://arxiv.org/abs/1802.05957). Enforcing Lipschitz constraints via spectral norm.
