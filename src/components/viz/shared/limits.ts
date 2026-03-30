@@ -576,3 +576,218 @@ export function checkCoercivity(
 
   return { isCoercive, sublevelSets };
 }
+
+// ── Uniform Convergence (Topic 4) ─────────────────────────────
+
+export interface UniformConvergenceCheck {
+  isUniform: boolean;
+  supNorm: number;
+  fitsInBand: boolean;
+  epsilon: number;
+  n: number;
+}
+
+export interface MTestResult {
+  passes: boolean;
+  partialMSum: number;
+  tailBound: number;
+  actualSupError: number;
+}
+
+export interface EquicontinuityCheck {
+  isEquicontinuous: boolean;
+  delta: number | null;
+  epsilon: number;
+  worstCaseF: number;
+}
+
+/**
+ * Check uniform convergence of f_n to f at a given n and epsilon.
+ * Evaluates ||f_n - f||_∞ on a dense grid over the domain.
+ */
+export function checkUniformConvergence(
+  fn: (x: number) => number,
+  limit: (x: number) => number,
+  domain: [number, number],
+  epsilon: number,
+  gridSize: number = 500,
+): UniformConvergenceCheck {
+  const [a, b] = domain;
+  const step = (b - a) / gridSize;
+  let supNorm = 0;
+
+  for (let i = 0; i <= gridSize; i++) {
+    const x = a + step * i;
+    const diff = Math.abs(fn(x) - limit(x));
+    if (diff > supNorm) supNorm = diff;
+  }
+
+  return {
+    isUniform: supNorm < epsilon,
+    supNorm,
+    fitsInBand: supNorm < epsilon,
+    epsilon,
+    n: 0, // Caller sets this contextually
+  };
+}
+
+/**
+ * Apply the Weierstrass M-test to a series of functions.
+ * Computes partial M-sum, estimates tail bound, and measures actual error.
+ *
+ * The tail bound is estimated by summing M_k for k = n+1..maxK.
+ * The actual sup error is ||S_maxK - S_n||_∞ on a dense grid.
+ */
+export function weierstrassMTest(
+  term: (x: number, k: number) => number,
+  Mk: (k: number) => number,
+  domain: [number, number],
+  n: number,
+  maxK: number = 200,
+  gridSize: number = 300,
+): MTestResult {
+  const [a, b] = domain;
+  const step = (b - a) / gridSize;
+
+  // Partial sum of M_k for k = 1..n
+  let partialMSum = 0;
+  for (let k = 1; k <= n; k++) partialMSum += Mk(k);
+
+  // Tail bound: sum M_k for k = n+1..maxK
+  let tailBound = 0;
+  for (let k = n + 1; k <= maxK; k++) tailBound += Mk(k);
+
+  // Check if full series M_k converges (sum to maxK as proxy)
+  let totalMSum = partialMSum + tailBound;
+  const passes = totalMSum < Infinity && Mk(maxK) < 1e-10;
+
+  // Actual sup error: ||S_maxK - S_n||_∞
+  let actualSupError = 0;
+  for (let i = 0; i <= gridSize; i++) {
+    const x = a + step * i;
+    let tail = 0;
+    for (let k = n + 1; k <= maxK; k++) tail += term(x, k);
+    const absTail = Math.abs(tail);
+    if (absTail > actualSupError) actualSupError = absTail;
+  }
+
+  return { passes, partialMSum, tailBound, actualSupError };
+}
+
+/**
+ * Check equicontinuity of a family of functions at a point x0.
+ * Tests whether a single delta controls |f(x) - f(x0)| < epsilon
+ * for ALL functions in the family simultaneously.
+ */
+export function checkEquicontinuity(
+  family: ((x: number) => number)[],
+  x0: number,
+  epsilon: number,
+  domain: [number, number],
+  gridSize: number = 300,
+): EquicontinuityCheck {
+  const [a, b] = domain;
+  const step = (b - a) / gridSize;
+
+  // For each function, find the smallest delta needed
+  let worstDelta = Infinity;
+  let worstCaseF = 0;
+
+  for (let fi = 0; fi < family.length; fi++) {
+    const f = family[fi];
+    const fx0 = f(x0);
+    let thisDelta = Infinity;
+
+    // Scan outward from x0 to find where |f(x) - f(x0)| first exceeds epsilon
+    for (let i = 0; i <= gridSize; i++) {
+      const x = a + step * i;
+      const dist = Math.abs(x - x0);
+      if (dist < 1e-12) continue;
+      if (Math.abs(f(x) - fx0) >= epsilon) {
+        if (dist < thisDelta) thisDelta = dist;
+      }
+    }
+
+    if (thisDelta < worstDelta) {
+      worstDelta = thisDelta;
+      worstCaseF = fi;
+    }
+  }
+
+  const isEquicontinuous = worstDelta > step * 2; // Delta exists (not degenerate)
+  return {
+    isEquicontinuous,
+    delta: isEquicontinuous ? worstDelta * 0.9 : null, // Slight safety margin
+    epsilon,
+    worstCaseF,
+  };
+}
+
+/**
+ * Extract a convergent subsequence from a family of functions
+ * on a discrete grid — finite-dimensional approximation of
+ * the Arzelà-Ascoli diagonal argument.
+ *
+ * 1. Evaluate all functions on a grid.
+ * 2. At each grid point, sort by value and take a greedy
+ *    subsequence that converges at that point.
+ * 3. Diagonalize across grid points.
+ */
+export function extractUniformSubsequence(
+  family: ((x: number) => number)[],
+  domain: [number, number],
+  gridSize: number = 50,
+): { indices: number[]; limitApprox: (x: number) => number; supNormErrors: number[] } {
+  const [a, b] = domain;
+  const step = (b - a) / gridSize;
+  const gridPoints: number[] = [];
+  for (let i = 0; i <= gridSize; i++) gridPoints.push(a + step * i);
+
+  // Evaluate all functions on the grid
+  const values: number[][] = family.map(f => gridPoints.map(x => f(x)));
+
+  // Start with all indices
+  let currentIndices = family.map((_, i) => i);
+
+  // Diagonal extraction: at each grid point, extract a subsequence
+  // that converges at that point (sort by value, take monotone subsequence)
+  for (let gi = 0; gi < gridPoints.length && currentIndices.length > 1; gi++) {
+    // Sort current indices by their value at this grid point
+    const sorted = [...currentIndices].sort(
+      (a, b) => values[a][gi] - values[b][gi],
+    );
+    // Take every other index to get a sparser, more convergent subsequence
+    // (crude finite approximation of Bolzano-Weierstrass extraction)
+    if (sorted.length > 4) {
+      currentIndices = sorted.filter((_, i) => i % 2 === 0);
+    } else {
+      currentIndices = sorted;
+    }
+  }
+
+  // Build piecewise-linear limit approximation from the last function in subsequence
+  const lastIdx = currentIndices[currentIndices.length - 1];
+  const lastValues = values[lastIdx];
+
+  const limitApprox = (x: number): number => {
+    const t = (x - a) / (b - a);
+    const gi = t * gridSize;
+    const lo = Math.max(0, Math.min(gridSize - 1, Math.floor(gi)));
+    const hi = lo + 1;
+    if (hi > gridSize) return lastValues[lo];
+    const frac = gi - lo;
+    return lastValues[lo] * (1 - frac) + lastValues[hi] * frac;
+  };
+
+  // Compute sup-norm errors for each function in the subsequence
+  const supNormErrors = currentIndices.map(idx => {
+    let maxErr = 0;
+    for (let gi = 0; gi <= gridSize; gi++) {
+      const err = Math.abs(values[idx][gi] - lastValues[gi]);
+      if (err > maxErr) maxErr = err;
+    }
+    return maxErr;
+  });
+
+  return { indices: currentIndices, limitApprox, supNormErrors };
+}
