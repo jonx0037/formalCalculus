@@ -21,9 +21,8 @@ export const tracks: Track[] = [
     title: 'Single-Variable Calculus',
     description: 'Differentiation, integration, and the theorems connecting them.',
     domain: 'single-variable',
-    published: [],
+    published: ['The Derivative & Chain Rule'],
     planned: [
-      'The Derivative & Chain Rule',
       'Mean Value Theorem & Taylor Expansion',
       'The Riemann Integral & FTC',
       'Improper Integrals & Special Functions',

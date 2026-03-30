@@ -1,0 +1,477 @@
+---
+title: "The Derivative & Chain Rule"
+subtitle: "Rates of change as limits of difference quotients — the tangent line as the best linear approximation, differentiation rules from first principles, and the chain rule that makes backpropagation possible"
+status: "published"
+difficulty: "foundational"
+prerequisites:
+  - "sequences-limits"
+  - "epsilon-delta"
+tags:
+  - "calculus"
+  - "derivative"
+  - "differentiation"
+  - "chain-rule"
+  - "tangent-line"
+  - "linear-approximation"
+  - "backpropagation"
+  - "automatic-differentiation"
+domain: "single-variable"
+videoId: null
+notebookPath: "notebooks/derivative/05_derivative_chain_rule.ipynb"
+githubUrl: "https://github.com/jonx0037/formalCalculus/blob/main/src/content/topics/derivative.mdx"
+datePublished: 2026-03-30
+estimatedReadTime: 45
+abstract: "The derivative of f at a is the limit f'(a) = lim_{h→0} [f(a+h) - f(a)] / h — the instantaneous rate of change, the slope of the tangent line, and the best linear approximation to f near a, all in one definition. Geometrically, the derivative is what you get when secant lines through (a, f(a)) and (a+h, f(a+h)) converge as h → 0: the limiting slope is f'(a), and the limiting line is the tangent. This limit need not exist — |x| is continuous at 0 but has no derivative there because the left and right secant slopes disagree, and the Weierstrass function is continuous everywhere but differentiable nowhere. When the derivative does exist, differentiability implies continuity (but not the converse), and differentiation obeys algebraic rules derived directly from the limit definition: the sum rule, the product rule (Leibniz rule), the quotient rule, and — most importantly — the chain rule (f ∘ g)'(a) = f'(g(a)) · g'(a). The chain rule says that the derivative of a composition is the product of the derivatives along the chain. This is not a coincidence — it reflects the fact that the derivative at each point is a linear map, and composing linear maps means multiplying them. In machine learning, the chain rule is used in backpropagation: given a loss L = L(f(g(h(x)))), the gradient ∂L/∂x is computed by multiplying local derivatives and backpropagating them through the computation graph, which is exactly the chain rule applied layer by layer. Automatic differentiation (reverse mode = backprop, forward mode = tangent propagation) mechanizes this process, and every gradient-based optimizer — SGD, Adam, RMSProp — depends on the chain rule to compute the gradients it needs."
+formalmlConnections:
+  - topic: "gradient-descent"
+    site: "formalml"
+    relationship: "Single-variable gradient descent θ_{t+1} = θ_t - η f'(θ_t) is the prototype for all gradient methods. The chain rule enables backpropagation — computing gradients through compositions of functions (network layers) — which is the computational engine of gradient-based optimization."
+  - topic: "shannon-entropy"
+    site: "formalml"
+    relationship: "Derivatives of entropy H(p) = -Σ pᵢ log pᵢ, KL divergence, and cross-entropy loss are central to information-theoretic ML objectives. The derivative d/dp(-p log p) = -log p - 1 connects information content to optimization."
+  - topic: "smooth-manifolds"
+    site: "formalml"
+    relationship: "The single-variable derivative is the 1D prototype for the pushforward map between tangent spaces. Differentiable functions are the morphisms of smooth manifolds — the chain rule becomes functoriality of the tangent functor."
+connections:
+  - topic: "sequences-limits"
+    relationship: "The derivative is defined as a limit. The convergence theory from Topic 1 — the ε-N definition, limit uniqueness, the algebra of limits — provides the rigorous foundation for the difference quotient limit that defines f'(a)."
+  - topic: "epsilon-delta"
+    relationship: "The limit in the derivative definition is a function limit (h → 0), formalized by the ε-δ framework from Topic 2. The proof that differentiability implies continuity uses ε-δ continuity directly."
+references:
+  - type: "book"
+    title: "Understanding Analysis"
+    authors: "Abbott"
+    year: 2015
+    note: "Chapter 5 develops the derivative from the limit definition through the Mean Value Theorem — the primary reference for our rigorous-but-accessible approach"
+  - type: "book"
+    title: "Principles of Mathematical Analysis"
+    authors: "Rudin"
+    year: 1976
+    note: "Chapter 5 on differentiation — the compact, definitive treatment of single-variable derivatives"
+  - type: "book"
+    title: "Calculus"
+    authors: "Spivak"
+    year: 2008
+    note: "Chapters 9–11 develop differentiation with unusual care for geometric intuition alongside full rigor — exceptional treatment of the chain rule proof"
+  - type: "book"
+    title: "Deep Learning"
+    authors: "Goodfellow, Bengio & Courville"
+    year: 2016
+    note: "Section 6.5 on back-propagation — the chain rule as the computational engine of deep learning"
+  - type: "paper"
+    title: "Automatic Differentiation in Machine Learning: a Survey"
+    authors: "Baydin, Pearlmutter, Radul & Siskind"
+    year: 2018
+    url: "https://arxiv.org/abs/1502.05767"
+    note: "Comprehensive survey of forward-mode and reverse-mode AD — mechanizing the chain rule for gradient computation"
+---
+
+import TheoremBlock from '../../components/ui/TheoremBlock.astro';
+import SecantToTangentExplorer from '../../components/viz/SecantToTangentExplorer.tsx';
+import LinearApproximationExplorer from '../../components/viz/LinearApproximationExplorer.tsx';
+import DifferentiabilityExplorer from '../../components/viz/DifferentiabilityExplorer.tsx';
+import ChainRuleCompositionExplorer from '../../components/viz/ChainRuleCompositionExplorer.tsx';
+import BackpropGraphExplorer from '../../components/viz/BackpropGraphExplorer.tsx';
+
+## Overview & Motivation
+
+Every time you train a neural network, you watch a loss curve drop. The optimizer adjusts each parameter $\theta$ by a small step — but in which direction, and how far? The answer is the **derivative**: $L'(\theta)$ tells you the rate at which the loss changes with respect to $\theta$, and that rate determines both the direction (the sign of $L'$) and the magnitude (|$L'$|) of the update.
+
+But a modern network doesn't have one parameter — it has millions, composed in layers. The input $x$ passes through $f_1$, then $f_2$, then $f_3$, and so on. To compute $dL/d\theta$ for a parameter buried in $f_1$, we need to differentiate through the entire chain of compositions. This is the **chain rule**: the derivative of a composition is the product of the derivatives at each stage. And backpropagation — the algorithm that makes deep learning computationally feasible — is simply the chain rule applied systematically to a computation graph.
+
+This topic makes both the derivative and the chain rule precise. We start with the geometric picture — secant lines rotating into the tangent — define the derivative as a limit, derive the differentiation rules from first principles, and prove the chain rule using the linear approximation characterization. By the end, you'll see exactly why backpropagation works and what "taking the gradient" means at the level of individual arithmetic operations.
+
+**Prerequisites:** We use the limit definition from [Sequences, Limits & Convergence](/topics/sequences-limits) — specifically, the algebra of limits (Theorem 3) — and the ε-δ framework from [Epsilon-Delta & Continuity](/topics/epsilon-delta) for the function limit that defines $f'(a)$.
+
+## The Derivative as a Limit
+
+### Two points, one slope
+
+Consider a function $f$ and two points on its graph: $(a, f(a))$ and $(a+h, f(a+h))$, where $h \neq 0$. The straight line through these two points is a **secant line**, and its slope is the **difference quotient**:
+
+$$\frac{f(a+h) - f(a)}{h}.$$
+
+This ratio measures the *average* rate of change of $f$ between $a$ and $a+h$. When $h$ is large, the secant line is a crude summary — it ignores everything the function does between the two points. But as $h$ shrinks toward $0$, the secant line pivots around $(a, f(a))$ and settles into a unique position: the **tangent line**. The slope of that tangent is the *instantaneous* rate of change — the derivative.
+
+<TheoremBlock type="definition" number={1} title="The Derivative">
+Let $f$ be defined on an open interval containing $a$. The **derivative of $f$ at $a$** is
+
+$$f'(a) = \lim_{h \to 0} \frac{f(a+h) - f(a)}{h},$$
+
+provided this limit exists. Equivalently, using the ε-δ framework from [Epsilon-Delta & Continuity](/topics/epsilon-delta): for every $\varepsilon > 0$, there exists $\delta > 0$ such that
+
+$$0 < |h| < \delta \implies \left|\frac{f(a+h) - f(a)}{h} - f'(a)\right| < \varepsilon.$$
+
+When this limit exists, we say $f$ is **differentiable** at $a$. The function $f': x \mapsto f'(x)$, defined at every point where the limit exists, is the **derivative function** of $f$.
+</TheoremBlock>
+
+The notation $f'(a)$ is Lagrange's. We also write $\frac{df}{dx}\big|_{x=a}$ (Leibniz) or $Df(a)$ (Euler/operator notation). The Leibniz notation is suggestive — it looks like a ratio of infinitesimals — and in practice we often manipulate it as if it were one. But the definition above is what makes it rigorous: $f'(a)$ is a single number, the limit of a ratio, not a ratio of limits.
+
+<TheoremBlock type="definition" number={2} title="Left and Right Derivatives">
+The **left derivative** and **right derivative** of $f$ at $a$ are
+
+$$f'_-(a) = \lim_{h \to 0^-} \frac{f(a+h) - f(a)}{h}, \qquad f'_+(a) = \lim_{h \to 0^+} \frac{f(a+h) - f(a)}{h}.$$
+
+The derivative $f'(a)$ exists if and only if both one-sided derivatives exist and $f'_-(a) = f'_+(a)$.
+</TheoremBlock>
+
+This connects directly to one-sided limits from [Epsilon-Delta & Continuity](/topics/epsilon-delta) — the derivative is defined by a function limit as $h \to 0$, and that limit exists if and only if both one-sided limits agree.
+
+<TheoremBlock type="example" number={1} title="Derivative of f(x) = x² at a = 3">
+We compute $f'(3)$ directly from the definition:
+
+$$f'(3) = \lim_{h \to 0} \frac{(3+h)^2 - 9}{h} = \lim_{h \to 0} \frac{9 + 6h + h^2 - 9}{h} = \lim_{h \to 0} \frac{6h + h^2}{h} = \lim_{h \to 0} (6 + h) = 6.$$
+
+Every step is algebra followed by a limit. The cancellation of $h$ in the numerator and denominator is the key move — it removes the $\frac{0}{0}$ indeterminate form and leaves a polynomial in $h$ that we can evaluate at $h = 0$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={2} title="Derivative of f(x) = √x at a > 0">
+For $f(x) = \sqrt{x}$ at $a > 0$:
+
+$$f'(a) = \lim_{h \to 0} \frac{\sqrt{a+h} - \sqrt{a}}{h}.$$
+
+The direct approach gives $\frac{0}{0}$, so we **rationalize** — multiply numerator and denominator by the conjugate $\sqrt{a+h} + \sqrt{a}$:
+
+$$\frac{\sqrt{a+h} - \sqrt{a}}{h} \cdot \frac{\sqrt{a+h} + \sqrt{a}}{\sqrt{a+h} + \sqrt{a}} = \frac{(a+h) - a}{h(\sqrt{a+h} + \sqrt{a})} = \frac{1}{\sqrt{a+h} + \sqrt{a}}.$$
+
+As $h \to 0$, this converges to $\frac{1}{2\sqrt{a}}$. So $f'(a) = \frac{1}{2\sqrt{a}}$, which is defined for $a > 0$ — the domain of the derivative is smaller than the domain of $f$ (which includes $a = 0$). At $a = 0$, the difference quotient $\frac{\sqrt{h}}{h} = \frac{1}{\sqrt{h}} \to \infty$, so $f$ is not differentiable there (vertical tangent).
+</TheoremBlock>
+
+Try dragging the $h$ slider toward zero in the explorer below — watch how the secant line (amber) rotates into the tangent line (red dashed), and how the secant slope converges to $f'(a)$.
+
+<SecantToTangentExplorer client:visible />
+
+![Secant lines approaching tangent on f(x) = x²](/images/topics/derivative/secant-to-tangent.png)
+
+## The Derivative as Linear Approximation
+
+The tangent line is more than a geometric artifact — it is the **best linear approximation** to $f$ near $a$. The tangent line at $a$ is
+
+$$T(x) = f(a) + f'(a)(x - a),$$
+
+and the quality of this approximation is measured by the error $f(x) - T(x)$. The defining property of the derivative is that this error vanishes *faster than the distance from $a$*:
+
+<TheoremBlock type="proposition" number={1} title="Derivative as Best Linear Approximation">
+$f$ is differentiable at $a$ with derivative $f'(a)$ if and only if there exists a number $L$ such that
+
+$$f(a+h) = f(a) + Lh + r(h),$$
+
+where $\lim_{h \to 0} \frac{r(h)}{h} = 0$. The number $L$ is unique and equals $f'(a)$. The remainder $r(h)$ is said to be **"little-o of $h$"**, written $r(h) = o(h)$.
+</TheoremBlock>
+
+This characterization is the conceptual bridge to multivariable calculus. In one dimension, the "linear map" $h \mapsto f'(a) \cdot h$ is just multiplication by a scalar. But the same definition works in $\mathbb{R}^n$: the derivative of $f: \mathbb{R}^n \to \mathbb{R}^m$ at $a$ is the linear map $L: \mathbb{R}^n \to \mathbb{R}^m$ such that $f(a+h) = f(a) + Lh + o(\|h\|)$. That linear map is represented by the **Jacobian matrix** — and the chain rule becomes matrix multiplication. The single-variable case is the prototype.
+
+<TheoremBlock type="remark" number={1} title="Linear maps preview">
+In one dimension, a linear map $L: \mathbb{R} \to \mathbb{R}$ is multiplication by a scalar: $L(h) = ch$. The derivative $f'(a)$ *is* that scalar. In $\mathbb{R}^n$, the derivative at $a$ will be a matrix (the Jacobian $J_f(a)$), and "multiplication by a scalar" becomes "multiplication by a matrix." The single-variable derivative is the $1 \times 1$ case of the Jacobian.
+</TheoremBlock>
+
+Explore the tangent line below — drag the point along the curve and notice how the error (right panel) decays quadratically near $a$, confirming that the tangent is truly the best *linear* approximation.
+
+<LinearApproximationExplorer client:visible />
+
+![Tangent line as local approximation with error plot](/images/topics/derivative/linear-approximation.png)
+
+## Differentiability and Continuity
+
+A natural question: if $f$ is differentiable at $a$, must it be continuous there? And conversely: if $f$ is continuous at $a$, must it be differentiable? The answers are "yes" and "no," respectively — and both answers are important.
+
+<TheoremBlock type="theorem" number={1} title="Differentiability Implies Continuity">
+If $f$ is differentiable at $a$, then $f$ is continuous at $a$.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+We need to show that $\lim_{h \to 0} f(a+h) = f(a)$, which is continuity at $a$ ([Epsilon-Delta & Continuity](/topics/epsilon-delta), Definition 5). Write
+
+$$f(a+h) - f(a) = \frac{f(a+h) - f(a)}{h} \cdot h.$$
+
+As $h \to 0$, the first factor converges to $f'(a)$ (by differentiability) and the second factor converges to $0$. By the algebra of limits ([Sequences, Limits & Convergence](/topics/sequences-limits), Theorem 3), the product converges to $f'(a) \cdot 0 = 0$. So $\lim_{h \to 0} [f(a+h) - f(a)] = 0$, which means $\lim_{h \to 0} f(a+h) = f(a)$. ∎
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={2} title="The converse is false">
+Continuity does not imply differentiability. The function $f(x) = |x|$ is continuous everywhere — including at $x = 0$ — but is not differentiable at $0$. This is not a pathological edge case: **every ReLU unit in a neural network** has a corner at $x = 0$ with the same non-differentiability as $|x|$. In practice, ML frameworks define the "derivative" at the kink by convention (typically $0$ or $1$), which works because the set of inputs landing exactly on the kink has measure zero.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={3} title="f(x) = |x| is not differentiable at 0">
+The left derivative at $0$:
+
+$$f'_-(0) = \lim_{h \to 0^-} \frac{|0+h| - |0|}{h} = \lim_{h \to 0^-} \frac{|h|}{h} = \lim_{h \to 0^-} \frac{-h}{h} = -1.$$
+
+The right derivative at $0$:
+
+$$f'_+(0) = \lim_{h \to 0^+} \frac{|h|}{h} = \lim_{h \to 0^+} \frac{h}{h} = 1.$$
+
+Since $f'_-(0) = -1 \neq 1 = f'_+(0)$, the derivative $f'(0)$ does not exist. Geometrically, the graph of $|x|$ has a corner at $0$ — there is no single tangent line, because the secant from the left settles on slope $-1$ while the secant from the right settles on slope $+1$.
+</TheoremBlock>
+
+Use the tabs below to compare smooth, corner, cusp, and Weierstrass-type non-differentiability. Drag the $h$ slider toward zero and watch whether the left and right secant slopes agree.
+
+<DifferentiabilityExplorer client:visible />
+
+![Four types of (non-)differentiability](/images/topics/derivative/differentiability-continuity.png)
+
+## Differentiation Rules
+
+Computing derivatives from the limit definition every time would be tedious. Fortunately, the limit definition yields general rules that handle sums, products, quotients, and powers. We derive each rule from the definition — no shortcuts, no "it can be shown."
+
+<TheoremBlock type="theorem" number={2} title="Sum Rule">
+If $f$ and $g$ are differentiable at $a$, then $f + g$ is differentiable at $a$ and
+
+$$(f + g)'(a) = f'(a) + g'(a).$$
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+$$\frac{(f+g)(a+h) - (f+g)(a)}{h} = \frac{f(a+h) - f(a)}{h} + \frac{g(a+h) - g(a)}{h}.$$
+
+Taking the limit as $h \to 0$ and applying the sum rule for limits ([Sequences, Limits & Convergence](/topics/sequences-limits), Theorem 3), we get $f'(a) + g'(a)$. ∎
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={3} title="Constant Multiple Rule">
+If $f$ is differentiable at $a$ and $c \in \mathbb{R}$, then $(cf)'(a) = c \cdot f'(a)$.
+</TheoremBlock>
+
+The proof is identical — factor $c$ out of the difference quotient and use the constant multiple rule for limits.
+
+<TheoremBlock type="theorem" number={4} title="Product Rule (Leibniz Rule)">
+If $f$ and $g$ are differentiable at $a$, then $fg$ is differentiable at $a$ and
+
+$$(fg)'(a) = f'(a)\,g(a) + f(a)\,g'(a).$$
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+The key is the **add-and-subtract trick**. Write
+
+$$f(a+h)\,g(a+h) - f(a)\,g(a) = f(a+h)\,g(a+h) - f(a+h)\,g(a) + f(a+h)\,g(a) - f(a)\,g(a).$$
+
+Factor:
+
+$$= f(a+h)\bigl[g(a+h) - g(a)\bigr] + g(a)\bigl[f(a+h) - f(a)\bigr].$$
+
+Divide by $h$:
+
+$$\frac{(fg)(a+h) - (fg)(a)}{h} = f(a+h) \cdot \frac{g(a+h) - g(a)}{h} + g(a) \cdot \frac{f(a+h) - f(a)}{h}.$$
+
+As $h \to 0$: the first term converges to $f(a) \cdot g'(a)$ (using Theorem 1: $f$ is differentiable hence continuous, so $f(a+h) \to f(a)$), and the second term converges to $g(a) \cdot f'(a)$. By the algebra of limits, the sum converges to $f(a)\,g'(a) + g(a)\,f'(a)$. ∎
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={5} title="Quotient Rule">
+If $f$ and $g$ are differentiable at $a$ and $g(a) \neq 0$, then $f/g$ is differentiable at $a$ and
+
+$$\left(\frac{f}{g}\right)'(a) = \frac{f'(a)\,g(a) - f(a)\,g'(a)}{g(a)^2}.$$
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+Write the difference quotient:
+
+$$\frac{\frac{f(a+h)}{g(a+h)} - \frac{f(a)}{g(a)}}{h} = \frac{f(a+h)\,g(a) - f(a)\,g(a+h)}{h \cdot g(a+h) \cdot g(a)}.$$
+
+Add and subtract $f(a)\,g(a)$ in the numerator:
+
+$$= \frac{[f(a+h) - f(a)]\,g(a) - f(a)\,[g(a+h) - g(a)]}{h \cdot g(a+h) \cdot g(a)}.$$
+
+Split the fraction and take the limit. The numerator converges to $f'(a)\,g(a) - f(a)\,g'(a)$. The denominator converges to $g(a)^2$ (since $g$ is continuous at $a$ by Theorem 1, so $g(a+h) \to g(a)$, and $g(a) \neq 0$ ensures the limit is well-defined). ∎
+</TheoremBlock>
+
+<TheoremBlock type="example" number={4} title="The power rule via the binomial theorem">
+For $f(x) = x^n$ with $n$ a positive integer:
+
+$$\frac{(a+h)^n - a^n}{h} = \frac{1}{h}\sum_{k=0}^{n}\binom{n}{k}a^{n-k}h^k - \frac{a^n}{h} = \sum_{k=1}^{n}\binom{n}{k}a^{n-k}h^{k-1}.$$
+
+As $h \to 0$, every term with $k \geq 2$ vanishes (it contains $h$ to a positive power), leaving only the $k = 1$ term:
+
+$$f'(a) = \binom{n}{1}a^{n-1} = n\,a^{n-1}.$$
+
+This is the **power rule**: $\frac{d}{dx}x^n = nx^{n-1}$.
+</TheoremBlock>
+
+![Differentiation rules: product, quotient, and power rule](/images/topics/derivative/differentiation-rules.png)
+
+## The Chain Rule
+
+The chain rule is the most important theorem in this topic — and arguably the most consequential single result for machine learning. It tells us how to differentiate a composition $f \circ g$, and the answer is beautifully simple: the derivative of the composition is the *product* of the derivatives.
+
+### Geometric intuition
+
+Think of $g$ as a function that stretches the input near $a$ by a factor of $g'(a)$, and $f$ as a function that stretches the input near $g(a)$ by a factor of $f'(g(a))$. When we compose them — first $g$ stretches, then $f$ stretches — the total stretching is the product: $f'(g(a)) \cdot g'(a)$.
+
+This is exactly what "the derivative of a composition is the product of the derivatives" means geometrically: each function contributes its own local stretching factor, and stretching factors multiply.
+
+<TheoremBlock type="theorem" number={6} title="The Chain Rule">
+If $g$ is differentiable at $a$ and $f$ is differentiable at $g(a)$, then $f \circ g$ is differentiable at $a$ and
+
+$$(f \circ g)'(a) = f'(g(a)) \cdot g'(a).$$
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+We use the linear approximation characterization (Proposition 1). Since $f$ is differentiable at $g(a)$, we can write
+
+$$f(g(a) + k) = f(g(a)) + f'(g(a)) \cdot k + \varphi(k) \cdot k,$$
+
+where $\varphi(k) \to 0$ as $k \to 0$ (and we define $\varphi(0) = 0$).
+
+**The subtle point:** A naive proof would divide by $g(a+h) - g(a)$ and recombine, but this fails when $g(a+h) = g(a)$ for $h \neq 0$ (which can happen — for example, $g(x) = x^2\sin(1/x)$ with $g(0) = 0$). The linear approximation approach avoids division entirely.
+
+Set $k = g(a+h) - g(a)$. Then
+
+$$f(g(a+h)) = f(g(a) + k) = f(g(a)) + f'(g(a)) \cdot k + \varphi(k) \cdot k.$$
+
+Subtract $f(g(a))$ and divide by $h$:
+
+$$\frac{f(g(a+h)) - f(g(a))}{h} = f'(g(a)) \cdot \frac{k}{h} + \varphi(k) \cdot \frac{k}{h} = \bigl[f'(g(a)) + \varphi(k)\bigr] \cdot \frac{g(a+h) - g(a)}{h}.$$
+
+As $h \to 0$: the factor $\frac{g(a+h) - g(a)}{h} \to g'(a)$ by differentiability of $g$, and $k = g(a+h) - g(a) \to 0$ (by continuity of $g$, which follows from differentiability via Theorem 1), so $\varphi(k) \to 0$. By the algebra of limits:
+
+$$(f \circ g)'(a) = \bigl[f'(g(a)) + 0\bigr] \cdot g'(a) = f'(g(a)) \cdot g'(a). \quad \text{∎}$$
+</TheoremBlock>
+
+<TheoremBlock type="example" number={5} title="Chain rule: d/dx sin(x²)">
+Let $g(x) = x^2$ and $f(u) = \sin(u)$, so $f(g(x)) = \sin(x^2)$.
+
+- **Inner derivative:** $g'(x) = 2x$
+- **Outer derivative:** $f'(u) = \cos(u)$, evaluated at $u = g(x) = x^2$: $f'(g(x)) = \cos(x^2)$
+- **Chain rule:** $(f \circ g)'(x) = \cos(x^2) \cdot 2x$
+
+At $x = a$: $\frac{d}{dx}\sin(x^2)\big|_{x=a} = 2a\cos(a^2)$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={6} title="Three-layer chain rule: d/dx e^{sin(x²)}">
+This is a composition of three functions: $h_1(x) = x^2$, $h_2(u) = \sin(u)$, $h_3(v) = e^v$. The chain rule applies iteratively:
+
+$$\frac{d}{dx}e^{\sin(x^2)} = e^{\sin(x^2)} \cdot \cos(x^2) \cdot 2x.$$
+
+Three derivatives, multiplied in order from outermost to innermost. This is a three-layer "network" — the chain rule applies at each layer. In a neural network with $L$ layers, we would multiply $L$ local derivatives.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={3} title="The chain rule as composition of linear maps">
+Each derivative $f'(a)$ is a linear map $\mathbb{R} \to \mathbb{R}$ (multiplication by $f'(a)$). The chain rule says: the derivative of a composition is the *composition* of the derivatives. In one dimension, composing two linear maps means multiplying two scalars: $f'(g(a)) \cdot g'(a)$.
+
+In $\mathbb{R}^n$, "multiplication" becomes matrix multiplication:
+
+$$J_{f \circ g}(a) = J_f(g(a)) \cdot J_g(a),$$
+
+where $J_f$ and $J_g$ are Jacobian matrices. The chain rule is *functorial* — it respects the compositional structure of functions. This perspective is the starting point for differential geometry, where the derivative is the pushforward map between tangent spaces. (→ <a href="https://formalml.com/topics/smooth-manifolds" target="_blank" rel="noopener">formalML: Smooth Manifolds</a>)
+</TheoremBlock>
+
+Explore the chain rule visually below — the left panel shows the inner function $g$ with its tangent, and the right panel shows the outer function $f$ with its tangent at $u = g(x)$. The derivative readout shows the product of local derivatives.
+
+<ChainRuleCompositionExplorer client:visible />
+
+![Chain rule: inner and outer functions with derivative multiplication](/images/topics/derivative/chain-rule-composition.png)
+
+## Higher-Order Derivatives
+
+If $f'$ is itself a function, we can ask: is $f'$ differentiable? If so, its derivative is the **second derivative** of $f$.
+
+<TheoremBlock type="definition" number={3} title="Higher-Order Derivatives">
+The **second derivative** of $f$ at $a$ is $f''(a) = (f')'(a)$, provided $f'$ is differentiable at $a$. Inductively, the **$n$-th derivative** is $f^{(n)}(a) = (f^{(n-1)})'(a)$.
+
+Notation: $f''$ or $\frac{d^2f}{dx^2}$ for the second derivative; $f^{(n)}$ or $\frac{d^nf}{dx^n}$ for the $n$-th derivative.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={4} title="Concavity and the second derivative">
+The sign of $f''(a)$ determines the **concavity** of $f$ at $a$:
+
+- $f''(a) > 0$: $f$ is **concave up** at $a$ — the graph curves upward, and the tangent line lies *below* the graph. This is the 1D condition for a **local minimum**.
+- $f''(a) < 0$: $f$ is **concave down** at $a$ — the graph curves downward, and the tangent line lies *above* the graph. This is the 1D condition for a **local maximum**.
+
+In higher dimensions, the second derivative becomes the **Hessian matrix** $H_f(a)$, and "concave up" becomes "positive definite" — the multi-dimensional criterion for a local minimum. This is the foundation of Newton's method and second-order optimization. (**The Hessian & Second-Order Analysis** *(coming soon)*)
+</TheoremBlock>
+
+![Higher-order derivatives: f, f', f'' for x³ - 3x](/images/topics/derivative/higher-order-derivatives.png)
+
+## Non-Differentiable Functions
+
+Differentiability is a strong condition — stronger than continuity. There are several ways it can fail:
+
+**1. Corners.** The function $f(x) = |x|$ is continuous everywhere but has a corner at $x = 0$ where the left and right derivatives disagree ($-1$ and $+1$). This is exactly the non-differentiability of ReLU at zero.
+
+**2. Cusps.** The function $f(x) = |x|^{2/3}$ is continuous at $0$ but the difference quotient $|h|^{2/3}/h = |h|^{-1/3} \to \pm\infty$ as $h \to 0$. The curve comes to a sharp point where the "tangent line" would be vertical — but vertical lines have undefined slope.
+
+**3. Vertical tangents.** The function $f(x) = x^{1/3}$ at $x = 0$ has a difference quotient $h^{1/3}/h = h^{-2/3} \to +\infty$. The tangent exists visually (it's the $y$-axis), but its slope is infinite, so the derivative does not exist as a real number.
+
+**4. Everywhere non-differentiable.** The **Weierstrass function**
+
+$$W(x) = \sum_{n=0}^{\infty} a^n \cos(b^n \pi x), \qquad 0 < a < 1, \quad ab > 1,$$
+
+is continuous everywhere (by the Weierstrass M-test, which we proved in [Uniform Convergence](/topics/uniform-convergence)) but differentiable *nowhere*. The partial sums are smooth, but each additional term adds higher-frequency oscillations. No matter how far you zoom in, the graph never smooths out — there is no tangent line at any point.
+
+<TheoremBlock type="remark" number={5} title="Non-differentiability in ML">
+ReLU$(x) = \max(0, x)$ has a corner at $x = 0$ — the same non-differentiability as $|x|$ shifted. In practice, ML frameworks assign a conventional "derivative" at the kink ($0$ or $1$), and this works because:
+
+1. The set of inputs landing exactly on the kink has **Lebesgue measure zero** — almost every input avoids it. (**Sigma-Algebras & Measures** *(coming soon)*)
+2. The difference quotient from either side is well-defined (it's $0$ or $1$), so the "gradient" used in practice is the one-sided derivative — which is fine for optimization.
+
+The Weierstrass function shows that pathology can be extreme — continuous everywhere, differentiable nowhere — but such functions don't arise as loss landscapes in practice. Real neural network losses are piecewise smooth (smooth between the ReLU kinks), and that's smooth enough for gradient descent.
+</TheoremBlock>
+
+![Four types of non-differentiability: corner, cusp, vertical tangent, Weierstrass](/images/topics/derivative/non-differentiable-functions.png)
+
+## Connections to ML — Backpropagation & Automatic Differentiation
+
+This is where the derivative and chain rule connect directly to modern machine learning practice. Backpropagation is not a separate algorithm — it *is* the chain rule, applied systematically to a computation graph.
+
+### Backpropagation is the chain rule
+
+Consider a minimal network: input $x$, weight $w$, bias $b$, activation $\sigma$, target $y$, and loss $L$:
+
+$$z = wx + b, \qquad a = \sigma(z), \qquad L = (a - y)^2.$$
+
+The **forward pass** computes $z$, then $a$, then $L$ — evaluating the composition left to right. The **backward pass** computes gradients right to left using the chain rule:
+
+$$\frac{\partial L}{\partial w} = \underbrace{\frac{\partial L}{\partial a}}_{= 2(a-y)} \cdot \underbrace{\frac{\partial a}{\partial z}}_{= \sigma'(z)} \cdot \underbrace{\frac{\partial z}{\partial w}}_{= x}.$$
+
+Each factor is a **local derivative** — the derivative of one node with respect to its immediate input. The chain rule says the total derivative is the product of the locals. This is exactly Theorem 6 applied to the composition $L = \ell(\sigma(wx+b))$.
+
+### Automatic differentiation
+
+**Forward mode** (tangent propagation): set $\dot{x} = 1$ and propagate forward: $\dot{z} = w$, $\dot{a} = \sigma'(z) \cdot \dot{z}$, $\dot{L} = 2(a-y) \cdot \dot{a}$. Cost: one forward sweep per input variable.
+
+**Reverse mode** (backpropagation): set $\bar{L} = 1$ and propagate backward: $\bar{a} = 2(a-y)$, $\bar{z} = \sigma'(z) \cdot \bar{a}$, $\bar{w} = x \cdot \bar{z}$. Cost: one backward sweep for *all* parameters.
+
+For a network with millions of parameters and a scalar loss, reverse mode wins by a factor of millions — this is why backpropagation, not forward-mode AD, is the standard in deep learning.
+
+### Common activation derivatives
+
+| Activation | $\sigma(z)$ | $\sigma'(z)$ |
+|---|---|---|
+| Sigmoid | $\frac{1}{1+e^{-z}}$ | $\sigma(z)(1 - \sigma(z))$ |
+| Tanh | $\tanh(z)$ | $1 - \tanh^2(z)$ |
+| ReLU | $\max(0, z)$ | $\mathbf{1}_{z > 0}$ |
+
+The sigmoid and tanh derivatives both compress toward zero for large $|z|$ — this is the **vanishing gradient problem**. ReLU avoids it (gradient is $1$ for $z > 0$) at the cost of the non-differentiability at $z = 0$. (→ <a href="https://formalml.com/topics/gradient-descent" target="_blank" rel="noopener">formalML: Gradient Descent</a>)
+
+Explore the computation graph below — toggle between forward and backward pass to see how values and gradients flow through the network.
+
+<BackpropGraphExplorer client:visible />
+
+![Computation graph with forward and backward pass](/images/topics/derivative/backprop-chain-rule.png)
+
+## Computational Notes
+
+When we don't have a closed-form derivative, we can approximate $f'(x)$ numerically using finite differences:
+
+**Forward difference:** $\frac{f(x+h) - f(x)}{h} = f'(x) + O(h)$. Truncation error is $O(h)$, but catastrophic cancellation occurs at very small $h$ (around $h \approx 10^{-8}$ for double precision).
+
+**Central difference:** $\frac{f(x+h) - f(x-h)}{2h} = f'(x) + O(h^2)$. The odd-order error terms cancel, giving $O(h^2)$ accuracy — a quadratic improvement over forward differences. Optimal $h \approx 10^{-5}$.
+
+**Richardson extrapolation:** Combine central differences at $h$ and $h/2$ to cancel the leading error term: $\frac{4d(h/2) - d(h)}{3} = f'(x) + O(h^4)$. Each level of extrapolation eliminates one more error term.
+
+The tradeoff: smaller $h$ reduces truncation error but increases floating-point cancellation error. There is an optimal $h$ that balances both — roughly $h^* \sim \varepsilon_{\text{mach}}^{1/(p+1)}$ for a method of order $p$, where $\varepsilon_{\text{mach}} \approx 2.2 \times 10^{-16}$ for double precision.
+
+![Numerical differentiation: error vs h for forward, central, and Richardson](/images/topics/derivative/numerical-differentiation.png)
+
+## What Comes Next
+
+The derivative gives us rates of change and the chain rule gives us gradients through compositions. Here is where these ideas lead:
+
+**Within formalCalculus:**
+
+- **Mean Value Theorem & Taylor Expansion** *(coming soon)* — If $f$ is differentiable on $[a, b]$, there exists $c \in (a, b)$ with $f'(c) = \frac{f(b)-f(a)}{b-a}$. Taylor's theorem extends linear approximation to polynomial approximation of arbitrary degree.
+- **The Riemann Integral & FTC** *(coming soon)* — The Fundamental Theorem of Calculus ties differentiation and integration: if $F'(x) = f(x)$, then $\int_a^b f(x)\,dx = F(b) - F(a)$.
+- **Partial Derivatives & the Gradient** *(coming soon)* — The gradient $\nabla f = (\partial f/\partial x_1, \ldots, \partial f/\partial x_n)$ generalizes the single-variable derivative to $\mathbb{R}^n$.
+- **The Jacobian & Multivariate Chain Rule** *(coming soon)* — The Jacobian matrix generalizes the scalar derivative, and the multivariate chain rule $J_{f \circ g} = J_f \cdot J_g$ is what backpropagation actually computes in multi-dimensional networks.
+
+**Forward to formalML:**
+
+- <a href="https://formalml.com/topics/gradient-descent" target="_blank" rel="noopener">Gradient Descent</a> — The derivative is the engine of optimization. Single-variable gradient descent $\theta_{t+1} = \theta_t - \eta f'(\theta_t)$ is the prototype for SGD, Adam, and all gradient methods.
+- <a href="https://formalml.com/topics/shannon-entropy" target="_blank" rel="noopener">Shannon Entropy</a> — Derivatives of entropy $H(p) = -\sum p_i \log p_i$ and cross-entropy loss drive information-theoretic ML objectives.
+- <a href="https://formalml.com/topics/smooth-manifolds" target="_blank" rel="noopener">Smooth Manifolds</a> — The derivative as a linear map between tangent spaces. The chain rule becomes functoriality of the tangent functor.
