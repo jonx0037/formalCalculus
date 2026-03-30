@@ -455,9 +455,13 @@ export function nestedIntervalBisection(
 }
 
 /**
- * Extract a convergent subsequence from a given sequence by iteratively
- * selecting elements closest to the running mean of selected elements.
+ * Extract a convergent subsequence from a given sequence.
+ * Strategy: partition values into buckets, find the densest bucket (most
+ * values clustered together), then filter elements within that bucket that
+ * stay close to the cluster center. This approximates Bolzano-Weierstrass —
+ * finding a subsequence that converges to a cluster point.
  * Returns the subsequence, its indices, and the estimated limit.
+ * Note: the extracted subsequence is not guaranteed to be monotone.
  */
 export function extractConvergentSubsequence(
   sequence: number[],
@@ -492,7 +496,7 @@ export function extractConvergentSubsequence(
     }
   }
 
-  // Extract monotone subsequence from densest bucket (increasing)
+  // Extract a cluster subsequence from the densest bucket
   const candidates = bucketIndices[bestBucket];
   const subIndices: number[] = [candidates[0]];
   const sub: number[] = [sequence[candidates[0]]];
@@ -537,7 +541,8 @@ export function checkCoercivity(
   }
 
   // Check coercivity: values at boundaries should be large
-  const boundaryWidth = Math.floor(samplePoints * 0.1);
+  // Clamp to at least 1 so boundary slices are never empty (avoids Math.min(...[]) = Infinity).
+  const boundaryWidth = Math.max(1, Math.floor(samplePoints * 0.1));
   const leftValues = samples.slice(0, boundaryWidth).map(s => s.y);
   const rightValues = samples.slice(-boundaryWidth).map(s => s.y);
   const interiorValues = samples.slice(boundaryWidth, -boundaryWidth).map(s => s.y);

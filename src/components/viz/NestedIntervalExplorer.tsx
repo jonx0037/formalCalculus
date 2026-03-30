@@ -4,7 +4,7 @@ import { useResizeObserver } from './shared/useResizeObserver';
 import { useD3 } from './shared/useD3';
 import { getBisectionTargets } from '../../data/completeness-compactness-data';
 import { nestedIntervalBisection } from './shared/limits';
-import { functionColors, regionColors } from './shared/colorScales';
+import { functionColors } from './shared/colorScales';
 
 const targets = getBisectionTargets();
 const margin = { top: 20, right: 30, bottom: 50, left: 50 };

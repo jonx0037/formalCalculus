@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import * as d3 from 'd3';
 import { useResizeObserver } from './shared/useResizeObserver';
 import { useD3 } from './shared/useD3';
@@ -8,7 +8,6 @@ import {
   findMinimalSubcover,
   type CoverInterval,
 } from '../../data/completeness-compactness-data';
-import { functionColors, regionColors } from './shared/colorScales';
 
 const margin = { top: 30, right: 30, bottom: 50, left: 30 };
 
@@ -35,6 +34,7 @@ export default function HeineBorelExplorer() {
   );
   const [coverageResult, setCoverageResult] = useState<ReturnType<typeof checkCoverage> | null>(null);
   const [autoResult, setAutoResult] = useState<number[] | null>(null);
+  const [autoAttempted, setAutoAttempted] = useState(false);
 
   const setOption = SET_OPTIONS[setIdx];
 
@@ -45,6 +45,7 @@ export default function HeineBorelExplorer() {
     setIntervals(newIntervals);
     setCoverageResult(null);
     setAutoResult(null);
+    setAutoAttempted(false);
   };
 
   const handleSetChange = (idx: number) => {
@@ -59,6 +60,7 @@ export default function HeineBorelExplorer() {
     setIntervals(newIntervals);
     setCoverageResult(null);
     setAutoResult(null);
+    setAutoAttempted(false);
   };
 
   const toggleInterval = (id: number) => {
@@ -67,16 +69,18 @@ export default function HeineBorelExplorer() {
     );
     setCoverageResult(null);
     setAutoResult(null);
+    setAutoAttempted(false);
   };
 
   const handleCheckCoverage = () => {
-    const result = checkCoverage(setOption.left, setOption.right, intervals);
+    const result = checkCoverage(setOption.left, setOption.right, intervals, setOption.isCompact);
     setCoverageResult(result);
   };
 
   const handleAutoSubcover = () => {
     const result = findMinimalSubcover(setOption.left, setOption.right, intervals);
     setAutoResult(result);
+    setAutoAttempted(true);
     if (result) {
       setIntervals((prev) =>
         prev.map((iv) => ({ ...iv, selected: result.includes(iv.id) }))
@@ -85,6 +89,7 @@ export default function HeineBorelExplorer() {
         setOption.left,
         setOption.right,
         intervals.map((iv) => ({ ...iv, selected: result.includes(iv.id) })),
+        setOption.isCompact,
       );
       setCoverageResult(coverage);
     } else {
@@ -266,9 +271,9 @@ export default function HeineBorelExplorer() {
         }`}>
           {coverageResult.covered
             ? <>Selected intervals <strong>cover</strong> {setOption.label} — finite subcover found ({intervals.filter(iv => iv.selected).length} intervals).</>
-            : autoResult === null
-              ? <>Selected intervals <strong>do not cover</strong> {setOption.label} — coverage: {(coverageResult.coverageFraction * 100).toFixed(1)}%. Try selecting more intervals.</>
-              : <>No finite subcover exists for {setOption.label} — this set is <strong>not compact</strong>.</>
+            : autoAttempted
+              ? <>No finite subcover exists for {setOption.label} — this set is <strong>not compact</strong>.</>
+              : <>Selected intervals <strong>do not cover</strong> {setOption.label} — coverage: {(coverageResult.coverageFraction * 100).toFixed(1)}%. Try selecting more intervals.</>
           }
         </div>
       )}

@@ -29,15 +29,6 @@ export default function SequentialCompactnessExplorer() {
     }));
   }, [presetIdx, seed]);
 
-  // Generate escaping sequence for non-compact sets
-  const escapingSeq = useMemo(() => {
-    if (!preset.escapingSequence) return null;
-    return Array.from({ length: SEQ_LENGTH }, (_, n) => ({
-      n,
-      value: preset.escapingSequence!(n),
-    }));
-  }, [presetIdx]);
-
   // Extract convergent subsequence
   const subseqResult = useMemo(() => {
     const values = sequence.map((s) => s.value);

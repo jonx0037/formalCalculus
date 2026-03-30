@@ -129,7 +129,7 @@ export default function CompactContinuousExplorer() {
       if (tab === 'evt') {
         // Show max and min markers
         const showMax = useCompactDomain || preset.hasMaxOnNonCompact;
-        const showMin = useCompactDomain || preset.hasMaxOnNonCompact;
+        const showMin = useCompactDomain || preset.hasMinOnNonCompact;
 
         if (showMax) {
           g.append('circle')

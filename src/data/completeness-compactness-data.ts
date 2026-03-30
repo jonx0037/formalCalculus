@@ -119,6 +119,7 @@ export interface CompactContinuousPreset {
   nonCompactType: 'open' | 'unbounded';
   hasMaxOnCompact: boolean;
   hasMaxOnNonCompact: boolean;
+  hasMinOnNonCompact: boolean;
 }
 
 export function getCompactContinuousPresets(): CompactContinuousPreset[] {
@@ -131,7 +132,8 @@ export function getCompactContinuousPresets(): CompactContinuousPreset[] {
       nonCompactDomain: [-1, 2],
       nonCompactType: 'open',
       hasMaxOnCompact: true,
-      hasMaxOnNonCompact: true, // max is in interior for this one
+      hasMaxOnNonCompact: false, // supremum at excluded endpoints, not attained on open (-1, 2)
+      hasMinOnNonCompact: true,  // minimum at x=0.5 is in the interior, so it is attained
     },
     {
       name: 'reciprocal',
@@ -141,7 +143,8 @@ export function getCompactContinuousPresets(): CompactContinuousPreset[] {
       nonCompactDomain: [0.01, 3],
       nonCompactType: 'open',
       hasMaxOnCompact: true,
-      hasMaxOnNonCompact: false, // blows up near 0
+      hasMaxOnNonCompact: false, // unbounded near 0 on open domain
+      hasMinOnNonCompact: false, // infimum near 0 from left, not attained
     },
     {
       name: 'sin-x',
@@ -151,7 +154,8 @@ export function getCompactContinuousPresets(): CompactContinuousPreset[] {
       nonCompactDomain: [-50, 50],
       nonCompactType: 'unbounded',
       hasMaxOnCompact: true,
-      hasMaxOnNonCompact: true, // max is at x=0, in the interior
+      hasMaxOnNonCompact: true,  // max at x=0 is in the interior of any finite domain
+      hasMinOnNonCompact: false, // infimum → 0 as x → ±∞, never attained
     },
     {
       name: 'exponential-decay',
@@ -161,7 +165,8 @@ export function getCompactContinuousPresets(): CompactContinuousPreset[] {
       nonCompactDomain: [-10, 10],
       nonCompactType: 'unbounded',
       hasMaxOnCompact: true,
-      hasMaxOnNonCompact: true, // max at x=0
+      hasMaxOnNonCompact: true,  // max at x=0 always attained
+      hasMinOnNonCompact: false, // infimum → 0 as x → ±∞, never attained on ℝ
     },
     {
       name: 'boundary-max',
@@ -171,7 +176,8 @@ export function getCompactContinuousPresets(): CompactContinuousPreset[] {
       nonCompactDomain: [0.001, 1],
       nonCompactType: 'open',
       hasMaxOnCompact: true,
-      hasMaxOnNonCompact: false, // increasingly wild oscillation near 0
+      hasMaxOnNonCompact: false, // increasingly wild oscillation near excluded 0
+      hasMinOnNonCompact: false, // same — infimum not attained near 0
     },
   ];
 }
@@ -187,7 +193,10 @@ export interface CoverInterval {
 
 /**
  * Generate a random open cover for a set contained in [setLeft, setRight].
- * For compact sets, the cover is guaranteed to actually cover the set.
+ * For compact sets, intervals are constructed to densely overlap and typically
+ * cover the set (though due to randomized widths a small gap is possible —
+ * use checkCoverage or findMinimalSubcover to verify).
+ * For open/non-compact sets, intervals are intentionally sparse near endpoints.
  * Uses seeded randomness for reproducibility.
  */
 export function generateOpenCover(
@@ -229,33 +238,54 @@ export function generateOpenCover(
 }
 
 /**
- * Check whether selected intervals from a cover actually cover the set [setLeft, setRight].
- * Returns the coverage fraction and any uncovered gaps.
+ * Check whether selected intervals from a cover actually cover the set.
+ * For the closed set [setLeft, setRight], samples include the endpoints.
+ * For the open set (setLeft, setRight), samples only interior points to avoid
+ * requiring coverage of points not in the set.
  */
 export function checkCoverage(
   setLeft: number,
   setRight: number,
   intervals: CoverInterval[],
+  isClosedSet: boolean = true,
   samplePoints: number = 500,
 ): { covered: boolean; coverageFraction: number; uncoveredPoints: number[] } {
   const selected = intervals.filter(iv => iv.selected);
-  const step = (setRight - setLeft) / samplePoints;
   const uncoveredPoints: number[] = [];
   let coveredCount = 0;
+  let totalPoints = 0;
 
-  for (let i = 0; i <= samplePoints; i++) {
-    const x = setLeft + step * i;
-    const isCovered = selected.some(iv => x > iv.left && x < iv.right);
-    if (isCovered) {
-      coveredCount++;
-    } else {
-      uncoveredPoints.push(x);
+  if (isClosedSet) {
+    // Sample [setLeft, setRight] inclusive of endpoints
+    const step = (setRight - setLeft) / samplePoints;
+    for (let i = 0; i <= samplePoints; i++) {
+      const x = setLeft + step * i;
+      totalPoints++;
+      const isCovered = selected.some(iv => x > iv.left && x < iv.right);
+      if (isCovered) {
+        coveredCount++;
+      } else {
+        uncoveredPoints.push(x);
+      }
+    }
+  } else {
+    // Sample only strict interior points of (setLeft, setRight)
+    const step = (setRight - setLeft) / (samplePoints + 1);
+    for (let i = 1; i <= samplePoints; i++) {
+      const x = setLeft + step * i;
+      totalPoints++;
+      const isCovered = selected.some(iv => x > iv.left && x < iv.right);
+      if (isCovered) {
+        coveredCount++;
+      } else {
+        uncoveredPoints.push(x);
+      }
     }
   }
 
   return {
     covered: uncoveredPoints.length === 0,
-    coverageFraction: coveredCount / (samplePoints + 1),
+    coverageFraction: coveredCount / totalPoints,
     uncoveredPoints: uncoveredPoints.slice(0, 20), // limit for display
   };
 }
