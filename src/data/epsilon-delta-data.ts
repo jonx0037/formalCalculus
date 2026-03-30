@@ -79,7 +79,7 @@ export function getFunctionPresets(): FunctionPreset[] {
     {
       name: 'sin(x)/x',
       label: 'f(x) = sin(x)/x',
-      fn: (x: number) => (Math.abs(x) < 1e-12 ? 1 : Math.sin(x) / x),
+      fn: (x: number) => (x === 0 ? NaN : Math.sin(x) / x),
       a: 0,
       L: 1,
       domain: [-4, 4],

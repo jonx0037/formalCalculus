@@ -132,6 +132,32 @@ export default function EpsilonDeltaExplorer() {
         .attr('opacity', 0.3)
         .attr('d', line);
 
+      // Helper: split filtered points into contiguous x-segments so D3
+      // doesn't draw artificial straight lines across disjoint regions.
+      const splitContiguous = (
+        points: { x: number; y: number }[],
+        maxGap: number,
+      ): { x: number; y: number }[][] => {
+        const segments: { x: number; y: number }[][] = [];
+        if (points.length === 0) return segments;
+        let seg: { x: number; y: number }[] = [points[0]];
+        for (let i = 1; i < points.length; i++) {
+          if (points[i].x - points[i - 1].x <= maxGap) {
+            seg.push(points[i]);
+          } else {
+            if (seg.length > 1) segments.push(seg);
+            seg = [points[i]];
+          }
+        }
+        if (seg.length > 1) segments.push(seg);
+        return segments;
+      };
+
+      const samplingStep =
+        curveData.length > 1
+          ? (curveData[1].x - curveData[0].x) * 1.5
+          : Infinity;
+
       // Inside box curve (bright green)
       const insideBox = curveData.filter(
         (d) =>
@@ -140,9 +166,9 @@ export default function EpsilonDeltaExplorer() {
           d.x !== preset.a &&
           Math.abs(d.y - preset.L) < epsilon,
       );
-      if (insideBox.length > 1) {
+      for (const seg of splitContiguous(insideBox, samplingStep)) {
         g.append('path')
-          .datum(insideBox)
+          .datum(seg)
           .attr('fill', 'none')
           .attr('stroke', '#059669')
           .attr('stroke-width', 3)
@@ -157,9 +183,9 @@ export default function EpsilonDeltaExplorer() {
           d.x !== preset.a &&
           Math.abs(d.y - preset.L) >= epsilon,
       );
-      if (outsideEps.length > 1) {
+      for (const seg of splitContiguous(outsideEps, samplingStep)) {
         g.append('path')
-          .datum(outsideEps)
+          .datum(seg)
           .attr('fill', 'none')
           .attr('stroke', '#D97706')
           .attr('stroke-width', 3)

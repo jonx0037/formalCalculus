@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import * as d3 from 'd3';
 import { useResizeObserver } from './shared/useResizeObserver';
 import { useD3 } from './shared/useD3';
@@ -20,15 +20,8 @@ export default function LipschitzExplorer() {
   const preset = presets[selectedIdx];
   const [xMin, xMax] = preset.domain;
 
-  // Sync K and coneX when preset changes
-  const prevIdx = useRef(selectedIdx);
-  if (prevIdx.current !== selectedIdx) {
-    prevIdx.current = selectedIdx;
-    // These will be applied on next render
-  }
-
-  // Use the preset's K as initial value
-  useMemo(() => {
+  // Reset K and cone position when the preset changes
+  useEffect(() => {
     setLipschitzK(preset.K ?? 2);
     setConeX((xMin + xMax) / 2);
   }, [selectedIdx]);
