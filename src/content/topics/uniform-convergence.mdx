@@ -1,0 +1,521 @@
+---
+title: "Uniform Convergence"
+subtitle: "When do limits of functions inherit the properties of the functions themselves? The sup-norm, the ε/3 trick, the Weierstrass M-test, Arzelà-Ascoli, and the uniform convergence framework that makes PAC learning possible"
+status: "published"
+difficulty: "intermediate"
+prerequisites:
+  - "sequences-limits"
+  - "epsilon-delta"
+  - "completeness-compactness"
+tags:
+  - "calculus"
+  - "uniform-convergence"
+  - "pointwise-convergence"
+  - "sup-norm"
+  - "weierstrass-m-test"
+  - "arzela-ascoli"
+  - "equicontinuity"
+  - "function-sequences"
+  - "generalization"
+  - "pac-learning"
+domain: "limits-continuity"
+videoId: null
+notebookPath: "notebooks/uniform-convergence/04_uniform_convergence.ipynb"
+githubUrl: "https://github.com/jonx0037/formalCalculus/blob/main/src/content/topics/uniform-convergence.mdx"
+datePublished: 2026-03-30
+estimatedReadTime: 45
+abstract: "A sequence of functions (f_n) converges pointwise to f on D if for each x in D, f_n(x) converges to f(x) as n tends to infinity. But pointwise convergence is deceptively weak: the limit of continuous functions can be discontinuous (f_n(x) = x^n on [0,1] converges pointwise to a step function), integration and limits cannot be interchanged (a moving bump with constant integral can converge pointwise to zero), and derivatives of the limit may bear no relation to the limits of the derivatives. Uniform convergence fixes these pathologies by requiring that the convergence rate be independent of x: (f_n) converges uniformly to f if for every epsilon > 0, there exists N such that |f_n(x) - f(x)| < epsilon for ALL x in D simultaneously — equivalently, the sup-norm ||f_n - f||_infinity tends to zero. The Uniform Limit Theorem guarantees that the uniform limit of continuous functions is continuous (the epsilon/3 argument), and uniform convergence permits interchange of limits with Riemann integration. The Weierstrass M-test provides a practical criterion: if |g_k(x)| <= M_k for all x and the sum of M_k converges, then the series of g_k converges uniformly. The Arzela-Ascoli theorem characterizes compact subsets of C([a,b]) via equicontinuity and pointwise boundedness — it is the compactness theorem for function spaces, extending the Heine-Borel theorem from R^n to infinite-dimensional spaces. In machine learning, uniform convergence is the mathematical backbone of generalization theory. PAC learning guarantees that the empirical risk R_hat(h) converges uniformly to the true risk R(h) over a hypothesis class H, and the VC dimension controls the rate of this uniform convergence. The Glivenko-Cantelli theorem — the empirical CDF converges uniformly to the true CDF — is the foundational uniform convergence result in statistics."
+formalmlConnections:
+  - topic: "pac-learning"
+    site: "formalml"
+    relationship: "PAC learning is fundamentally a uniform convergence result: the empirical risk R_hat_n(h) converges uniformly to the true risk R(h) over the hypothesis class H as the sample size n grows. The VC dimension quantifies the complexity of H and controls the rate of uniform convergence — larger VC dimension means slower convergence and more data required for generalization."
+  - topic: "concentration-inequalities"
+    site: "formalml"
+    relationship: "Uniform convergence bounds like the Glivenko-Cantelli theorem and the Dvoretzky-Kiefer-Wolfowitz inequality are concentration inequalities applied uniformly over function classes. The DKW inequality bounds ||F_hat_n - F||_infinity — the sup-norm distance between empirical and true CDFs — at rate O(1/sqrt(n))."
+  - topic: "measure-theoretic-probability"
+    site: "formalml"
+    relationship: "Modes of convergence in probability — almost sure convergence, convergence in probability, convergence in distribution — extend the pointwise/uniform distinction from deterministic function sequences to sequences of random variables. Uniform integrability, the probabilistic analog of equicontinuity, controls interchange of limits and expectations."
+connections:
+  - topic: "sequences-limits"
+    relationship: "Pointwise and uniform convergence of function sequences extend the epsilon-N convergence of numerical sequences from Topic 1. The Cauchy criterion for uniform convergence is the function-space analog of the Cauchy criterion for sequences. Convergence rates (sublinear, linear, quadratic) reappear as rates of uniform convergence over function classes."
+  - topic: "epsilon-delta"
+    relationship: "The Uniform Limit Theorem proves that uniform convergence preserves continuity — the epsilon-delta framework from Topic 2 is the tool used in the proof (the epsilon/3 argument). Uniform continuity and Lipschitz continuity from Topic 2 reappear in the equicontinuity condition of the Arzela-Ascoli theorem."
+  - topic: "completeness-compactness"
+    relationship: "The Arzela-Ascoli theorem is a compactness result in function space C([a,b]), extending the Heine-Borel theorem from R^n. Equicontinuity + pointwise boundedness plays the role that closed + bounded plays in Heine-Borel. Completeness of R under the sup-norm means that uniformly Cauchy sequences converge."
+references:
+  - type: "book"
+    title: "Understanding Analysis"
+    authors: "Abbott"
+    year: 2015
+    note: "Chapter 6 develops uniform convergence with the epsilon-band characterization and proves the Uniform Limit Theorem — the primary reference for our geometric-first approach"
+  - type: "book"
+    title: "Principles of Mathematical Analysis"
+    authors: "Rudin"
+    year: 1976
+    note: "Chapter 7 on sequences and series of functions — the definitive treatment of uniform convergence, the Weierstrass M-test, and equicontinuity"
+  - type: "book"
+    title: "Analysis I"
+    authors: "Tao"
+    year: 2016
+    note: "Chapter 14 on uniform convergence — careful first-principles development distinguishing pointwise and uniform convergence at every step"
+  - type: "book"
+    title: "Functional Analysis"
+    authors: "Kreyszig"
+    year: 1989
+    note: "Chapter 1 on normed spaces and Chapter 5 on compact operators — the sup-norm as a genuine norm on C([a,b]) and Arzela-Ascoli as a compactness criterion"
+  - type: "book"
+    title: "Understanding Machine Learning: From Theory to Algorithms"
+    authors: "Shalev-Shwartz & Ben-David"
+    year: 2014
+    note: "Chapters 4-6 develop PAC learning and VC dimension as uniform convergence results over hypothesis classes — the direct ML application of the theory developed here"
+  - type: "paper"
+    title: "On the Uniform Convergence of Relative Frequencies of Events to Their Probabilities"
+    authors: "Vapnik & Chervonenkis"
+    year: 1971
+    url: "https://doi.org/10.1137/1116025"
+    note: "The foundational paper introducing VC dimension and establishing the connection between uniform convergence and learnability"
+---
+
+import TheoremBlock from '../../components/ui/TheoremBlock.astro';
+import PointwiseVsUniformExplorer from '../../components/viz/PointwiseVsUniformExplorer.tsx';
+import UniformLimitTheoremExplorer from '../../components/viz/UniformLimitTheoremExplorer.tsx';
+import WeierstrassMTestExplorer from '../../components/viz/WeierstrassMTestExplorer.tsx';
+import ArzelaAscoliExplorer from '../../components/viz/ArzelaAscoliExplorer.tsx';
+
+## Overview & Motivation
+
+You're training a neural network with increasing width: $f_1, f_2, f_4, f_8, \ldots$ neurons per hidden layer. Each $f_n$ is a continuous function — compositions of affine maps and continuous activations like ReLU or sigmoid. As $n \to \infty$, does $f_n$ converge to some function $f$? And if so, is $f$ still continuous? Can you integrate $f$ by integrating the $f_n$? Can you differentiate $f$ by differentiating the $f_n$?
+
+The answers depend on *how* $f_n$ converges — and the wrong notion of convergence gives the wrong answers to all three questions.
+
+In [Sequences, Limits & Convergence](/topics/sequences-limits), we studied convergence of sequences of *numbers*: given a sequence $a_1, a_2, a_3, \ldots$ in $\mathbb{R}$, does $a_n \to L$? In [Epsilon-Delta & Continuity](/topics/epsilon-delta), we studied continuity of *individual functions*: is $f$ continuous at $a$? In [Completeness & Compactness](/topics/completeness-compactness), we studied structural properties that guarantee limits exist and optima are attained. Now we combine all three: when does a *sequence of functions* converge, and when does the limit inherit the properties of the functions themselves?
+
+The answer will require a new notion of convergence — *uniform convergence* — that is strictly stronger than the naive "pointwise" approach. The distinction between these two notions is not a technicality. It is the mathematical backbone of generalization theory in machine learning.
+
+## Pointwise Convergence of Function Sequences
+
+The simplest way to define convergence of a function sequence is to check convergence at each point separately.
+
+<TheoremBlock type="definition" number={1} title="Pointwise Convergence of Function Sequences">
+A sequence of functions $(f_n)$ where $f_n: D \to \mathbb{R}$ converges *pointwise* to $f: D \to \mathbb{R}$ if for every $x \in D$,
+
+$$\lim_{n \to \infty} f_n(x) = f(x).$$
+
+Equivalently, for every $x \in D$ and every $\varepsilon > 0$, there exists $N \in \mathbb{N}$ (which may depend on both $x$ and $\varepsilon$) such that
+
+$$n \geq N \implies |f_n(x) - f(x)| < \varepsilon.$$
+</TheoremBlock>
+
+The crucial phrase is "which may depend on both $x$ and $\varepsilon$." We write $N = N(x, \varepsilon)$ to emphasize this dependence. At each fixed $x$, we're just asking for ordinary sequence convergence — the $\varepsilon$-$N$ definition from [Sequences, Limits & Convergence](/topics/sequences-limits). But the $N$ required might be very different at different points $x$.
+
+The canonical example makes this concrete:
+
+<TheoremBlock type="example" number={1}>
+Consider $f_n(x) = x^n$ on $[0, 1]$. The pointwise limit is
+
+$$f(x) = \begin{cases} 0 & \text{if } x \in [0, 1) \\ 1 & \text{if } x = 1 \end{cases}$$
+
+**Proof.** For $x \in [0, 1)$, we have $|x| < 1$, so $x^n \to 0$ as $n \to \infty$ (geometric sequence with ratio $|r| < 1$). For $x = 1$, we have $1^n = 1$ for all $n$. $\blacksquare$
+</TheoremBlock>
+
+Notice what happened: each $f_n(x) = x^n$ is continuous on $[0, 1]$, but the pointwise limit $f$ has a jump discontinuity at $x = 1$. The limit of continuous functions is *not* continuous.
+
+A second example where things go right: $g_n(x) = x^n / n$ on $[0, 1]$ also converges pointwise to $f \equiv 0$ (the same limit for $x \in [0,1)$; at $x = 1$, $g_n(1) = 1/n \to 0$). And this time the limit *is* continuous. What's different?
+
+![Pointwise vs. uniform convergence](/images/topics/uniform-convergence/pointwise-vs-uniform.png)
+
+The difference is the convergence *rate*. For $f_n(x) = x^n$, points near $x = 1$ require enormous $N$ to get close to the limit — $N(x, \varepsilon) = \lceil \log \varepsilon / \log x \rceil \to \infty$ as $x \to 1^-$. For $g_n(x) = x^n/n$, the sup-norm $\|g_n\|_\infty = 1/n$ is independent of $x$, so a single $N$ works everywhere.
+
+## The Three Pathologies of Pointwise Convergence
+
+Pointwise convergence fails to preserve the three fundamental properties of functions:
+
+**1. Continuity failure.** We've just seen this: $f_n(x) = x^n$ is continuous for every $n$, but $f_n \to f$ pointwise where $f$ is discontinuous. The limit of continuous functions need not be continuous under pointwise convergence.
+
+**2. Integration failure.** Consider the "moving bump" sequence $f_n(x) = n^2 x (1 - x)^n$ on $[0, 1]$. Each $f_n$ has a bump near $x = 0$ that grows taller and narrower. One can verify that $\int_0^1 f_n(x)\,dx = \frac{n^2}{(n+1)(n+2)} \to 1$ as $n \to \infty$. But $f_n(x) \to 0$ for each fixed $x > 0$ (and $f_n(0) = 0$), so the pointwise limit is $f \equiv 0$, and $\int_0^1 f(x)\,dx = 0$. We get
+
+$$\lim_{n \to \infty} \int_0^1 f_n(x)\,dx = 1 \neq 0 = \int_0^1 \left(\lim_{n \to \infty} f_n(x)\right) dx.$$
+
+The limit and integral do not commute.
+
+**3. Differentiation failure.** Let $f_n(x) = \frac{\sin(nx)}{\sqrt{n}}$ on $\mathbb{R}$. Then $|f_n(x)| \leq 1/\sqrt{n} \to 0$ uniformly, so $f_n \to 0$ everywhere. But $f_n'(x) = \sqrt{n}\cos(nx)$, and $|f_n'(0)| = \sqrt{n} \to \infty$. The derivatives of the $f_n$ don't converge at all, even though the $f_n$ themselves converge nicely.
+
+![The three pathologies of pointwise convergence](/images/topics/uniform-convergence/three-pathologies.png)
+
+<TheoremBlock type="remark" number={1}>
+These three failures are not pathological edge cases. They arise naturally whenever convergence is "fast in some places and slow in others," which is typical in machine learning: a neural network may fit training data well in dense regions and poorly in sparse regions, so the convergence of $f_n$ to $f$ is inherently non-uniform across the input domain. The distinction between pointwise and uniform convergence is the mathematical formalization of this problem.
+</TheoremBlock>
+
+## Uniform Convergence — The Fix
+
+If we require the convergence rate to be the *same* at every $x$ — that is, the $N$ depends only on $\varepsilon$, not on $x$ — then all three pathologies disappear.
+
+<TheoremBlock type="definition" number={2} title="Uniform Convergence">
+A sequence of functions $(f_n)$ converges *uniformly* to $f$ on $D$ if for every $\varepsilon > 0$, there exists $N \in \mathbb{N}$ such that
+
+$$n \geq N \implies |f_n(x) - f(x)| < \varepsilon \quad \text{for all } x \in D \text{ simultaneously.}$$
+
+Equivalently, $\|f_n - f\|_\infty = \sup_{x \in D} |f_n(x) - f(x)| \to 0$ as $n \to \infty$.
+</TheoremBlock>
+
+The geometric picture is the **ε-band characterization**: $f_n \to f$ uniformly if and only if for every $\varepsilon > 0$, eventually the entire graph of $f_n$ lies within an $\varepsilon$-band around the graph of $f$. Not just at each point separately, but *everywhere at once*.
+
+<TheoremBlock type="definition" number={3} title="Sup-Norm / Uniform Metric">
+For bounded functions $f, g: D \to \mathbb{R}$, the **sup-norm** (or **uniform norm**) is
+
+$$\|f - g\|_\infty = \sup_{x \in D} |f(x) - g(x)|.$$
+
+This is a genuine metric on the space of bounded functions on $D$. Uniform convergence is convergence in this metric.
+</TheoremBlock>
+
+The comparison is now sharp:
+- **Pointwise:** "for each $x$, the vertical distance $|f_n(x) - f(x)| \to 0$."
+- **Uniform:** "the *maximum* vertical distance over all $x$ simultaneously $\to 0$."
+
+![The ε-band characterization](/images/topics/uniform-convergence/epsilon-band-characterization.png)
+
+<TheoremBlock type="proposition" number={1} title="Uniform ⟹ Pointwise">
+If $f_n \to f$ uniformly on $D$, then $f_n \to f$ pointwise on $D$. The converse is false.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+If $\|f_n - f\|_\infty < \varepsilon$ for $n \geq N$, then in particular $|f_n(x) - f(x)| \leq \|f_n - f\|_\infty < \varepsilon$ for each fixed $x \in D$, so $f_n(x) \to f(x)$.
+
+The converse fails: $f_n(x) = x^n$ on $[0, 1]$ converges pointwise but not uniformly — the sup-norm $\sup_{x \in [0,1)} |x^n - 0|$ does not tend to $0$ because for any $n$, we can find $x$ close to $1$ with $x^n$ close to $1$. $\blacksquare$
+</TheoremBlock>
+
+<TheoremBlock type="example" number={2}>
+$g_n(x) = x^n / n$ on $[0, 1]$. Then $\|g_n\|_\infty = \sup_{x \in [0,1]} x^n / n = 1/n \to 0$, so $g_n \to 0$ uniformly. Compare with $f_n(x) = x^n$, where $\sup_{x \in [0,1)} x^n$ approaches $1$, not $0$.
+</TheoremBlock>
+
+Use the explorer below to feel the difference. Drag the $n$ slider and watch whether the function's graph stays inside the ε-band. The moment when $x^n$ escapes the band near $x = 1$ — but $x^n/n$ stays inside — is the difference between pointwise and uniform convergence.
+
+<PointwiseVsUniformExplorer client:visible />
+
+## The Uniform Limit Theorem
+
+The most important theorem in this topic: uniform convergence preserves continuity.
+
+<TheoremBlock type="theorem" number={1} title="Uniform Limit Theorem">
+If each $f_n: D \to \mathbb{R}$ is continuous at $a \in D$ and $f_n \to f$ uniformly on $D$, then $f$ is continuous at $a$.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+Fix $\varepsilon > 0$. We need $\delta > 0$ such that $|x - a| < \delta \implies |f(x) - f(a)| < \varepsilon$. Apply the triangle inequality:
+
+$$|f(x) - f(a)| \leq |f(x) - f_n(x)| + |f_n(x) - f_n(a)| + |f_n(a) - f(a)|.$$
+
+**Step 1 (Uniform convergence).** Choose $N$ such that $\|f_N - f\|_\infty < \varepsilon/3$. Then $|f(x) - f_N(x)| < \varepsilon/3$ for **all** $x$, and $|f_N(a) - f(a)| < \varepsilon/3$.
+
+**Step 2 (Continuity of $f_N$).** Since $f_N$ is continuous at $a$, choose $\delta > 0$ such that $|x - a| < \delta \implies |f_N(x) - f_N(a)| < \varepsilon/3$.
+
+**Step 3 (Combine).** For $|x - a| < \delta$:
+
+$$|f(x) - f(a)| < \frac{\varepsilon}{3} + \frac{\varepsilon}{3} + \frac{\varepsilon}{3} = \varepsilon. \quad \blacksquare$$
+</TheoremBlock>
+
+The key insight: uniform convergence provides a *single* $N$ that simultaneously controls the first and third terms for **all** $x$. Pointwise convergence would give different $N$ for different $x$, and we couldn't fix $N$ before choosing $\delta$.
+
+<TheoremBlock type="remark" number={2}>
+The **ε/3 trick** is a paradigm: when bounding $|f(x) - f(a)|$ through an intermediary $f_n$, split the triangle inequality into three terms and allocate $\varepsilon/3$ to each. This proof strategy recurs throughout analysis — and in ML, it appears in decomposing generalization error into approximation error + estimation error + optimization error, each bounded by $\varepsilon/3$.
+</TheoremBlock>
+
+![The Uniform Limit Theorem](/images/topics/uniform-convergence/uniform-limit-theorem.png)
+
+<UniformLimitTheoremExplorer client:visible />
+
+## Interchange Theorems — Integration and Differentiation
+
+Uniform convergence enables two crucial interchange theorems, but with different hypotheses.
+
+<TheoremBlock type="theorem" number={2} title="Interchange of Limit and Integral">
+If $f_n \to f$ uniformly on $[a, b]$ and each $f_n$ is Riemann integrable on $[a, b]$, then $f$ is Riemann integrable and
+
+$$\lim_{n \to \infty} \int_a^b f_n(x)\, dx = \int_a^b f(x)\, dx.$$
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+$$\left|\int_a^b f_n(x)\, dx - \int_a^b f(x)\, dx\right| = \left|\int_a^b [f_n(x) - f(x)]\, dx\right| \leq \int_a^b |f_n(x) - f(x)|\, dx \leq \|f_n - f\|_\infty \cdot (b - a).$$
+
+Since $\|f_n - f\|_\infty \to 0$ by uniform convergence, the right side tends to $0$. $\blacksquare$
+</TheoremBlock>
+
+The proof is clean and direct — the sup-norm bound converts a pointwise inequality into a uniform one, and the integral of a uniform bound is just the bound times the interval length.
+
+<TheoremBlock type="example" number={3}>
+The interchange **fails** for pointwise convergence. Our "moving bump" sequence has $\int f_n = 1$ for all $n$ but $f_n \to 0$ pointwise, so $\int (\lim f_n) = 0 \neq 1 = \lim (\int f_n)$.
+</TheoremBlock>
+
+![Interchange of limit and integral](/images/topics/uniform-convergence/interchange-integration.png)
+
+The differentiation interchange is harder and requires a stronger hypothesis:
+
+<TheoremBlock type="theorem" number={3} title="Interchange of Limit and Derivative">
+If $(f_n)$ is a sequence of differentiable functions on $[a, b]$ such that:
+
+(i) $f_n(x_0) \to L$ for at least one $x_0 \in [a, b]$, and
+
+(ii) $f_n' \to g$ **uniformly** on $[a, b]$,
+
+then $f_n \to f$ uniformly for some differentiable $f$, and $f' = g = \lim f_n'$.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={3}>
+The differentiation interchange requires uniform convergence of the *derivatives*, not the functions themselves. This asymmetry is fundamental: integration is a smoothing operation (it improves convergence), while differentiation is a roughening operation (it can destroy convergence). In ML terms: backpropagation computes derivatives, so uniform convergence of loss landscapes $\mathcal{L}_n(\theta) \to \mathcal{L}(\theta)$ does **not** automatically imply well-behaved gradients $\nabla \mathcal{L}_n \to \nabla \mathcal{L}$.
+</TheoremBlock>
+
+## The Cauchy Criterion for Uniform Convergence
+
+Just as numerical sequences have a Cauchy criterion that certifies convergence without knowing the limit ([Sequences, Limits & Convergence](/topics/sequences-limits), Definition 6), function sequences have an analogous criterion.
+
+<TheoremBlock type="proposition" number={2} title="Cauchy Criterion for Uniform Convergence">
+A sequence $(f_n)$ converges uniformly on $D$ if and only if for every $\varepsilon > 0$, there exists $N$ such that
+
+$$m, n \geq N \implies \|f_m - f_n\|_\infty = \sup_{x \in D} |f_m(x) - f_n(x)| < \varepsilon.$$
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+**(⟹)** If $f_n \to f$ uniformly, then $\|f_m - f_n\|_\infty \leq \|f_m - f\|_\infty + \|f_n - f\|_\infty$. Given $\varepsilon > 0$, choose $N$ such that $\|f_k - f\|_\infty < \varepsilon/2$ for $k \geq N$. Then $\|f_m - f_n\|_\infty < \varepsilon$ for $m, n \geq N$.
+
+**(⟸)** For each fixed $x$, the numerical sequence $(f_n(x))$ satisfies $|f_m(x) - f_n(x)| \leq \|f_m - f_n\|_\infty < \varepsilon$, so $(f_n(x))$ is Cauchy in $\mathbb{R}$. By completeness of $\mathbb{R}$ (from [Completeness & Compactness](/topics/completeness-compactness)), $f_n(x) \to f(x)$ for some value $f(x)$.
+
+To show the convergence is uniform: fix $\varepsilon > 0$ and choose $N$ from the hypothesis. For any $m, n \geq N$ and any $x$, $|f_m(x) - f_n(x)| < \varepsilon$. Taking $m \to \infty$ gives $|f(x) - f_n(x)| \leq \varepsilon$ for all $x \in D$, which is $\|f - f_n\|_\infty \leq \varepsilon$. $\blacksquare$
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={4}>
+The Cauchy criterion shows that $C([a,b])$ with the sup-norm is a *complete* space — every uniformly Cauchy sequence of continuous functions converges uniformly to a continuous function. This completeness is the function-space analog of the completeness of $\mathbb{R}$ from [Completeness & Compactness](/topics/completeness-compactness). It will be formalized as a Banach space structure in **Normed & Banach Spaces** *(coming soon)*.
+</TheoremBlock>
+
+![Cauchy criterion for function sequences](/images/topics/uniform-convergence/cauchy-criterion-functions.png)
+
+## Series of Functions and the Weierstrass M-Test
+
+A series of functions $\sum_{k=1}^\infty g_k(x)$ is just a sequence of partial sums. The Weierstrass M-test provides a practical, checkable criterion for uniform convergence.
+
+<TheoremBlock type="definition" number={4} title="Uniform Convergence of a Series">
+A series $\sum_{k=1}^\infty g_k(x)$ converges **uniformly** on $D$ if the sequence of partial sums $S_n(x) = \sum_{k=1}^n g_k(x)$ converges uniformly on $D$.
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={4} title="Weierstrass M-Test">
+Let $g_k: D \to \mathbb{R}$ and suppose there exist constants $M_k \geq 0$ such that $|g_k(x)| \leq M_k$ for all $x \in D$ and all $k$. If $\sum_{k=1}^\infty M_k$ converges, then $\sum_{k=1}^\infty g_k$ converges uniformly (and absolutely) on $D$.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+For $m > n$:
+
+$$\|S_m - S_n\|_\infty = \sup_{x \in D} \left|\sum_{k=n+1}^m g_k(x)\right| \leq \sum_{k=n+1}^m \sup_{x \in D} |g_k(x)| \leq \sum_{k=n+1}^m M_k.$$
+
+Since $\sum M_k$ converges, its tail $\sum_{k=n+1}^\infty M_k \to 0$, so $(S_n)$ is uniformly Cauchy. By the Cauchy criterion (Proposition 2), $(S_n)$ converges uniformly. $\blacksquare$
+</TheoremBlock>
+
+<TheoremBlock type="example" number={4}>
+The series $\sum_{k=1}^\infty \frac{\sin(kx)}{k^2}$ converges uniformly on $\mathbb{R}$. Take $M_k = 1/k^2$; since $|\sin(kx)| \leq 1$ and $\sum 1/k^2 = \pi^2/6 < \infty$, the M-test applies. Since each $\sin(kx)/k^2$ is continuous and the convergence is uniform, the Uniform Limit Theorem (applied to partial sums) guarantees the sum defines a continuous function.
+</TheoremBlock>
+
+![The Weierstrass M-test](/images/topics/uniform-convergence/weierstrass-m-test.png)
+
+<WeierstrassMTestExplorer client:visible />
+
+## Equicontinuity and the Arzelà-Ascoli Theorem
+
+The Heine-Borel theorem from [Completeness & Compactness](/topics/completeness-compactness) says that a subset of $\mathbb{R}^n$ is compact if and only if it is closed and bounded. What is the analog for subsets of the function space $C([a,b])$? Boundedness alone is not enough — we need a condition that controls how much the functions in the family can oscillate. That condition is **equicontinuity**.
+
+<TheoremBlock type="definition" number={5} title="Equicontinuity">
+A family of functions $\mathcal{F} \subseteq C([a,b])$ is **equicontinuous** if for every $\varepsilon > 0$, there exists $\delta > 0$ such that
+
+$$|x - y| < \delta \implies |f(x) - f(y)| < \varepsilon \quad \text{for ALL } f \in \mathcal{F}.$$
+</TheoremBlock>
+
+Compare this with uniform continuity from [Epsilon-Delta & Continuity](/topics/epsilon-delta) (Definition 9): uniform continuity says a *single function* has one $\delta$ that works at every point; equicontinuity says a *family of functions* has one $\delta$ that works for every function *and* every point simultaneously.
+
+<TheoremBlock type="definition" number={6} title="Pointwise Boundedness">
+A family $\mathcal{F}$ is **pointwise bounded** if for each $x \in [a,b]$, $\sup_{f \in \mathcal{F}} |f(x)| < \infty$.
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={5} title="Arzelà-Ascoli Theorem">
+A subset $\mathcal{F} \subseteq C([a,b])$ is **relatively compact** (every sequence in $\mathcal{F}$ has a uniformly convergent subsequence) if and only if $\mathcal{F}$ is equicontinuous and pointwise bounded.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+**(⟸, main direction.)** Let $(f_n) \subseteq \mathcal{F}$.
+
+**Step 1 (Diagonal extraction on the rationals).** Let $\{r_1, r_2, \ldots\}$ be an enumeration of the rationals in $[a,b]$. By pointwise boundedness, $(f_n(r_1))$ is a bounded sequence in $\mathbb{R}$, so by the Bolzano-Weierstrass theorem ([Sequences, Limits & Convergence](/topics/sequences-limits), Theorem 4), we can extract a subsequence that converges at $r_1$. From that subsequence, extract a further subsequence converging at $r_2$. Continue. The **diagonal subsequence** — the $k$-th term of the $k$-th subsequence — converges at *every* rational $r_j$.
+
+**Step 2 (Extend from rationals to all of $[a,b]$).** By equicontinuity, for any $\varepsilon > 0$, choose $\delta$ from the definition. For any $x \in [a,b]$, find a rational $r$ with $|x - r| < \delta$. Then for indices $n_k, n_j$ in our diagonal subsequence:
+
+$$|f_{n_k}(x) - f_{n_j}(x)| \leq |f_{n_k}(x) - f_{n_k}(r)| + |f_{n_k}(r) - f_{n_j}(r)| + |f_{n_j}(r) - f_{n_j}(x)| < \frac{\varepsilon}{3} + \frac{\varepsilon}{3} + \frac{\varepsilon}{3} = \varepsilon$$
+
+for $k, j$ sufficiently large. The first and third terms use equicontinuity ($\delta$ works for *all* $f$); the middle term uses convergence at $r$.
+
+**Step 3 (Convergence is uniform).** The same $\delta$ from equicontinuity works at *every* $x$, so the bound above is independent of $x$. This gives $\|f_{n_k} - f_{n_j}\|_\infty < \varepsilon$, so the diagonal subsequence is uniformly Cauchy and hence uniformly convergent.
+
+**(⟹, sketch.)** If $\mathcal{F}$ is relatively compact, a finite $\varepsilon$-net argument shows equicontinuity: cover $\mathcal{F}$ with finitely many $\varepsilon/3$-balls, use the uniform continuity of each center function, and take the minimum $\delta$. Pointwise boundedness follows similarly. $\blacksquare$
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={5}>
+The Arzelà-Ascoli proof uses the same **diagonal argument** that appears in Cantor's proof and in many ML contexts — extracting convergent subsequences from parameter sequences in optimization. The equicontinuity condition has a direct ML interpretation: a family of neural networks with bounded Lipschitz constants (achieved by spectral normalization or gradient clipping) is equicontinuous, and Arzelà-Ascoli guarantees a convergent subsequence — the function-space analog of compactness in parameter space.
+</TheoremBlock>
+
+![The Arzelà-Ascoli theorem](/images/topics/uniform-convergence/arzela-ascoli.png)
+
+<ArzelaAscoliExplorer client:visible />
+
+## Connections to ML
+
+Uniform convergence is not merely a theoretical curiosity that happens to appear in machine learning. It is the *mathematical foundation* of generalization theory — the question of why models that perform well on training data also perform well on unseen data.
+
+### Uniform convergence of empirical processes
+
+Given a hypothesis class $\mathcal{H}$ (e.g., the set of all neural networks with a fixed architecture), the **empirical risk** of a hypothesis $h \in \mathcal{H}$ on $n$ training examples is
+
+$$\hat{R}_n(h) = \frac{1}{n}\sum_{i=1}^n \ell(h(x_i), y_i),$$
+
+while the **true risk** is $R(h) = \mathbb{E}[\ell(h(X), Y)]$. The law of large numbers guarantees that for any *fixed* $h$, $\hat{R}_n(h) \to R(h)$ as $n \to \infty$. This is *pointwise* convergence — one hypothesis at a time.
+
+But learning requires more: we need $\hat{R}_n(h)$ to be close to $R(h)$ for *all* $h \in \mathcal{H}$ simultaneously, so that the hypothesis $\hat{h}$ that minimizes $\hat{R}_n$ also approximately minimizes $R$. This is **uniform convergence**:
+
+$$\sup_{h \in \mathcal{H}} \left|\hat{R}_n(h) - R(h)\right| \to 0.$$
+
+This is exactly the sup-norm $\|\hat{R}_n - R\|_\infty \to 0$ over the function class $\mathcal{H}$. → <a href="https://formalml.com/topics/pac-learning" class="formalml-badge" target="_blank" rel="noopener">formalML</a> **PAC Learning**
+
+### The Glivenko-Cantelli theorem
+
+The oldest and most fundamental uniform convergence result in statistics: the empirical CDF $\hat{F}_n(x) = \frac{1}{n}\sum_{i=1}^n \mathbf{1}_{X_i \leq x}$ converges uniformly to the true CDF $F(x)$:
+
+$$\|\hat{F}_n - F\|_\infty = \sup_{x \in \mathbb{R}} |\hat{F}_n(x) - F(x)| \to 0 \quad \text{almost surely.}$$
+
+The Dvoretzky-Kiefer-Wolfowitz (DKW) inequality gives the rate: $P\left(\|\hat{F}_n - F\|_\infty > t\right) \leq 2e^{-2nt^2}$, yielding $\|\hat{F}_n - F\|_\infty = O(1/\sqrt{n})$. The Kolmogorov-Smirnov test is built on this sup-norm. → <a href="https://formalml.com/topics/concentration-inequalities" class="formalml-badge" target="_blank" rel="noopener">formalML</a> **Concentration Inequalities**
+
+### VC dimension and complexity control
+
+The **VC dimension** $d$ of a hypothesis class $\mathcal{H}$ quantifies how "complex" $\mathcal{H}$ is — it is the largest number of points that $\mathcal{H}$ can shatter (classify in all $2^d$ possible ways). The **fundamental theorem of statistical learning**: $\mathcal{H}$ is PAC-learnable if and only if $\mathcal{H}$ has finite VC dimension. The generalization bound
+
+$$\sup_{h \in \mathcal{H}} |\hat{R}_n(h) - R(h)| \leq O\left(\sqrt{\frac{d \log n}{n}}\right)$$
+
+is a *rate* of uniform convergence — it tells you how fast the sup-norm between empirical and true risk shrinks with sample size. → <a href="https://formalml.com/topics/pac-learning" class="formalml-badge" target="_blank" rel="noopener">formalML</a> **PAC Learning**
+
+### Arzelà-Ascoli and neural network approximation
+
+The **universal approximation theorem** says that neural networks are *dense* in $C([a,b])$ under the sup-norm: for any continuous $f$ and any $\varepsilon > 0$, there exists a neural network $g$ with $\|f - g\|_\infty < \varepsilon$. Arzelà-Ascoli constrains which families of networks are compact (and hence tractable): a family with bounded Lipschitz constants is equicontinuous, and equicontinuity + boundedness gives compactness. This is why Lipschitz constraints (spectral normalization, gradient penalty) appear in generative models — they enforce the compactness that makes optimization well-posed.
+
+![ML connections](/images/topics/uniform-convergence/ml-connections-uniform.png)
+
+## Computational Notes
+
+Uniform convergence can be verified computationally by evaluating the sup-norm on a dense grid.
+
+**Computing the sup-norm.** Given a function sequence $f_n$ and its limit $f$, we approximate $\|f_n - f\|_\infty$ by sampling:
+
+```python
+import numpy as np
+
+def sup_norm(fn, f, domain, grid_size=1000):
+    """Approximate ||fn - f||_∞ on domain."""
+    x = np.linspace(domain[0], domain[1], grid_size)
+    return np.max(np.abs(fn(x) - f(x)))
+
+# x^n on [0, 1]: not uniform (sup norm → 1)
+for n in [10, 50, 100, 500]:
+    fn = lambda x, n=n: x**n
+    f = lambda x: np.where(x < 1, 0.0, 1.0)
+    print(f"n={n:3d}: ||f_n - f||_∞ = {sup_norm(fn, f, (0, 1)):.6f}")
+
+# x^n/n on [0, 1]: uniform (sup norm = 1/n → 0)
+for n in [10, 50, 100, 500]:
+    gn = lambda x, n=n: x**n / n
+    g = lambda x: np.zeros_like(x)
+    print(f"n={n:3d}: ||g_n - g||_∞ = {sup_norm(gn, g, (0, 1)):.6f}")
+```
+
+**Verifying the integration interchange.** Compare $\int f_n$ with $\int f$:
+
+```python
+from scipy import integrate
+
+def check_interchange(fn, f, domain, n_values):
+    """Compare lim ∫f_n with ∫(lim f_n)."""
+    a, b = domain
+    integral_f = integrate.quad(f, a, b)[0]
+    for n in n_values:
+        integral_fn = integrate.quad(lambda x: fn(x, n), a, b)[0]
+        print(f"n={n:3d}: ∫f_n = {integral_fn:.6f}, ∫f = {integral_f:.6f}, "
+              f"gap = {abs(integral_fn - integral_f):.6f}")
+
+# Uniform case: gap → 0
+check_interchange(
+    fn=lambda x, n: x**n / n,
+    f=lambda x: 0.0,
+    domain=(0, 1),
+    n_values=[5, 20, 100]
+)
+```
+
+**Implementing the Weierstrass M-test.** Check the bound and compare with the actual tail error:
+
+```python
+def weierstrass_m_test(term, Mk, domain, n_terms, max_k=200, grid=1000):
+    """Apply the M-test: compare actual tail error with M-bound."""
+    x = np.linspace(domain[0], domain[1], grid)
+    partial = sum(term(x, k) for k in range(1, n_terms + 1))
+    full = sum(term(x, k) for k in range(1, max_k + 1))
+    actual_error = np.max(np.abs(full - partial))
+    m_bound = sum(Mk(k) for k in range(n_terms + 1, max_k + 1))
+    print(f"n={n_terms}: actual ||S-S_n||_∞ = {actual_error:.6f}, "
+          f"M-bound = {m_bound:.6f}")
+
+# ∑ sin(kx)/k²
+weierstrass_m_test(
+    term=lambda x, k: np.sin(k * x) / k**2,
+    Mk=lambda k: 1 / k**2,
+    domain=(0, 2 * np.pi),
+    n_terms=10
+)
+```
+
+**Computing the Kolmogorov-Smirnov statistic.** The sup-norm between empirical and true CDF:
+
+```python
+def kolmogorov_smirnov(samples, cdf):
+    """Compute ||F_hat_n - F||_∞."""
+    n = len(samples)
+    sorted_samples = np.sort(samples)
+    ecdf = np.arange(1, n + 1) / n
+    sup_diff = np.max(np.abs(ecdf - cdf(sorted_samples)))
+    return sup_diff
+
+# Standard normal: Glivenko-Cantelli in action
+from scipy.stats import norm
+for n in [100, 1000, 10000]:
+    samples = np.random.randn(n)
+    ks = kolmogorov_smirnov(samples, norm.cdf)
+    dkw_bound = np.sqrt(np.log(2 / 0.05) / (2 * n))
+    print(f"n={n:5d}: KS = {ks:.4f}, DKW 95% bound = {dkw_bound:.4f}")
+```
+
+## Connections & Further Reading
+
+### Within formalCalculus
+
+- [**Sequences, Limits & Convergence**](/topics/sequences-limits) — the ε-N convergence framework for numerical sequences. Pointwise convergence of $f_n(x)$ at each fixed $x$ is literally a collection of numerical sequence convergence problems. The Cauchy criterion for uniform convergence (Proposition 2) is the function-space analog of the Cauchy sequence criterion. The Bolzano-Weierstrass theorem is the engine of the diagonal argument in the Arzelà-Ascoli proof.
+- [**Epsilon-Delta & Continuity**](/topics/epsilon-delta) — the ε-δ continuity framework used in the Uniform Limit Theorem proof (the ε/3 argument). Uniform continuity from Topic 2 is the single-function version of the equicontinuity concept. The Lipschitz hierarchy reappears: a family with bounded Lipschitz constants is equicontinuous.
+- [**Completeness & Compactness**](/topics/completeness-compactness) — the Heine-Borel theorem is the finite-dimensional analog of Arzelà-Ascoli. Equicontinuity + pointwise boundedness plays the role that closed + bounded plays in Heine-Borel. Completeness of $\mathbb{R}$ underlies the Cauchy criterion proof.
+- **Series Convergence & Tests** *(coming soon)* — the Weierstrass M-test applied to specific series; absolute vs. conditional convergence for function series.
+- **Power Series & Taylor Series** *(coming soon)* — power series converge uniformly on compact subsets of the radius of convergence; term-by-term differentiation and integration are direct applications of the interchange theorems.
+- **Metric Spaces & Topology** *(coming soon)* — $C([a,b])$ with the sup-norm as a complete metric space; Arzelà-Ascoli as a compactness criterion in metric spaces.
+- **Normed & Banach Spaces** *(coming soon)* — $C([a,b])$ is a Banach space (complete normed vector space); completeness is the Cauchy criterion for uniform convergence.
+- **Approximation Theory & Convergence Rates** *(coming soon)* — Stone-Weierstrass theorem (polynomials are dense in $C([a,b])$ under the sup-norm); rates of uniform approximation.
+
+### Forward to formalML
+
+- <a href="https://formalml.com/topics/pac-learning" class="formalml-badge" target="_blank" rel="noopener">formalML</a> **PAC Learning** — uniform convergence of empirical risk to true risk; VC dimension controls the rate.
+- <a href="https://formalml.com/topics/concentration-inequalities" class="formalml-badge" target="_blank" rel="noopener">formalML</a> **Concentration Inequalities** — Glivenko-Cantelli, DKW inequality, uniform bounds over function classes.
+- <a href="https://formalml.com/topics/measure-theoretic-probability" class="formalml-badge" target="_blank" rel="noopener">formalML</a> **Measure-Theoretic Probability** — modes of convergence in probability extend the pointwise/uniform distinction to random functions.
+
+### References
+
+1. **Abbott** (2015), *Understanding Analysis*, Chapter 6 — our primary reference for the geometric-first approach to uniform convergence.
+2. **Rudin** (1976), *Principles of Mathematical Analysis*, Chapter 7 — the definitive treatment of sequences and series of functions.
+3. **Tao** (2016), *Analysis I*, Chapter 14 — careful first-principles development.
+4. **Kreyszig** (1989), *Functional Analysis*, Chapters 1 & 5 — the sup-norm as a norm on $C([a,b])$.
+5. **Shalev-Shwartz & Ben-David** (2014), *Understanding Machine Learning*, Chapters 4–6 — PAC learning as uniform convergence.
+6. **Vapnik & Chervonenkis** (1971), "[On the Uniform Convergence of Relative Frequencies of Events to Their Probabilities](https://doi.org/10.1137/1116025)" — the foundational paper connecting uniform convergence and learnability.

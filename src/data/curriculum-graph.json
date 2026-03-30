@@ -3,7 +3,7 @@
     { "id": "sequences-limits", "label": "Sequences, Limits & Convergence", "domain": "limits-continuity", "status": "published", "url": "/topics/sequences-limits" },
     { "id": "epsilon-delta", "label": "Epsilon-Delta & Continuity", "domain": "limits-continuity", "status": "published", "url": "/topics/epsilon-delta" },
     { "id": "completeness-compactness", "label": "Completeness & Compactness", "domain": "limits-continuity", "status": "published", "url": "/topics/completeness-compactness" },
-    { "id": "uniform-convergence", "label": "Uniform Convergence", "domain": "limits-continuity", "status": "planned", "url": "/topics/uniform-convergence" },
+    { "id": "uniform-convergence", "label": "Uniform Convergence", "domain": "limits-continuity", "status": "published", "url": "/topics/uniform-convergence" },
 
     { "id": "derivative", "label": "The Derivative & Chain Rule", "domain": "single-variable", "status": "planned", "url": "/topics/derivative" },
     { "id": "mean-value-taylor", "label": "Mean Value Theorem & Taylor Expansion", "domain": "single-variable", "status": "planned", "url": "/topics/mean-value-taylor" },
@@ -44,8 +44,11 @@
     { "source": "sequences-limits", "target": "epsilon-delta" },
     { "source": "sequences-limits", "target": "completeness-compactness" },
     { "source": "epsilon-delta", "target": "completeness-compactness" },
+    { "source": "sequences-limits", "target": "uniform-convergence" },
     { "source": "epsilon-delta", "target": "uniform-convergence" },
     { "source": "completeness-compactness", "target": "uniform-convergence" },
+    { "source": "uniform-convergence", "target": "series-convergence" },
+    { "source": "uniform-convergence", "target": "power-taylor-series" },
 
     { "source": "epsilon-delta", "target": "derivative" },
     { "source": "derivative", "target": "mean-value-taylor" },
