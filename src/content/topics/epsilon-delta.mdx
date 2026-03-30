@@ -406,7 +406,7 @@ If $f$ is continuous on a compact set $K$ (closed and bounded in $\mathbb{R}$), 
 </TheoremBlock>
 
 <TheoremBlock type="remark" number={5} title="Compactness Upgrades Continuity">
-The Heine-Cantor theorem explains why **compactness** is so important for optimization. On compact domains, continuity automatically gives us uniform continuity — uniform control over function behavior everywhere. This is the machinery behind many existence and approximation theorems in analysis and ML, and we will develop it fully in **Completeness & Compactness** *(coming soon)*.
+The Heine-Cantor theorem explains why **compactness** is so important for optimization. On compact domains, continuity automatically gives us uniform continuity — uniform control over function behavior everywhere. This is the machinery behind many existence and approximation theorems in analysis and ML, and we develop it fully in [**Completeness & Compactness**](/topics/completeness-compactness).
 </TheoremBlock>
 
 ![Lipschitz continuity](/images/topics/epsilon-delta/lipschitz-continuity.png)
@@ -520,7 +520,7 @@ print(f"Root: {root:.10f} (found in {iters} iterations)")
 ### Where this leads within formalCalculus
 
 - [**Sequences, Limits & Convergence**](/topics/sequences-limits) — the prerequisite. The ε-N definition that this topic extends, and the Bolzano-Weierstrass Theorem that powers the EVT proof.
-- **Completeness & Compactness** *(coming soon)* — generalizes EVT via compactness. The Heine-Cantor theorem (Theorem 5 above) is a preview of why compactness upgrades continuity to uniform continuity.
+- [**Completeness & Compactness**](/topics/completeness-compactness) — reproves EVT and Heine-Cantor as consequences of compactness, revealing the structural reason these theorems hold.
 - **Uniform Convergence** *(coming soon)* — when does uniform convergence of continuous functions produce a continuous limit? The sequential characterization bridges the answer.
 - **The Derivative & Chain Rule** *(coming soon)* — differentiability implies continuity (but not conversely — ReLU is continuous but not differentiable at 0). The derivative is itself a limit.
 - **The Riemann Integral & FTC** *(coming soon)* — continuous functions on $[a, b]$ are Riemann integrable. Continuity is the "easy" sufficient condition.

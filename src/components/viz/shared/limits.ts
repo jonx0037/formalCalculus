@@ -395,3 +395,184 @@ export function seededRandom(seed: number): () => number {
     return (state >>> 0) / 0x100000000;
   };
 }
+
+// ── Completeness & Compactness (Topic 3) ─────────────────────
+
+export interface NestedIntervalResult {
+  intervals: { a: number; b: number }[];
+  limit: number;
+  converged: boolean;
+  steps: number;
+}
+
+export interface CompactnessCheck {
+  isCompact: boolean;
+  isClosed: boolean;
+  isBounded: boolean;
+  failureReason: 'not-closed' | 'not-bounded' | null;
+  escapingSubsequence?: number[];
+}
+
+export interface SublevelSet {
+  level: number;
+  isBounded: boolean;
+  bounds: [number, number] | null;
+}
+
+/**
+ * Run bisection on an interval [a, b] targeting a value where checkFn determines
+ * which half to keep. Returns the full history of nested intervals.
+ */
+export function nestedIntervalBisection(
+  a: number,
+  b: number,
+  checkFn: (mid: number) => 'left' | 'right',
+  maxSteps: number = 30,
+): NestedIntervalResult {
+  const intervals: { a: number; b: number }[] = [{ a, b }];
+
+  let lo = a;
+  let hi = b;
+
+  for (let i = 0; i < maxSteps; i++) {
+    const mid = (lo + hi) / 2;
+    const direction = checkFn(mid);
+
+    if (direction === 'left') {
+      hi = mid;
+    } else {
+      lo = mid;
+    }
+
+    intervals.push({ a: lo, b: hi });
+
+    if (hi - lo < 1e-14) {
+      return { intervals, limit: (lo + hi) / 2, converged: true, steps: i + 1 };
+    }
+  }
+
+  return { intervals, limit: (lo + hi) / 2, converged: hi - lo < 1e-10, steps: maxSteps };
+}
+
+/**
+ * Extract a convergent subsequence from a given sequence.
+ * Strategy: partition values into buckets, find the densest bucket (most
+ * values clustered together), then filter elements within that bucket that
+ * stay close to the cluster center. This approximates Bolzano-Weierstrass —
+ * finding a subsequence that converges to a cluster point.
+ * Returns the subsequence, its indices, and the estimated limit.
+ * Note: the extracted subsequence is not guaranteed to be monotone.
+ */
+export function extractConvergentSubsequence(
+  sequence: number[],
+  tolerance: number = 1e-6,
+): { subsequence: number[]; indices: number[]; limit: number | null; converges: boolean } {
+  if (sequence.length === 0) {
+    return { subsequence: [], indices: [], limit: null, converges: false };
+  }
+
+  // Find the value that appears most densely: partition into buckets
+  const min = Math.min(...sequence);
+  const max = Math.max(...sequence);
+  const range = max - min || 1;
+  const bucketCount = Math.max(10, Math.floor(sequence.length / 3));
+  const buckets: number[][] = Array.from({ length: bucketCount }, () => []);
+  const bucketIndices: number[][] = Array.from({ length: bucketCount }, () => []);
+
+  for (let i = 0; i < sequence.length; i++) {
+    const idx = Math.min(
+      bucketCount - 1,
+      Math.floor(((sequence[i] - min) / range) * bucketCount),
+    );
+    buckets[idx].push(sequence[i]);
+    bucketIndices[idx].push(i);
+  }
+
+  // Find densest bucket
+  let bestBucket = 0;
+  for (let i = 1; i < bucketCount; i++) {
+    if (buckets[i].length > buckets[bestBucket].length) {
+      bestBucket = i;
+    }
+  }
+
+  // Extract a cluster subsequence from the densest bucket
+  const candidates = bucketIndices[bestBucket];
+  const subIndices: number[] = [candidates[0]];
+  const sub: number[] = [sequence[candidates[0]]];
+
+  for (let i = 1; i < candidates.length; i++) {
+    const val = sequence[candidates[i]];
+    if (Math.abs(val - sub[sub.length - 1]) < Math.abs(sub[sub.length - 1] - sub[0]) + tolerance) {
+      subIndices.push(candidates[i]);
+      sub.push(val);
+    }
+  }
+
+  // Estimate limit as mean of last few elements
+  const tail = sub.slice(-Math.max(3, Math.floor(sub.length / 2)));
+  const limit = tail.reduce((s, v) => s + v, 0) / tail.length;
+
+  // Check convergence: do the tail elements cluster?
+  const maxDev = Math.max(...tail.map(v => Math.abs(v - limit)));
+  const converges = maxDev < tolerance || (sub.length >= 3 && maxDev < range * 0.05);
+
+  return { subsequence: sub, indices: subIndices, limit, converges };
+}
+
+/**
+ * Check if a function is coercive on a given domain by sampling.
+ * A function is coercive if f(x) → ∞ as |x| → ∞.
+ * Returns whether sublevel sets appear bounded.
+ */
+export function checkCoercivity(
+  f: (x: number) => number,
+  sampleRange: [number, number],
+  samplePoints: number = 200,
+): { isCoercive: boolean; sublevelSets: SublevelSet[] } {
+  const [lo, hi] = sampleRange;
+  const step = (hi - lo) / samplePoints;
+
+  // Sample function values
+  const samples: { x: number; y: number }[] = [];
+  for (let i = 0; i <= samplePoints; i++) {
+    const x = lo + step * i;
+    samples.push({ x, y: f(x) });
+  }
+
+  // Check coercivity: values at boundaries should be large
+  // Clamp to at least 1 so boundary slices are never empty (avoids Math.min(...[]) = Infinity).
+  const boundaryWidth = Math.max(1, Math.floor(samplePoints * 0.1));
+  const leftValues = samples.slice(0, boundaryWidth).map(s => s.y);
+  const rightValues = samples.slice(-boundaryWidth).map(s => s.y);
+  const interiorValues = samples.slice(boundaryWidth, -boundaryWidth).map(s => s.y);
+
+  const leftMin = Math.min(...leftValues);
+  const rightMin = Math.min(...rightValues);
+  const interiorMin = Math.min(...interiorValues);
+
+  const isCoercive = leftMin > interiorMin && rightMin > interiorMin;
+
+  // Compute sublevel sets at several levels
+  const fMin = Math.min(...samples.map(s => s.y));
+  const fMax = Math.max(...samples.map(s => s.y));
+  const levels = [0.25, 0.5, 0.75].map(t => fMin + t * (fMax - fMin));
+
+  const sublevelSets: SublevelSet[] = levels.map(level => {
+    const inSet = samples.filter(s => s.y <= level);
+    if (inSet.length === 0) {
+      return { level, isBounded: true, bounds: null };
+    }
+    const xMin = Math.min(...inSet.map(s => s.x));
+    const xMax = Math.max(...inSet.map(s => s.x));
+
+    // Bounded if the sublevel set doesn't touch the sample boundaries
+    const touchesLeft = xMin <= lo + step * 2;
+    const touchesRight = xMax >= hi - step * 2;
+    const isBounded = !touchesLeft && !touchesRight;
+
+    return { level, isBounded, bounds: [xMin, xMax] as [number, number] };
+  });
+
+  return { isCoercive, sublevelSets };
+}
