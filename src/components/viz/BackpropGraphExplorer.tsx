@@ -1,5 +1,4 @@
-import { useState, useMemo, useCallback, type ChangeEvent } from 'react';
-import * as d3 from 'd3';
+import { useState, useMemo, useCallback, useId, type ChangeEvent } from 'react';
 import { useResizeObserver } from './shared/useResizeObserver';
 import { useD3 } from './shared/useD3';
 import { getActivationPresets } from '../../data/derivative-data';
@@ -73,6 +72,7 @@ const edgeDefs: EdgeDef[] = [
 export default function BackpropGraphExplorer() {
   const { ref: containerRef, width } = useResizeObserver<HTMLDivElement>();
   const height = Math.min(width * 0.75, 520);
+  const baseId = useId();
 
   const [mode, setMode] = useState<Mode>('forward');
   const [activationIdx, setActivationIdx] = useState(0);
@@ -89,14 +89,11 @@ export default function BackpropGraphExplorer() {
   );
 
   // Extract named values for edge labels and readout
+  // graph.nodes indices are fixed by computeBackprop: [x, w, b, z, a, L]
   const vals = useMemo(() => {
-    const zNode = graph.nodes.find((n) => n.label.startsWith('z'));
-    const aNode = graph.nodes.find((n) => n.label.startsWith('a'));
-    const lNode = graph.nodes.find((n) => n.label.startsWith('L'));
-    const zVal = zNode ? zNode.value : 0;
-    const aVal = aNode ? aNode.value : 0;
+    const zVal = graph.nodes[3].value;
+    const aVal = graph.nodes[4].value;
     const dadz = preset.sigmaPrime(zVal);
-    const dLda = 2 * (aVal - yTarget);
     return {
       w,
       b,
@@ -104,9 +101,9 @@ export default function BackpropGraphExplorer() {
       yTarget,
       z: zVal,
       a: aVal,
-      L: lNode ? lNode.value : 0,
+      L: graph.nodes[5].value,
       dadz,
-      dLda,
+      dLda: graph.nodes[4].gradient,
       dLdw: graph.dLdw,
       dLdb: graph.dLdb,
     };
@@ -134,7 +131,7 @@ export default function BackpropGraphExplorer() {
 
       defs
         .append('marker')
-        .attr('id', 'arrow-forward')
+        .attr('id', `${baseId}-arrow-forward`)
         .attr('viewBox', '0 0 10 6')
         .attr('refX', 10)
         .attr('refY', 3)
@@ -147,7 +144,7 @@ export default function BackpropGraphExplorer() {
 
       defs
         .append('marker')
-        .attr('id', 'arrow-backward')
+        .attr('id', `${baseId}-arrow-backward`)
         .attr('viewBox', '0 0 10 6')
         .attr('refX', 0)
         .attr('refY', 3)
@@ -231,7 +228,7 @@ export default function BackpropGraphExplorer() {
             .attr('y2', y2 + perpY)
             .style('stroke', functionColors[0])
             .style('stroke-width', 2)
-            .attr('marker-end', 'url(#arrow-forward)');
+            .attr('marker-end', `url(#${baseId}-arrow-forward)`);
 
           // Forward edge label
           const midX = (x1 + x2) / 2 + perpX;
@@ -255,7 +252,7 @@ export default function BackpropGraphExplorer() {
             .style('stroke', functionColors[1])
             .style('stroke-width', 2)
             .style('stroke-dasharray', '5,3')
-            .attr('marker-end', 'url(#arrow-backward)');
+            .attr('marker-end', `url(#${baseId}-arrow-backward)`);
 
           // Backward edge label
           const midX = (x1 + x2) / 2 - perpX;
@@ -285,8 +282,8 @@ export default function BackpropGraphExplorer() {
 
         if (mode === 'both') {
           // Split color: blue left half, red right half via clip paths
-          const clipId = `clip-${nd.id}`;
-          const clipIdR = `clip-r-${nd.id}`;
+          const clipId = `${baseId}-clip-${nd.id}`;
+          const clipIdR = `${baseId}-clip-r-${nd.id}`;
 
           defs
             .append('clipPath')

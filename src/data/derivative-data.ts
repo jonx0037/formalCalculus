@@ -5,6 +5,22 @@
  * BackpropGraphExplorer.
  */
 
+// ── Precomputed Weierstrass power tables ────────────────────
+
+const WEIERSTRASS_A_POWERS: number[] = [];
+const WEIERSTRASS_B_POWERS: number[] = [];
+
+{
+  let aPow = 1;
+  let bPow = 1;
+  for (let k = 0; k < 50; k++) {
+    WEIERSTRASS_A_POWERS.push(aPow);
+    WEIERSTRASS_B_POWERS.push(bPow);
+    aPow *= 0.5;
+    bPow *= 7;
+  }
+}
+
 // ── Interfaces ──────────────────────────────────────────────
 
 export interface DerivativeFunctionPreset {
@@ -229,12 +245,10 @@ export function getDifferentiabilityPresets(): DifferentiabilityPreset[] {
       name: 'weierstrass',
       label: 'Weierstrass function',
       fn: (x: number) => {
-        // Partial sum with a=0.5, b=7, 30 terms
+        // Partial sum with a=0.5, b=7, 30 terms using precomputed powers
         let sum = 0;
-        let aPow = 1;
         for (let k = 0; k < 30; k++) {
-          sum += aPow * Math.cos(Math.pow(7, k) * Math.PI * x);
-          aPow *= 0.5;
+          sum += WEIERSTRASS_A_POWERS[k] * Math.cos(WEIERSTRASS_B_POWERS[k] * Math.PI * x);
         }
         return sum;
       },

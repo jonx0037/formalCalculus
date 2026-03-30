@@ -362,16 +362,35 @@ export function generateDerivativeCurve(
 // ── Special functions ───────────────────────────────────────
 
 /**
+ * Precomputed power lookup tables for the default Weierstrass parameters.
+ * a^k and b^k for k = 0..MAX_WEIERSTRASS_TERMS-1, giving O(1) access
+ * per term instead of recomputing Math.pow on every call.
+ */
+const MAX_WEIERSTRASS_TERMS = 50;
+const WEIERSTRASS_A_POWERS: number[] = [];
+const WEIERSTRASS_B_POWERS: number[] = [];
+
+{
+  let aPow = 1;
+  let bPow = 1;
+  for (let k = 0; k < MAX_WEIERSTRASS_TERMS; k++) {
+    WEIERSTRASS_A_POWERS.push(aPow);
+    WEIERSTRASS_B_POWERS.push(bPow);
+    aPow *= 0.5;
+    bPow *= 7;
+  }
+}
+
+/**
  * Weierstrass function partial sum: W(x) = sum_{k=0}^{terms-1} a^k * cos(b^k * pi * x).
  *
- * For 0 < a < 1 and b an odd integer with ab > 1 + 3pi/2, this function is
- * continuous everywhere but differentiable nowhere. The partial sum with
- * finitely many terms is smooth, but increasing terms reveals ever-finer
- * oscillations that prevent any tangent line from settling.
+ * For 0 < a < 1 and b an odd integer with ab > 1, the infinite series defines
+ * a function that is continuous everywhere but differentiable nowhere. The
+ * partial sum with finitely many terms is smooth, but increasing terms reveals
+ * ever-finer oscillations that prevent any tangent line from settling in the limit.
  *
- * Default parameters: a = 0.5, b = 7 (ab = 3.5 > 1 + 3pi/2 ≈ 5.71... — wait,
- * actually ab = 3.5 < 5.71, so we use the relaxed condition ab > 1 which
- * suffices for Weierstrass's original construction with appropriate b).
+ * Default parameters: a = 0.5, b = 7 (ab = 3.5 > 1), which satisfy these
+ * classical Weierstrass conditions.
  */
 export function weierstrass(
   x: number,
@@ -379,11 +398,20 @@ export function weierstrass(
   b: number = 7,
   terms: number = 50,
 ): number {
+  // Use precomputed lookup tables for default parameters (the common case)
+  const usePrecomputed = a === 0.5 && b === 7 && terms <= MAX_WEIERSTRASS_TERMS;
+
   let sum = 0;
-  let aPow = 1; // a^k, computed incrementally to avoid Math.pow per term
-  for (let k = 0; k < terms; k++) {
-    sum += aPow * Math.cos(Math.pow(b, k) * Math.PI * x);
-    aPow *= a;
+  if (usePrecomputed) {
+    for (let k = 0; k < terms; k++) {
+      sum += WEIERSTRASS_A_POWERS[k] * Math.cos(WEIERSTRASS_B_POWERS[k] * Math.PI * x);
+    }
+  } else {
+    let aPow = 1;
+    for (let k = 0; k < terms; k++) {
+      sum += aPow * Math.cos(Math.pow(b, k) * Math.PI * x);
+      aPow *= a;
+    }
   }
   return sum;
 }
@@ -436,13 +464,16 @@ export function computeBackprop(
   const dzdw = x;
   const dzdb = 1;
 
+  const dzdx = w;
+
   const dLdz = dLda * dadz;
   const dLdw = dLdz * dzdw;
   const dLdb = dLdz * dzdb;
+  const dLdx = dLdz * dzdx;
 
   return {
     nodes: [
-      { label: 'x', value: x, gradient: 0 },
+      { label: 'x', value: x, gradient: dLdx },
       { label: 'w', value: w, gradient: dLdw },
       { label: 'b', value: b, gradient: dLdb },
       { label: 'z = wx + b', value: z, gradient: dLdz },

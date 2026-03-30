@@ -4,7 +4,7 @@ import { useResizeObserver } from './shared/useResizeObserver';
 import { useD3 } from './shared/useD3';
 import { computeSecant, computeTangent, tangentLineAt, secantLineAt, generateCurve } from './shared/differentiation';
 import { getFunctionPresets } from '../../data/derivative-data';
-import { functionColors, regionColors } from './shared/colorScales';
+import { functionColors } from './shared/colorScales';
 
 const presets = getFunctionPresets();
 const margin = { top: 20, right: 30, bottom: 40, left: 50 };
@@ -316,7 +316,7 @@ export default function SecantToTangentExplorer() {
           <span style={{ color: functionColors[1] }}>- -</span> Tangent
         </span>
         <span className="font-medium" style={{ color: 'var(--color-text)' }}>
-          h = {h.toFixed(6)}
+          h = {effectiveH.toFixed(6)}
           {' · '}Secant slope = {secant.slope.toFixed(4)}
           {' · '}f&apos;(a) = {exactDerivative.toFixed(4)}
           {' · '}|Error| = {slopeError.toFixed(6)}

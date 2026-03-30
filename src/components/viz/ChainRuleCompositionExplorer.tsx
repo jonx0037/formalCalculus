@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, type ChangeEvent } from 'react';
+import { useState, useMemo, useCallback, useId, type ChangeEvent } from 'react';
 import * as d3 from 'd3';
 import { useResizeObserver } from './shared/useResizeObserver';
 import { useD3 } from './shared/useD3';
@@ -14,6 +14,7 @@ const SAMPLE_PTS = 500;
 export default function ChainRuleCompositionExplorer() {
   const { ref: containerRef, width } = useResizeObserver<HTMLDivElement>();
   const height = Math.min(width * 0.55, 420);
+  const baseId = useId();
 
   const [selectedIdx, setSelectedIdx] = useState(0);
   const preset = presets[selectedIdx];
@@ -292,7 +293,7 @@ export default function ChainRuleCompositionExplorer() {
       svg
         .append('defs')
         .append('marker')
-        .attr('id', 'chain-arrow')
+        .attr('id', `${baseId}-chain-arrow`)
         .attr('viewBox', '0 0 10 10')
         .attr('refX', 8)
         .attr('refY', 5)
@@ -309,7 +310,7 @@ export default function ChainRuleCompositionExplorer() {
         .style('stroke', functionColors[2])
         .style('stroke-width', 2)
         .style('opacity', 0.7)
-        .attr('marker-end', 'url(#chain-arrow)');
+        .attr('marker-end', `url(#${baseId}-chain-arrow)`);
 
       // Label on the arrow: "g(x)"
       g.append('text')
