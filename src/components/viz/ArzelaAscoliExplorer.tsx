@@ -19,7 +19,7 @@ export default function ArzelaAscoliExplorer() {
   const [seed, setSeed] = useState(42);
   const [showSubseq, setShowSubseq] = useState(false);
   const [probeX, setProbeX] = useState<number | null>(null);
-  const [probeEps, _setProbeEps] = useState(0.3);
+  const [probeEps] = useState(0.3);
 
   const preset = presets[presetIdx];
 
@@ -276,9 +276,11 @@ export default function ArzelaAscoliExplorer() {
       {showSubseq && subsequence && (
         <div className="mb-2 text-sm text-zinc-600 dark:text-zinc-400">
           Extracted subsequence: indices [{subsequence.indices.join(', ')}]
-          {preset.isEquicontinuous && (
+          {preset.isEquicontinuous && preset.isPointwiseBounded &&
+            subsequence.supNormErrors.length > 0 && (
             <span className="ml-2 text-emerald-600">
-              — converges uniformly
+              — numerically appears to converge uniformly (latest ‖f_n − f‖ ≈{' '}
+              {subsequence.supNormErrors[subsequence.supNormErrors.length - 1].toFixed(3)})
             </span>
           )}
         </div>

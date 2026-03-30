@@ -43,14 +43,16 @@ export default function WeierstrassMTestExplorer() {
       const gridSize = 300;
       const step = (xMax - xMin) / gridSize;
 
-      // Compute partial sum at current n and a "full" sum at n=50
+      // Compute partial sum at current n and a "full" sum at maxK
+      // Use the same maxK as weierstrassMTest() for consistent error/bound display
+      const FULL_SUM_K = 200;
       const partialPoints: [number, number][] = [];
       const fullPoints: [number, number][] = [];
       for (let i = 0; i <= gridSize; i++) {
         const x = xMin + step * i;
         let partial = 0;
         let full = 0;
-        for (let k = 1; k <= 50; k++) {
+        for (let k = 1; k <= FULL_SUM_K; k++) {
           const term = preset.term(x, k);
           if (k <= n) partial += term;
           full += term;

@@ -80,8 +80,8 @@ export function getFunctionSequencePresets(): FunctionSequencePreset[] {
       limit: (_x) => 0,
       domain: [0, 1],
       isUniform: true,
-      supNorm: (n) => 1 / (2 * Math.sqrt(n)),
-      supNormFormula: '||q_n||_∞ = 1/(2√n) → 0',
+      supNorm: (n) => 1 / (n + 1),
+      supNormFormula: '||q_n||_∞ = 1/(n+1) → 0',
       mlContext:
         'Soft thresholding — like the sigmoid activation compressing large inputs as width grows.',
     },
@@ -100,6 +100,17 @@ export interface FunctionSeriesPreset {
   domain: [number, number];
 }
 
+// Precomputed inverse factorials to avoid O(k) recomputation per call
+const INV_FACTORIALS: number[] = (() => {
+  const table = [1, 1]; // 1/0!, 1/1!
+  let fact = 1;
+  for (let i = 2; i <= 170; i++) {
+    fact *= i;
+    table.push(1 / fact);
+  }
+  return table;
+})();
+
 export function getFunctionSeriesPresets(): FunctionSeriesPreset[] {
   return [
     {
@@ -114,16 +125,8 @@ export function getFunctionSeriesPresets(): FunctionSeriesPreset[] {
     {
       name: 'cos-factorial',
       label: '∑ cos(kx)/k!',
-      term: (x, k) => {
-        let factorial = 1;
-        for (let i = 2; i <= k; i++) factorial *= i;
-        return Math.cos(k * x) / factorial;
-      },
-      Mk: (k) => {
-        let factorial = 1;
-        for (let i = 2; i <= k; i++) factorial *= i;
-        return 1 / factorial;
-      },
+      term: (x, k) => Math.cos(k * x) * (INV_FACTORIALS[k] ?? 0),
+      Mk: (k) => INV_FACTORIALS[k] ?? 0,
       MkFormula: 'M_k = 1/k! (∑ = e − 1)',
       MtestPasses: true,
       domain: [0, 2 * Math.PI],

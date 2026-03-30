@@ -584,7 +584,6 @@ export interface UniformConvergenceCheck {
   supNorm: number;
   fitsInBand: boolean;
   epsilon: number;
-  n: number;
 }
 
 export interface MTestResult {
@@ -627,7 +626,6 @@ export function checkUniformConvergence(
     supNorm,
     fitsInBand: supNorm < epsilon,
     epsilon,
-    n: 0, // Caller sets this contextually
   };
 }
 
@@ -657,9 +655,9 @@ export function weierstrassMTest(
   let tailBound = 0;
   for (let k = n + 1; k <= maxK; k++) tailBound += Mk(k);
 
-  // Check if full series M_k converges (sum to maxK as proxy)
-  let totalMSum = partialMSum + tailBound;
-  const passes = totalMSum < Infinity && Mk(maxK) < 1e-10;
+  // Numeric heuristic: M-test passes if total sum is finite and tail is negligible
+  const totalMSum = partialMSum + tailBound;
+  const passes = Number.isFinite(totalMSum) && tailBound < 1e-6;
 
   // Actual sup error: ||S_maxK - S_n||_∞
   let actualSupError = 0;

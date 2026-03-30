@@ -26,8 +26,6 @@ export default function PointwiseVsUniformExplorer() {
     return checkUniformConvergence(fn, preset.limit, preset.domain, epsilon, 500);
   }, [preset, n, epsilon]);
 
-  const actualSupNorm = useMemo(() => preset.supNorm(n), [preset, n]);
-
   const svgRef = useD3<SVGSVGElement>(
     (svg) => {
       svg.selectAll('*').remove();

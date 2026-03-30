@@ -28,7 +28,7 @@ export default function UniformLimitTheoremExplorer() {
   const [mode, setMode] = useState<'uniform' | 'pointwise'>('uniform');
   const [n, setN] = useState(10);
   const [probeX, setProbeX] = useState<number | null>(null);
-  const [probeEps, setProbeEps] = useState(0.15);
+  const [probeEps] = useState(0.15);
 
   const isUniform = mode === 'uniform';
   const fn = isUniform ? uniformFn : pointwiseFn;
@@ -52,6 +52,11 @@ export default function UniformLimitTheoremExplorer() {
         const dist = Math.abs(x - a);
         if (dist < delta) delta = dist;
       }
+    }
+    // Clamp delta to domain bounds when no violation found
+    if (delta === Infinity) {
+      const [xMin, xMax] = domain;
+      delta = Math.max(0, Math.min(a - xMin, xMax - a));
     }
     const found = delta > step * 2;
     return { a, fa, eps, delta: found ? delta * 0.9 : null, found };
