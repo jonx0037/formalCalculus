@@ -1,0 +1,526 @@
+---
+title: "Mean Value Theorem & Taylor Expansion"
+subtitle: "Local approximation theory — the theorems that connect a function's derivatives to its global behavior, and the polynomial approximations that power convergence analysis in optimization"
+status: "published"
+difficulty: "intermediate"
+prerequisites:
+  - "derivative"
+  - "completeness-compactness"
+tags:
+  - "calculus"
+  - "mean-value-theorem"
+  - "rolles-theorem"
+  - "taylor-expansion"
+  - "taylor-polynomial"
+  - "remainder-estimation"
+  - "lhopitals-rule"
+  - "local-approximation"
+  - "convergence-rates"
+  - "newtons-method"
+domain: "single-variable"
+videoId: null
+notebookPath: "notebooks/mean-value-taylor/06_mean_value_taylor.ipynb"
+githubUrl: "https://github.com/jonx0037/formalCalculus/blob/main/src/content/topics/mean-value-taylor.mdx"
+datePublished: 2026-03-30
+estimatedReadTime: 55
+abstract: "The Mean Value Theorem says that if f is continuous on [a,b] and differentiable on (a,b), there exists c ∈ (a,b) where f'(c) = [f(b) - f(a)]/(b - a) — the instantaneous rate of change at some interior point equals the average rate of change over the whole interval. Geometrically, this means every secant line has a parallel tangent line somewhere between the endpoints. This single theorem has sweeping consequences: it proves that functions with zero derivative are constant, that the sign of f' determines monotonicity, and that bounded derivatives imply Lipschitz continuity. The proof goes through Rolle's theorem — the special case where f(a) = f(b), so the guaranteed interior point is a local extremum with f'(c) = 0 — which itself depends on the Extreme Value Theorem from compactness. Taylor's theorem extends the Mean Value Theorem from first-order to arbitrary-order approximation: near any point a, a sufficiently smooth function is approximated by its degree-n Taylor polynomial Tₙ(x) = Σ f⁽ᵏ⁾(a)/k! (x - a)ᵏ, with the Lagrange remainder Rₙ = f⁽ⁿ⁺¹⁾(c)/(n+1)! (x - a)ⁿ⁺¹ providing a quantitative error bound. Taylor expansion is the analytical engine behind convergence rate proofs in optimization: the descent lemma f(y) ≤ f(x) + ∇f(x)ᵀ(y - x) + (L/2)‖y - x‖² is a second-order Taylor bound, and Newton's method achieves quadratic convergence by optimizing the local quadratic Taylor model at each step."
+formalmlConnections:
+  - topic: "gradient-descent"
+    site: "formalml"
+    relationship: "The descent lemma — the cornerstone inequality in gradient descent convergence proofs — is a direct consequence of second-order Taylor expansion with Lipschitz gradient. Newton's method replaces f with its local quadratic Taylor model at each step, achieving quadratic convergence where GD achieves only linear."
+  - topic: "proximal-methods"
+    site: "formalml"
+    relationship: "Proximal operators minimize f(y) + (1/2t)‖y - x‖², which is the second-order Taylor model of f at x plus a quadratic penalty. The Moreau envelope uses the same Taylor-inspired local quadratic structure."
+  - topic: "smooth-manifolds"
+    site: "formalml"
+    relationship: "Taylor expansion on manifolds generalizes via the exponential map. The MVT extends to curves on manifolds, and Taylor approximation in local coordinates is the foundation for Riemannian optimization."
+connections:
+  - topic: "derivative"
+    relationship: "The derivative definition and differentiation rules from Topic 5 are the raw material. Rolle's theorem and MVT are statements about the derivative — they assert the existence of points where f' takes specific values. Taylor's theorem builds polynomial approximations from higher-order derivatives f', f'', ..., f⁽ⁿ⁾."
+  - topic: "completeness-compactness"
+    relationship: "Rolle's theorem requires the Extreme Value Theorem: a continuous function on [a,b] achieves its maximum and minimum. The EVT was proved in Topic 3 using compactness (Heine-Borel). The chain Rolle → MVT → Taylor is built on the compactness foundation."
+  - topic: "sequences-limits"
+    relationship: "Taylor remainder estimation involves limits of the form Rₙ(x) → 0 as n → ∞. Convergence rate analysis (linear, quadratic) for Newton's method uses the sequence convergence framework from Topic 1."
+  - topic: "epsilon-delta"
+    relationship: "The continuity and differentiability hypotheses in Rolle's theorem and MVT are formalized using the ε-δ framework from Topic 2. L'Hôpital's Rule requires careful handling of limits of ratios."
+references:
+  - type: "book"
+    title: "Understanding Analysis"
+    authors: "Abbott"
+    year: 2015
+    note: "Chapter 5 develops MVT from Rolle's theorem with exceptional clarity; Chapter 6 covers Taylor's theorem — the primary reference for our rigorous-but-accessible approach"
+  - type: "book"
+    title: "Principles of Mathematical Analysis"
+    authors: "Rudin"
+    year: 1976
+    note: "Chapter 5 on differentiation covers MVT and Taylor's theorem in the definitive compact style"
+  - type: "book"
+    title: "Calculus"
+    authors: "Spivak"
+    year: 2008
+    note: "Chapters 11–12 develop MVT and Taylor's theorem with unmatched geometric intuition alongside full rigor — exceptional treatment of the Taylor remainder"
+  - type: "book"
+    title: "Convex Optimization"
+    authors: "Boyd & Vandenberghe"
+    year: 2004
+    note: "Section 9.1 on unconstrained minimization — the descent lemma and convergence rate proofs that directly use Taylor expansion"
+  - type: "book"
+    title: "Introductory Lectures on Convex Optimization"
+    authors: "Nesterov"
+    year: 2004
+    note: "Chapter 1 develops the Lipschitz gradient framework and descent lemma — the canonical application of Taylor expansion to optimization convergence analysis"
+---
+
+import TheoremBlock from '../../components/ui/TheoremBlock.astro';
+import RollesTheoremExplorer from '../../components/viz/RollesTheoremExplorer.tsx';
+import MeanValueTheoremExplorer from '../../components/viz/MeanValueTheoremExplorer.tsx';
+import TaylorPolynomialExplorer from '../../components/viz/TaylorPolynomialExplorer.tsx';
+import TaylorRemainderExplorer from '../../components/viz/TaylorRemainderExplorer.tsx';
+import ConvergenceRateExplorer from '../../components/viz/ConvergenceRateExplorer.tsx';
+
+## Overview & Motivation
+
+You're training a neural network and observe that the loss drops from $L(\theta_0) = 2.4$ to $L(\theta_{100}) = 0.03$ over 100 gradient descent steps. Can you guarantee that at some point during training, the loss was decreasing at a rate of *exactly* $\frac{0.03 - 2.4}{100} = -0.0237$ per step? The Mean Value Theorem says *yes* — and this kind of "existence of an intermediate rate" argument is exactly what convergence proofs exploit.
+
+Moreover, *how well* can you approximate the loss near the current parameter? The tangent line approximation from [The Derivative & Chain Rule](/topics/derivative) gives a first-order answer: $L(\theta + h) \approx L(\theta) + L'(\theta) h$. But this approximation degrades as $h$ grows. Taylor expansion provides higher-order corrections — the second-order approximation $L(\theta + h) \approx L(\theta) + L'(\theta) h + \frac{1}{2} L''(\theta) h^2$ is what Newton's method uses, and the quality of these approximations determines whether your optimizer converges linearly or quadratically.
+
+This topic develops both ideas rigorously. We start with Rolle's theorem and the Mean Value Theorem — the existence results that connect local derivatives to global behavior — then build Taylor's theorem, which extends linear approximation to polynomial approximation of arbitrary degree. The MVT earns its name through three sweeping consequences: zero derivative implies constant, derivative sign determines monotonicity, and bounded derivatives imply Lipschitz continuity. Taylor's theorem earns its keep by powering every convergence rate proof in optimization.
+
+**Prerequisites:** We use the derivative definition and differentiation rules from [The Derivative & Chain Rule](/topics/derivative), and the Extreme Value Theorem from [Completeness & Compactness](/topics/completeness-compactness) — specifically, that a continuous function on a closed bounded interval $[a, b]$ achieves its maximum and minimum.
+
+## Rolle's Theorem
+
+### The geometric picture
+
+Imagine a continuous curve that starts and ends at the same height — say, you drive from home, travel some distance, and return to the same elevation. At some point during the trip, your altitude was neither increasing nor decreasing: you were at a turning point. In the language of calculus, there must be at least one point where the tangent to the curve is horizontal.
+
+This is Rolle's theorem in a sentence: if $f(a) = f(b)$ and $f$ is smooth enough in between, then $f'(c) = 0$ for some interior point $c$.
+
+<TheoremBlock type="theorem" number={1} title="Rolle's Theorem">
+Let $f$ be continuous on $[a, b]$ and differentiable on $(a, b)$, with $f(a) = f(b)$. Then there exists $c \in (a, b)$ such that $f'(c) = 0$.
+</TheoremBlock>
+
+<TheoremBlock type="proof" number={1}>
+By the Extreme Value Theorem — which we proved in [Completeness & Compactness](/topics/completeness-compactness) using the Heine-Borel theorem — the continuous function $f$ on the compact set $[a, b]$ achieves its maximum value $M$ and its minimum value $m$.
+
+**Case 1:** If $M = m$, then $f$ is constant on $[a, b]$, so $f'(c) = 0$ for every $c \in (a, b)$.
+
+**Case 2:** If $M \neq m$, then since $f(a) = f(b)$, at least one of $M$ or $m$ is achieved at an interior point $c \in (a, b)$ (both endpoints have the same value, so if the max *and* the min were both at the endpoints, we'd have $M = f(a) = f(b) = m$, contradicting $M \neq m$).
+
+Without loss of generality, suppose $f(c) = M$ with $c \in (a, b)$. Since $c$ is a local maximum and $f$ is differentiable at $c$, we have:
+
+- For $h > 0$ sufficiently small: $\frac{f(c + h) - f(c)}{h} \leq 0$ (since $f(c + h) \leq f(c) = M$), so $f'(c) \leq 0$.
+- For $h < 0$ sufficiently small: $\frac{f(c + h) - f(c)}{h} \geq 0$ (since $f(c + h) \leq f(c)$ and $h < 0$), so $f'(c) \geq 0$.
+
+Together: $f'(c) = 0$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={1} title="Rolle's on f(x) = x² − 4x + 3 on [1, 3]">
+We verify: $f(1) = 1 - 4 + 3 = 0$ and $f(3) = 9 - 12 + 3 = 0$, so $f(a) = f(b)$. The derivative is $f'(x) = 2x - 4$, which vanishes at $c = 2 \in (1, 3)$. Geometrically, the parabola dips below the $x$-axis and turns around at its vertex $x = 2$.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={1} title="Why all three hypotheses matter">
+Each hypothesis in Rolle's theorem is essential — removing any one produces a counterexample:
+
+**(i) Not continuous:** Define $f$ on $[0, 1]$ by $f(x) = 0$ for $x < 1/2$ and $f(x) = 0$ for $x \geq 1/2$ except $f(1/2) = 1$. Then $f(0) = f(1) = 0$, but $f$ has a jump discontinuity and may have no zero of $f'$.
+
+**(ii) Not differentiable:** $f(x) = |x|$ on $[-1, 1]$ has $f(-1) = f(1) = 1$, but $f'(0)$ does not exist (the left and right derivatives disagree — we saw this in [The Derivative & Chain Rule](/topics/derivative), Example 3). The minimum of $|x|$ is at $x = 0$, exactly where differentiability fails.
+
+**(iii) Not $f(a) = f(b)$:** The function $f(x) = x$ on $[0, 1]$ has $f'(x) = 1 \neq 0$ everywhere. Without the equal-endpoint condition, there's no reason to expect a horizontal tangent.
+
+Try toggling "Break hypotheses" in the explorer below to see each failure mode.
+</TheoremBlock>
+
+<RollesTheoremExplorer client:visible />
+
+![Rolle's theorem on three different functions, showing f(a) = f(b) and the horizontal tangent at c](/images/topics/mean-value-taylor/rolles-theorem.png)
+
+## The Mean Value Theorem
+
+### From horizontal to parallel
+
+Rolle's theorem requires $f(a) = f(b)$ — a strong condition. The Mean Value Theorem removes it. The key insight is geometric: tilt your head until the secant line connecting $(a, f(a))$ and $(b, f(b))$ is horizontal, and you're back to Rolle's setup. More precisely, subtract the secant line from $f$, and the resulting function has equal endpoints.
+
+<TheoremBlock type="theorem" number={2} title="The Mean Value Theorem">
+Let $f$ be continuous on $[a, b]$ and differentiable on $(a, b)$. Then there exists $c \in (a, b)$ such that
+
+$$f'(c) = \frac{f(b) - f(a)}{b - a}.$$
+
+In words: the instantaneous rate of change at some interior point $c$ equals the average rate of change over $[a, b]$.
+</TheoremBlock>
+
+<TheoremBlock type="proof" number={2}>
+Define the auxiliary function
+
+$$g(x) = f(x) - \frac{f(b) - f(a)}{b - a}(x - a).$$
+
+This is $f$ minus the secant line through $(a, f(a))$ and $(b, f(b))$.
+
+**Check the hypotheses of Rolle's theorem:**
+- $g$ is continuous on $[a, b]$ (difference of continuous functions).
+- $g$ is differentiable on $(a, b)$ (difference of differentiable functions).
+- $g(a) = f(a) - 0 = f(a)$ and $g(b) = f(b) - \frac{f(b) - f(a)}{b - a}(b - a) = f(b) - (f(b) - f(a)) = f(a)$, so $g(a) = g(b)$.
+
+By Rolle's theorem, there exists $c \in (a, b)$ with $g'(c) = 0$. Since
+
+$$g'(x) = f'(x) - \frac{f(b) - f(a)}{b - a},$$
+
+we get $f'(c) = \frac{f(b) - f(a)}{b - a}$.
+</TheoremBlock>
+
+The proof is a one-line reduction to Rolle's theorem — but it's the *choice* of the auxiliary function $g$ that makes it work. The idea is to subtract exactly the right linear function so that the endpoints align.
+
+<TheoremBlock type="example" number={2} title="MVT on f(x) = x³ on [0, 2]">
+The secant slope is $\frac{f(2) - f(0)}{2 - 0} = \frac{8}{2} = 4$. We need $f'(c) = 3c^2 = 4$, so $c = \frac{2}{\sqrt{3}} \approx 1.155 \in (0, 2)$.
+
+Drag the $a$ and $b$ sliders in the explorer below to see how the secant line and the parallel tangent change for different intervals.
+</TheoremBlock>
+
+<MeanValueTheoremExplorer client:visible />
+
+![The Mean Value Theorem: secant line and parallel tangent for two functions](/images/topics/mean-value-taylor/mean-value-theorem.png)
+
+## Consequences of the Mean Value Theorem
+
+The MVT is the bridge between *local* information (the derivative at a point) and *global* behavior (the function's values over an interval). Three consequences demonstrate its power — and each one is a workhorse in analysis and optimization.
+
+<TheoremBlock type="corollary" number={1} title="Zero Derivative Implies Constant">
+If $f$ is differentiable on $(a, b)$ and $f'(x) = 0$ for all $x \in (a, b)$, then $f$ is constant on $(a, b)$.
+</TheoremBlock>
+
+<TheoremBlock type="proof" number={3}>
+For any $x_1, x_2 \in (a, b)$ with $x_1 < x_2$, the MVT gives
+
+$$f(x_2) - f(x_1) = f'(c)(x_2 - x_1) = 0 \cdot (x_2 - x_1) = 0$$
+
+for some $c \in (x_1, x_2)$. Hence $f(x_1) = f(x_2)$ for all $x_1, x_2 \in (a, b)$.
+</TheoremBlock>
+
+<TheoremBlock type="corollary" number={2} title="Monotonicity from Derivative Sign">
+Let $f$ be differentiable on $(a, b)$.
+- If $f'(x) > 0$ for all $x \in (a, b)$, then $f$ is strictly increasing on $(a, b)$.
+- If $f'(x) < 0$ for all $x \in (a, b)$, then $f$ is strictly decreasing on $(a, b)$.
+</TheoremBlock>
+
+<TheoremBlock type="proof" number={4}>
+Suppose $f'(x) > 0$ on $(a, b)$ and take $x_1 < x_2$ in $(a, b)$. By the MVT, there exists $c \in (x_1, x_2)$ with
+
+$$f(x_2) - f(x_1) = f'(c)(x_2 - x_1).$$
+
+Since $f'(c) > 0$ and $x_2 - x_1 > 0$, we get $f(x_2) - f(x_1) > 0$, i.e., $f(x_1) < f(x_2)$. The decreasing case is symmetric.
+</TheoremBlock>
+
+<TheoremBlock type="corollary" number={3} title="Bounded Derivative Implies Lipschitz">
+If $f$ is differentiable on $(a, b)$ and $|f'(x)| \leq M$ for all $x \in (a, b)$, then
+
+$$|f(x) - f(y)| \leq M|x - y| \quad \text{for all } x, y \in (a, b).$$
+</TheoremBlock>
+
+<TheoremBlock type="proof" number={5}>
+By the MVT, $|f(x) - f(y)| = |f'(c)| \cdot |x - y| \leq M|x - y|$.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={2} title="Lipschitz continuity and ML">
+The Lipschitz constant $M$ bounds how fast $f$ can change. In machine learning, the **Lipschitz gradient condition** $\|\nabla f(x) - \nabla f(y)\| \leq L\|x - y\|$ is the single most important regularity assumption in convergence proofs for gradient descent. It comes directly from applying the MVT (or its multivariable analog) to $\nabla f$: if $\nabla^2 f$ exists and $\|\nabla^2 f\| \leq L$, then the gradient is $L$-Lipschitz. This $L$ determines the maximum safe learning rate $\eta \leq 1/L$ and the convergence rate $O(1/k)$ for gradient descent on convex functions. (→ formalML: <a href="https://formalml.com/topics/gradient-descent" target="_blank" rel="noopener">Gradient Descent</a>)
+</TheoremBlock>
+
+![Consequences of MVT: zero derivative implies constant, positive derivative implies increasing, bounded derivative implies Lipschitz](/images/topics/mean-value-taylor/mvt-consequences.png)
+
+## Cauchy's Mean Value Theorem and L'Hôpital's Rule
+
+The standard MVT compares $f$ to the identity function $g(x) = x$. Cauchy's generalization compares *two* functions simultaneously.
+
+<TheoremBlock type="theorem" number={3} title="Cauchy's Mean Value Theorem">
+Let $f$ and $g$ be continuous on $[a, b]$ and differentiable on $(a, b)$, with $g'(x) \neq 0$ for all $x \in (a, b)$. Then there exists $c \in (a, b)$ such that
+
+$$\frac{f'(c)}{g'(c)} = \frac{f(b) - f(a)}{g(b) - g(a)}.$$
+</TheoremBlock>
+
+<TheoremBlock type="proof" number={6}>
+First note that $g(b) \neq g(a)$ (otherwise, Rolle's theorem applied to $g$ would give $g'(c) = 0$ for some $c$, contradicting our hypothesis). Define
+
+$$h(x) = f(x)(g(b) - g(a)) - g(x)(f(b) - f(a)).$$
+
+Then $h$ is continuous on $[a, b]$, differentiable on $(a, b)$, and $h(a) = f(a)g(b) - g(a)f(b) = h(b)$. By Rolle's theorem, there exists $c \in (a, b)$ with $h'(c) = 0$:
+
+$$f'(c)(g(b) - g(a)) = g'(c)(f(b) - f(a)).$$
+
+Since $g'(c) \neq 0$ and $g(b) - g(a) \neq 0$, dividing gives the result.
+</TheoremBlock>
+
+The standard MVT is the special case $g(x) = x$. The power of Cauchy's version is that it lets us evaluate limits of *ratios* — which brings us to L'Hôpital's Rule.
+
+<TheoremBlock type="theorem" number={4} title="L'Hôpital's Rule (0/0 form)">
+Suppose $f$ and $g$ are differentiable near $a$ (except possibly at $a$), with $g'(x) \neq 0$ near $a$. If
+
+$$\lim_{x \to a} f(x) = 0 \quad \text{and} \quad \lim_{x \to a} g(x) = 0,$$
+
+and the limit $\lim_{x \to a} \frac{f'(x)}{g'(x)} = L$ exists (finite or $\pm\infty$), then
+
+$$\lim_{x \to a} \frac{f(x)}{g(x)} = L.$$
+</TheoremBlock>
+
+<TheoremBlock type="proof" number={7}>
+Define $f(a) = g(a) = 0$ so that $f$ and $g$ are continuous at $a$. For $x$ near $a$ with $x \neq a$, Cauchy's MVT on $[a, x]$ (or $[x, a]$) gives a point $c_x$ between $a$ and $x$ with
+
+$$\frac{f(x)}{g(x)} = \frac{f(x) - f(a)}{g(x) - g(a)} = \frac{f'(c_x)}{g'(c_x)}.$$
+
+As $x \to a$, $c_x \to a$ (squeezed between $x$ and $a$), so $\frac{f'(c_x)}{g'(c_x)} \to L$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={3} title="L'Hôpital's applied: lim sin(x)/x">
+$\lim_{x \to 0} \frac{\sin x}{x}$ is the $0/0$ form. Applying L'Hôpital's:
+
+$$\lim_{x \to 0} \frac{\sin x}{x} = \lim_{x \to 0} \frac{\cos x}{1} = 1.$$
+
+We previously established this limit geometrically (a squeeze argument involving areas). Now we have a second, purely analytical proof via Cauchy's MVT. Both proofs are valid; the geometric argument is more elementary, while L'Hôpital's is more general.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={3} title="L'Hôpital's caveats">
+L'Hôpital's Rule is a *sufficient* condition, not a necessary one. The limit $\lim_{x \to 0} \frac{x^2 \sin(1/x)}{x} = \lim_{x \to 0} x \sin(1/x) = 0$ exists, but $\lim_{x \to 0} \frac{2x \sin(1/x) - \cos(1/x)}{1}$ does not exist (the $\cos(1/x)$ term oscillates). So L'Hôpital's fails to apply, yet the original limit exists.
+
+The rule also applies to the $\infty/\infty$ form, to limits as $x \to \infty$, and (via algebraic rearrangement) to $0 \cdot \infty$ and $\infty - \infty$ indeterminate forms.
+</TheoremBlock>
+
+![L'Hôpital's Rule applied to sin(x)/x and (eˣ − 1)/x](/images/topics/mean-value-taylor/lhopitals-rule.png)
+
+## Taylor Polynomials
+
+### From linear to polynomial approximation
+
+In [The Derivative & Chain Rule](/topics/derivative), we saw that the tangent line $T_1(x) = f(a) + f'(a)(x - a)$ is the best *linear* approximation to $f$ near $a$ — "best" meaning that the error $f(x) - T_1(x)$ vanishes faster than $|x - a|$ as $x \to a$. But what if we allow *quadratic* approximation?
+
+The best quadratic that matches $f$ in value, slope, and curvature at $a$ is
+
+$$T_2(x) = f(a) + f'(a)(x - a) + \frac{f''(a)}{2}(x - a)^2.$$
+
+The coefficient $f''(a)/2$ is chosen so that $T_2''(a) = f''(a)$ — the curvatures agree. The pattern continues: the degree-$n$ Taylor polynomial matches $f$ through its first $n$ derivatives at $a$.
+
+<TheoremBlock type="definition" number={1} title="Taylor Polynomial">
+Let $f$ be $n$-times differentiable at $a$. The **degree-$n$ Taylor polynomial of $f$ centered at $a$** is
+
+$$T_n(x) = \sum_{k=0}^{n} \frac{f^{(k)}(a)}{k!}(x - a)^k = f(a) + f'(a)(x - a) + \frac{f''(a)}{2!}(x - a)^2 + \cdots + \frac{f^{(n)}(a)}{n!}(x - a)^n.$$
+
+The special case $a = 0$ gives the **Maclaurin polynomial**.
+</TheoremBlock>
+
+<TheoremBlock type="proposition" number={1} title="Taylor Polynomial as Best Polynomial Approximation">
+Among all polynomials $p$ of degree $\leq n$, the Taylor polynomial $T_n$ is the unique polynomial satisfying $p^{(k)}(a) = f^{(k)}(a)$ for $k = 0, 1, \ldots, n$. Equivalently, the error $f(x) - T_n(x)$ vanishes to order $n$ at $a$:
+
+$$\lim_{x \to a} \frac{f(x) - T_n(x)}{(x - a)^n} = 0.$$
+</TheoremBlock>
+
+<TheoremBlock type="example" number={4} title="Taylor polynomials of eˣ at a = 0">
+Since all derivatives of $e^x$ equal $e^x$, we have $f^{(k)}(0) = 1$ for all $k$:
+
+$$T_n(x) = 1 + x + \frac{x^2}{2!} + \frac{x^3}{3!} + \cdots + \frac{x^n}{n!}.$$
+
+As $n$ increases, $T_n$ approximates $e^x$ over a wider and wider interval. Try increasing the degree in the explorer below to watch the polynomial "hug" the exponential.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={5} title="Taylor polynomials of sin(x) at a = 0">
+The derivatives of $\sin x$ cycle: $\sin, \cos, -\sin, -\cos, \sin, \ldots$ At $x = 0$: $f(0) = 0$, $f'(0) = 1$, $f''(0) = 0$, $f'''(0) = -1$, $f^{(4)}(0) = 0$, $f^{(5)}(0) = 1, \ldots$
+
+Only odd terms survive:
+
+$$T_{2n+1}(x) = x - \frac{x^3}{3!} + \frac{x^5}{5!} - \frac{x^7}{7!} + \cdots + \frac{(-1)^n x^{2n+1}}{(2n+1)!}.$$
+
+The pattern reflects the odd symmetry of $\sin$ — an odd function's Taylor series has only odd powers.
+</TheoremBlock>
+
+<TaylorPolynomialExplorer client:visible />
+
+![Taylor polynomials of degrees 1, 3, and 7 approximating eˣ](/images/topics/mean-value-taylor/taylor-approximation.png)
+
+## Taylor's Theorem (with Remainder)
+
+The Taylor polynomial $T_n$ approximates $f$ — but how well? Taylor's theorem gives a *quantitative* error bound via the remainder term $R_n(x) = f(x) - T_n(x)$.
+
+<TheoremBlock type="theorem" number={5} title="Taylor's Theorem (Lagrange Remainder)">
+Let $f$ be $(n+1)$-times differentiable on an open interval containing $a$ and $x$. Then
+
+$$f(x) = T_n(x) + R_n(x), \quad \text{where} \quad R_n(x) = \frac{f^{(n+1)}(c)}{(n+1)!}(x - a)^{n+1}$$
+
+for some $c$ between $a$ and $x$.
+</TheoremBlock>
+
+<TheoremBlock type="proof" number={8}>
+We prove this by applying Rolle's theorem to a carefully constructed auxiliary function. Fix $x \neq a$ and define the constant $K$ by
+
+$$f(x) = T_n(x) + K(x - a)^{n+1},$$
+
+so that $K = \frac{f(x) - T_n(x)}{(x - a)^{n+1}}$. Our goal is to show that $K = \frac{f^{(n+1)}(c)}{(n+1)!}$ for some $c$ between $a$ and $x$.
+
+Define
+
+$$\phi(t) = f(t) - T_n^{(a \to t)}(x) - K(x - t)^{n+1},$$
+
+where $T_n^{(a \to t)}(x) = \sum_{k=0}^{n} \frac{f^{(k)}(t)}{k!}(x - t)^k$ is the degree-$n$ Taylor polynomial of $f$ centered at $t$ and evaluated at $x$ (note: $t$ is the variable, $x$ is fixed).
+
+We verify: $\phi(x) = f(x) - f(x) - 0 = 0$ (the Taylor polynomial centered at $x$ evaluated at $x$ is just $f(x)$). And $\phi(a) = f(a) - T_n(x) - K(x - a)^{n+1} = 0$ by our choice of $K$.
+
+Since $\phi(a) = \phi(x) = 0$, Rolle's theorem gives some $c$ between $a$ and $x$ with $\phi'(c) = 0$.
+
+Differentiating $\phi$ with respect to $t$ (and using the telescoping cancellation — each term in the Taylor sum has its derivative cancel with a piece of the next term):
+
+$$\phi'(t) = -\frac{f^{(n+1)}(t)}{n!}(x - t)^n + K(n+1)(x - t)^n.$$
+
+Setting $\phi'(c) = 0$ and dividing by $(x - c)^n \neq 0$:
+
+$$K = \frac{f^{(n+1)}(c)}{(n+1) \cdot n!} = \frac{f^{(n+1)}(c)}{(n+1)!}.$$
+
+This is the Lagrange form of the remainder.
+
+**Note:** The base case $n = 0$ gives $f(x) = f(a) + f'(c)(x - a)$, which is exactly the Mean Value Theorem. Taylor's theorem is the higher-order generalization of the MVT.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={4} title="The integral form of the remainder">
+An alternative expression for the remainder is
+
+$$R_n(x) = \int_a^x \frac{f^{(n+1)}(t)}{n!}(x - t)^n \, dt.$$
+
+This avoids the unknown point $c$ and is sometimes more useful for estimation. The integral form will be re-derived using the Fundamental Theorem of Calculus in **The Riemann Integral & FTC** *(coming soon)*.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={6} title="Taylor remainder for eˣ">
+For $f(x) = e^x$ with $a = 0$: all derivatives are $e^x$, so $f^{(n+1)}(c) = e^c$ for some $c$ between $0$ and $x$. The Lagrange remainder is
+
+$$|R_n(x)| = \frac{e^c}{(n+1)!}|x|^{n+1} \leq \frac{e^{|x|}}{(n+1)!}|x|^{n+1}.$$
+
+For any fixed $x$, $R_n(x) \to 0$ as $n \to \infty$ because the factorial $(n+1)!$ grows faster than any power $|x|^{n+1}$. This proves that $e^x = \sum_{k=0}^{\infty} \frac{x^k}{k!}$ converges for all $x \in \mathbb{R}$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={7} title="Taylor remainder for sin(x)">
+For $f(x) = \sin x$ with $a = 0$: all derivatives of $\sin$ are bounded by $1$ in absolute value, so
+
+$$|R_n(x)| \leq \frac{1}{(n+1)!}|x|^{n+1} \to 0 \quad \text{as } n \to \infty$$
+
+for any fixed $x$. The Maclaurin series of $\sin x$ converges to $\sin x$ for all $x$.
+</TheoremBlock>
+
+<TaylorRemainderExplorer client:visible />
+
+![Actual Taylor error vs. Lagrange bound for eˣ and sin(x)](/images/topics/mean-value-taylor/taylor-remainder.png)
+
+## When Taylor Series Fail
+
+Not every smooth function equals its Taylor series. The fact that Taylor polynomials approximate well *locally* (small $|x - a|$, fixed $n$) does not guarantee that the Taylor *series* converges to $f$ (fixed $x$, $n \to \infty$).
+
+<TheoremBlock type="example" number={8} title="Smooth but not analytic: f(x) = e^{−1/x²}">
+Define
+
+$$f(x) = \begin{cases} e^{-1/x^2} & \text{if } x \neq 0, \\ 0 & \text{if } x = 0. \end{cases}$$
+
+This function is $C^\infty$ (infinitely differentiable) everywhere. At $x = 0$, one can show by induction (using L'Hôpital's Rule from §5 at each step) that $f^{(k)}(0) = 0$ for all $k \geq 0$. So the Taylor series at $0$ is
+
+$$T(x) = 0 + 0 + 0 + \cdots = 0,$$
+
+but $f(x) > 0$ for all $x \neq 0$. The Taylor series converges (to $0$), but it does not converge to $f(x)$. The function "flattens" against zero so aggressively at $x = 0$ that no polynomial can detect the non-zero values away from the origin.
+</TheoremBlock>
+
+<TheoremBlock type="definition" number={2} title="Analytic Function">
+A function $f$ is **analytic** at $a$ if its Taylor series at $a$ converges to $f(x)$ in some neighborhood of $a$: there exists $r > 0$ such that $f(x) = \sum_{k=0}^{\infty} \frac{f^{(k)}(a)}{k!}(x - a)^k$ for all $|x - a| < r$.
+</TheoremBlock>
+
+Most functions encountered in practice — $e^x$, $\sin x$, $\cos x$, polynomials, rational functions away from poles — are analytic. The function $e^{-1/x^2}$ is the standard example of *smooth but not analytic*.
+
+<TheoremBlock type="remark" number={5} title="Smooth vs. analytic in ML">
+In practice, loss functions in ML are typically compositions of analytic functions (exponentials, logarithms, polynomials), so the Taylor expansion is a reliable local model. ReLU is piecewise linear (hence piecewise analytic). The distinction between smooth and analytic matters more in theory — the existence of smooth bump functions (which are $C^\infty$ with compact support and are *not* analytic) is essential for partition-of-unity arguments in differential geometry. (→ formalML: <a href="https://formalml.com/topics/smooth-manifolds" target="_blank" rel="noopener">Smooth Manifolds</a>)
+</TheoremBlock>
+
+![The function exp(-1/x squared) and its Taylor series (identically zero)](/images/topics/mean-value-taylor/smooth-not-analytic.png)
+
+## Connections to ML — Taylor Expansion in Optimization
+
+Taylor expansion is not just *used* in ML proofs — it is the primary analytical technique for understanding optimization algorithms.
+
+### The descent lemma
+
+Suppose $f$ is twice differentiable and $\nabla f$ is $L$-Lipschitz: $\|\nabla f(x) - \nabla f(y)\| \leq L\|x - y\|$. By the second-order Taylor expansion with Lagrange remainder (in one dimension, this is Theorem 5 with $n = 1$):
+
+$$f(y) = f(x) + f'(x)(y - x) + \frac{f''(c)}{2}(y - x)^2$$
+
+for some $c$ between $x$ and $y$. Since $|f''(c)| \leq L$ (the Lipschitz gradient condition — Corollary 3 applied to $f'$), we get the **descent lemma**:
+
+$$f(y) \leq f(x) + f'(x)(y - x) + \frac{L}{2}(y - x)^2.$$
+
+Setting $y = x - \frac{1}{L}f'(x)$ (a gradient descent step with learning rate $\eta = 1/L$) and simplifying:
+
+$$f(y) \leq f(x) - \frac{1}{2L}(f'(x))^2.$$
+
+Each GD step decreases $f$ by at least $\frac{1}{2L}|f'(x)|^2$. This is the foundation of every gradient descent convergence proof.
+
+### Newton's method
+
+Newton's method approximates $f$ by its local *quadratic* Taylor model:
+
+$$m(x) = f(x_k) + f'(x_k)(x - x_k) + \frac{1}{2}f''(x_k)(x - x_k)^2.$$
+
+Minimizing $m$ gives $m'(x) = 0$, yielding the Newton update:
+
+$$x_{k+1} = x_k - \frac{f'(x_k)}{f''(x_k)}.$$
+
+For root-finding (solve $g(x) = 0$), the linear Taylor model $g(x_k) + g'(x_k)(x - x_k) = 0$ gives $x_{k+1} = x_k - \frac{g(x_k)}{g'(x_k)}$. Near a root, the Taylor remainder analysis shows the error satisfies $|x_{k+1} - x^*| \leq C|x_k - x^*|^2$ — **quadratic convergence**. Each iteration roughly doubles the number of correct digits.
+
+### Convergence rate comparison
+
+Using Taylor expansion, we can compare:
+- **Gradient descent** (first-order, uses $T_1$ model): linear convergence $|x_k - x^*| \leq r^k$ for some $r < 1$.
+- **Newton's method** (second-order, uses $T_2$ model): quadratic convergence $|x_k - x^*| \leq C \cdot r^{2^k}$, which is *doubly exponential* decay.
+
+The practical trade-off: Newton needs $f''$ (the Hessian in higher dimensions), which is expensive to compute. This is why quasi-Newton methods like L-BFGS exist — they approximate the second-order Taylor model cheaply. (→ formalML: <a href="https://formalml.com/topics/gradient-descent" target="_blank" rel="noopener">Gradient Descent</a>)
+
+<ConvergenceRateExplorer client:visible />
+
+![Convergence rate comparison: gradient descent (linear) vs Newton's method (quadratic)](/images/topics/mean-value-taylor/convergence-rate-comparison.png)
+
+## Computational Notes
+
+Taylor approximation is straightforward to implement numerically. In Python:
+
+```python
+import numpy as np
+from math import factorial
+
+def taylor_polynomial(f_derivs, a, n, x):
+    """Evaluate the degree-n Taylor polynomial of f at x.
+    f_derivs: list of derivative functions [f, f', f'', ...]
+    """
+    return sum(f_derivs[k](a) / factorial(k) * (x - a)**k for k in range(n + 1))
+
+# Taylor polynomials of e^x at a = 0
+x = np.linspace(-3, 3, 1000)
+for n in [1, 3, 5, 10]:
+    T_n = sum((x**k) / factorial(k) for k in range(n + 1))
+    max_error = np.max(np.abs(np.exp(x) - T_n))
+    print(f"T_{n}: max error on [-3,3] = {max_error:.6e}")
+```
+
+For Newton's method in practice, SciPy provides `scipy.optimize.minimize(f, x0, method='Newton-CG')`, which implements a Newton-conjugate gradient method that approximates the Hessian-vector product without forming the full Hessian matrix.
+
+![Taylor polynomial accuracy vs. degree and distance from center](/images/topics/mean-value-taylor/numerical-taylor.png)
+
+## Connections & Further Reading
+
+### Within formalCalculus
+
+This topic builds directly on:
+- [**The Derivative & Chain Rule**](/topics/derivative) — the derivative definition, differentiation rules, and chain rule that are the raw material for Rolle's theorem, MVT, and Taylor expansion.
+- [**Completeness & Compactness**](/topics/completeness-compactness) — the Extreme Value Theorem (via Heine-Borel) that powers Rolle's theorem.
+- [**Sequences, Limits & Convergence**](/topics/sequences-limits) — the convergence framework for Taylor remainder analysis and Newton's method error sequences.
+- [**Epsilon-Delta & Continuity**](/topics/epsilon-delta) — the continuity hypotheses in Rolle's and MVT, and the limit machinery for L'Hôpital's Rule.
+
+### Coming next
+
+- [**Mean Value Theorem & Taylor Expansion**](/topics/mean-value-taylor) — you are here.
+- **The Riemann Integral & FTC** *(coming soon)* — the Fundamental Theorem of Calculus uses the MVT in its proof. Taylor's theorem provides the integral form of the remainder $R_n(x) = \int_a^x \frac{f^{(n+1)}(t)}{n!}(x-t)^n \, dt$.
+- **Improper Integrals & Special Functions** *(coming soon)* — Taylor expansion of integrands near singularities, Stirling's approximation for the Gamma function.
+- **Power Series & Taylor Series** *(coming soon)* — Taylor polynomials are finite truncations of Taylor series. This topic provided the approximation theory; the series topic addresses convergence of the infinite sum.
+- **Partial Derivatives & the Gradient** *(coming soon)* — the MVT generalizes to the multivariable setting. The descent lemma in $\mathbb{R}^n$ uses the multivariable second-order Taylor expansion.
+- **The Hessian & Second-Order Analysis** *(coming soon)* — Newton's method in $\mathbb{R}^n$ uses the Hessian matrix $\nabla^2 f$, the multivariable analog of $f''$, in the local quadratic Taylor model.
+
+### Forward links to formalML
+
+- <a href="https://formalml.com/topics/gradient-descent" target="_blank" rel="noopener">Gradient Descent</a> → formalML — descent lemma, convergence rates, and the role of Taylor expansion in optimization analysis.
+- <a href="https://formalml.com/topics/proximal-methods" target="_blank" rel="noopener">Proximal Methods</a> → formalML — proximal operators as quadratic Taylor models with regularization.
+- <a href="https://formalml.com/topics/smooth-manifolds" target="_blank" rel="noopener">Smooth Manifolds</a> → formalML — Taylor expansion on manifolds, smooth bump functions, and partition of unity.
