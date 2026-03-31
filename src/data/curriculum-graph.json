@@ -6,7 +6,7 @@
     { "id": "uniform-convergence", "label": "Uniform Convergence", "domain": "limits-continuity", "status": "published", "url": "/topics/uniform-convergence" },
 
     { "id": "derivative", "label": "The Derivative & Chain Rule", "domain": "single-variable", "status": "published", "url": "/topics/derivative" },
-    { "id": "mean-value-taylor", "label": "Mean Value Theorem & Taylor Expansion", "domain": "single-variable", "status": "planned", "url": "/topics/mean-value-taylor" },
+    { "id": "mean-value-taylor", "label": "Mean Value Theorem & Taylor Expansion", "domain": "single-variable", "status": "published", "url": "/topics/mean-value-taylor" },
     { "id": "riemann-integral", "label": "The Riemann Integral & FTC", "domain": "single-variable", "status": "planned", "url": "/topics/riemann-integral" },
     { "id": "improper-integrals", "label": "Improper Integrals & Special Functions", "domain": "single-variable", "status": "planned", "url": "/topics/improper-integrals" },
 
@@ -53,6 +53,7 @@
     { "source": "sequences-limits", "target": "derivative" },
     { "source": "epsilon-delta", "target": "derivative" },
     { "source": "derivative", "target": "mean-value-taylor" },
+    { "source": "completeness-compactness", "target": "mean-value-taylor" },
     { "source": "sequences-limits", "target": "riemann-integral" },
     { "source": "epsilon-delta", "target": "riemann-integral" },
     { "source": "riemann-integral", "target": "improper-integrals" },

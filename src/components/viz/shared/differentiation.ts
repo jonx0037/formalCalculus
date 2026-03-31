@@ -10,6 +10,9 @@
  *  - Chain rule evaluation for composed functions
  *  - Derivative curve generation
  *  - Weierstrass nowhere-differentiable function
+ *  - Taylor polynomial computation and evaluation (Topic 6)
+ *  - Mean Value Theorem point-finding (Topic 6)
+ *  - Newton's method and gradient descent trajectories (Topic 6)
  */
 
 import type { Point2D } from './types';
@@ -523,4 +526,343 @@ export function numericalDifferentiationErrors(
     centralError,
     richardsonError,
   };
+}
+
+// ── Taylor polynomial computation (Topic 6) ─────────────────
+
+export interface TaylorPolynomial {
+  /** Expansion center a */
+  center: number;
+  /** Polynomial degree n */
+  degree: number;
+  /** Coefficients: coefficients[k] = f^(k)(a) / k! */
+  coefficients: number[];
+}
+
+export interface TaylorEvaluation {
+  /** Evaluation point */
+  x: number;
+  /** Taylor polynomial value T_n(x) */
+  taylorValue: number;
+  /** Exact function value f(x) */
+  exactValue: number;
+  /** Absolute error |f(x) - T_n(x)| */
+  error: number;
+  /** Lagrange remainder bound, null if M_{n+1} not provided */
+  lagrangeBound: number | null;
+}
+
+export interface MVTResult {
+  /** Left endpoint */
+  a: number;
+  /** Right endpoint */
+  b: number;
+  /** Secant slope (f(b) - f(a)) / (b - a) */
+  secantSlope: number;
+  /** Interior point where f'(c) = secant slope */
+  c: number;
+  /** Value f'(c) at the MVT point */
+  fPrimeC: number;
+}
+
+export interface NewtonStep {
+  /** Current iterate */
+  x: number;
+  /** f(x) or f'(x) depending on context */
+  fx: number;
+  /** Derivative used in the update */
+  fpx: number;
+  /** Next iterate */
+  nextX: number;
+  /** Local quadratic Taylor model (for optimization) */
+  taylorModel: TaylorPolynomial | null;
+}
+
+/**
+ * Compute the degree-n Taylor polynomial of f centered at a.
+ * `derivatives` is an array [f, f', f'', ...] of functions.
+ * The array must have at least degree + 1 entries.
+ */
+export function computeTaylorPolynomial(
+  derivatives: ((x: number) => number)[],
+  center: number,
+  degree: number,
+): TaylorPolynomial {
+  const n = Math.min(degree, derivatives.length - 1);
+  const coefficients: number[] = [];
+  let factorial = 1;
+  for (let k = 0; k <= n; k++) {
+    if (k > 0) factorial *= k;
+    coefficients.push(derivatives[k](center) / factorial);
+  }
+  return { center, degree: n, coefficients };
+}
+
+/**
+ * Evaluate a Taylor polynomial at x using Horner's method.
+ * T_n(x) = a_0 + a_1*(x-c) + a_2*(x-c)^2 + ... + a_n*(x-c)^n
+ */
+export function evaluateTaylorPolynomial(
+  poly: TaylorPolynomial,
+  x: number,
+): number {
+  const dx = x - poly.center;
+  let result = 0;
+  // Horner's method: evaluate from highest degree down
+  for (let k = poly.degree; k >= 0; k--) {
+    result = result * dx + poly.coefficients[k];
+  }
+  return result;
+}
+
+/**
+ * Evaluate a Taylor polynomial and compute the approximation error.
+ * If maxDerivBound (an upper bound on |f^(n+1)| on [a,x]) is provided,
+ * also computes the Lagrange remainder bound.
+ */
+export function evaluateTaylorWithError(
+  f: (x: number) => number,
+  poly: TaylorPolynomial,
+  x: number,
+  maxDerivBound?: number,
+): TaylorEvaluation {
+  const taylorValue = evaluateTaylorPolynomial(poly, x);
+  const exactValue = f(x);
+  const error = Math.abs(exactValue - taylorValue);
+
+  let lagrangeBound: number | null = null;
+  if (maxDerivBound !== undefined) {
+    const dx = Math.abs(x - poly.center);
+    let factorial = 1;
+    for (let k = 1; k <= poly.degree + 1; k++) factorial *= k;
+    lagrangeBound = (maxDerivBound * Math.pow(dx, poly.degree + 1)) / factorial;
+  }
+
+  return { x, taylorValue, exactValue, error, lagrangeBound };
+}
+
+// ── Mean Value Theorem point-finding (Topic 6) ──────────────
+
+/**
+ * Find a single MVT point c in (a, b) where f'(c) = (f(b)-f(a))/(b-a).
+ * Uses bisection on g(x) = f'(x) - secantSlope, which is robust and
+ * guaranteed to converge whenever g has a sign change.
+ * Returns null if no sign change is detected.
+ */
+export function findMVTPoint(
+  f: (x: number) => number,
+  fPrime: (x: number) => number,
+  a: number,
+  b: number,
+  tolerance: number = 1e-12,
+): MVTResult | null {
+  if (a === b || !isFinite(a) || !isFinite(b)) return null;
+  const secantSlope = (f(b) - f(a)) / (b - a);
+  if (!isFinite(secantSlope)) return null;
+  const g = (x: number) => fPrime(x) - secantSlope;
+
+  // Scan for a sign change
+  const nScan = 200;
+  const dx = (b - a) / nScan;
+  let left = a + dx * 0.01; // avoid exact endpoints
+  let gLeft = g(left);
+
+  for (let i = 1; i <= nScan; i++) {
+    const right = a + dx * i - (i === nScan ? dx * 0.01 : 0);
+    const gRight = g(right);
+
+    if (gLeft * gRight <= 0) {
+      // Bisect this interval
+      let lo = left;
+      let hi = right;
+      for (let j = 0; j < 60; j++) {
+        const mid = (lo + hi) / 2;
+        const gMid = g(mid);
+        if (Math.abs(gMid) < tolerance) {
+          lo = mid;
+          break;
+        }
+        if (gLeft * gMid <= 0) {
+          hi = mid;
+        } else {
+          lo = mid;
+          gLeft = gMid;
+        }
+      }
+      const c = (lo + hi) / 2;
+      return { a, b, secantSlope, c, fPrimeC: fPrime(c) };
+    }
+
+    left = right;
+    gLeft = gRight;
+  }
+
+  return null;
+}
+
+/**
+ * Find all MVT points c in (a, b) that are detectable via sign changes.
+ * Scans at `resolution` equally-spaced points for sign changes of
+ * g(x) = f'(x) - secantSlope, then bisects each bracket.
+ *
+ * Note: roots of even multiplicity (where g touches zero but doesn't
+ * cross it) will not be detected by this method.
+ */
+export function findAllMVTPoints(
+  f: (x: number) => number,
+  fPrime: (x: number) => number,
+  a: number,
+  b: number,
+  resolution: number = 1000,
+  tolerance: number = 1e-12,
+): MVTResult[] {
+  if (a === b || !isFinite(a) || !isFinite(b)) return [];
+  const secantSlope = (f(b) - f(a)) / (b - a);
+  if (!isFinite(secantSlope)) return [];
+  const g = (x: number) => fPrime(x) - secantSlope;
+  const results: MVTResult[] = [];
+  const dx = (b - a) / resolution;
+
+  let prevX = a + dx * 0.001;
+  let prevG = g(prevX);
+
+  for (let i = 1; i <= resolution; i++) {
+    const currX = i < resolution ? a + dx * i : b - dx * 0.001;
+    const currG = g(currX);
+
+    if (prevG * currG <= 0 && (prevG !== 0 || currG !== 0)) {
+      // Bisect
+      let lo = prevX;
+      let hi = currX;
+      let gLo = prevG;
+      for (let j = 0; j < 60; j++) {
+        const mid = (lo + hi) / 2;
+        const gMid = g(mid);
+        if (Math.abs(gMid) < tolerance) {
+          lo = mid;
+          hi = mid;
+          break;
+        }
+        if (gLo * gMid <= 0) {
+          hi = mid;
+        } else {
+          lo = mid;
+          gLo = gMid;
+        }
+      }
+      const c = (lo + hi) / 2;
+      // Avoid duplicates (within tolerance)
+      if (results.length === 0 || Math.abs(c - results[results.length - 1].c) > tolerance * 100) {
+        results.push({ a, b, secantSlope, c, fPrimeC: fPrime(c) });
+      }
+    }
+
+    prevX = currX;
+    prevG = currG;
+  }
+
+  return results;
+}
+
+// ── Newton's method and gradient descent (Topic 6) ──────────
+
+/**
+ * One step of Newton's method for optimization:
+ * x_{k+1} = x_k - f'(x_k) / f''(x_k)
+ * Includes the local quadratic Taylor model centered at x.
+ */
+export function newtonOptimizationStep(
+  f: (x: number) => number,
+  fPrime: (x: number) => number,
+  fDoublePrime: (x: number) => number,
+  x: number,
+): NewtonStep {
+  const fx = f(x);
+  const fpx = fPrime(x);
+  const fppx = fDoublePrime(x);
+  const nextX = fppx !== 0 ? x - fpx / fppx : NaN;
+
+  // Build local T_2 model: f(x) + f'(x)(t-x) + f''(x)/2 (t-x)^2
+  const taylorModel: TaylorPolynomial = {
+    center: x,
+    degree: 2,
+    coefficients: [fx, fpx, fppx / 2],
+  };
+
+  return { x, fx, fpx, nextX, taylorModel };
+}
+
+/**
+ * One step of Newton's method for root-finding:
+ * x_{k+1} = x_k - g(x_k) / g'(x_k)
+ */
+export function newtonRootStep(
+  g: (x: number) => number,
+  gPrime: (x: number) => number,
+  x: number,
+): NewtonStep {
+  const gx = g(x);
+  const gpx = gPrime(x);
+  const nextX = gpx !== 0 ? x - gx / gpx : NaN;
+  return { x, fx: gx, fpx: gpx, nextX, taylorModel: null };
+}
+
+/**
+ * Run gradient descent for maxSteps steps.
+ * x_{k+1} = x_k - eta * f'(x_k)
+ * Returns the full trajectory including function values.
+ * Stops early if |x| exceeds divergence guard (1e6) or f(x) is non-finite.
+ */
+export function gradientDescentTrajectory(
+  f: (x: number) => number,
+  fPrime: (x: number) => number,
+  x0: number,
+  eta: number,
+  maxSteps: number,
+): Array<{ k: number; x: number; fx: number; grad: number }> {
+  const trajectory: Array<{ k: number; x: number; fx: number; grad: number }> = [];
+  let x = x0;
+
+  for (let k = 0; k <= maxSteps; k++) {
+    const fx = f(x);
+    const grad = fPrime(x);
+    trajectory.push({ k, x, fx, grad });
+
+    if (k === maxSteps) break;
+    if (Math.abs(x) > 1e6 || !isFinite(fx)) break;
+
+    x = x - eta * grad;
+  }
+
+  return trajectory;
+}
+
+/**
+ * Run Newton's optimization method for maxSteps steps.
+ * x_{k+1} = x_k - f'(x_k) / f''(x_k)
+ * Returns the full trajectory with local quadratic Taylor models.
+ */
+export function newtonTrajectory(
+  f: (x: number) => number,
+  fPrime: (x: number) => number,
+  fDoublePrime: (x: number) => number,
+  x0: number,
+  maxSteps: number,
+): Array<{ k: number; x: number; fx: number; taylorModel: TaylorPolynomial }> {
+  const trajectory: Array<{ k: number; x: number; fx: number; taylorModel: TaylorPolynomial }> = [];
+  let x = x0;
+
+  for (let k = 0; k <= maxSteps; k++) {
+    const step = newtonOptimizationStep(f, fPrime, fDoublePrime, x);
+    // newtonOptimizationStep always produces a taylorModel (non-null)
+    const model = step.taylorModel ?? { center: step.x, degree: 0, coefficients: [step.fx] };
+    trajectory.push({ k, x: step.x, fx: step.fx, taylorModel: model });
+
+    if (k === maxSteps) break;
+    if (!isFinite(step.nextX) || Math.abs(step.nextX) > 1e6) break;
+
+    x = step.nextX;
+  }
+
+  return trajectory;
 }
