@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect, useRef, type ChangeEvent } from 'react';
+import { useState, useMemo, useCallback, useEffect, type ChangeEvent } from 'react';
 import * as d3 from 'd3';
 import { useResizeObserver } from './shared/useResizeObserver';
 import { useD3 } from './shared/useD3';
@@ -105,11 +105,12 @@ export default function TaylorPolynomialExplorer() {
       const topInnerH = topHeight - margin.top - margin.bottom;
 
       // ── Y-range from original function (for clipping Taylor) ──
-      const yExtent = d3.extent(curveData, (d) => d.y) as [number, number];
-      const yRange = (yExtent[1] ?? 1) - (yExtent[0] ?? -1);
+      const yExtent = d3.extent(curveData, (d) => d.y);
+      if (yExtent[0] === undefined || yExtent[1] === undefined) return;
+      const yRange = yExtent[1] - yExtent[0];
       const yPad = yRange * 0.15 || 0.5;
-      const yMin = (yExtent[0] ?? -1) - yPad;
-      const yMax = (yExtent[1] ?? 1) + yPad;
+      const yMin = yExtent[0] - yPad;
+      const yMax = yExtent[1] + yPad;
 
       const xScale = d3.scaleLinear().domain(preset.domain).range([0, innerW]);
       const yScale = d3.scaleLinear().domain([yMin, yMax]).range([topInnerH, 0]);
@@ -244,9 +245,10 @@ export default function TaylorPolynomialExplorer() {
 
       if (errorFiltered.length === 0) return;
 
-      const errExtent = d3.extent(errorFiltered, (d) => d.y) as [number, number];
-      const errMin = Math.max(1e-16, (errExtent[0] ?? 1e-16) * 0.1);
-      const errMax = (errExtent[1] ?? 1) * 10;
+      const errExtent = d3.extent(errorFiltered, (d) => d.y);
+      if (errExtent[0] === undefined || errExtent[1] === undefined) return;
+      const errMin = Math.max(1e-16, errExtent[0] * 0.1);
+      const errMax = errExtent[1] * 10;
 
       const exScale = d3.scaleLinear().domain(preset.domain).range([0, innerW]);
       const eyScale = d3.scaleLog().domain([errMin, errMax]).range([botInnerH, 0]).clamp(true);

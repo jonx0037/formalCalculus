@@ -656,7 +656,9 @@ export function findMVTPoint(
   b: number,
   tolerance: number = 1e-12,
 ): MVTResult | null {
+  if (a === b || !isFinite(a) || !isFinite(b)) return null;
   const secantSlope = (f(b) - f(a)) / (b - a);
+  if (!isFinite(secantSlope)) return null;
   const g = (x: number) => fPrime(x) - secantSlope;
 
   // Scan for a sign change
@@ -699,9 +701,12 @@ export function findMVTPoint(
 }
 
 /**
- * Find all MVT points c in (a, b).
+ * Find all MVT points c in (a, b) that are detectable via sign changes.
  * Scans at `resolution` equally-spaced points for sign changes of
  * g(x) = f'(x) - secantSlope, then bisects each bracket.
+ *
+ * Note: roots of even multiplicity (where g touches zero but doesn't
+ * cross it) will not be detected by this method.
  */
 export function findAllMVTPoints(
   f: (x: number) => number,
@@ -711,7 +716,9 @@ export function findAllMVTPoints(
   resolution: number = 1000,
   tolerance: number = 1e-12,
 ): MVTResult[] {
+  if (a === b || !isFinite(a) || !isFinite(b)) return [];
   const secantSlope = (f(b) - f(a)) / (b - a);
+  if (!isFinite(secantSlope)) return [];
   const g = (x: number) => fPrime(x) - secantSlope;
   const results: MVTResult[] = [];
   const dx = (b - a) / resolution;
@@ -804,7 +811,7 @@ export function newtonRootStep(
  * Run gradient descent for maxSteps steps.
  * x_{k+1} = x_k - eta * f'(x_k)
  * Returns the full trajectory including function values.
- * Stops early if |x| exceeds divergence guard or gradient is near zero.
+ * Stops early if |x| exceeds divergence guard (1e6) or f(x) is non-finite.
  */
 export function gradientDescentTrajectory(
   f: (x: number) => number,
@@ -847,7 +854,9 @@ export function newtonTrajectory(
 
   for (let k = 0; k <= maxSteps; k++) {
     const step = newtonOptimizationStep(f, fPrime, fDoublePrime, x);
-    trajectory.push({ k, x: step.x, fx: step.fx, taylorModel: step.taylorModel! });
+    // newtonOptimizationStep always produces a taylorModel (non-null)
+    const model = step.taylorModel ?? { center: step.x, degree: 0, coefficients: [step.fx] };
+    trajectory.push({ k, x: step.x, fx: step.fx, taylorModel: model });
 
     if (k === maxSteps) break;
     if (!isFinite(step.nextX) || Math.abs(step.nextX) > 1e6) break;

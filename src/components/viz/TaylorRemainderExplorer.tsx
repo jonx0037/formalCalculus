@@ -203,12 +203,12 @@ export default function TaylorRemainderExplorer() {
   );
 
   return (
-    <div ref={containerRef} style={{ width: '100%' }}>
+    <div ref={containerRef} className="w-full">
       {/* Controls */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center', marginBottom: '8px' }}>
-        <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px', color: 'var(--color-text)' }}>
+      <div className="flex flex-wrap items-center gap-3 mb-2" style={{ color: 'var(--color-text)' }}>
+        <label className="flex items-center gap-1 text-sm" style={{ color: 'var(--color-text)' }}>
           Function:
-          <select value={selectedIdx} onChange={handlePresetChange} style={{ padding: '2px 6px', fontSize: '13px', background: 'var(--color-surface-alt)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: '4px' }}>
+          <select value={selectedIdx} onChange={handlePresetChange} className="text-sm rounded px-2 py-1" style={{ background: 'var(--color-surface-alt)', color: 'var(--color-text)', border: '1px solid var(--color-border)' }}>
             {presets.map((p, i) => (
               <option key={p.name} value={i}>
                 {p.label}
@@ -217,13 +217,13 @@ export default function TaylorRemainderExplorer() {
           </select>
         </label>
 
-        <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px', color: 'var(--color-text)' }}>
+        <label className="flex items-center gap-1 text-sm" style={{ color: 'var(--color-text)' }}>
           Degree n = {degree}
-          <input type="range" min={1} max={15} step={1} value={degree} onChange={handleDegreeChange} style={{ width: '100px' }} />
+          <input type="range" min={1} max={15} step={1} value={degree} onChange={handleDegreeChange} className="w-24" />
         </label>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '2px', fontSize: '13px' }}>
-          <span style={{ marginRight: '4px', color: 'var(--color-text)' }}>Show:</span>
+        <div className="flex items-center gap-0.5 text-sm">
+          <span className="mr-1" style={{ color: 'var(--color-text)' }}>Show:</span>
           {(['actual', 'bound', 'both'] as const).map((mode) => {
             const disabled = mode !== 'actual' && !hasBound;
             return (
@@ -251,7 +251,7 @@ export default function TaylorRemainderExplorer() {
       <svg ref={svgRef} width={width} height={height} style={{ overflow: 'visible' }} />
 
       {/* Readout */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', marginTop: '6px', fontSize: '12px', color: 'var(--color-text-muted)' }}>
+      <div className="flex flex-wrap gap-4 mt-1.5 text-xs" style={{ color: 'var(--color-text-muted)' }}>
         <span>
           Max actual error: <strong style={{ color: functionColors[1] }}>{maxError.toExponential(2)}</strong>
         </span>

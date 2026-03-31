@@ -94,7 +94,8 @@ export default function MeanValueTheoremExplorer() {
 
       // Scales
       const [xMin, xMax] = preset.domain;
-      const yExtent = d3.extent(curveData, (d) => d.y) as [number, number];
+      const yExtent = d3.extent(curveData, (d) => d.y);
+      if (yExtent[0] === undefined || yExtent[1] === undefined) return;
       const yPad = (yExtent[1] - yExtent[0]) * 0.12 || 0.5;
       const yMin = yExtent[0] - yPad;
       const yMax = yExtent[1] + yPad;

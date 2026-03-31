@@ -122,7 +122,7 @@ We verify: $f(1) = 1 - 4 + 3 = 0$ and $f(3) = 9 - 12 + 3 = 0$, so $f(a) = f(b)$.
 <TheoremBlock type="remark" number={1} title="Why all three hypotheses matter">
 Each hypothesis in Rolle's theorem is essential — removing any one produces a counterexample:
 
-**(i) Not continuous:** Define $f$ on $[0, 1]$ by $f(x) = 0$ for $x < 1/2$ and $f(x) = 0$ for $x \geq 1/2$ except $f(1/2) = 1$. Then $f(0) = f(1) = 0$, but $f$ has a jump discontinuity and may have no zero of $f'$.
+**(i) Not continuous:** Define $f$ on $[0, 1]$ by $f(x) = x$ for $0 \leq x < 1$ and $f(1) = 0$. Then $f(0) = f(1) = 0$, and $f$ is differentiable on $(0, 1)$ with $f'(x) = 1$ for all $x \in (0, 1)$ — so there is no $c$ with $f'(c) = 0$. The discontinuity at $x = 1$ breaks Rolle's conclusion.
 
 **(ii) Not differentiable:** $f(x) = |x|$ on $[-1, 1]$ has $f(-1) = f(1) = 1$, but $f'(0)$ does not exist (the left and right derivatives disagree — we saw this in [The Derivative & Chain Rule](/topics/derivative), Example 3). The minimum of $|x|$ is at $x = 0$, exactly where differentiability fails.
 
@@ -345,31 +345,33 @@ for some $c$ between $a$ and $x$.
 </TheoremBlock>
 
 <TheoremBlock type="proof" number={8}>
-We prove this by applying Rolle's theorem to a carefully constructed auxiliary function. Fix $x \neq a$ and define the constant $K$ by
+We prove this by applying Rolle's theorem to a carefully constructed auxiliary function. Fix $x \neq a$ and define
 
-$$f(x) = T_n(x) + K(x - a)^{n+1},$$
+$$\phi(t) = f(t) - T_n(t) - K(t - a)^{n+1},$$
 
-so that $K = \frac{f(x) - T_n(x)}{(x - a)^{n+1}}$. Our goal is to show that $K = \frac{f^{(n+1)}(c)}{(n+1)!}$ for some $c$ between $a$ and $x$.
+where $T_n(t) = \sum_{k=0}^{n} \frac{f^{(k)}(a)}{k!}(t - a)^k$ is the degree-$n$ Taylor polynomial of $f$ centered at $a$ (evaluated at the variable $t$), and $K$ is a constant chosen so that $\phi(x) = 0$.
 
-Define
+First note that $T_n(a) = f(a)$, so $\phi(a) = f(a) - f(a) - 0 = 0$.
 
-$$\phi(t) = f(t) - T_n^{(a \to t)}(x) - K(x - t)^{n+1},$$
+Next, the condition $\phi(x) = 0$ gives
 
-where $T_n^{(a \to t)}(x) = \sum_{k=0}^{n} \frac{f^{(k)}(t)}{k!}(x - t)^k$ is the degree-$n$ Taylor polynomial of $f$ centered at $t$ and evaluated at $x$ (note: $t$ is the variable, $x$ is fixed).
+$$0 = f(x) - T_n(x) - K(x - a)^{n+1}, \quad \text{so} \quad K = \frac{f(x) - T_n(x)}{(x - a)^{n+1}}.$$
 
-We verify: $\phi(x) = f(x) - f(x) - 0 = 0$ (the Taylor polynomial centered at $x$ evaluated at $x$ is just $f(x)$). And $\phi(a) = f(a) - T_n(x) - K(x - a)^{n+1} = 0$ by our choice of $K$.
+Our goal is to show that $K = \frac{f^{(n+1)}(c)}{(n+1)!}$ for some $c$ between $a$ and $x$.
 
-Since $\phi(a) = \phi(x) = 0$, Rolle's theorem gives some $c$ between $a$ and $x$ with $\phi'(c) = 0$.
+Since $\phi(a) = \phi(x) = 0$, Rolle's theorem gives some $c_1$ between $a$ and $x$ with $\phi'(c_1) = 0$. We differentiate $\phi$ a total of $n+1$ times. At each stage, the polynomial terms from $T_n(t)$ lose one degree, and after $n+1$ differentiations the Taylor polynomial terms vanish entirely:
 
-Differentiating $\phi$ with respect to $t$ (and using the telescoping cancellation — each term in the Taylor sum has its derivative cancel with a piece of the next term):
+$$\phi^{(n+1)}(t) = f^{(n+1)}(t) - K \cdot (n+1)!$$
 
-$$\phi'(t) = -\frac{f^{(n+1)}(t)}{n!}(x - t)^n + K(n+1)(x - t)^n.$$
+(since $(t - a)^{n+1}$ differentiates $n+1$ times to $(n+1)!$, and $T_n(t)$ is a degree-$n$ polynomial whose $(n+1)$-th derivative is $0$).
 
-Setting $\phi'(c) = 0$ and dividing by $(x - c)^n \neq 0$:
+By applying Rolle's theorem successively — $\phi(a) = \phi(x) = 0$ gives a zero of $\phi'$, which combined with $\phi'(a) = 0$ gives a zero of $\phi''$, and so on — we obtain a point $c$ between $a$ and $x$ with $\phi^{(n+1)}(c) = 0$. Setting this to zero:
 
-$$K = \frac{f^{(n+1)}(c)}{(n+1) \cdot n!} = \frac{f^{(n+1)}(c)}{(n+1)!}.$$
+$$0 = f^{(n+1)}(c) - K(n+1)! \quad \Rightarrow \quad K = \frac{f^{(n+1)}(c)}{(n+1)!}.$$
 
-This is the Lagrange form of the remainder.
+Combining with the expression $K = \frac{f(x) - T_n(x)}{(x - a)^{n+1}}$ gives the Lagrange remainder:
+
+$$f(x) - T_n(x) = \frac{f^{(n+1)}(c)}{(n+1)!}(x - a)^{n+1}.$$
 
 **Note:** The base case $n = 0$ gives $f(x) = f(a) + f'(c)(x - a)$, which is exactly the Mean Value Theorem. Taylor's theorem is the higher-order generalization of the MVT.
 </TheoremBlock>
@@ -512,7 +514,6 @@ This topic builds directly on:
 
 ### Coming next
 
-- [**Mean Value Theorem & Taylor Expansion**](/topics/mean-value-taylor) — you are here.
 - **The Riemann Integral & FTC** *(coming soon)* — the Fundamental Theorem of Calculus uses the MVT in its proof. Taylor's theorem provides the integral form of the remainder $R_n(x) = \int_a^x \frac{f^{(n+1)}(t)}{n!}(x-t)^n \, dt$.
 - **Improper Integrals & Special Functions** *(coming soon)* — Taylor expansion of integrands near singularities, Stirling's approximation for the Gamma function.
 - **Power Series & Taylor Series** *(coming soon)* — Taylor polynomials are finite truncations of Taylor series. This topic provided the approximation theory; the series topic addresses convergence of the infinite sum.

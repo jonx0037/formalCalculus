@@ -514,19 +514,10 @@ export default function ConvergenceRateExplorer() {
       <svg ref={svgRef} style={{ display: 'block', width: '100%' }} />
 
       {/* Controls row */}
-      <div
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: '12px',
-          alignItems: 'center',
-          padding: '8px 0',
-          fontSize: '13px',
-        }}
-      >
-        <label style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+      <div className="flex flex-wrap items-center gap-3 py-2 text-sm" style={{ color: 'var(--color-text)' }}>
+        <label className="flex items-center gap-1">
           Function:
-          <select value={selectedIdx} onChange={handlePresetChange} style={{ fontSize: '13px' }}>
+          <select value={selectedIdx} onChange={handlePresetChange} className="text-sm rounded px-2 py-1" style={{ background: 'var(--color-surface-alt)', color: 'var(--color-text)', border: '1px solid var(--color-border)' }}>
             {presets.map((p, i) => (
               <option key={p.name} value={i}>
                 {p.label}
@@ -535,7 +526,7 @@ export default function ConvergenceRateExplorer() {
           </select>
         </label>
 
-        <label style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+        <label className="flex items-center gap-1">
           x&#x2080; = {x0.toFixed(2)}
           <input
             type="range"
@@ -544,11 +535,11 @@ export default function ConvergenceRateExplorer() {
             step={0.01}
             value={x0}
             onChange={handleX0Change}
-            style={{ width: '80px' }}
+            className="w-20"
           />
         </label>
 
-        <label style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+        <label className="flex items-center gap-1">
           &#x3B7; = {eta.toFixed(2)}
           <input
             type="range"
@@ -557,7 +548,7 @@ export default function ConvergenceRateExplorer() {
             step={0.01}
             value={eta}
             onChange={handleEtaChange}
-            style={{ width: '80px' }}
+            className="w-20"
           />
         </label>
 
@@ -568,34 +559,25 @@ export default function ConvergenceRateExplorer() {
         <button
           onClick={handleStep}
           disabled={currentStep >= maxAvail}
-          style={{ fontSize: '13px', cursor: 'pointer' }}
+          className="text-sm cursor-pointer px-2 py-1 rounded" style={{ background: 'var(--color-surface-alt)', border: '1px solid var(--color-border)' }}
         >
           Step &#x25B6;
         </button>
-        <button onClick={handlePlay} style={{ fontSize: '13px', cursor: 'pointer' }}>
+        <button onClick={handlePlay} className="text-sm cursor-pointer px-2 py-1 rounded" style={{ background: 'var(--color-surface-alt)', border: '1px solid var(--color-border)' }}>
           {playing ? 'Pause \u23F8' : 'Play \u23E9'}
         </button>
-        <button onClick={handleReset} style={{ fontSize: '13px', cursor: 'pointer' }}>
+        <button onClick={handleReset} className="text-sm cursor-pointer px-2 py-1 rounded" style={{ background: 'var(--color-surface-alt)', border: '1px solid var(--color-border)' }}>
           Reset &#x21BA;
         </button>
 
-        <label style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+        <label className="flex items-center gap-1">
           <input type="checkbox" checked={showModels} onChange={handleShowModelsChange} />
           Show Taylor models
         </label>
       </div>
 
       {/* Readout */}
-      <div
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: '24px',
-          padding: '4px 0 8px',
-          fontSize: '12px',
-          fontFamily: 'monospace',
-        }}
-      >
+      <div className="flex flex-wrap gap-6 py-1 pb-2 text-xs font-mono" style={{ color: 'var(--color-text-muted)' }}>
         <span style={{ color: convergenceColors.linear }}>
           GD: x&#x2096; = {gdCurrent.x.toFixed(6)}, f(x&#x2096;) = {gdCurrent.fx.toFixed(6)},
           |x&#x2096; &minus; x*| = {gdDist.toExponential(2)}
