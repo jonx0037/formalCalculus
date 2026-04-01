@@ -19,8 +19,6 @@ export default function GaussianIntegralExplorer() {
   const [showPolar, setShowPolar] = useState(true);
   const [showDensity, setShowDensity] = useState(false);
 
-  const SQRT_PI = Math.sqrt(Math.PI);
-
   // 1D Gaussian curve
   const curveData = useMemo(() => {
     const pts: { x: number; y: number }[] = [];
@@ -261,7 +259,7 @@ export default function GaussianIntegralExplorer() {
       </div>
 
       <div style={{ display: 'flex', gap: '16px', fontSize: '13px', marginBottom: '8px', color: '#555' }}>
-        <span>\u222B\u208B\u1D47\u1D47 e^{'\u2212'}ax\u00B2 dx = {integralValue.toFixed(6)}</span>
+        <span>{'\u222B'} e^(-{scaleA === 1 ? '' : scaleA}x{'\u00B2'}) dx = {integralValue.toFixed(6)}</span>
         <span style={{ color: '#059669' }}>
           Exact \u221A(\u03C0/a) = {exactValue.toFixed(6)} | Error: {Math.abs(integralValue - exactValue).toExponential(2)}
         </span>

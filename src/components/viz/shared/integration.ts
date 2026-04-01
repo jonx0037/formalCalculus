@@ -482,7 +482,6 @@ export function improperIntegralTypeI(
   a: number,
   maxB: number = 1000,
   tolerance: number = 1e-10,
-  nSubintervals: number = 200,
 ): ImproperIntegralResult {
   let nEvals = 0;
   const fCounted = (x: number): number => { nEvals++; return f(x); };
@@ -537,40 +536,44 @@ export function improperIntegralTypeII(
   a: number,
   b: number,
   tolerance: number = 1e-10,
-  nSubintervals: number = 200,
 ): ImproperIntegralResult {
   let nEvals = 0;
   const fCounted = (x: number): number => { nEvals++; return f(x); };
 
-  // Shrink epsilon from (b-a)/2 down to a very small value
+  // Incremental accumulation: integrate only new segments [a + eps_new, a + eps_old]
+  // instead of re-integrating the entire [a + eps, b] each iteration.
   const nSteps = 30;
-  let bestValue = 0;
-  let prevValue = NaN;
+  const halfSpan = (b - a) / 2;
+  let currentLeft = a + halfSpan; // start from the midpoint
+  let cumulative = adaptiveQuadrature(fCounted, currentLeft, b, tolerance).value;
+  let prevCumulative = NaN;
   let converged = false;
-  let lastEps = (b - a) / 2;
+  let lastEps = halfSpan;
 
   for (let i = 0; i < nSteps; i++) {
-    const eps = (b - a) / 2 * Math.pow(0.5, i + 1);
-    const result = adaptiveQuadrature(fCounted, a + eps, b, tolerance);
-    bestValue = result.value;
+    const eps = halfSpan * Math.pow(0.5, i + 1);
+    const newLeft = a + eps;
+    if (newLeft >= currentLeft) continue;
 
-    if (!isNaN(prevValue)) {
-      const diff = Math.abs(bestValue - prevValue);
-      if (diff < tolerance) {
-        converged = true;
-        lastEps = eps;
-        break;
-      }
-    }
-    prevValue = bestValue;
+    // Only integrate the new segment [newLeft, currentLeft]
+    const segment = adaptiveQuadrature(fCounted, newLeft, currentLeft, tolerance);
+    prevCumulative = cumulative;
+    cumulative += segment.value;
+    currentLeft = newLeft;
     lastEps = eps;
+
+    // Check convergence: new segment contribution is negligible
+    if (Math.abs(segment.value) < tolerance) {
+      converged = true;
+      break;
+    }
   }
 
   return {
-    value: bestValue,
+    value: cumulative,
     converged,
     truncationLimit: lastEps,
-    estimatedError: converged ? Math.abs(bestValue - prevValue) : null,
+    estimatedError: converged && !isNaN(prevCumulative) ? Math.abs(cumulative - prevCumulative) : null,
     nEvaluations: nEvals,
   };
 }
@@ -592,15 +595,17 @@ const LANCZOS_COEFFICIENTS = [
 ];
 
 /**
- * Compute the log of the Gamma function using the Lanczos approximation.
- * Valid for all real s except non-positive integers.
+ * Compute the log of |Gamma(s)| using the Lanczos approximation.
+ * Returns log(|Gamma(s)|) for all real s except non-positive integers (poles).
+ * Uses Math.abs on the sine term in the reflection formula so the result
+ * is well-defined when Gamma(s) is negative (e.g., s in (-1, 0), (-3, -2)).
  */
 export function logGamma(s: number): number {
   if (s <= 0 && s === Math.floor(s)) return Infinity; // poles
 
-  // Reflection formula for s < 0.5
+  // Reflection formula for s < 0.5: log|Gamma(s)| = log(pi / |sin(pi*s)|) - logGamma(1 - s)
   if (s < 0.5) {
-    return Math.log(Math.PI / Math.sin(Math.PI * s)) - logGamma(1 - s);
+    return Math.log(Math.PI / Math.abs(Math.sin(Math.PI * s))) - logGamma(1 - s);
   }
 
   const x = s - 1;
@@ -652,10 +657,13 @@ export function incompleteGamma(s: number, x: number): number {
   let sum = 0;
   let term = 1 / s;
   sum = term;
+  let prevSum = 0;
   for (let n = 1; n < 200; n++) {
     term *= x / (s + n);
+    prevSum = sum;
     sum += term;
-    if (Math.abs(term) < 1e-14 * Math.abs(sum)) break;
+    // Converged when the term is tiny relative to the sum AND the sum has stabilized
+    if (Math.abs(term) < 1e-14 * Math.abs(sum) && Math.abs(sum - prevSum) < 1e-14 * Math.abs(sum)) break;
   }
 
   return Math.pow(x, s) * Math.exp(-x) * sum;

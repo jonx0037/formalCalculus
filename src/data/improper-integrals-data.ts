@@ -57,7 +57,7 @@ export interface ComparisonPreset {
   /** Limit ratio L = lim f/g for limit comparison */
   limitRatio?: number;
   /** Result of the convergence test */
-  convergenceResult: 'converges' | 'diverges';
+  convergenceResult: 'converges' | 'diverges' | 'inconclusive';
   /** Exact integral of f (if known) */
   exactF?: number;
   /** Exact integral of g (if known) */
@@ -180,7 +180,7 @@ export const TYPE_II_PRESETS: ImproperIntegralPreset[] = [
   },
   {
     name: 'one-over-x-two-thirds-01',
-    label: 'f(x) = 1/x\u00B2\u2033\u00B3 on (0,1]',
+    label: 'f(x) = 1/x^(2/3) on (0,1]',
     f: (x: number) => 1 / Math.pow(x, 2 / 3),
     type: 'II',
     singularity: 0,
@@ -248,14 +248,14 @@ export const COMPARISON_PRESETS: ComparisonPreset[] = [
   },
   {
     name: 'inv-sqrt-vs-inv-x',
-    label: '1/x \u2264 1/\u221Ax (wrong direction)',
+    label: '1/x \u2264 1/\u221Ax (inconclusive)',
     f: (x: number) => 1 / x,
     g: (x: number) => 1 / Math.sqrt(x),
     fLabel: 'f(x) = 1/x',
     gLabel: 'g(x) = 1/\u221Ax',
     domain: [1, 50],
     testType: 'direct',
-    convergenceResult: 'diverges',
+    convergenceResult: 'inconclusive',
   },
 ];
 

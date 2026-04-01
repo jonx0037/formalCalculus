@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import * as d3 from 'd3';
 import { useResizeObserver } from './shared/useResizeObserver';
 import { useD3 } from './shared/useD3';
-import { gammaFunction, incompleteGamma } from './shared/integration';
+import { gammaFunction } from './shared/integration';
 import { GAMMA_FACTORIAL_POINTS } from '../../data/improper-integrals-data';
 import { functionColors, regionColors } from './shared/colorScales';
 
