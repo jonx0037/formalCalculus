@@ -4,7 +4,7 @@ import { useResizeObserver } from './shared/useResizeObserver';
 import { useD3 } from './shared/useD3';
 import { LOSS_SURFACE_PRESETS } from '../../data/gradient-data';
 import { generateContours, gradientDescent } from './shared/multivariate';
-import { functionColors, regionColors } from './shared/colorScales';
+import { functionColors } from './shared/colorScales';
 
 import type { ChangeEvent } from 'react';
 import type { GDTrajectory } from './shared/multivariate';
@@ -37,32 +37,10 @@ export default function GradientDescentExplorer() {
     setIsRunning(false);
   }, []);
 
-  // Generate contours
+  // Generate contours (more levels for log-scaled presets like Rosenbrock)
   const contours = useMemo(() => {
-    if (preset.logContours) {
-      // Log-spaced contour levels for Rosenbrock
-      const gridSize = 80;
-      const dx = (preset.xDomain[1] - preset.xDomain[0]) / (gridSize - 1);
-      const dy = (preset.yDomain[1] - preset.yDomain[0]) / (gridSize - 1);
-      let zMin = Infinity, zMax = -Infinity;
-      for (let j = 0; j < gridSize; j++) {
-        for (let i = 0; i < gridSize; i++) {
-          const x = preset.xDomain[0] + i * dx;
-          const y = preset.yDomain[0] + j * dy;
-          const z = preset.L(x, y);
-          if (isFinite(z)) {
-            if (z < zMin) zMin = z;
-            if (z > zMax) zMax = z;
-          }
-        }
-      }
-      const logMin = Math.log10(Math.max(zMin, 0.01));
-      const logMax = Math.log10(Math.max(zMax, 1));
-      const nLevels = 16;
-      // Use log-spaced levels
-      return generateContours(preset.L, preset.xDomain, preset.yDomain, nLevels, 80);
-    }
-    return generateContours(preset.L, preset.xDomain, preset.yDomain, 14, 80);
+    const nLevels = preset.logContours ? 16 : 14;
+    return generateContours(preset.L, preset.xDomain, preset.yDomain, nLevels, 80);
   }, [selectedIdx]);
 
   // Compute trajectory when start or LR changes

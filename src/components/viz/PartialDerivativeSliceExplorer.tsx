@@ -24,10 +24,11 @@ export default function PartialDerivativeSliceExplorer() {
 
   const handlePresetChange = useCallback((e: ChangeEvent<HTMLSelectElement>) => {
     const idx = Number(e.target.value);
+    const defaultPt = SURFACE_PRESETS[idx].defaultPoint;
     setSelectedIdx(idx);
     setSlicePosition(0.5);
-    setEvalPoint(SURFACE_PRESETS[idx].defaultPoint[0]);
-  }, []);
+    setEvalPoint(sliceAxis === 'y' ? defaultPt[0] : defaultPt[1]);
+  }, [sliceAxis]);
 
   // Generate wireframe
   const wireframe = useMemo(
@@ -357,7 +358,9 @@ export default function PartialDerivativeSliceExplorer() {
         <span>
           <span style={{ color: functionColors[1] }}>●</span> Tangent (slope = {partialSymbol} = {partialInfo.slope.toFixed(3)})
         </span>
-        <span>f({evalPoint.toFixed(2)}, {sliceVal.toFixed(2)}) = {partialInfo.fVal.toFixed(3)}</span>
+        <span>
+          f({sliceAxis === 'y' ? evalPoint.toFixed(2) : sliceVal.toFixed(2)}, {sliceAxis === 'y' ? sliceVal.toFixed(2) : evalPoint.toFixed(2)}) = {partialInfo.fVal.toFixed(3)}
+        </span>
       </div>
     </div>
   );

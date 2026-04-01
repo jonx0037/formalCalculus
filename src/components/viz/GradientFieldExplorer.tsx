@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, type ChangeEvent } from 'react';
+import { useState, useMemo, useCallback, useId, type ChangeEvent } from 'react';
 import * as d3 from 'd3';
 import { useResizeObserver } from './shared/useResizeObserver';
 import { useD3 } from './shared/useD3';
@@ -11,6 +11,7 @@ const margin = { top: 20, right: 20, bottom: 40, left: 50 };
 export default function GradientFieldExplorer() {
   const { ref: containerRef, width } = useResizeObserver<HTMLDivElement>();
   const height = Math.min(width * 0.75, 500);
+  const markerId = useId().replace(/:/g, '');
 
   const [selectedIdx, setSelectedIdx] = useState(0);
   const [probePoint, setProbePoint] = useState<[number, number]>(SURFACE_PRESETS[0].defaultPoint);
@@ -101,7 +102,7 @@ export default function GradientFieldExplorer() {
         // Arrow marker
         svg.append('defs')
           .append('marker')
-          .attr('id', 'grad-arrow')
+          .attr('id', `grad-arrow-${markerId}`)
           .attr('viewBox', '0 -3 6 6')
           .attr('refX', 5)
           .attr('markerWidth', 4)

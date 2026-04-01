@@ -110,12 +110,16 @@ export function numericalGradient(
 ): number[] {
   const n = point.length;
   const grad: number[] = new Array(n);
+  const p = [...point];
+  const step = Math.abs(h);
   for (let i = 0; i < n; i++) {
-    const forward = point.slice();
-    const backward = point.slice();
-    forward[i] += h;
-    backward[i] -= h;
-    grad[i] = (f(...forward) - f(...backward)) / (2 * h);
+    const original = p[i];
+    p[i] = original + step;
+    const f1 = f(...p);
+    p[i] = original - step;
+    const f2 = f(...p);
+    p[i] = original;
+    grad[i] = (f1 - f2) / (2 * step);
   }
   return grad;
 }
@@ -140,10 +144,12 @@ export function analyticalGradient(
  *
  * The direction vector is normalized internally. Returns the value,
  * gradient magnitude, and angle between direction and gradient.
+ * The optional `point` parameter populates the result's evaluation point.
  */
 export function directionalDerivative(
   grad: number[],
   direction: number[],
+  point?: number[],
 ): DirectionalDerivativeResult {
   // Normalize direction
   const dirNorm = Math.sqrt(direction.reduce((s, d) => s + d * d, 0));
@@ -161,7 +167,7 @@ export function directionalDerivative(
   }
 
   return {
-    point: [],
+    point: point ? point.slice() : [],
     direction: unit,
     value,
     gradientMag: gradMag,

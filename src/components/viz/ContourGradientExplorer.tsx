@@ -1,10 +1,10 @@
-import { useState, useMemo, useCallback, type ChangeEvent } from 'react';
+import { useState, useMemo, useCallback, useId, type ChangeEvent } from 'react';
 import * as d3 from 'd3';
 import { useResizeObserver } from './shared/useResizeObserver';
 import { useD3 } from './shared/useD3';
 import { CONTOUR_PRESETS } from '../../data/gradient-data';
 import { generateContours, gradientFlow } from './shared/multivariate';
-import { functionColors, regionColors } from './shared/colorScales';
+import { functionColors } from './shared/colorScales';
 
 const margin = { top: 20, right: 20, bottom: 40, left: 50 };
 const ARROW_GRID = 10;
@@ -12,6 +12,7 @@ const ARROW_GRID = 10;
 export default function ContourGradientExplorer() {
   const { ref: containerRef, width } = useResizeObserver<HTMLDivElement>();
   const height = Math.min(width * 0.75, 500);
+  const markerId = useId().replace(/:/g, '');
 
   const [selectedIdx, setSelectedIdx] = useState(0);
   const [showFlow, setShowFlow] = useState(false);
@@ -99,7 +100,7 @@ export default function ContourGradientExplorer() {
       // Arrow marker
       svg.append('defs')
         .append('marker')
-        .attr('id', 'contour-grad-arrow')
+        .attr('id', `contour-grad-arrow-${markerId}`)
         .attr('viewBox', '0 -3 6 6')
         .attr('refX', 5)
         .attr('markerWidth', 4)

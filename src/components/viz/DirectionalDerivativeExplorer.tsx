@@ -222,24 +222,9 @@ export default function DirectionalDerivativeExplorer() {
         .angle((d) => -d.angle + Math.PI / 2)
         .radius((d) => rScale(Math.abs(d.value)));
 
-      // Split into positive and negative parts for different colors
-      const posData = polarData.map((d) => ({
-        angle: d.angle,
-        value: d.value >= 0 ? d.value : 0,
-      }));
-      const negData = polarData.map((d) => ({
-        angle: d.angle,
-        value: d.value < 0 ? -d.value : 0,
-      }));
-
-      // Full curve
-      const fullPolarLine = d3.lineRadial<{ angle: number; value: number }>()
-        .angle((d) => -d.angle + Math.PI / 2)
-        .radius((d) => rScale(Math.abs(d.value)));
-
       gRight.append('path')
         .datum(polarData)
-        .attr('d', fullPolarLine as unknown as string)
+        .attr('d', polarLine as unknown as string)
         .style('fill', 'none')
         .style('stroke', functionColors[0])
         .style('stroke-width', 1.5);
