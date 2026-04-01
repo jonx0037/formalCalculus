@@ -10,7 +10,7 @@
     { "id": "riemann-integral", "label": "The Riemann Integral & FTC", "domain": "single-variable", "status": "published", "url": "/topics/riemann-integral" },
     { "id": "improper-integrals", "label": "Improper Integrals & Special Functions", "domain": "single-variable", "status": "published", "url": "/topics/improper-integrals" },
 
-    { "id": "gradient", "label": "Partial Derivatives & the Gradient", "domain": "multivar-differential", "status": "planned", "url": "/topics/gradient" },
+    { "id": "gradient", "label": "Partial Derivatives & the Gradient", "domain": "multivar-differential", "status": "published", "url": "/topics/gradient" },
     { "id": "jacobian", "label": "The Jacobian & Multivariate Chain Rule", "domain": "multivar-differential", "status": "planned", "url": "/topics/jacobian" },
     { "id": "hessian", "label": "The Hessian & Second-Order Analysis", "domain": "multivar-differential", "status": "planned", "url": "/topics/hessian" },
     { "id": "inverse-implicit", "label": "Inverse & Implicit Function Theorems", "domain": "multivar-differential", "status": "planned", "url": "/topics/inverse-implicit" },

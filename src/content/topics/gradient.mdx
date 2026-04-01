@@ -1,0 +1,449 @@
+---
+title: "Partial Derivatives & the Gradient"
+subtitle: "Extending differentiation to functions of several variables — partial derivatives as single-variable slices, the gradient as the direction of steepest ascent, directional derivatives, and the total derivative as the correct notion of multivariable differentiability"
+status: "published"
+difficulty: "foundational"
+prerequisites:
+  - "derivative"
+tags:
+  - "calculus"
+  - "partial-derivative"
+  - "gradient"
+  - "directional-derivative"
+  - "tangent-plane"
+  - "steepest-ascent"
+  - "level-set"
+  - "total-derivative"
+  - "differentiability"
+  - "gradient-descent"
+domain: "multivar-differential"
+videoId: null
+notebookPath: "notebooks/gradient/09_partial_derivatives_gradient.ipynb"
+githubUrl: "https://github.com/jonx0037/formalCalculus/blob/main/src/content/topics/gradient.mdx"
+datePublished: 2026-04-01
+estimatedReadTime: 45
+abstract: "Partial derivatives extend single-variable differentiation to functions of several variables. Given f: ℝⁿ → ℝ, the partial derivative ∂f/∂xᵢ at a point a is computed by holding all variables except xᵢ fixed and taking the ordinary derivative — it measures the rate of change of f in the xᵢ-direction. Geometrically, for f: ℝ² → ℝ, ∂f/∂x is the slope of the curve obtained by slicing the surface z = f(x,y) with the plane y = a₂. Assembling all partial derivatives into a vector gives the gradient ∇f(a) = (∂f/∂x₁, ..., ∂f/∂xₙ). The gradient connects to directional derivatives via D_u f(a) = ∇f(a) · u: the rate of change of f in direction u is the dot product of the gradient with u. Since |∇f · u| ≤ ‖∇f‖ with equality when u = ∇f/‖∇f‖, the gradient points in the direction of steepest ascent, and its magnitude is the maximum rate of change. This is why gradient descent works: moving in the direction −∇L(θ) decreases the loss as rapidly as possible (locally). The gradient is perpendicular to level sets — contour lines on a topographic map run at right angles to the direction of steepest climb. But partial derivatives alone do not tell the whole story. The function f(x,y) = xy/(x² + y²) has both partial derivatives at the origin, yet is not even continuous there. The correct notion of differentiability in ℝⁿ is the total derivative: a linear map Df(a) satisfying lim_{h→0} |f(a+h) − f(a) − Df(a)·h| / ‖h‖ = 0. When f is differentiable, the total derivative is represented by the gradient (for scalar-valued f) or the Jacobian matrix (for vector-valued f, covered in the next topic). A sufficient condition for differentiability is that all partial derivatives exist and are continuous — the C¹ criterion. In machine learning, the gradient is the engine of optimization: SGD, Adam, and every gradient-based optimizer compute ∇L(θ) and step in the direction −∇L. Gradient magnitude |∂L/∂xᵢ| measures feature importance, saliency maps visualize which input pixels matter most to a classifier, and the geometry of loss landscapes — contour shapes, saddle points, local minima — is understood through the gradient and its higher-order relatives."
+formalmlConnections:
+  - topic: "gradient-descent"
+    site: "formalml"
+    relationship: "Gradient descent updates parameters by stepping in the direction −∇L(θ) — the steepest descent direction. The gradient's orthogonality to level sets explains why gradient descent cuts across contour lines. The directional derivative inequality D_u f ≤ ‖∇f‖ quantifies why no other direction decreases the loss faster (locally)."
+  - topic: "convex-analysis"
+    site: "formalml"
+    relationship: "For convex functions, the gradient provides a global lower bound: f(y) ≥ f(x) + ∇f(x)ᵀ(y − x). This first-order convexity condition is the foundation of convex optimization — the gradient at any point gives a tangent hyperplane that lies entirely below the graph."
+  - topic: "smooth-manifolds"
+    site: "formalml"
+    relationship: "The gradient of a constraint function g is normal to the level set g⁻¹(c). This geometric fact — that ∇g is perpendicular to the constraint surface — is the starting point for Lagrange multipliers and the theory of smooth submanifolds of ℝⁿ."
+connections:
+  - topic: "derivative"
+    relationship: "Partial derivatives are single-variable derivatives in disguise: hold all variables except one fixed and apply the limit definition from Topic 5. Every concept here — the limit definition, differentiability vs. continuity, linear approximation — is the multivariable extension of its Topic 5 counterpart."
+  - topic: "epsilon-delta"
+    relationship: "The total derivative definition uses a multivariable limit (‖h‖ → 0 in ℝⁿ), extending the ε-δ framework from Topic 2 to higher dimensions. The C¹ criterion uses continuity of partial derivatives, also in the ε-δ sense."
+  - topic: "completeness-compactness"
+    relationship: "Compactness of closed bounded sets in ℝⁿ (Heine-Borel generalizes) ensures that continuous functions on compact domains achieve extrema — the multivariable Extreme Value Theorem that motivates gradient-based search for minima."
+references:
+  - type: "book"
+    title: "Understanding Analysis"
+    authors: "Abbott"
+    year: 2015
+    note: "Single-variable foundation — Topic 5 of formalCalculus follows Abbott's Chapter 5. This topic extends that foundation to several variables."
+  - type: "book"
+    title: "Analysis on Manifolds"
+    authors: "Munkres"
+    year: 1991
+    note: "Chapters 2–3 develop partial derivatives, the total derivative, and the chain rule in ℝⁿ with full rigor and exceptional clarity — the primary reference for our multivariable treatment"
+  - type: "book"
+    title: "Principles of Mathematical Analysis"
+    authors: "Rudin"
+    year: 1976
+    note: "Chapter 9 on multivariable differentiation — compact, definitive treatment of the total derivative and the inverse function theorem"
+  - type: "book"
+    title: "Calculus on Manifolds"
+    authors: "Spivak"
+    year: 1965
+    note: "Chapter 2 develops the derivative as a linear map, the multivariate chain rule, and partial derivatives — elegant minimalist treatment"
+  - type: "book"
+    title: "Deep Learning"
+    authors: "Goodfellow, Bengio & Courville"
+    year: 2016
+    note: "Section 4.3 on gradient-based optimization — the gradient as the engine of deep learning training"
+  - type: "paper"
+    title: "Visualizing the Loss Landscape of Neural Nets"
+    authors: "Li, Xu, Taylor, Studer & Goldstein"
+    year: 2018
+    url: "https://arxiv.org/abs/1712.09913"
+    note: "Loss landscape geometry — contour plots, saddle points, and the role of gradient direction in navigating high-dimensional optimization surfaces"
+---
+
+import TheoremBlock from '../../components/ui/TheoremBlock.astro';
+import PartialDerivativeSliceExplorer from '../../components/viz/PartialDerivativeSliceExplorer.tsx';
+import GradientFieldExplorer from '../../components/viz/GradientFieldExplorer.tsx';
+import DirectionalDerivativeExplorer from '../../components/viz/DirectionalDerivativeExplorer.tsx';
+import ContourGradientExplorer from '../../components/viz/ContourGradientExplorer.tsx';
+import GradientDescentExplorer from '../../components/viz/GradientDescentExplorer.tsx';
+
+## Overview & Motivation
+
+In single-variable calculus, a function $f: \mathbb{R} \to \mathbb{R}$ has one input and one direction to differentiate. The derivative $f'(a)$ captures everything about the local behavior of $f$ near $a$: the rate of change, the tangent slope, the best linear approximation. We built that theory carefully in [The Derivative & Chain Rule](/topics/derivative).
+
+But a neural network's loss $L(\theta_1, \theta_2, \ldots, \theta_n)$ depends on thousands or millions of parameters. To minimize $L$, we need to know how $L$ changes when we nudge *each* parameter $\theta_i$ independently — that is a **partial derivative** — and then assemble those rates of change into a single direction for the next step — that is the **gradient**. The gradient $\nabla L$ tells us the direction of steepest ascent; negating it gives steepest descent; and the update rule $\theta_{t+1} = \theta_t - \eta \nabla L(\theta_t)$ is gradient descent.
+
+This topic builds the theory that makes gradient-based optimization precise. We start with the geometric picture — slicing surfaces to extract ordinary derivatives — then assemble partial derivatives into the gradient, connect the gradient to directional derivatives and level sets, and confront the subtle question of what "differentiable" really means in $\mathbb{R}^n$.
+
+## Partial Derivatives
+
+We begin with the simplest multivariable setup: a function $f: \mathbb{R}^2 \to \mathbb{R}$, which we can visualize as a surface $z = f(x, y)$ in three-dimensional space. To compute the partial derivative $\frac{\partial f}{\partial x}$ at a point $(a_1, a_2)$, we slice the surface with the plane $y = a_2$. This slice produces a curve in the $xz$-plane — an ordinary single-variable function of $x$. The slope of this curve at $x = a_1$ is the partial derivative $\frac{\partial f}{\partial x}(a_1, a_2)$.
+
+The key idea: **a partial derivative is just an ordinary derivative, with all other variables held fixed.**
+
+<TheoremBlock type="definition" number={1} title="Partial Derivative">
+Let $f: \mathbb{R}^n \to \mathbb{R}$ and let $a = (a_1, \ldots, a_n) \in \mathbb{R}^n$. The *partial derivative of $f$ with respect to $x_i$ at $a$* is
+
+$$\frac{\partial f}{\partial x_i}(a) = \lim_{h \to 0} \frac{f(a_1, \ldots, a_i + h, \ldots, a_n) - f(a)}{h},$$
+
+provided this limit exists. In plain English: hold every input fixed except $x_i$, and take the ordinary derivative with respect to $x_i$.
+
+**Notation:** $\frac{\partial f}{\partial x_i}(a) = f_{x_i}(a) = \partial_i f(a) = D_i f(a)$.
+</TheoremBlock>
+
+This is exactly the limit definition of the derivative from [The Derivative & Chain Rule](/topics/derivative), applied to the single-variable function $g(t) = f(a_1, \ldots, a_{i-1}, t, a_{i+1}, \ldots, a_n)$.
+
+<TheoremBlock type="example" number={1} title="Partial derivatives of f(x,y) = x²y + sin(y)">
+To compute $\frac{\partial f}{\partial x}$: treat $y$ as a constant and differentiate with respect to $x$.
+
+$$\frac{\partial f}{\partial x} = 2xy.$$
+
+To compute $\frac{\partial f}{\partial y}$: treat $x$ as a constant and differentiate with respect to $y$.
+
+$$\frac{\partial f}{\partial y} = x^2 + \cos(y).$$
+
+At the point $(1, \pi/2)$: $f_x(1, \pi/2) = 2 \cdot 1 \cdot \pi/2 = \pi$ and $f_y(1, \pi/2) = 1 + \cos(\pi/2) = 1$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={2} title="Partial derivatives of f(x,y) = e^{x² + y²}">
+The chain rule from [Topic 5](/topics/derivative) applies directly. Treating $y$ as constant:
+
+$$\frac{\partial f}{\partial x} = 2x \, e^{x^2 + y^2}.$$
+
+Treating $x$ as constant:
+
+$$\frac{\partial f}{\partial y} = 2y \, e^{x^2 + y^2}.$$
+
+At any point, $f_x$ and $f_y$ have the same exponential factor — they differ only in the leading coefficient ($2x$ vs. $2y$). This symmetry reflects the rotational structure of $x^2 + y^2$.
+</TheoremBlock>
+
+<PartialDerivativeSliceExplorer client:visible />
+
+![Partial derivative slices: the surface f(x,y) = x² + y² with y-fixed and x-fixed slices highlighted](/images/topics/gradient/partial-derivative-slices.png)
+
+## Tangent Planes & Linear Approximation
+
+In [The Derivative & Chain Rule](/topics/derivative), the tangent line $y = f(a) + f'(a)(x - a)$ was the best linear approximation to $f$ near $a$. In two variables, the tangent *line* becomes a tangent *plane*.
+
+<TheoremBlock type="proposition" number={1} title="Tangent Plane as Linear Approximation">
+If $f: \mathbb{R}^2 \to \mathbb{R}$ is differentiable at $a = (a_1, a_2)$, then
+
+$$f(a_1 + h_1, a_2 + h_2) \approx f(a) + f_x(a) \, h_1 + f_y(a) \, h_2,$$
+
+with error that vanishes faster than $\|(h_1, h_2)\|$ as $(h_1, h_2) \to (0, 0)$. The surface $z = f(a) + f_x(a)(x - a_1) + f_y(a)(y - a_2)$ is the **tangent plane** to $z = f(x,y)$ at $(a_1, a_2, f(a))$.
+</TheoremBlock>
+
+The tangent plane touches the surface at one point and "hugs" it locally — just as the tangent line does in one dimension. Each partial derivative contributes one slope: $f_x$ is the slope in the $x$-direction, $f_y$ is the slope in the $y$-direction, and together they tilt the plane to match the surface.
+
+<TheoremBlock type="remark" number={1} title="From tangent line to tangent plane to tangent hyperplane">
+In $\mathbb{R}^1$, the best linear approximation is a line. In $\mathbb{R}^2$, it is a plane. In $\mathbb{R}^n$, it is a hyperplane:
+
+$$f(a + h) \approx f(a) + \sum_{i=1}^n \frac{\partial f}{\partial x_i}(a) \, h_i.$$
+
+The pattern is the same — the derivative provides the coefficients of the linear approximation. In the next topic (**The Jacobian & Multivariate Chain Rule** *(coming soon)*), the derivative of a *vector-valued* function becomes a matrix, and the tangent hyperplane becomes an affine subspace.
+</TheoremBlock>
+
+![Tangent plane: the surface with its tangent plane at a point, showing how the plane approximates the surface locally](/images/topics/gradient/tangent-plane.png)
+
+## The Gradient Vector
+
+The individual partial derivatives tell us rates of change along coordinate directions. But there is nothing special about the coordinate axes — they are an arbitrary choice of basis for $\mathbb{R}^n$. The **gradient** collects all partial derivatives into a single vector that encodes the rate of change in *every* direction simultaneously.
+
+<TheoremBlock type="definition" number={2} title="The Gradient">
+Let $f: \mathbb{R}^n \to \mathbb{R}$ be a function whose partial derivatives all exist at $a$. The *gradient of $f$ at $a$* is the vector
+
+$$\nabla f(a) = \left(\frac{\partial f}{\partial x_1}(a), \frac{\partial f}{\partial x_2}(a), \ldots, \frac{\partial f}{\partial x_n}(a)\right) \in \mathbb{R}^n.$$
+
+**Notation:** $\nabla f(a) = \text{grad}\, f(a) = Df(a)^T$. We follow the column-vector convention throughout: $\nabla f$ is a column vector in $\mathbb{R}^n$.
+</TheoremBlock>
+
+The gradient transforms the partial derivative — a collection of $n$ separate numbers — into a single geometric object: a vector that lives in the same space as the input. This shift from "list of rates" to "direction in input space" is the conceptual leap that makes gradient-based optimization geometric.
+
+<TheoremBlock type="example" number={3} title="Gradient of f(x,y) = x² + y²">
+$$\nabla f(x, y) = (2x, 2y).$$
+
+At any point, the gradient points radially outward from the origin — directly "uphill" on the paraboloid. At $(1, 1)$: $\nabla f = (2, 2)$, pointing toward the northeast. The magnitude $\|\nabla f(1,1)\| = \sqrt{8} = 2\sqrt{2}$ measures how steep the surface is at that point.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={4} title="Gradient of f(x,y,z) = xyz">
+$$\nabla f = (yz, \, xz, \, xy).$$
+
+At $(1, 2, 3)$: $\nabla f = (6, 3, 2)$. The function is most sensitive to changes in $x$ (rate $= 6$), less sensitive to $y$ (rate $= 3$), and least sensitive to $z$ (rate $= 2$). In an ML context, this is feature importance: the gradient magnitude per coordinate tells you which inputs matter most.
+</TheoremBlock>
+
+<GradientFieldExplorer client:visible />
+
+![Gradient vector field: contour plot with gradient arrows perpendicular to contours](/images/topics/gradient/gradient-vector-field.png)
+
+## Directional Derivatives
+
+Partial derivatives measure the rate of change along the coordinate axes $\mathbf{e}_1, \mathbf{e}_2, \ldots, \mathbf{e}_n$. But we often need the rate of change in a direction $\mathbf{u}$ that is *not* aligned with any axis — for instance, the direction a gradient descent step actually takes.
+
+<TheoremBlock type="definition" number={3} title="Directional Derivative">
+Let $f: \mathbb{R}^n \to \mathbb{R}$, $a \in \mathbb{R}^n$, and $\mathbf{u} \in \mathbb{R}^n$ a unit vector ($\|\mathbf{u}\| = 1$). The *directional derivative of $f$ at $a$ in the direction $\mathbf{u}$* is
+
+$$D_\mathbf{u}f(a) = \lim_{t \to 0} \frac{f(a + t\mathbf{u}) - f(a)}{t},$$
+
+provided this limit exists. In plain English: stand at $a$, walk in direction $\mathbf{u}$, and measure how fast $f$ changes.
+</TheoremBlock>
+
+Notice that choosing $\mathbf{u} = \mathbf{e}_i$ (the $i$-th standard basis vector) recovers the partial derivative $\frac{\partial f}{\partial x_i}(a)$. Partial derivatives are special cases of directional derivatives — the special cases where the direction is along a coordinate axis.
+
+The remarkable fact is that when $f$ is differentiable, the directional derivative in *any* direction can be computed from the gradient alone:
+
+<TheoremBlock type="theorem" number={1} title="Gradient–Directional Derivative Relationship">
+If $f: \mathbb{R}^n \to \mathbb{R}$ is differentiable at $a$, then for every unit vector $\mathbf{u}$, the directional derivative exists and equals
+
+$$D_\mathbf{u}f(a) = \nabla f(a) \cdot \mathbf{u}.$$
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+Define $\varphi(t) = f(a + t\mathbf{u})$. This is a function $\varphi: \mathbb{R} \to \mathbb{R}$ — a single-variable function obtained by restricting $f$ to the line through $a$ in direction $\mathbf{u}$. By definition, $D_\mathbf{u}f(a) = \varphi'(0)$.
+
+Since $f$ is differentiable at $a$, the chain rule ([The Derivative & Chain Rule](/topics/derivative), Theorem 6) applies to the composition $\varphi(t) = f(a + t\mathbf{u})$. The "inner function" is $\gamma(t) = a + t\mathbf{u}$, with $\gamma'(0) = \mathbf{u}$. The chain rule gives:
+
+$$\varphi'(0) = \sum_{i=1}^n \frac{\partial f}{\partial x_i}(a) \cdot u_i = \nabla f(a) \cdot \mathbf{u}.$$
+
+The chain rule is valid here because $f$ is *differentiable* at $a$ — not merely having partial derivatives. This distinction is critical and we return to it in Section 7. ∎
+</TheoremBlock>
+
+<TheoremBlock type="example" number={5} title="Directional derivative of f(x,y) = x² + y² in direction u = (1,1)/√2">
+At $(1, 1)$: $\nabla f = (2, 2)$. In the direction $\mathbf{u} = \frac{1}{\sqrt{2}}(1, 1)$:
+
+$$D_\mathbf{u}f(1, 1) = (2, 2) \cdot \frac{1}{\sqrt{2}}(1, 1) = \frac{2 + 2}{\sqrt{2}} = 2\sqrt{2} \approx 2.83.$$
+
+Compare this with the partial derivatives: $f_x(1,1) = 2$ and $f_y(1,1) = 2$. The directional derivative in the diagonal direction is *larger* than either partial derivative individually — because the gradient points diagonally, and we are measuring rate of change in the gradient's own direction.
+</TheoremBlock>
+
+<DirectionalDerivativeExplorer client:visible />
+
+![Directional derivative: contour plot with gradient and direction vectors, plus polar rose plot](/images/topics/gradient/directional-derivative.png)
+
+## The Gradient as Steepest Ascent
+
+We now arrive at the geometric crown jewel of this topic: the gradient points in the direction of steepest ascent. This is *why gradient descent works* — it follows $-\nabla L$, which is the direction of steepest descent.
+
+<TheoremBlock type="theorem" number={2} title="Gradient as Direction of Steepest Ascent">
+Let $f: \mathbb{R}^n \to \mathbb{R}$ be differentiable at $a$ with $\nabla f(a) \neq 0$. Then among all unit vectors $\mathbf{u} \in \mathbb{R}^n$:
+
+1. The maximum of $D_\mathbf{u}f(a)$ is $\|\nabla f(a)\|$, achieved when $\mathbf{u} = \frac{\nabla f(a)}{\|\nabla f(a)\|}$.
+2. The minimum of $D_\mathbf{u}f(a)$ is $-\|\nabla f(a)\|$, achieved when $\mathbf{u} = -\frac{\nabla f(a)}{\|\nabla f(a)\|}$.
+3. $D_\mathbf{u}f(a) = 0$ if and only if $\mathbf{u}$ is orthogonal to $\nabla f(a)$.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+By Theorem 1, $D_\mathbf{u}f = \nabla f \cdot \mathbf{u}$. By the Cauchy-Schwarz inequality:
+
+$$|\nabla f \cdot \mathbf{u}| \le \|\nabla f\| \cdot \|\mathbf{u}\| = \|\nabla f\|,$$
+
+since $\|\mathbf{u}\| = 1$. Equality holds if and only if $\mathbf{u}$ is a scalar multiple of $\nabla f$. Since $\|\mathbf{u}\| = 1$, this means $\mathbf{u} = \pm \nabla f / \|\nabla f\|$.
+
+The positive sign gives $\nabla f \cdot (\nabla f / \|\nabla f\|) = \|\nabla f\|^2 / \|\nabla f\| = \|\nabla f\|$ (the maximum). The negative sign gives $-\|\nabla f\|$ (the minimum). If $\mathbf{u} \perp \nabla f$, then $\nabla f \cdot \mathbf{u} = 0$. ∎
+</TheoremBlock>
+
+This theorem has an immediate and profound consequence for optimization: to decrease $f$ as fast as possible from the current point $a$, walk in the direction $-\nabla f(a) / \|\nabla f(a)\|$. The maximum rate of decrease is $\|\nabla f(a)\|$. No other direction does better.
+
+The gradient is not merely "some direction of increase" — it is the *unique optimal direction*, and its magnitude tells you the maximum possible rate of change. Directions perpendicular to the gradient produce zero change — they trace out the level set.
+
+<TheoremBlock type="theorem" number={3} title="Gradient is Orthogonal to Level Sets">
+Let $f: \mathbb{R}^n \to \mathbb{R}$ be differentiable at $a$ with $\nabla f(a) \neq 0$. Let $S = \{x \in \mathbb{R}^n : f(x) = f(a)\}$ be the level set through $a$. If $\gamma: (-\varepsilon, \varepsilon) \to \mathbb{R}^n$ is a smooth curve with $\gamma(0) = a$ and $\gamma(t) \in S$ for all $t$, then
+
+$$\nabla f(a) \cdot \gamma'(0) = 0.$$
+
+In words: the gradient is perpendicular to every curve that stays on the level set.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+Since $f(\gamma(t)) = f(a) = c$ for all $t$ (the curve stays on the level set), differentiating with respect to $t$ at $t = 0$ gives:
+
+$$\frac{d}{dt} f(\gamma(t))\bigg|_{t=0} = \nabla f(\gamma(0)) \cdot \gamma'(0) = \nabla f(a) \cdot \gamma'(0) = 0,$$
+
+by the chain rule. This holds for *every* tangent vector $\gamma'(0)$ to $S$ at $a$, so $\nabla f(a)$ is orthogonal to the tangent space of $S$ at $a$. ∎
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={2} title="Contour maps and topographic intuition">
+On a topographic map, contour lines connect points at the same elevation. The gradient points in the direction of steepest climb — straight up the hillside, perpendicular to the contour lines. A hiker following the gradient path reaches the summit as fast as possible; a hiker walking along a contour line (perpendicular to the gradient) stays at the same elevation. Gradient descent reverses this: it follows $-\nabla f$, going *downhill* as steeply as possible.
+
+For a loss function with circular contours (isotropic loss, like $L = x^2 + y^2$), the gradient points radially inward and gradient descent takes a straight path to the minimum. For elongated contours (anisotropic loss, like $L = x^2 + 10y^2$), the gradient does *not* point toward the minimum — it points perpendicular to the contour, which may oscillate back and forth across the narrow valley. This is exactly why momentum and adaptive methods like Adam were invented.
+</TheoremBlock>
+
+<ContourGradientExplorer client:visible />
+
+![Gradient-contour orthogonality: circular vs. elliptical contours](/images/topics/gradient/gradient-contour-orthogonality.png)
+
+## Differentiability in $\mathbb{R}^n$ — The Total Derivative
+
+We have been using the word "differentiable" in our theorems, and it is time to be precise about what it means. In single-variable calculus, differentiability meant that the limit $\lim_{h \to 0} [f(a+h) - f(a)]/h$ exists. The multivariable situation is more subtle.
+
+The subtle point: **having all partial derivatives is not the same as being differentiable.** Partial derivatives probe a function only along coordinate axes — a set of $n$ rays emanating from $a$. A function can have well-defined partial derivatives at a point but behave wildly when approached from other directions. The correct notion of differentiability requires the function to be well-approximated by a *single linear map* in *all* directions simultaneously.
+
+<TheoremBlock type="definition" number={4} title="Differentiability (Total Derivative)">
+A function $f: \mathbb{R}^n \to \mathbb{R}$ is *differentiable at $a$* if there exists a linear map $Df(a): \mathbb{R}^n \to \mathbb{R}$ such that
+
+$$\lim_{h \to 0} \frac{|f(a+h) - f(a) - Df(a)(h)|}{\|h\|} = 0.$$
+
+When $f$ is differentiable, $Df(a)$ is unique and is represented by the gradient: $Df(a)(h) = \nabla f(a) \cdot h$. For $f: \mathbb{R}^n \to \mathbb{R}^m$, $Df(a)$ is represented by the Jacobian matrix — that is the next topic.
+</TheoremBlock>
+
+The limit says: the linear approximation $f(a) + \nabla f(a) \cdot h$ matches $f(a + h)$ so well that the error $|f(a+h) - f(a) - \nabla f(a) \cdot h|$ shrinks faster than $\|h\|$ itself. Compare this with the single-variable case from [The Derivative & Chain Rule](/topics/derivative): $|f(a+h) - f(a) - f'(a)h| / |h| \to 0$. The multivariable version is the same idea, but the limit is in $\mathbb{R}^n$ — the approach direction is unrestricted.
+
+<TheoremBlock type="theorem" number={4} title="Differentiability Implies Partial Derivatives Exist">
+If $f: \mathbb{R}^n \to \mathbb{R}$ is differentiable at $a$, then all partial derivatives exist at $a$, and $Df(a)(\mathbf{e}_i) = \frac{\partial f}{\partial x_i}(a)$.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+Set $h = t\mathbf{e}_i$ (approach along the $i$-th coordinate axis) in the total derivative definition:
+
+$$\frac{|f(a + t\mathbf{e}_i) - f(a) - Df(a)(t\mathbf{e}_i)|}{|t|} \to 0 \quad \text{as } t \to 0.$$
+
+Since $Df(a)$ is linear, $Df(a)(t\mathbf{e}_i) = t \cdot Df(a)(\mathbf{e}_i)$. Rearranging:
+
+$$\left|\frac{f(a + t\mathbf{e}_i) - f(a)}{t} - Df(a)(\mathbf{e}_i)\right| \to 0.$$
+
+The left side of the subtraction is exactly the difference quotient defining $\frac{\partial f}{\partial x_i}(a)$. So the partial derivative exists and equals $Df(a)(\mathbf{e}_i)$. ∎
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={3} title="The converse is false">
+Partial derivatives existing does *not* imply differentiability. This echoes the single-variable situation (continuity does not imply differentiability), but in a stronger form: in $\mathbb{R}^n$, we can have all partial derivatives at a point and still fail to be *continuous* there. The following example demonstrates this dramatically.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={6} title="The critical counterexample">
+Define
+
+$$f(x, y) = \begin{cases} \frac{xy}{x^2 + y^2} & (x, y) \neq (0, 0) \\ 0 & (x, y) = (0, 0). \end{cases}$$
+
+**Partial derivatives at the origin exist and equal zero:**
+
+$$f_x(0, 0) = \lim_{h \to 0} \frac{f(h, 0) - f(0, 0)}{h} = \lim_{h \to 0} \frac{0}{h} = 0.$$
+
+Similarly $f_y(0, 0) = 0$. Both partial derivatives exist because along the coordinate axes, $f$ is identically zero.
+
+**But $f$ is not continuous at the origin:** Along the line $y = x$,
+
+$$f(x, x) = \frac{x \cdot x}{x^2 + x^2} = \frac{x^2}{2x^2} = \frac{1}{2} \neq 0 = f(0, 0).$$
+
+The function approaches $1/2$ along the diagonal but equals $0$ at the origin. Since $f$ is not continuous, it certainly cannot be differentiable — yet both partial derivatives exist. The moral: **partial derivatives probe only the coordinate directions; differentiability requires consistent behavior from all directions simultaneously.**
+</TheoremBlock>
+
+![Differentiability counterexample: the surface f(x,y) = xy/(x² + y²)](/images/topics/gradient/differentiability-counterexample.png)
+
+The positive result — a sufficient condition for differentiability — requires the partial derivatives to be *continuous*, not merely to exist:
+
+<TheoremBlock type="theorem" number={5} title="C¹ Criterion">
+If all partial derivatives $\frac{\partial f}{\partial x_i}$ exist in a neighborhood of $a$ and are continuous at $a$, then $f$ is differentiable at $a$.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+We sketch the proof for $n = 2$; the general case is analogous. Write:
+
+$$f(a + h) - f(a) = [f(a_1 + h_1, a_2 + h_2) - f(a_1, a_2 + h_2)] + [f(a_1, a_2 + h_2) - f(a_1, a_2)].$$
+
+Apply the single-variable Mean Value Theorem ([Mean Value Theorem & Taylor Expansion](/topics/mean-value-taylor), Theorem 1) to each bracket:
+
+- The first bracket equals $f_x(c_1, a_2 + h_2) \cdot h_1$ for some $c_1$ between $a_1$ and $a_1 + h_1$.
+- The second bracket equals $f_y(a_1, c_2) \cdot h_2$ for some $c_2$ between $a_2$ and $a_2 + h_2$.
+
+So:
+
+$$f(a + h) - f(a) = f_x(c_1, a_2 + h_2) \cdot h_1 + f_y(a_1, c_2) \cdot h_2.$$
+
+Now subtract the linear approximation $f_x(a) h_1 + f_y(a) h_2$:
+
+$$f(a+h) - f(a) - [f_x(a) h_1 + f_y(a) h_2] = [f_x(c_1, a_2+h_2) - f_x(a)] h_1 + [f_y(a_1, c_2) - f_y(a)] h_2.$$
+
+By continuity of $f_x$ and $f_y$ at $a$: as $h \to 0$, we have $c_1 \to a_1$ and $c_2 \to a_2$, so $f_x(c_1, a_2 + h_2) \to f_x(a)$ and $f_y(a_1, c_2) \to f_y(a)$. Call these differences $\alpha(h)$ and $\beta(h)$, both tending to zero. Then:
+
+$$|f(a+h) - f(a) - \nabla f(a) \cdot h| \le |\alpha(h)| \cdot |h_1| + |\beta(h)| \cdot |h_2| \le (|\alpha(h)| + |\beta(h)|) \|h\|.$$
+
+Dividing by $\|h\|$: the error ratio is at most $|\alpha(h)| + |\beta(h)| \to 0$. ∎
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={4} title="Differentiability implies continuity (the chain of implications)">
+Just as in [The Derivative & Chain Rule](/topics/derivative), differentiability at $a$ implies continuity at $a$:
+
+$$|f(a + h) - f(a)| = |Df(a)(h) + o(\|h\|)| \le \|Df(a)\| \cdot \|h\| + o(\|h\|) \to 0.$$
+
+The chain of implications is:
+
+$$C^1 \;\Rightarrow\; \text{differentiable} \;\Rightarrow\; \text{continuous}, \qquad \text{differentiable} \;\Rightarrow\; \text{partial derivatives exist},$$
+
+but *none* of the converses hold in general. The $C^1$ criterion is the practical workhorse: in virtually every function arising in machine learning (polynomials, exponentials, compositions of smooth functions), the partial derivatives are continuous, so differentiability is automatic.
+</TheoremBlock>
+
+## Computational Notes
+
+Computing gradients is the central computational task in gradient-based optimization. There are three approaches:
+
+**Analytical gradients.** When we know the formula for $f$, we compute $\nabla f$ by hand (or symbolically). For $f(x, y) = x^2 + y^2$, the gradient is $(2x, 2y)$ — exact, fast, no approximation error. This is always preferred when available.
+
+**Finite difference gradients.** When we don't have a formula (or want to verify one), we approximate each partial derivative numerically:
+
+$$\frac{\partial f}{\partial x_i}(a) \approx \frac{f(a + h\mathbf{e}_i) - f(a - h\mathbf{e}_i)}{2h} \quad \text{(central difference)}.$$
+
+This is the same central difference from [The Derivative & Chain Rule](/topics/derivative), applied coordinate by coordinate. The tradeoff is the same: $h$ too large gives truncation error; $h$ too small gives floating-point cancellation error. For $n$ variables, we need $2n$ function evaluations — one forward and one backward per coordinate.
+
+In Python, `scipy.optimize.approx_fprime(x, f, epsilon)` computes the finite-difference gradient. NumPy's `numpy.gradient` handles gridded data.
+
+**Automatic differentiation.** The `jax.grad` function computes *exact* gradients (to machine precision) without finite differences, using reverse-mode automatic differentiation — the same algorithm as backpropagation. A preview:
+
+```python
+import jax
+import jax.numpy as jnp
+
+f = lambda x: x[0]**2 + x[1]**2
+grad_f = jax.grad(f)
+grad_f(jnp.array([1.0, 1.0]))  # → [2.0, 2.0]
+```
+
+This computes the exact gradient at cost proportional to a single function evaluation, regardless of the number of variables $n$. Automatic differentiation is the computational backbone of modern deep learning — we will see how it works in detail when we reach the Jacobian and the multivariate chain rule.
+
+![Gradient computation comparison: analytical vs. finite-difference, with error analysis](/images/topics/gradient/gradient-computation-comparison.png)
+
+## Connections to ML
+
+The gradient is the most operationally important object in machine learning optimization. Every concept in this topic has a direct counterpart in ML practice.
+
+**Gradient descent.** The update rule $\theta_{t+1} = \theta_t - \eta \nabla L(\theta_t)$ is the literal definition of gradient descent: evaluate the gradient of the loss, step in the opposite direction (steepest descent), and repeat. The learning rate $\eta$ controls the step size. Theorem 2 explains why this is locally optimal: no other direction decreases $L$ faster than $-\nabla L / \|\nabla L\|$.
+
+**Loss landscape geometry.** The geometry of the loss function $L(\theta)$ determines how gradient descent behaves. Contour plots reveal this geometry: circular contours (isotropic loss) mean gradient descent takes a direct path to the minimum. Elongated contours (anisotropic loss) mean gradient descent oscillates — the gradient perpendicularity to contour lines (Theorem 3) causes the path to zig-zag across the narrow valley. This oscillation motivates momentum, RMSProp, and Adam, which adapt the effective learning rate per coordinate. Second-order methods using the Hessian (**The Hessian & Second-Order Analysis** *(coming soon)*) address this more directly.
+
+**Feature importance and saliency.** The magnitude $|\frac{\partial L}{\partial x_i}|$ measures how sensitive the loss is to feature $x_i$. If $\partial L / \partial x_3$ is large while $\partial L / \partial x_7$ is small, then feature $x_3$ has more influence on the prediction. In deep learning, **saliency maps** compute $\frac{\partial L}{\partial \text{input pixel}}$ to visualize which pixels most affect the classifier's output — a direct application of partial derivatives.
+
+**Critical points.** A critical point has $\nabla f(a) = 0$: the loss surface is flat. But $\nabla f = 0$ does not distinguish minima from maxima from saddle points — that requires the Hessian (the matrix of second-order partial derivatives, coming in **The Hessian & Second-Order Analysis** *(coming soon)*). In high-dimensional loss landscapes, saddle points are far more common than local minima, and the gradient alone cannot tell them apart.
+
+<GradientDescentExplorer client:visible />
+
+![Gradient descent on three loss landscapes: isotropic, anisotropic, and Rosenbrock](/images/topics/gradient/gradient-descent-landscape.png)
+
+![Learning rate effects: too small, just right, and too large](/images/topics/gradient/gradient-descent-learning-rate.png)
+
+## Connections & Further Reading
+
+### Within formalCalculus
+
+- [**The Derivative & Chain Rule**](/topics/derivative) — Partial derivatives are single-variable derivatives applied coordinate-by-coordinate. The chain rule proof (Theorem 1 above) directly uses the single-variable chain rule from Topic 5.
+- [**Epsilon-Delta & Continuity**](/topics/epsilon-delta) — The total derivative definition uses a multivariable limit ($\|h\| \to 0$ in $\mathbb{R}^n$). The $C^1$ criterion uses continuity of partial derivatives in the $\varepsilon$-$\delta$ sense.
+- [**Completeness & Compactness**](/topics/completeness-compactness) — Compactness in $\mathbb{R}^n$ (Heine-Borel generalizes) ensures continuous functions on compact domains achieve extrema — the multivariable Extreme Value Theorem that motivates gradient-based search.
+- **The Jacobian & Multivariate Chain Rule** *(coming soon)* — The Jacobian matrix generalizes the gradient to vector-valued functions $f: \mathbb{R}^n \to \mathbb{R}^m$. Where the gradient is a single row of partials, the Jacobian stacks $m$ rows. The multivariate chain rule $J_{f \circ g}(a) = J_f(g(a)) \cdot J_g(a)$ is the backbone of backpropagation.
+- **The Hessian & Second-Order Analysis** *(coming soon)* — The Hessian matrix $H_{ij} = \frac{\partial^2 f}{\partial x_i \partial x_j}$ classifies critical points (where $\nabla f = 0$) as minima, maxima, or saddle points. The second-order Taylor expansion in $\mathbb{R}^n$ builds on the gradient as its first-order term.
+- **Inverse & Implicit Function Theorems** *(coming soon)* — The Inverse Function Theorem requires the Jacobian (built from partial derivatives) to be invertible. The Implicit Function Theorem uses $\nabla g$ at the constraint surface.
+
+### Forward to formalML
+
+- <a href="https://formalml.com/topics/gradient-descent" target="_blank" rel="noopener">Gradient Descent</a> — The gradient is the engine: $\theta_{t+1} = \theta_t - \eta \nabla L(\theta_t)$. Everything in this topic — the gradient's definition, steepest ascent, orthogonality to level sets — explains *why gradient descent works geometrically*.
+- <a href="https://formalml.com/topics/convex-analysis" target="_blank" rel="noopener">Convex Analysis</a> — For convex $f$, the first-order condition $f(y) \ge f(x) + \nabla f(x)^T(y - x)$ says the tangent hyperplane lies below the graph — the gradient provides a global lower bound.
+- <a href="https://formalml.com/topics/smooth-manifolds" target="_blank" rel="noopener">Smooth Manifolds</a> — The gradient of a constraint function $g$ is normal to the level set $g^{-1}(c)$, the starting point for Lagrange multipliers and the theory of smooth submanifolds.
