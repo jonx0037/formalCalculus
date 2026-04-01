@@ -29,9 +29,8 @@ export const tracks: Track[] = [
     title: 'Multivariable Differential Calculus',
     description: 'Gradients, Jacobians, Hessians — the engine of optimization.',
     domain: 'multivar-differential',
-    published: [],
+    published: ['Partial Derivatives & the Gradient'],
     planned: [
-      'Partial Derivatives & the Gradient',
       'The Jacobian & Multivariate Chain Rule',
       'The Hessian & Second-Order Analysis',
       'Inverse & Implicit Function Theorems',
