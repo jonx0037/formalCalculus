@@ -1,0 +1,612 @@
+---
+title: "The Riemann Integral & FTC"
+subtitle: "Area as a limit of sums — the Riemann integral defined via partitions and Darboux sums, integrability of continuous functions, and the Fundamental Theorem connecting differentiation and integration"
+status: "published"
+difficulty: "foundational"
+prerequisites:
+  - "sequences-limits"
+  - "epsilon-delta"
+  - "mean-value-taylor"
+tags:
+  - "calculus"
+  - "riemann-integral"
+  - "integration"
+  - "fundamental-theorem"
+  - "riemann-sum"
+  - "darboux-sum"
+  - "antiderivative"
+  - "numerical-integration"
+  - "expected-value"
+  - "quadrature"
+domain: "single-variable"
+videoId: null
+notebookPath: "notebooks/riemann-integral/07_riemann_integral.ipynb"
+githubUrl: "https://github.com/jonx0037/formalCalculus/blob/main/src/content/topics/riemann-integral.mdx"
+datePublished: 2026-04-01
+estimatedReadTime: 50
+abstract: "The Riemann integral formalizes the intuitive notion of 'area under a curve' as a limit of finite sums. Given a function f on [a,b] and a partition P = {x₀, x₁, ..., xₙ} of [a,b], a Riemann sum Σ f(tᵢ) Δxᵢ approximates the integral by summing the areas of narrow rectangles. The integral ∫ₐᵇ f(x) dx is the common value of the upper and lower Darboux sums — sup Σ Mᵢ Δxᵢ and inf Σ mᵢ Δxᵢ — when they agree in the limit of partition refinement. Continuous functions on [a,b] are always Riemann integrable: uniform continuity (guaranteed by compactness of [a,b]) ensures that the upper and lower sums can be made arbitrarily close by choosing a fine enough partition. The Fundamental Theorem of Calculus forges the link between differentiation and integration. Part 1 says that if f is continuous, the area function F(x) = ∫ₐˣ f(t) dt is differentiable with F'(x) = f(x) — integration followed by differentiation recovers the original function. Part 2 says that if F is any antiderivative of f, then ∫ₐᵇ f(x) dx = F(b) - F(a) — the integral is computed by evaluating the antiderivative at the endpoints. The proof of Part 2 uses the Mean Value Theorem to relate the telescoping sum F(b) - F(a) = Σ [F(xᵢ) - F(xᵢ₋₁)] to the Riemann sum Σ f(cᵢ) Δxᵢ. Substitution (u-substitution) is the chain rule in reverse: ∫ f(g(x))g'(x) dx = ∫ f(u) du. Integration by parts is the product rule in reverse: ∫ u dv = uv - ∫ v du. In machine learning, the integral is ubiquitous: expected values E[X] = ∫ x f(x) dx, loss functions as integrals over distributions, marginalizing over latent variables, and probability computations all require integration. Numerical quadrature — trapezoidal rule, Simpson's rule, Gaussian quadrature — provides the computational tools when antiderivatives don't exist in closed form."
+formalmlConnections:
+  - topic: "measure-theoretic-probability"
+    site: "formalml"
+    relationship: "The Riemann integral defines expected values for continuous densities: E[X] = ∫ x f(x) dx. But Riemann integration fails for pathological functions like the indicator of the rationals. The Lebesgue integral, built on measure theory, resolves these limitations and is the foundation of rigorous probability theory."
+  - topic: "shannon-entropy"
+    site: "formalml"
+    relationship: "Differential entropy h(X) = -∫ f(x) log f(x) dx, KL divergence D_KL(p‖q) = ∫ p(x) log(p(x)/q(x)) dx, and cross-entropy are all defined as integrals. The properties of the integral — linearity, monotonicity, additivity — directly yield information-theoretic inequalities."
+  - topic: "bayesian-nonparametrics"
+    site: "formalml"
+    relationship: "Posterior computation requires integrating likelihood × prior over the parameter space. When conjugacy is unavailable, numerical quadrature (trapezoidal, Simpson's, Gaussian quadrature) provides the computational backbone. Understanding integration error bounds from this topic informs the accuracy of these approximations."
+connections:
+  - topic: "sequences-limits"
+    relationship: "The Riemann integral is defined as a limit — specifically, the limit of Riemann sums as the partition mesh tends to zero. The convergence theory from Topic 1 provides the framework: the sequence of Riemann sums converges, and the integral is its limit."
+  - topic: "epsilon-delta"
+    relationship: "Integrability of continuous functions relies on uniform continuity, which was characterized via the ε-δ framework in Topic 2. The proofs of integrability criteria and the FTC use ε-δ arguments throughout."
+  - topic: "mean-value-taylor"
+    relationship: "The FTC Part 2 proof uses the Mean Value Theorem: F(xᵢ) - F(xᵢ₋₁) = F'(cᵢ)(xᵢ - xᵢ₋₁) = f(cᵢ)Δxᵢ converts the telescoping sum into a Riemann sum. The integral form of the Taylor remainder, stated without proof in Topic 6 Remark 4, is proved here using integration by parts."
+  - topic: "derivative"
+    relationship: "The FTC connects differentiation and integration as inverse operations. The substitution rule is the chain rule in reverse; integration by parts is the product rule in reverse. The derivative definition from Topic 5 is essential throughout."
+  - topic: "completeness-compactness"
+    relationship: "The proof that continuous functions on [a,b] are Riemann integrable uses the Heine-Cantor theorem: continuous functions on compact sets are uniformly continuous. Compactness of [a,b] (Heine-Borel, Topic 3) is the hidden engine behind integrability."
+references:
+  - type: "book"
+    title: "Understanding Analysis"
+    authors: "Abbott"
+    year: 2015
+    note: "Chapter 7 develops the Riemann integral via the Darboux approach with exceptional clarity — our primary reference for the definition and integrability proofs"
+  - type: "book"
+    title: "Principles of Mathematical Analysis"
+    authors: "Rudin"
+    year: 1976
+    note: "Chapter 6 on Riemann-Stieltjes integration — the definitive compact treatment, though we specialize to the Riemann case"
+  - type: "book"
+    title: "Calculus"
+    authors: "Spivak"
+    year: 2008
+    note: "Chapters 13–14 develop integration with unmatched geometric motivation alongside full rigor — the best reference for the geometric intuition behind partitions and area"
+  - type: "book"
+    title: "Real Analysis"
+    authors: "Folland"
+    year: 1999
+    note: "Chapter 2 gives the Lebesgue integral — useful for understanding where Riemann fails and why the generalization matters"
+  - type: "book"
+    title: "Numerical Analysis"
+    authors: "Burden & Faires"
+    year: 2010
+    note: "Chapter 4 on numerical integration — trapezoidal rule, Simpson's rule, Gaussian quadrature error analysis"
+---
+
+import TheoremBlock from '../../components/ui/TheoremBlock.astro';
+import RiemannSumExplorer from '../../components/viz/RiemannSumExplorer.tsx';
+import DarbouxSumExplorer from '../../components/viz/DarbouxSumExplorer.tsx';
+import FTCExplorer from '../../components/viz/FTCExplorer.tsx';
+import SubstitutionExplorer from '../../components/viz/SubstitutionExplorer.tsx';
+import NumericalIntegrationExplorer from '../../components/viz/NumericalIntegrationExplorer.tsx';
+
+## Overview & Motivation
+
+You're computing the expected loss of a model over a continuous data distribution: $\mathbb{E}[\ell(f_\theta(X), Y)] = \int \ell(f_\theta(x), y) \, p(x,y) \, dx \, dy$. What does this integral *mean*, precisely? It's the limit of a sum: partition the input space into small regions, compute the loss $\times$ density $\times$ volume in each region, and sum up. As the regions shrink, the sum converges to the integral. This is not a metaphor — it's the definition.
+
+The Riemann integral makes "area under a curve" (and its higher-dimensional generalizations) rigorous. We'll define it via partitions and Darboux sums (§2–3), prove that continuous functions are integrable (§4), establish the Fundamental Theorem of Calculus that ties integration to differentiation (§6–7), develop the key integration techniques (§8), and connect everything to expected values and numerical computation in ML (§11).
+
+**Prerequisites:** We use the sequence convergence framework from [Sequences, Limits & Convergence](/topics/sequences-limits), the epsilon-delta characterization of uniform continuity from [Epsilon-Delta & Continuity](/topics/epsilon-delta), the Heine-Cantor theorem from [Completeness & Compactness](/topics/completeness-compactness), and the Mean Value Theorem from [Mean Value Theorem & Taylor Expansion](/topics/mean-value-taylor).
+
+## Partitions and Riemann Sums
+
+### The geometric picture
+
+Start with a curve $y = f(x)$ above the $x$-axis on $[a, b]$. Slice the interval into $n$ equal subintervals. In each subinterval, build a rectangle whose height is the function value at some sample point. The total area of these rectangles approximates the area under the curve. The approximation improves as the slices get thinner — and the Riemann integral is the limit of this process.
+
+<TheoremBlock type="definition" number={1} title="Partition">
+A **partition** $P$ of $[a, b]$ is a finite ordered set $P = \{x_0, x_1, \ldots, x_n\}$ with $a = x_0 < x_1 < \cdots < x_n = b$. The **mesh** (or norm) of $P$ is $\|P\| = \max_{1 \le i \le n} \Delta x_i$ where $\Delta x_i = x_i - x_{i-1}$. A partition $Q$ is a **refinement** of $P$ if $P \subseteq Q$ (every point of $P$ is also a point of $Q$).
+</TheoremBlock>
+
+<TheoremBlock type="definition" number={2} title="Riemann Sum">
+Given a bounded function $f: [a, b] \to \mathbb{R}$, a partition $P = \{x_0, \ldots, x_n\}$, and sample points $t_i \in [x_{i-1}, x_i]$ for each $i$, the **Riemann sum** is
+
+$$S(f, P, \{t_i\}) = \sum_{i=1}^{n} f(t_i) \, \Delta x_i.$$
+
+Specific choices of sample points yield named rules:
+- **Left rule:** $t_i = x_{i-1}$ (left endpoint of each subinterval)
+- **Right rule:** $t_i = x_i$ (right endpoint)
+- **Midpoint rule:** $t_i = \frac{x_{i-1} + x_i}{2}$ (midpoint)
+</TheoremBlock>
+
+<TheoremBlock type="example" number={1} title="Riemann sums for f(x) = x² on [0, 1]">
+Take the uniform partition with $n = 4$ subintervals, so $\Delta x = 1/4$ and the partition points are $\{0, 1/4, 1/2, 3/4, 1\}$.
+
+**Left sum:** $S_L = \frac{1}{4}\bigl(f(0) + f(1/4) + f(1/2) + f(3/4)\bigr) = \frac{1}{4}\bigl(0 + \tfrac{1}{16} + \tfrac{4}{16} + \tfrac{9}{16}\bigr) = \frac{14}{64} \approx 0.219.$
+
+**Right sum:** $S_R = \frac{1}{4}\bigl(f(1/4) + f(1/2) + f(3/4) + f(1)\bigr) = \frac{1}{4}\bigl(\tfrac{1}{16} + \tfrac{4}{16} + \tfrac{9}{16} + 1\bigr) = \frac{30}{64} \approx 0.469.$
+
+The exact integral is $\int_0^1 x^2 \, dx = 1/3 \approx 0.333$, which is trapped between the left and right sums (as expected for this increasing function). As $n$ grows, both sums converge to $1/3$.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={1} title="The trapezoidal rule">
+Average the left and right Riemann sums to get the **trapezoidal rule**:
+
+$$T(f, P) = \frac{1}{2}[S_L(f, P) + S_R(f, P)] = \sum_{i=1}^n \frac{f(x_{i-1}) + f(x_i)}{2} \, \Delta x_i.$$
+
+Geometrically, each rectangle is replaced by a trapezoid whose top edge connects $(x_{i-1}, f(x_{i-1}))$ to $(x_i, f(x_i))$. This typically gives a better approximation than either endpoint rule alone, because the trapezoid's area is the average of the over-estimate and under-estimate.
+</TheoremBlock>
+
+<RiemannSumExplorer client:visible />
+
+![Three-panel illustration: left, right, and midpoint Riemann sums for x² on [0,1] with n = 8](/images/topics/riemann-integral/riemann-sums.png)
+
+## Upper and Lower Sums — The Darboux Approach
+
+### Why Darboux?
+
+Riemann sums depend on the choice of sample points $t_i$. To define the integral without this ambiguity, we bound the sums from above and below using suprema and infima of $f$ on each subinterval. This is the Darboux approach, and it gives us a clean criterion for integrability: the integral exists if and only if the upper and lower bounds can be squeezed arbitrarily close.
+
+<TheoremBlock type="definition" number={3} title="Upper and Lower Darboux Sums">
+For a bounded function $f$ on $[a, b]$ and a partition $P = \{x_0, \ldots, x_n\}$, define
+
+$$M_i = \sup_{x \in [x_{i-1}, x_i]} f(x) \quad \text{and} \quad m_i = \inf_{x \in [x_{i-1}, x_i]} f(x).$$
+
+The **upper Darboux sum** is $U(f, P) = \sum_{i=1}^n M_i \, \Delta x_i$ and the **lower Darboux sum** is $L(f, P) = \sum_{i=1}^n m_i \, \Delta x_i$.
+
+For any choice of sample points, $L(f, P) \le S(f, P, \{t_i\}) \le U(f, P)$.
+</TheoremBlock>
+
+<TheoremBlock type="proposition" number={1} title="Refinement Monotonicity">
+If $Q$ is a refinement of $P$, then
+
+$$L(f, P) \le L(f, Q) \le U(f, Q) \le U(f, P).$$
+
+Refining a partition increases lower sums and decreases upper sums — the bounds get tighter.
+</TheoremBlock>
+
+<TheoremBlock type="proof" number={1}>
+It suffices to show the result when $Q$ is obtained by adding a single point $x^* \in (x_{k-1}, x_k)$ to $P$, since the general case follows by induction on the number of added points.
+
+On the subinterval $[x_{k-1}, x_k]$, the upper sum contributes $M_k \cdot \Delta x_k$ where $M_k = \sup_{[x_{k-1}, x_k]} f$. Splitting at $x^*$ gives two subintervals $[x_{k-1}, x^*]$ and $[x^*, x_k]$ with suprema
+
+$$M_k' = \sup_{[x_{k-1}, x^*]} f \le M_k \quad \text{and} \quad M_k'' = \sup_{[x^*, x_k]} f \le M_k.$$
+
+So the new contribution is $M_k'(x^* - x_{k-1}) + M_k''(x_k - x^*) \le M_k(x^* - x_{k-1}) + M_k(x_k - x^*) = M_k \cdot \Delta x_k.$
+
+All other subintervals are unchanged, so $U(f, Q) \le U(f, P)$. The argument for $L(f, P) \le L(f, Q)$ is analogous (infima on smaller subintervals are $\ge$ the infimum on the larger subinterval).
+</TheoremBlock>
+
+<TheoremBlock type="proposition" number={2} title="Upper-Lower Inequality">
+For *any* partitions $P$ and $Q$ (not necessarily related by refinement), $L(f, P) \le U(f, Q)$.
+</TheoremBlock>
+
+<TheoremBlock type="proof" number={2}>
+The common refinement $P \cup Q$ refines both $P$ and $Q$. By Proposition 1:
+
+$$L(f, P) \le L(f, P \cup Q) \le U(f, P \cup Q) \le U(f, Q).$$
+
+The middle inequality $L(f, P \cup Q) \le U(f, P \cup Q)$ holds because $m_i \le M_i$ on every subinterval.
+</TheoremBlock>
+
+<DarbouxSumExplorer client:visible />
+
+![Upper and lower Darboux sums squeezing toward the integral, with gap shading](/images/topics/riemann-integral/darboux-sums.png)
+
+## The Riemann Integral
+
+<TheoremBlock type="definition" number={4} title="The Riemann Integral (Darboux Definition)">
+A bounded function $f: [a, b] \to \mathbb{R}$ is **Riemann integrable** if the upper and lower integrals agree:
+
+$$\underline{\int_a^b} f = \sup_P L(f, P) = \inf_P U(f, P) = \overline{\int_a^b} f.$$
+
+The common value is written $\int_a^b f(x) \, dx$ and called the **Riemann integral** of $f$ on $[a, b]$.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={2} title="Equivalent ε-characterization of integrability">
+$f$ is Riemann integrable if and only if for every $\varepsilon > 0$, there exists a partition $P$ such that $U(f, P) - L(f, P) < \varepsilon$. This is the criterion we'll use in all integrability proofs: show that the gap between upper and lower sums can be made as small as we like.
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={1} title="Continuous Functions Are Riemann Integrable">
+If $f: [a, b] \to \mathbb{R}$ is continuous, then $f$ is Riemann integrable.
+</TheoremBlock>
+
+<TheoremBlock type="proof" number={3}>
+Since $[a, b]$ is compact (Heine-Borel, [Completeness & Compactness](/topics/completeness-compactness)), $f$ is uniformly continuous on $[a, b]$ (Heine-Cantor theorem, also from Topic 3).
+
+Given $\varepsilon > 0$, choose $\delta > 0$ such that
+
+$$|x - y| < \delta \implies |f(x) - f(y)| < \frac{\varepsilon}{b - a}.$$
+
+Take any partition $P$ with mesh $\|P\| < \delta$. On each subinterval $[x_{i-1}, x_i]$, the length is $\Delta x_i < \delta$, so for any $x, y \in [x_{i-1}, x_i]$ we have $|f(x) - f(y)| < \varepsilon/(b - a)$. In particular:
+
+$$M_i - m_i = \sup_{[x_{i-1}, x_i]} f - \inf_{[x_{i-1}, x_i]} f < \frac{\varepsilon}{b - a}.$$
+
+Therefore:
+
+$$U(f, P) - L(f, P) = \sum_{i=1}^n (M_i - m_i) \, \Delta x_i < \frac{\varepsilon}{b - a} \sum_{i=1}^n \Delta x_i = \frac{\varepsilon}{b - a} \cdot (b - a) = \varepsilon.$$
+
+Every step is explicit. The chain compactness $\to$ uniform continuity $\to$ integrability is fully traced.
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={2} title="Monotone Functions Are Riemann Integrable">
+If $f: [a, b] \to \mathbb{R}$ is monotone (either increasing or decreasing throughout), then $f$ is Riemann integrable.
+</TheoremBlock>
+
+<TheoremBlock type="proof" number={4}>
+Assume $f$ is increasing (the decreasing case is analogous). For any partition $P$, the supremum on $[x_{i-1}, x_i]$ is $M_i = f(x_i)$ and the infimum is $m_i = f(x_{i-1})$ — since $f$ is increasing.
+
+With the uniform partition $\Delta x_i = (b - a)/n$:
+
+$$U(f, P) - L(f, P) = \sum_{i=1}^n (f(x_i) - f(x_{i-1})) \cdot \frac{b - a}{n} = \frac{b - a}{n} \sum_{i=1}^n [f(x_i) - f(x_{i-1})].$$
+
+The sum telescopes: $\sum_{i=1}^n [f(x_i) - f(x_{i-1})] = f(b) - f(a)$.
+
+So $U - L = \frac{(b - a)(f(b) - f(a))}{n}$. Given $\varepsilon > 0$, choose $n > \frac{(b - a)(f(b) - f(a))}{\varepsilon}$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={2} title="The Dirichlet function is not Riemann integrable">
+Define $\mathbf{1}_{\mathbb{Q}}(x) = 1$ if $x \in \mathbb{Q}$ and $\mathbf{1}_{\mathbb{Q}}(x) = 0$ if $x \notin \mathbb{Q}$. On any subinterval $[x_{i-1}, x_i]$:
+
+- $M_i = 1$ because the rationals are dense — every subinterval contains rational numbers.
+- $m_i = 0$ because the irrationals are dense — every subinterval contains irrational numbers.
+
+So $U(f, P) = \sum M_i \, \Delta x_i = b - a$ and $L(f, P) = \sum m_i \, \Delta x_i = 0$ for **every** partition $P$. The upper and lower integrals disagree: $\overline{\int} = b - a \neq 0 = \underline{\int}$, so $f$ is not Riemann integrable.
+
+This example matters for ML: the Dirichlet function is a legitimate measurable function, and the Lebesgue integral *can* handle it ($\int \mathbf{1}_{\mathbb{Q}} = 0$). The failure of Riemann integration for such functions is precisely why measure-theoretic probability (→ [formalML: Measure-Theoretic Probability](https://formalml.com/topics/measure-theoretic-probability)) requires the more powerful Lebesgue integral.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={3} title="Bounded functions with finitely many discontinuities">
+If $f$ is bounded on $[a, b]$ and has only finitely many points of discontinuity, then $f$ is still Riemann integrable. The idea: cover the discontinuities with subintervals of arbitrarily small total length (contributing at most $\varepsilon$ to $U - L$), and handle the continuous portions with Theorem 1. Discontinuities on a set of "measure zero" don't spoil integrability — a fact that foreshadows the Lebesgue criterion.
+</TheoremBlock>
+
+![Integrability proof illustration: uniform continuity giving M_i - m_i < ε/(b-a), gap shrinking with n](/images/topics/riemann-integral/integrability-proof.png)
+
+## Properties of the Integral
+
+<TheoremBlock type="theorem" number={3} title="Properties of the Riemann Integral">
+If $f$ and $g$ are Riemann integrable on $[a, b]$ and $c \in \mathbb{R}$:
+
+**(a) Linearity:**
+
+$$\int_a^b [f(x) + g(x)] \, dx = \int_a^b f(x) \, dx + \int_a^b g(x) \, dx \quad \text{and} \quad \int_a^b c \, f(x) \, dx = c \int_a^b f(x) \, dx.$$
+
+**(b) Monotonicity:** If $f(x) \le g(x)$ for all $x \in [a, b]$, then $\int_a^b f \le \int_a^b g$.
+
+**(c) Additivity over intervals:** For any $c \in (a, b)$:
+
+$$\int_a^b f = \int_a^c f + \int_c^b f.$$
+
+**(d) Triangle inequality:**
+
+$$\left|\int_a^b f(x) \, dx\right| \le \int_a^b |f(x)| \, dx.$$
+</TheoremBlock>
+
+<TheoremBlock type="proof" number={5}>
+**(a) Linearity (additivity).** For any partition $P$, the infimum of a sum satisfies $\inf(f + g) \ge \inf f + \inf g$ on each subinterval. Therefore $L(f + g, P) \ge L(f, P) + L(g, P)$. Similarly, $U(f + g, P) \le U(f, P) + U(g, P)$. Taking the supremum of lower sums and infimum of upper sums gives
+
+$$\int_a^b f + \int_a^b g \le \underline{\int_a^b} (f + g) \le \overline{\int_a^b} (f + g) \le \int_a^b f + \int_a^b g.$$
+
+So all four quantities are equal. The scalar multiplication $\int cf = c \int f$ follows by similar reasoning (with separate cases for $c \ge 0$ and $c < 0$).
+
+**(b) Monotonicity.** If $f(x) \le g(x)$ on $[a, b]$, then $L(f, P) \le L(g, P)$ for every partition $P$ (the infimum of $f$ on each subinterval is $\le$ the infimum of $g$). Taking $\sup_P$ gives $\int f \le \int g$.
+
+**(c) Additivity.** Use a common refinement that includes the point $c$. On such a refinement, the Riemann sums over $[a, b]$ split exactly into sums over $[a, c]$ and $[c, b]$.
+
+**(d) Triangle inequality.** Since $-|f(x)| \le f(x) \le |f(x)|$ for all $x$, apply monotonicity: $-\int |f| \le \int f \le \int |f|$, which gives $|\int f| \le \int |f|$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={3} title="Computing ∫₀¹ x² dx from the definition">
+We compute the integral directly as a limit of Riemann sums — the "hard" way — to see the definition in action.
+
+Using the right-endpoint sum with the uniform partition ($\Delta x = 1/n$, sample points $t_i = i/n$):
+
+$$S_n = \sum_{i=1}^n \left(\frac{i}{n}\right)^2 \cdot \frac{1}{n} = \frac{1}{n^3} \sum_{i=1}^n i^2 = \frac{1}{n^3} \cdot \frac{n(n+1)(2n+1)}{6} = \frac{(n+1)(2n+1)}{6n^2}.$$
+
+As $n \to \infty$:
+
+$$\lim_{n \to \infty} \frac{(n+1)(2n+1)}{6n^2} = \lim_{n \to \infty} \frac{2n^2 + 3n + 1}{6n^2} = \frac{2}{6} = \frac{1}{3}.$$
+
+So $\int_0^1 x^2 \, dx = 1/3$. This is the hard way — the FTC (coming in §7) will make it a one-line computation.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={4} title="Computing ∫₀¹ eˣ dx as a limit of sums">
+Right-endpoint uniform partition: $S_n = \frac{1}{n} \sum_{i=1}^n e^{i/n} = \frac{1}{n} \cdot e^{1/n} \cdot \frac{e^{n \cdot (1/n)} - 1}{e^{1/n} - 1} = \frac{e^{1/n}(e - 1)}{n(e^{1/n} - 1)}$ (geometric series).
+
+As $n \to \infty$, using $e^{1/n} - 1 \approx 1/n$: $S_n \to e - 1$. This matches $[e^x]_0^1 = e - 1$.
+</TheoremBlock>
+
+![Integral properties: linearity (sum of areas), monotonicity (f ≤ g), and additivity (splitting at c)](/images/topics/riemann-integral/integral-properties.png)
+
+## The Fundamental Theorem of Calculus, Part 1
+
+### The geometric picture
+
+Consider the "area function" $F(x) = \int_a^x f(t) \, dt$ — the accumulated area under $f$ from $a$ to $x$. As $x$ advances by a tiny amount $h$, the area increases by approximately $f(x) \cdot h$ — a thin rectangle of height $f(x)$ and width $h$. So
+
+$$F'(x) \approx \frac{F(x+h) - F(x)}{h} \approx f(x).$$
+
+The FTC Part 1 says this approximation is exact in the limit: **$F'(x) = f(x)$**. Differentiation undoes integration.
+
+<TheoremBlock type="definition" number={5} title="Antiderivative">
+A function $F: [a, b] \to \mathbb{R}$ is an **antiderivative** of $f$ on $(a, b)$ if $F'(x) = f(x)$ for all $x \in (a, b)$.
+
+If $F$ is an antiderivative of $f$, then so is $F + C$ for any constant $C$ — and these are the *only* antiderivatives. This follows from Corollary 1 of the MVT ([Mean Value Theorem & Taylor Expansion](/topics/mean-value-taylor)): if $(F - G)' = 0$ on $(a, b)$, then $F - G$ is constant.
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={4} title="Fundamental Theorem of Calculus, Part 1">
+If $f$ is continuous on $[a, b]$, then the function $F: [a, b] \to \mathbb{R}$ defined by
+
+$$F(x) = \int_a^x f(t) \, dt$$
+
+is continuous on $[a, b]$, differentiable on $(a, b)$, and $F'(x) = f(x)$ for all $x \in (a, b)$.
+</TheoremBlock>
+
+<TheoremBlock type="proof" number={6}>
+Fix $x \in (a, b)$. For $h \neq 0$ with $x + h \in [a, b]$, the additivity of the integral gives:
+
+$$\frac{F(x+h) - F(x)}{h} = \frac{1}{h} \int_x^{x+h} f(t) \, dt.$$
+
+Since $f$ is continuous at $x$: given $\varepsilon > 0$, choose $\delta > 0$ such that $|t - x| < \delta \implies |f(t) - f(x)| < \varepsilon$. For $|h| < \delta$, every $t$ between $x$ and $x + h$ satisfies $|t - x| \le |h| < \delta$, so $|f(t) - f(x)| < \varepsilon$. Therefore:
+
+$$\left|\frac{F(x+h) - F(x)}{h} - f(x)\right| = \left|\frac{1}{h} \int_x^{x+h} [f(t) - f(x)] \, dt\right| \le \frac{1}{|h|} \int_x^{x+h} |f(t) - f(x)| \, dt < \frac{1}{|h|} \cdot \varepsilon \cdot |h| = \varepsilon.$$
+
+The integral bound uses $|f(t) - f(x)| < \varepsilon$ for all $t$ in the interval of length $|h|$, and the triangle inequality for integrals (Theorem 3(d)).
+
+This shows $\lim_{h \to 0} \frac{F(x+h) - F(x)}{h} = f(x)$, i.e., $F'(x) = f(x)$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={5} title="Differentiating an integral with no closed-form antiderivative">
+$$\frac{d}{dx} \int_0^x \sin(t^2) \, dt = \sin(x^2).$$
+
+No antiderivative of $\sin(t^2)$ exists in elementary functions (the integral defines the Fresnel function $S(x)$). But the FTC Part 1 tells us the derivative of the area function anyway. This illustrates the power of FTC1: we can differentiate integrals even when we cannot compute them in closed form.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={6} title="Chain rule version of FTC1">
+$$\frac{d}{dx} \int_0^{x^2} e^{-t^2} \, dt = e^{-x^4} \cdot 2x.$$
+
+Here the upper limit is $g(x) = x^2$ rather than $x$ itself. By the chain rule ([The Derivative & Chain Rule](/topics/derivative), Theorem 6): if $G(u) = \int_0^u e^{-t^2} \, dt$, then $G'(u) = e^{-u^2}$ by FTC1, and $\frac{d}{dx} G(x^2) = G'(x^2) \cdot 2x = e^{-x^4} \cdot 2x$.
+</TheoremBlock>
+
+<FTCExplorer client:visible />
+
+![FTC Part 1: f(x) with shaded area to x, and F(x) below with tangent slope = f(x)](/images/topics/riemann-integral/ftc-part-1.png)
+
+## The Fundamental Theorem of Calculus, Part 2
+
+FTC Part 1 tells us that every continuous function *has* an antiderivative (namely $F(x) = \int_a^x f$). FTC Part 2 tells us how to *use* an antiderivative to compute a definite integral: evaluate at the endpoints and subtract.
+
+<TheoremBlock type="theorem" number={5} title="Fundamental Theorem of Calculus, Part 2">
+If $f$ is continuous on $[a, b]$ and $F$ is any antiderivative of $f$ on $[a, b]$ (i.e., $F'(x) = f(x)$ for all $x \in (a, b)$), then
+
+$$\int_a^b f(x) \, dx = F(b) - F(a).$$
+</TheoremBlock>
+
+<TheoremBlock type="proof" number={7}>
+Let $P = \{x_0, x_1, \ldots, x_n\}$ be any partition of $[a, b]$. Write $F(b) - F(a)$ as a telescoping sum:
+
+$$F(b) - F(a) = \sum_{i=1}^n [F(x_i) - F(x_{i-1})].$$
+
+By the Mean Value Theorem ([Mean Value Theorem & Taylor Expansion](/topics/mean-value-taylor), Theorem 2), applied to $F$ on each subinterval $[x_{i-1}, x_i]$: there exists $c_i \in (x_{i-1}, x_i)$ such that
+
+$$F(x_i) - F(x_{i-1}) = F'(c_i)(x_i - x_{i-1}) = f(c_i) \, \Delta x_i.$$
+
+So the telescoping sum becomes a Riemann sum:
+
+$$F(b) - F(a) = \sum_{i=1}^n f(c_i) \, \Delta x_i.$$
+
+Since $f$ is continuous (hence Riemann integrable by Theorem 1), as $\|P\| \to 0$ every Riemann sum converges to $\int_a^b f$. But the left side $F(b) - F(a)$ is independent of the partition. Therefore:
+
+$$F(b) - F(a) = \int_a^b f(x) \, dx.$$
+</TheoremBlock>
+
+<TheoremBlock type="example" number={7} title="∫₀¹ x² dx via FTC2">
+$$\int_0^1 x^2 \, dx = \left[\frac{x^3}{3}\right]_0^1 = \frac{1}{3} - 0 = \frac{1}{3}.$$
+
+Compare with Example 3: the same answer, in one line instead of a page of algebra. The FTC transforms a limit evaluation into an antiderivative evaluation.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={8} title="∫₀π sin(x) dx">
+$$\int_0^\pi \sin(x) \, dx = [-\cos(x)]_0^\pi = -\cos(\pi) + \cos(0) = 1 + 1 = 2.$$
+
+The area under one arch of the sine curve is exactly 2.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={4} title="The two parts of FTC are not converses">
+Part 1 says: start with $f$ continuous $\to$ construct $F(x) = \int_a^x f$ $\to$ get $F' = f$. Part 2 says: start with *any* antiderivative $F$ of $f$ $\to$ $\int_a^b f = F(b) - F(a)$. They are complementary, not equivalent. Part 1 is an **existence** result (continuous functions have antiderivatives); Part 2 is a **computation** result (integrals can be evaluated via antiderivatives).
+</TheoremBlock>
+
+![FTC Part 2: telescoping sum F(b) - F(a) becoming a Riemann sum via MVT](/images/topics/riemann-integral/ftc-part-2.png)
+
+## Integration Techniques
+
+<TheoremBlock type="theorem" number={6} title="Substitution Rule (Change of Variables)">
+If $g: [a, b] \to \mathbb{R}$ is continuously differentiable and $f$ is continuous on the range of $g$, then
+
+$$\int_a^b f(g(x)) \, g'(x) \, dx = \int_{g(a)}^{g(b)} f(u) \, du.$$
+</TheoremBlock>
+
+<TheoremBlock type="proof" number={8}>
+Let $F$ be an antiderivative of $f$ (exists by FTC Part 1 since $f$ is continuous). Then by the chain rule ([The Derivative & Chain Rule](/topics/derivative), Theorem 6):
+
+$$(F \circ g)'(x) = F'(g(x)) \cdot g'(x) = f(g(x)) \cdot g'(x).$$
+
+So $F \circ g$ is an antiderivative of $f(g(x)) \cdot g'(x)$. By FTC Part 2:
+
+$$\int_a^b f(g(x)) \, g'(x) \, dx = F(g(b)) - F(g(a)) = \int_{g(a)}^{g(b)} f(u) \, du.$$
+</TheoremBlock>
+
+<TheoremBlock type="example" number={9} title="∫₀¹ 2x e^(x²) dx">
+Let $u = x^2$, so $du = 2x \, dx$. The bounds transform: $u(0) = 0$, $u(1) = 1$. Therefore:
+
+$$\int_0^1 2x \, e^{x^2} \, dx = \int_0^1 e^u \, du = [e^u]_0^1 = e - 1.$$
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={7} title="Integration by Parts">
+If $u$ and $v$ are continuously differentiable on $[a, b]$, then
+
+$$\int_a^b u(x) \, v'(x) \, dx = [u(x) \, v(x)]_a^b - \int_a^b u'(x) \, v(x) \, dx.$$
+</TheoremBlock>
+
+<TheoremBlock type="proof" number={9}>
+By the product rule ([The Derivative & Chain Rule](/topics/derivative), Theorem 4): $(uv)' = u'v + uv'$. Integrate both sides from $a$ to $b$ using FTC Part 2:
+
+$$u(b) \, v(b) - u(a) \, v(a) = \int_a^b u'(x) \, v(x) \, dx + \int_a^b u(x) \, v'(x) \, dx.$$
+
+Rearrange to get the integration by parts formula.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={10} title="∫₀¹ x eˣ dx">
+Let $u = x$ and $dv = e^x \, dx$, so $du = dx$ and $v = e^x$. Then:
+
+$$\int_0^1 x \, e^x \, dx = [x \, e^x]_0^1 - \int_0^1 e^x \, dx = (1 \cdot e - 0) - [e^x]_0^1 = e - (e - 1) = 1.$$
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={5} title="The chain rule and product rule in reverse">
+Substitution is the chain rule $(f \circ g)' = (f' \circ g) \cdot g'$ read from right to left. Integration by parts is the product rule $(uv)' = u'v + uv'$ rearranged. Every differentiation rule has an integration counterpart — they are the same theorems, applied in opposite directions.
+</TheoremBlock>
+
+<SubstitutionExplorer client:visible />
+
+![Substitution and integration by parts: x-domain vs u-domain areas, and rectangle decomposition](/images/topics/riemann-integral/integration-techniques.png)
+
+## The Integral Form of the Taylor Remainder
+
+This section resolves the forward reference from [Mean Value Theorem & Taylor Expansion](/topics/mean-value-taylor), Remark 4, which stated the integral remainder without proof.
+
+<TheoremBlock type="theorem" number={8} title="Integral Remainder for Taylor's Theorem">
+If $f$ is $(n+1)$-times continuously differentiable on an interval containing $a$ and $x$, then
+
+$$f(x) = \sum_{k=0}^{n} \frac{f^{(k)}(a)}{k!}(x - a)^k + R_n(x)$$
+
+where the remainder is given by
+
+$$R_n(x) = \frac{1}{n!} \int_a^x (x - t)^n \, f^{(n+1)}(t) \, dt.$$
+</TheoremBlock>
+
+<TheoremBlock type="proof" number={10}>
+By induction on $n$.
+
+**Base case ($n = 0$):** We need $f(x) = f(a) + \int_a^x f'(t) \, dt$. This is exactly FTC Part 2 applied to $F = f$: $\int_a^x f'(t) \, dt = f(x) - f(a)$.
+
+**Inductive step:** Assume the result holds for $n - 1$:
+
+$$R_{n-1}(x) = \frac{1}{(n-1)!} \int_a^x (x - t)^{n-1} f^{(n)}(t) \, dt.$$
+
+Apply integration by parts with
+
+$$u = f^{(n)}(t), \quad dv = \frac{(x - t)^{n-1}}{(n-1)!} \, dt, \quad \text{so} \quad v = -\frac{(x - t)^n}{n!}.$$
+
+Then:
+
+$$R_{n-1}(x) = \left[-\frac{(x - t)^n}{n!} f^{(n)}(t)\right]_a^x + \frac{1}{n!} \int_a^x (x - t)^n f^{(n+1)}(t) \, dt.$$
+
+Evaluating the boundary term: at $t = x$, $(x - t)^n = 0$; at $t = a$, the term is $-(-1) \cdot \frac{(x - a)^n}{n!} f^{(n)}(a) = \frac{f^{(n)}(a)}{n!}(x - a)^n$. So:
+
+$$R_{n-1}(x) = \frac{f^{(n)}(a)}{n!}(x - a)^n + R_n(x).$$
+
+Absorbing $\frac{f^{(n)}(a)}{n!}(x - a)^n$ into the Taylor polynomial of degree $n$ gives the result.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={6} title="Lagrange remainder from the integral remainder">
+The Lagrange form $R_n(x) = \frac{f^{(n+1)}(c)}{(n+1)!}(x - a)^{n+1}$ (from [Mean Value Theorem & Taylor Expansion](/topics/mean-value-taylor), Theorem 4) follows from the integral form by the Mean Value Theorem for Integrals. The integral form is *stronger*: it gives the *exact* remainder as an integral, not just a bound involving an unknown intermediate point $c$.
+</TheoremBlock>
+
+![Taylor remainder: integral form vs Lagrange bound for e^x](/images/topics/riemann-integral/taylor-remainder-integral.png)
+
+## Numerical Integration
+
+When antiderivatives don't exist in closed form — which is most of the time in practice — we compute integrals numerically. The Riemann sum framework we've developed is not just a theoretical tool; it's the blueprint for computational quadrature.
+
+<TheoremBlock type="proposition" number={3} title="Error Bounds for Quadrature Rules">
+For $f$ with sufficient smoothness on $[a, b]$ with $n$ subintervals of width $h = (b - a)/n$:
+
+**(a) Left/Right endpoint rule:** $|E_n| \le \frac{(b - a)^2}{2n} \max_{[a,b]} |f'|$ — error $O(h)$.
+
+**(b) Trapezoidal rule:** $|E_n| \le \frac{(b - a)^3}{12n^2} \max_{[a,b]} |f''|$ — error $O(h^2)$.
+
+**(c) Simpson's rule:** $|E_n| \le \frac{(b - a)^5}{180n^4} \max_{[a,b]} |f^{(4)}|$ — error $O(h^4)$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={11} title="Error comparison across quadrature rules">
+Approximate $\int_0^1 e^x \, dx = e - 1 \approx 1.71828$ with $n = 10$ subintervals:
+
+| Rule | Approximation | $|E_{10}|$ | Bound |
+|------|---------------|-----------|-------|
+| Left | $\approx 1.5819$ | $\approx 0.136$ | $\le 0.136$ |
+| Trapezoidal | $\approx 1.7197$ | $\approx 0.00136$ | $\le 0.00227$ |
+| Simpson's | $\approx 1.718282$ | $\approx 1.5 \times 10^{-6}$ | $\le 1.5 \times 10^{-6}$ |
+
+Simpson's rule achieves 6 digits of accuracy with just 10 subintervals. The convergence rates — $O(1/n)$, $O(1/n^2)$, $O(1/n^4)$ — explain why higher-order methods dominate in practice.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={7} title="Simpson's rule and polynomial interpolation">
+Simpson's rule fits a parabola through every three consecutive points $(x_{i-1}, f(x_{i-1}))$, $(x_i, f(x_i))$, $(x_{i+1}, f(x_{i+1}))$, then integrates the parabola exactly. It is exact for polynomials up to degree 3 — not just degree 2 — because of a symmetry cancellation. This is why the error involves $f^{(4)}$, not $f^{(3)}$.
+</TheoremBlock>
+
+<NumericalIntegrationExplorer client:visible />
+
+![Log-log convergence plot: error vs n for left, trapezoidal, and Simpson rules](/images/topics/riemann-integral/quadrature-error.png)
+
+## Connections to ML
+
+The integral is one of the most ubiquitous operations in machine learning — arguably more so than the derivative, since every expected value, every probability computation, and every marginal distribution involves integration.
+
+### Expected values as integrals
+
+If $X$ is a continuous random variable with density $f(x)$, then the expected value of any function $g(X)$ is
+
+$$\mathbb{E}[g(X)] = \int_{-\infty}^{\infty} g(x) \, f(x) \, dx.$$
+
+The risk (expected loss) of a hypothesis $h$ is $\text{Risk}(h) = \mathbb{E}_{(X,Y)}[\ell(h(X), Y)] = \int \ell(h(x), y) \, p(x, y) \, dx \, dy$. We can't compute this integral exactly (we don't know $p$), so we approximate it with the **empirical risk**: $\hat{R}(h) = \frac{1}{n} \sum_{i=1}^n \ell(h(x_i), y_i)$. This is literally a Riemann sum — the Monte Carlo approximation replaces the integral with a finite sum over data points.
+
+→ [Measure-Theoretic Probability](https://formalml.com/topics/measure-theoretic-probability) on formalML
+
+### Marginalizing over latent variables
+
+Mixture models define $p(x) = \int p(x | z) \, p(z) \, dz$ — the observed density is obtained by integrating over the latent variable $z$. Variational autoencoders work with $\log p(x) = \log \int p(x | z) \, p(z) \, dz$. When this integral is intractable (it almost always is in high dimensions), we resort to variational lower bounds (the ELBO) or numerical quadrature.
+
+→ [Bayesian Nonparametrics](https://formalml.com/topics/bayesian-nonparametrics) on formalML
+
+### Information-theoretic quantities
+
+Entropy, KL divergence, and cross-entropy are all integrals over densities:
+
+$$H(X) = -\int f(x) \log f(x) \, dx, \qquad D_{\text{KL}}(p \| q) = \int p(x) \log \frac{p(x)}{q(x)} \, dx.$$
+
+The properties of the integral — linearity, monotonicity — directly yield Gibbs' inequality ($D_{\text{KL}} \ge 0$) and other fundamental information-theoretic bounds.
+
+→ [Shannon Entropy](https://formalml.com/topics/shannon-entropy) on formalML
+
+### Numerical quadrature in practice
+
+When closed-form antiderivatives don't exist, we compute integrals numerically. For 1D integrals, the trapezoidal and Simpson's rules from §10 are effective. `scipy.integrate.quad` uses adaptive Gaussian quadrature — choosing subinterval sizes based on local function behavior, exactly the kind of partition refinement we studied in §2. For high-dimensional integrals ($d > 3$), Monte Carlo methods replace deterministic quadrature, because the curse of dimensionality makes grid-based methods impractical.
+
+### From Riemann to Lebesgue: why the generalization matters
+
+The Riemann integral handles continuous and piecewise-continuous functions on bounded intervals. But ML requires more:
+
+- **Unbounded domains:** $\int_{-\infty}^{\infty} f(x) \, dx$ (every expected value over $\mathbb{R}$).
+- **Pathological functions:** Indicator functions, densities with heavy tails, functions with uncountably many discontinuities.
+- **Exchanging limits and integrals:** The dominated convergence theorem lets us pass limits inside integrals under mild conditions — essential for proving that the empirical risk converges to the true risk.
+
+The Lebesgue integral handles all of these. The transition Riemann $\to$ Lebesgue is the transition from introductory to measure-theoretic probability.
+
+→ [Measure-Theoretic Probability](https://formalml.com/topics/measure-theoretic-probability) on formalML
+
+![ML connections: expected value as integral over density, and Monte Carlo approximation](/images/topics/riemann-integral/ml-connections.png)
+
+## Connections & Further Reading
+
+### Back-references
+
+- [Sequences, Limits & Convergence](/topics/sequences-limits) — the integral is defined as a limit of Riemann sums; the convergence theory from Topic 1 provides the framework.
+- [Epsilon-Delta & Continuity](/topics/epsilon-delta) — uniform continuity (ε-δ framework) is the key ingredient in the proof that continuous functions are integrable.
+- [Completeness & Compactness](/topics/completeness-compactness) — compactness of $[a,b]$ gives uniform continuity (Heine-Cantor), which is the hidden engine behind integrability.
+- [The Derivative & Chain Rule](/topics/derivative) — the chain rule gives substitution; the product rule gives integration by parts. The FTC connects differentiation and integration as inverse operations.
+- [Mean Value Theorem & Taylor Expansion](/topics/mean-value-taylor) — the MVT powers the FTC Part 2 proof; the integral form of the Taylor remainder (§9) resolves Remark 4 from Topic 6.
+
+### Forward references (within formalCalculus)
+
+- **Improper Integrals & Special Functions** *(coming soon)* — extending integration to unbounded intervals ($\int_0^\infty$) and unbounded integrands; the Gamma, Beta, and Gaussian integrals.
+- **Multiple Integrals & Fubini's Theorem** *(coming soon)* — iterated integrals in $\mathbb{R}^n$, computing joint and marginal densities.
+- **Change of Variables** *(coming soon)* — the Jacobian determinant generalizes substitution to $\mathbb{R}^n$.
+- **Power Series & Taylor Series** *(coming soon)* — term-by-term integration of power series.
+- **The Lebesgue Integral** *(coming soon)* — the measure-theoretic generalization that resolves Riemann's limitations.
+
+### Forward links to formalML
+
+- [Measure-Theoretic Probability](https://formalml.com/topics/measure-theoretic-probability) — the Riemann integral is the starting point; the Lebesgue integral is the destination.
+- [Shannon Entropy](https://formalml.com/topics/shannon-entropy) — entropy, KL divergence, and cross-entropy are all integrals.
+- [Bayesian Nonparametrics](https://formalml.com/topics/bayesian-nonparametrics) — posterior computation is integration; quadrature is the computational workhorse.
