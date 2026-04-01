@@ -2,7 +2,6 @@ import { useState, useMemo, useCallback, type ChangeEvent } from 'react';
 import * as d3 from 'd3';
 import { useResizeObserver } from './shared/useResizeObserver';
 import { useD3 } from './shared/useD3';
-import { areaFunction } from './shared/integration';
 import { getFTCPresets } from '../../data/riemann-integral-data';
 import { functionColors, regionColors } from './shared/colorScales';
 
@@ -37,14 +36,6 @@ export default function FTCExplorer() {
       pts.push({ x, y: preset.f(x) });
     }
     return pts;
-  }, [selectedIdx]);
-
-  // F(x) = integral area function (numerically + exact overlay)
-  const areaData = useMemo(() => {
-    const [a, b] = preset.domain;
-    const xVals: number[] = [];
-    for (let i = 0; i < CURVE_PTS; i++) xVals.push(a + (i / (CURVE_PTS - 1)) * (b - a));
-    return areaFunction(preset.f, preset.defaultA, xVals, 200);
   }, [selectedIdx]);
 
   // F(x) exact curve

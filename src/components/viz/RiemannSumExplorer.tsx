@@ -81,7 +81,7 @@ export default function RiemannSumExplorer() {
 
   // Convergence data
   const convergenceData = useMemo(() => {
-    if (!exact) return null;
+    if (exact === null) return null;
     const nVals = [];
     for (let k = 2; k <= 200; k++) nVals.push(k);
     return quadratureConvergence(
@@ -174,7 +174,7 @@ export default function RiemannSumExplorer() {
         .attr('text-anchor', 'middle')
         .style('fill', 'var(--color-text-muted)')
         .style('font-size', '13px')
-        .text(`${preset.label} on [${a.toFixed(1)}, ${b.toFixed(2)}]  —  n = ${n}, ${rule} rule`);
+        .text(`${preset.label} on [${a.toFixed(1)}, ${b.toFixed(2)}]  —  n = ${rsResult.partition.n}, ${rule} rule`);
     },
     [width, selectedIdx, n, rule, curveData, rsResult],
   );

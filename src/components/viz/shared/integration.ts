@@ -14,8 +14,6 @@
  *  - Quadrature convergence data for error-vs-n plots
  */
 
-import type { Point2D } from './types';
-
 // Re-export seededRandom for downstream consumers
 export { seededRandom } from './limits';
 
@@ -108,7 +106,7 @@ export function uniformPartition(a: number, b: number, n: number): IntegrationPa
     widths.push(h);
   }
 
-  return { points, n, mesh: h, widths };
+  return { points, n, mesh: Math.abs(h), widths };
 }
 
 /**
@@ -121,16 +119,18 @@ export function refinePartition(
 ): IntegrationPartition {
   const pts = partition.points;
 
-  // Find insertion index (skip if already present)
+  // Find insertion index (skip if already present, including last point)
+  for (let i = 0; i < pts.length; i++) {
+    if (Math.abs(newPoint - pts[i]) < 1e-12) return partition; // already present
+  }
   let insertIdx = -1;
   for (let i = 0; i < pts.length - 1; i++) {
-    if (Math.abs(newPoint - pts[i]) < 1e-12) return partition; // already present
     if (newPoint > pts[i] && newPoint < pts[i + 1]) {
       insertIdx = i + 1;
       break;
     }
   }
-  if (insertIdx === -1) return partition; // outside range or at endpoint
+  if (insertIdx === -1) return partition; // outside range
 
   const newPoints = [...pts.slice(0, insertIdx), newPoint, ...pts.slice(insertIdx)];
   const newWidths: number[] = [];
@@ -138,7 +138,7 @@ export function refinePartition(
   for (let i = 0; i < newPoints.length - 1; i++) {
     const w = newPoints[i + 1] - newPoints[i];
     newWidths.push(w);
-    if (w > mesh) mesh = w;
+    if (Math.abs(w) > mesh) mesh = Math.abs(w);
   }
 
   return { points: newPoints, n: newPoints.length - 1, mesh, widths: newWidths };
@@ -357,29 +357,41 @@ export function areaFunction(
   xValues: number[],
   nSubintervals: number = 100,
 ): Array<{ x: number; Fx: number }> {
-  // Sort xValues and compute incrementally
-  const sorted = [...xValues].sort((u, v) => u - v);
-  const result: Array<{ x: number; Fx: number }> = [];
+  // Tag each x with its original index so we can restore input order
+  const indexed = xValues.map((x, idx) => ({ x, idx }));
+  indexed.sort((u, v) => u.x - v.x);
 
+  const FxByIndex: number[] = new Array(xValues.length);
+
+  // ── Forward pass (x >= a): accumulate left-to-right in O(N) ──
   let cumulative = 0;
   let prevX = a;
-
-  for (const x of sorted) {
-    if (x < a) {
-      // For x < a, integrate backwards: F(x) = -integral from x to a
-      const seg = trapezoidalSegment(f, x, a, nSubintervals);
-      result.push({ x, Fx: -seg });
-    } else {
-      // Accumulate from prevX to x using trapezoidal rule
+  for (const { x, idx } of indexed) {
+    if (x >= a) {
       if (x > prevX) {
         cumulative += trapezoidalSegment(f, prevX, x, nSubintervals);
         prevX = x;
       }
-      result.push({ x, Fx: cumulative });
+      FxByIndex[idx] = cumulative;
     }
   }
 
-  return result;
+  // ── Backward pass (x < a): accumulate right-to-left in O(N) ──
+  let backCumulative = 0;
+  let prevBack = a;
+  for (let j = indexed.length - 1; j >= 0; j--) {
+    const { x, idx } = indexed[j];
+    if (x < a) {
+      if (x < prevBack) {
+        backCumulative -= trapezoidalSegment(f, x, prevBack, nSubintervals);
+        prevBack = x;
+      }
+      FxByIndex[idx] = backCumulative;
+    }
+  }
+
+  // Return results in the same order as the input xValues array
+  return xValues.map((x, idx) => ({ x, Fx: FxByIndex[idx] }));
 }
 
 /** Internal: trapezoidal rule on a single segment [lo, hi]. */
