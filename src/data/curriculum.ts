@@ -21,10 +21,8 @@ export const tracks: Track[] = [
     title: 'Single-Variable Calculus',
     description: 'Differentiation, integration, and the theorems connecting them.',
     domain: 'single-variable',
-    published: ['The Derivative & Chain Rule', 'Mean Value Theorem & Taylor Expansion', 'The Riemann Integral & FTC'],
-    planned: [
-      'Improper Integrals & Special Functions',
-    ],
+    published: ['The Derivative & Chain Rule', 'Mean Value Theorem & Taylor Expansion', 'The Riemann Integral & FTC', 'Improper Integrals & Special Functions'],
+    planned: [],
   },
   {
     id: 'multivar-differential',

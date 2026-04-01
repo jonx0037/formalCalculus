@@ -1,7 +1,7 @@
 /**
  * Shared utility module for Riemann integration and numerical quadrature.
- * Created by Topic 7 (riemann-integral), to be extended by Topic 8
- * (improper-integrals) and Track 4 topics (multiple-integrals, change-of-variables).
+ * Created by Topic 7 (riemann-integral), extended by Topic 8 (improper-integrals).
+ * To be further extended by Track 4 topics (multiple-integrals, change-of-variables).
  * All functions are pure and deterministic — no Math.random().
  *
  * Provides:
@@ -12,6 +12,10 @@
  *  - Adaptive quadrature (recursive bisection)
  *  - Area function F(x) = integral from a to x of f(t) dt
  *  - Quadrature convergence data for error-vs-n plots
+ *  - Improper integral computation via truncation (Type I and Type II)
+ *  - Gamma function (Lanczos approximation), Beta function
+ *  - Incomplete gamma, error function, Gaussian CDF
+ *  - Stirling's approximation
  */
 
 // Re-export seededRandom for downstream consumers
@@ -435,4 +439,303 @@ export function quadratureConvergence(
       return { n, error: error < 1e-16 ? 1e-16 : error }; // floor for log-log
     }),
   }));
+}
+
+// ══════════════════════════════════════════════════════════════
+// Topic 8: Improper Integrals & Special Functions
+// ══════════════════════════════════════════════════════════════
+
+// ── Improper Integral Interfaces ────────────────────────────
+
+/** Result of computing an improper integral via truncation. */
+export interface ImproperIntegralResult {
+  /** Final computed integral value */
+  value: number;
+  /** Whether the sequence of partial integrals converged */
+  converged: boolean;
+  /** The truncation limit used (b for Type I, epsilon for Type II) */
+  truncationLimit: number;
+  /** Estimated error (difference between last two partial sums) */
+  estimatedError: number | null;
+  /** Total number of function evaluations */
+  nEvaluations: number;
+}
+
+/** Gamma function evaluation result. */
+export interface GammaResult {
+  /** The input parameter */
+  s: number;
+  /** Gamma(s) — may be Infinity for large s or at poles */
+  value: number;
+  /** log(Gamma(s)) — always computable even when Gamma overflows */
+  logValue: number;
+}
+
+// ── Improper Integrals ──────────────────────────────────────
+
+/**
+ * Compute a Type I improper integral: integral from a to infinity of f(x) dx.
+ * Uses truncation: evaluates integral from a to b for increasing b until convergence.
+ */
+export function improperIntegralTypeI(
+  f: (x: number) => number,
+  a: number,
+  maxB: number = 1000,
+  tolerance: number = 1e-10,
+): ImproperIntegralResult {
+  let nEvals = 0;
+  const fCounted = (x: number): number => { nEvals++; return f(x); };
+
+  let prevValue = 0;
+  let converged = false;
+  let currentB = a;
+
+  // Use logarithmic spacing for the truncation bounds
+  const nSteps = 40;
+  const logMin = Math.log10(Math.max(a + 1, 1));
+  const logMax = Math.log10(maxB);
+
+  for (let i = 0; i < nSteps; i++) {
+    const nextB = Math.pow(10, logMin + (i / (nSteps - 1)) * (logMax - logMin));
+    if (nextB <= currentB) continue;
+
+    const segment = adaptiveQuadrature(fCounted, currentB === a ? a : currentB, nextB, tolerance / nSteps);
+    prevValue += segment.value;
+    currentB = nextB;
+
+    // Check for early convergence: if integrand is negligible
+    const probe = Math.abs(f(currentB));
+    if (probe < 1e-15 && i > 5) {
+      converged = true;
+      break;
+    }
+  }
+
+  // Check convergence by comparing last two segments
+  const testValue = prevValue;
+  const extraSeg = adaptiveQuadrature(fCounted, currentB, currentB * 1.5, tolerance);
+  const withExtra = testValue + extraSeg.value;
+  const error = Math.abs(withExtra - testValue);
+  converged = converged || error < tolerance;
+
+  return {
+    value: withExtra,
+    converged,
+    truncationLimit: currentB * 1.5,
+    estimatedError: error,
+    nEvaluations: nEvals,
+  };
+}
+
+/**
+ * Compute a Type II improper integral where f is unbounded near a.
+ * Evaluates integral from (a + epsilon) to b for decreasing epsilon.
+ */
+export function improperIntegralTypeII(
+  f: (x: number) => number,
+  a: number,
+  b: number,
+  tolerance: number = 1e-10,
+): ImproperIntegralResult {
+  let nEvals = 0;
+  const fCounted = (x: number): number => { nEvals++; return f(x); };
+
+  // Incremental accumulation: integrate only new segments [a + eps_new, a + eps_old]
+  // instead of re-integrating the entire [a + eps, b] each iteration.
+  const nSteps = 30;
+  const halfSpan = (b - a) / 2;
+  let currentLeft = a + halfSpan; // start from the midpoint
+  let cumulative = adaptiveQuadrature(fCounted, currentLeft, b, tolerance).value;
+  let prevCumulative = NaN;
+  let converged = false;
+  let lastEps = halfSpan;
+
+  for (let i = 0; i < nSteps; i++) {
+    const eps = halfSpan * Math.pow(0.5, i + 1);
+    const newLeft = a + eps;
+    if (newLeft >= currentLeft) continue;
+
+    // Only integrate the new segment [newLeft, currentLeft]
+    const segment = adaptiveQuadrature(fCounted, newLeft, currentLeft, tolerance);
+    prevCumulative = cumulative;
+    cumulative += segment.value;
+    currentLeft = newLeft;
+    lastEps = eps;
+
+    // Check convergence: new segment contribution is negligible
+    if (Math.abs(segment.value) < tolerance) {
+      converged = true;
+      break;
+    }
+  }
+
+  return {
+    value: cumulative,
+    converged,
+    truncationLimit: lastEps,
+    estimatedError: converged && !isNaN(prevCumulative) ? Math.abs(cumulative - prevCumulative) : null,
+    nEvaluations: nEvals,
+  };
+}
+
+// ── Gamma Function (Lanczos Approximation) ──────────────────
+
+// Lanczos coefficients for g = 7 (standard 9-coefficient set)
+const LANCZOS_G = 7;
+const LANCZOS_COEFFICIENTS = [
+  0.99999999999980993,
+  676.5203681218851,
+  -1259.1392167224028,
+  771.32342877765313,
+  -176.61502916214059,
+  12.507343278686905,
+  -0.13857109526572012,
+  9.9843695780195716e-6,
+  1.5056327351493116e-7,
+];
+
+/**
+ * Compute the log of |Gamma(s)| using the Lanczos approximation.
+ * Returns log(|Gamma(s)|) for all real s except non-positive integers (poles).
+ * Uses Math.abs on the sine term in the reflection formula so the result
+ * is well-defined when Gamma(s) is negative (e.g., s in (-1, 0), (-3, -2)).
+ */
+export function logGamma(s: number): number {
+  if (s <= 0 && s === Math.floor(s)) return Infinity; // poles
+
+  // Reflection formula for s < 0.5: log|Gamma(s)| = log(pi / |sin(pi*s)|) - logGamma(1 - s)
+  if (s < 0.5) {
+    return Math.log(Math.PI / Math.abs(Math.sin(Math.PI * s))) - logGamma(1 - s);
+  }
+
+  const x = s - 1;
+  let a = LANCZOS_COEFFICIENTS[0];
+  for (let i = 1; i < LANCZOS_COEFFICIENTS.length; i++) {
+    a += LANCZOS_COEFFICIENTS[i] / (x + i);
+  }
+
+  const t = x + LANCZOS_G + 0.5;
+  return 0.5 * Math.log(2 * Math.PI) + (x + 0.5) * Math.log(t) - t + Math.log(a);
+}
+
+/**
+ * Compute Gamma(s) for real s > 0.
+ * Uses the Lanczos approximation for ~15 digits of precision.
+ * Returns both the value and log-value (log-value avoids overflow for large s).
+ */
+export function gammaFunction(s: number): GammaResult {
+  const lg = logGamma(s);
+  return {
+    s,
+    value: Math.exp(lg),
+    logValue: lg,
+  };
+}
+
+// ── Beta Function ───────────────────────────────────────────
+
+/**
+ * Compute B(a, b) = Gamma(a) * Gamma(b) / Gamma(a + b).
+ * Computed via log-Gamma for numerical stability.
+ */
+export function betaFunction(a: number, b: number): number {
+  return Math.exp(logGamma(a) + logGamma(b) - logGamma(a + b));
+}
+
+// ── Incomplete Gamma ────────────────────────────────────────
+
+/**
+ * Compute the lower incomplete gamma function:
+ * gamma(s, x) = integral from 0 to x of t^{s-1} e^{-t} dt.
+ * Uses the series expansion for convergence.
+ */
+export function incompleteGamma(s: number, x: number): number {
+  if (x < 0) return 0;
+  if (x === 0) return 0;
+
+  // Series expansion: gamma(s, x) = x^s * e^{-x} * sum_{n=0..inf} x^n / (s(s+1)...(s+n))
+  let sum = 0;
+  let term = 1 / s;
+  sum = term;
+  let prevSum = 0;
+  for (let n = 1; n < 200; n++) {
+    term *= x / (s + n);
+    prevSum = sum;
+    sum += term;
+    // Converged when the term is tiny relative to the sum AND the sum has stabilized
+    if (Math.abs(term) < 1e-14 * Math.abs(sum) && Math.abs(sum - prevSum) < 1e-14 * Math.abs(sum)) break;
+  }
+
+  return Math.pow(x, s) * Math.exp(-x) * sum;
+}
+
+// ── Error Function & Gaussian CDF ───────────────────────────
+
+/**
+ * Compute the error function erf(x) = (2/sqrt(pi)) * integral from 0 to x of e^{-t^2} dt.
+ * Uses the Abramowitz & Stegun rational approximation (formula 7.1.26).
+ * Maximum error: < 1.5e-7.
+ */
+export function errorFunction(x: number): number {
+  // erf(-x) = -erf(x)
+  const sign = x < 0 ? -1 : 1;
+  const absX = Math.abs(x);
+
+  // Abramowitz & Stegun constants
+  const p = 0.3275911;
+  const a1 = 0.254829592;
+  const a2 = -0.284496736;
+  const a3 = 1.421413741;
+  const a4 = -1.453152027;
+  const a5 = 1.061405429;
+
+  const t = 1.0 / (1.0 + p * absX);
+  const poly = t * (a1 + t * (a2 + t * (a3 + t * (a4 + t * a5))));
+  const result = 1.0 - poly * Math.exp(-absX * absX);
+
+  return sign * result;
+}
+
+/**
+ * Compute the Gaussian CDF: Phi(x) = (1/2)[1 + erf(x / sqrt(2))].
+ * Phi(x) = P(Z <= x) where Z ~ N(0, 1).
+ */
+export function gaussianCDF(x: number): number {
+  return 0.5 * (1 + errorFunction(x / Math.SQRT2));
+}
+
+// ── Stirling's Approximation ────────────────────────────────
+
+/**
+ * Compute Stirling's approximation for n!:
+ *   S(n) = sqrt(2 * pi * n) * (n / e)^n
+ *
+ * Returns the approximation, its log, the relative error vs Gamma(n+1),
+ * and the improved approximation with the 1/(12n) correction.
+ */
+export function stirlingApproximation(n: number): {
+  value: number;
+  logValue: number;
+  relativeError: number;
+  improvedValue: number;
+} {
+  if (n <= 0) return { value: 0, logValue: -Infinity, relativeError: 1, improvedValue: 0 };
+
+  // log(S(n)) = 0.5 * log(2*pi*n) + n * log(n) - n
+  const logStirling = 0.5 * Math.log(2 * Math.PI * n) + n * Math.log(n) - n;
+  const stirling = Math.exp(logStirling);
+
+  // Improved Stirling: S(n) * (1 + 1/(12n))
+  const improved = stirling * (1 + 1 / (12 * n));
+
+  // Relative error vs true factorial via Gamma(n+1)
+  const logTrue = logGamma(n + 1);
+  const relativeError = Math.abs(Math.exp(logTrue - logStirling) - 1);
+
+  return {
+    value: stirling,
+    logValue: logStirling,
+    relativeError,
+    improvedValue: improved,
+  };
 }
