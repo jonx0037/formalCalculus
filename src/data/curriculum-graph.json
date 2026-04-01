@@ -8,7 +8,7 @@
     { "id": "derivative", "label": "The Derivative & Chain Rule", "domain": "single-variable", "status": "published", "url": "/topics/derivative" },
     { "id": "mean-value-taylor", "label": "Mean Value Theorem & Taylor Expansion", "domain": "single-variable", "status": "published", "url": "/topics/mean-value-taylor" },
     { "id": "riemann-integral", "label": "The Riemann Integral & FTC", "domain": "single-variable", "status": "published", "url": "/topics/riemann-integral" },
-    { "id": "improper-integrals", "label": "Improper Integrals & Special Functions", "domain": "single-variable", "status": "planned", "url": "/topics/improper-integrals" },
+    { "id": "improper-integrals", "label": "Improper Integrals & Special Functions", "domain": "single-variable", "status": "published", "url": "/topics/improper-integrals" },
 
     { "id": "gradient", "label": "Partial Derivatives & the Gradient", "domain": "multivar-differential", "status": "planned", "url": "/topics/gradient" },
     { "id": "jacobian", "label": "The Jacobian & Multivariate Chain Rule", "domain": "multivar-differential", "status": "planned", "url": "/topics/jacobian" },
@@ -58,6 +58,7 @@
     { "source": "epsilon-delta", "target": "riemann-integral" },
     { "source": "mean-value-taylor", "target": "riemann-integral" },
     { "source": "riemann-integral", "target": "improper-integrals" },
+    { "source": "mean-value-taylor", "target": "improper-integrals" },
 
     { "source": "derivative", "target": "gradient" },
     { "source": "gradient", "target": "jacobian" },
