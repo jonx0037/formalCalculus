@@ -1,0 +1,431 @@
+---
+title: "The Jacobian & Multivariate Chain Rule"
+subtitle: "Derivatives of vector-valued functions as matrices — the Jacobian as the best linear approximation, the chain rule as matrix multiplication, and the determinant as volume scaling"
+status: "published"
+difficulty: "intermediate"
+prerequisites:
+  - "gradient"
+tags:
+  - "calculus"
+  - "jacobian"
+  - "chain-rule"
+  - "multivariate"
+  - "linear-map"
+  - "determinant"
+  - "backpropagation"
+  - "coordinate-transformation"
+  - "normalizing-flows"
+  - "automatic-differentiation"
+domain: "multivar-differential"
+videoId: null
+notebookPath: "notebooks/jacobian/10_jacobian_chain_rule.ipynb"
+githubUrl: "https://github.com/jonx0037/formalCalculus/blob/main/src/content/topics/jacobian.mdx"
+datePublished: 2026-04-02
+estimatedReadTime: 50
+abstract: "The Jacobian matrix extends differentiation from scalar-valued functions f: ℝⁿ → ℝ to vector-valued functions f: ℝⁿ → ℝᵐ. Where the gradient is a single row of partial derivatives (the derivative of a function with one output), the Jacobian stacks m such rows — one for each output component. The Jacobian J_f(a) is the matrix representation of the total derivative Df(a): ℝⁿ → ℝᵐ, the best linear approximation to f near a. The central result is the multivariate chain rule: if g: ℝⁿ → ℝᵏ and f: ℝᵏ → ℝᵐ are differentiable, then the Jacobian of the composition f ∘ g is the matrix product J_{f∘g}(a) = J_f(g(a)) · J_g(a). This is the chain rule from single-variable calculus (multiply the derivatives along the chain) generalized to arbitrary dimensions — and it is exactly backpropagation. Every layer in a neural network computes a function fₖ: ℝⁿₖ → ℝⁿₖ₊₁, and the end-to-end Jacobian is the product J_L · J_fₖ · ⋯ · J_f₁. Reverse-mode automatic differentiation (backprop) computes this product right-to-left, one vector-Jacobian product at a time, at a cost independent of the number of parameters, which is why deep learning works at scale. For square Jacobians (n = m), the Jacobian determinant det J_f(a) measures how f distorts local volumes: areas near a are scaled by |det J_f(a)|, and the sign encodes orientation. This appears in the change-of-variables formula for integration (the r in r dr dθ for polar coordinates is the Jacobian determinant) and in normalizing flows, where the density of a transformed variable requires dividing by |det J_f|."
+formalmlConnections:
+  - topic: "gradient-descent"
+    site: "formalml"
+    relationship: "Backpropagation computes ∇L by applying the multivariate chain rule through each layer of the network. The Jacobian of each layer is multiplied in sequence: J_{L∘fₖ∘⋯∘f₁} = J_L · J_fₖ ⋯ J_f₁. Reverse-mode AD evaluates this product right-to-left via vector-Jacobian products, computing the full gradient in O(1) backward passes regardless of parameter count."
+  - topic: "smooth-manifolds"
+    site: "formalml"
+    relationship: "The Jacobian of a smooth map f: M → N between manifolds is the pushforward map df_p: T_pM → T_{f(p)}N between tangent spaces. The chain rule d(g∘f)_p = dg_{f(p)} ∘ df_p is the functoriality of the tangent functor."
+  - topic: "information-geometry"
+    site: "formalml"
+    relationship: "The Fisher information matrix transforms under reparametrization φ via I(φ(η)) = J_φᵀ I(η) J_φ — a Jacobian sandwich expressing how the natural Riemannian metric on a statistical manifold changes under coordinate transforms."
+connections:
+  - topic: "gradient"
+    relationship: "The gradient ∇f(a) of a scalar-valued function is a special case of the Jacobian: when m = 1, the Jacobian is a 1 × n row matrix, and its transpose is the gradient vector. Everything from Topic 9 — partial derivatives, the total derivative, the C¹ criterion — extends directly to the vector-valued setting."
+  - topic: "derivative"
+    relationship: "The single-variable chain rule (f∘g)'(a) = f'(g(a)) · g'(a) from Topic 5 is the 1 × 1 case of the multivariate chain rule J_{f∘g}(a) = J_f(g(a)) · J_g(a). The conceptual insight is the same — the derivative of a composition is the product of the derivatives — but the product becomes matrix multiplication."
+  - topic: "epsilon-delta"
+    relationship: "The total derivative definition uses a multivariable limit (‖h‖ → 0 in ℝⁿ), and the chain rule proof requires careful ε-δ management of the error terms from two composed total derivatives."
+  - topic: "completeness-compactness"
+    relationship: "Compactness arguments ensure that continuous functions on compact domains achieve extrema, used implicitly when discussing global properties of differentiable maps."
+references:
+  - type: "book"
+    title: "Analysis on Manifolds"
+    authors: "Munkres"
+    year: 1991
+    note: "Chapters 2–3 develop the total derivative and the chain rule in ℝⁿ with full rigor — the primary reference for this topic's proof of the multivariate chain rule"
+  - type: "book"
+    title: "Calculus on Manifolds"
+    authors: "Spivak"
+    year: 1965
+    note: "Chapter 2 treats the derivative as a linear map and proves the chain rule in the most general finite-dimensional setting — elegant and minimal"
+  - type: "book"
+    title: "Principles of Mathematical Analysis"
+    authors: "Rudin"
+    year: 1976
+    note: "Chapter 9 on multivariable differentiation — Theorem 9.15 is the chain rule with a clean proof via the contraction mapping characterization of the derivative"
+  - type: "book"
+    title: "Linear Algebra Done Right"
+    authors: "Axler"
+    year: 2024
+    note: "Determinants, linear maps, and matrix multiplication — the linear algebra foundation for understanding the Jacobian as a matrix representation of a linear map"
+  - type: "book"
+    title: "Deep Learning"
+    authors: "Goodfellow, Bengio & Courville"
+    year: 2016
+    note: "Section 6.5 on backpropagation — the chain rule applied to computation graphs, forward-mode vs. reverse-mode AD"
+  - type: "paper"
+    title: "Variational Inference with Normalizing Flows"
+    authors: "Rezende & Mohamed"
+    year: 2015
+    url: "https://arxiv.org/abs/1505.05770"
+    note: "Normalizing flows use the change-of-variables formula with the Jacobian determinant to compute densities of transformed distributions — the probabilistic application of the Jacobian determinant"
+  - type: "paper"
+    title: "Automatic Differentiation in Machine Learning: a Survey"
+    authors: "Baydin, Pearlmutter, Radul & Siskind"
+    year: 2018
+    url: "https://arxiv.org/abs/1502.05767"
+    note: "Comprehensive survey of forward-mode and reverse-mode AD — the computational realization of the chain rule in modern ML frameworks"
+---
+
+import TheoremBlock from '../../components/ui/TheoremBlock.astro';
+import JacobianGridExplorer from '../../components/viz/JacobianGridExplorer.tsx';
+import JacobianLinearApproxExplorer from '../../components/viz/JacobianLinearApproxExplorer.tsx';
+import ChainRuleMatrixExplorer from '../../components/viz/ChainRuleMatrixExplorer.tsx';
+import JacobianDeterminantExplorer from '../../components/viz/JacobianDeterminantExplorer.tsx';
+
+## Overview & Motivation
+
+In [the previous topic](/topics/gradient), we differentiated functions $f: \mathbb{R}^n \to \mathbb{R}$ — one output. The gradient $\nabla f$ told us how that single output changes in every input direction. But a neural network layer is not a scalar-valued function. A layer $f_k: \mathbb{R}^{n_k} \to \mathbb{R}^{n_{k+1}}$ takes a vector of activations and produces a vector of activations — multiple inputs, *multiple outputs*. To differentiate such a function, we need a partial derivative for every input-output pair: how does the $i$-th output change when the $j$-th input is nudged?
+
+Arranging all of these into a matrix gives the **Jacobian**. And the chain rule — the engine that makes backpropagation possible — says that the Jacobian of a composition is the *product* of the Jacobian matrices. If that sounds like matrix multiplication, it is. The single-variable chain rule $(f \circ g)'(a) = f'(g(a)) \cdot g'(a)$ from [Topic 5](/topics/derivative) was multiplying $1 \times 1$ matrices. Now we see the general picture.
+
+This topic develops three ideas: the **Jacobian matrix** (the derivative of a vector-valued function), the **multivariate chain rule** (matrix multiplication along a computation graph), and the **Jacobian determinant** (how a differentiable map distorts volumes). Together, these are the calculus that makes deep learning — and much of mathematical physics — work.
+
+## Vector-Valued Functions & the Jacobian Matrix
+
+We begin with the conceptual step from scalar to vector. A function $f: \mathbb{R}^2 \to \mathbb{R}^2$ maps a region in the plane to another region in the plane. Each output component $f_1, f_2$ is a scalar-valued function of two variables, and each has its own gradient. The Jacobian stacks these gradients as rows.
+
+<TheoremBlock type="definition" number={1} title="Vector-Valued Function">
+A *vector-valued function* $f: \mathbb{R}^n \to \mathbb{R}^m$ is defined by $m$ component functions $f = (f_1, f_2, \ldots, f_m)$, where each $f_i: \mathbb{R}^n \to \mathbb{R}$ is a scalar-valued function. The function maps a point $a \in \mathbb{R}^n$ to the vector
+
+$$f(a) = (f_1(a), f_2(a), \ldots, f_m(a)) \in \mathbb{R}^m.$$
+
+When $m = 1$, this reduces to the scalar-valued functions of [Topic 9](/topics/gradient).
+</TheoremBlock>
+
+<TheoremBlock type="definition" number={2} title="The Jacobian Matrix">
+Let $f: \mathbb{R}^n \to \mathbb{R}^m$ and suppose all partial derivatives $\frac{\partial f_i}{\partial x_j}(a)$ exist. The *Jacobian matrix* (or simply *Jacobian*) of $f$ at $a$ is the $m \times n$ matrix
+
+$$J_f(a) = \begin{pmatrix} \frac{\partial f_1}{\partial x_1}(a) & \cdots & \frac{\partial f_1}{\partial x_n}(a) \\ \vdots & \ddots & \vdots \\ \frac{\partial f_m}{\partial x_1}(a) & \cdots & \frac{\partial f_m}{\partial x_n}(a) \end{pmatrix}.$$
+
+Row $i$ of $J_f(a)$ is $\nabla f_i(a)^T$ — the gradient of the $i$-th component function. Column $j$ is the vector of all partial derivatives with respect to $x_j$. Common notations include $J_f(a)$, $Df(a)$, and $\frac{\partial(f_1, \ldots, f_m)}{\partial(x_1, \ldots, x_n)}$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={1} title="Jacobian of a linear function">
+Let $f(x) = Ax + b$ where $A$ is a constant $m \times n$ matrix. Then $J_f(a) = A$ for all $a$ — the Jacobian of a linear function is the matrix itself. The derivative of a linear map is the linear map. This is the multivariable analog of "$f(x) = ax + b$ has derivative $a$."
+</TheoremBlock>
+
+<TheoremBlock type="example" number={2} title="Jacobian of polar-to-Cartesian">
+Let $f(r, \theta) = (r\cos\theta, r\sin\theta)$. The Jacobian is
+
+$$J_f(r, \theta) = \begin{pmatrix} \cos\theta & -r\sin\theta \\ \sin\theta & r\cos\theta \end{pmatrix}.$$
+
+At $(r, \theta) = (2, \pi/4)$, we get $J_f = \begin{pmatrix} 1/\sqrt{2} & -\sqrt{2} \\ 1/\sqrt{2} & \sqrt{2} \end{pmatrix}$. The first column tells us how $(x, y)$ changes when we increase $r$ (move radially outward); the second column tells us how $(x, y)$ changes when we increase $\theta$ (move tangentially).
+</TheoremBlock>
+
+<TheoremBlock type="example" number={3} title="Jacobian of a neural network layer">
+A fully connected layer with activation is $f(x) = \sigma(Wx + b)$ where $\sigma$ is applied component-wise. By the chain rule (which we will prove shortly),
+
+$$J_f(x) = \text{diag}(\sigma'(Wx + b)) \cdot W.$$
+
+When $\sigma$ is the identity (linear layer), $J_f = W$ — recovering Example 1. When $\sigma = \text{sigmoid}$, the diagonal matrix of $\sigma'$ values modulates each row of $W$: the partial derivative $\frac{\partial f_i}{\partial x_j}$ is $\sigma'(z_i) \cdot W_{ij}$, where $z = Wx + b$ is the pre-activation vector.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={1} title="Gradient as a special case">
+When $m = 1$, the Jacobian is a $1 \times n$ row matrix: $J_f(a) = \begin{pmatrix} \frac{\partial f}{\partial x_1}(a) & \cdots & \frac{\partial f}{\partial x_n}(a) \end{pmatrix} = \nabla f(a)^T$. The gradient is the transpose of the single-row Jacobian. When $n = 1$, the Jacobian is an $m \times 1$ column matrix — just the vector of ordinary derivatives of each component. When $m = n = 1$, the Jacobian is a $1 \times 1$ matrix containing the single-variable derivative $f'(a)$ from [Topic 5](/topics/derivative). The Jacobian unifies all of these cases.
+</TheoremBlock>
+
+<JacobianGridExplorer client:visible />
+
+![Construction of the Jacobian matrix: each row is the gradient of a component function, assembled into the full m × n matrix of partial derivatives.](/images/topics/jacobian/jacobian-matrix-construction.png)
+
+## The Jacobian as Linear Approximation
+
+Just as the gradient was the best linear approximation for $f: \mathbb{R}^n \to \mathbb{R}$ ([Topic 9, §7](/topics/gradient)), the Jacobian is the best linear approximation for $f: \mathbb{R}^n \to \mathbb{R}^m$. The total derivative is a linear map $Df(a): \mathbb{R}^n \to \mathbb{R}^m$, and its matrix representation is the Jacobian.
+
+<TheoremBlock type="definition" number={3} title="Differentiability (Vector-Valued)">
+A function $f: \mathbb{R}^n \to \mathbb{R}^m$ is *differentiable at $a$* if there exists a linear map $Df(a): \mathbb{R}^n \to \mathbb{R}^m$ such that
+
+$$\lim_{h \to 0} \frac{\|f(a+h) - f(a) - Df(a)(h)\|}{\|h\|} = 0.$$
+
+When $Df(a)$ exists, it is unique and represented by the Jacobian matrix: $Df(a)(h) = J_f(a) \cdot h$ for all $h \in \mathbb{R}^n$. This extends Definition 4 of [Topic 9](/topics/gradient) from $m = 1$ to arbitrary $m$.
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={1} title="Differentiability ⟺ Component-wise Differentiability">
+$f: \mathbb{R}^n \to \mathbb{R}^m$ is differentiable at $a$ if and only if each component $f_i: \mathbb{R}^n \to \mathbb{R}$ is differentiable at $a$ (in the sense of the total derivative from [Topic 9](/topics/gradient)). When $f$ is differentiable, the rows of the Jacobian are the gradients of the component functions.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+**($\Rightarrow$)** If $f$ is differentiable at $a$, then $\frac{\|f(a+h) - f(a) - J_f(a)h\|}{\|h\|} \to 0$. For each component $f_i$, the absolute value of a single component is bounded by the norm of the full vector:
+
+$$\frac{|f_i(a+h) - f_i(a) - \nabla f_i(a) \cdot h|}{\|h\|} \le \frac{\|f(a+h) - f(a) - J_f(a)h\|}{\|h\|} \to 0.$$
+
+So each $f_i$ is differentiable at $a$ with total derivative $\nabla f_i(a) \cdot h$.
+
+**($\Leftarrow$)** If each $f_i$ is differentiable at $a$, then for each $i$: $|f_i(a+h) - f_i(a) - \nabla f_i(a) \cdot h| = o(\|h\|)$. We square and sum over all components:
+
+$$\|f(a+h) - f(a) - J_f(a)h\|^2 = \sum_{i=1}^m |f_i(a+h) - f_i(a) - \nabla f_i(a) \cdot h|^2.$$
+
+Each summand is $o(\|h\|^2)$ by hypothesis, so the sum is $o(\|h\|^2)$. Taking the square root: $\|f(a+h) - f(a) - J_f(a)h\| = o(\|h\|)$. $\square$
+</TheoremBlock>
+
+<TheoremBlock type="proposition" number={1} title="The Jacobian Approximation">
+If $f: \mathbb{R}^n \to \mathbb{R}^m$ is differentiable at $a$, then
+
+$$f(a + h) \approx f(a) + J_f(a) \cdot h$$
+
+with error $o(\|h\|)$. This is the multivariable Taylor expansion to first order for vector-valued functions. Geometrically: the affine map $h \mapsto f(a) + J_f(a)h$ is the best linear approximation to $f$ near $a$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={4} title="Linear approximation of polar-to-Cartesian">
+Near $(r, \theta) = (2, \pi/4)$, the polar-to-Cartesian map is approximated by
+
+$$f\begin{pmatrix} 2 + \Delta r \\ \pi/4 + \Delta\theta \end{pmatrix} \approx \begin{pmatrix} \sqrt{2} \\ \sqrt{2} \end{pmatrix} + \begin{pmatrix} 1/\sqrt{2} & -\sqrt{2} \\ 1/\sqrt{2} & \sqrt{2} \end{pmatrix} \begin{pmatrix} \Delta r \\ \Delta\theta \end{pmatrix}.$$
+
+A small change in $(r, \theta)$ maps to a change in $(x, y)$ via matrix multiplication — the Jacobian acts on the perturbation vector. The interactive visualization below lets you see how the linear approximation (an ellipse) converges to the true image (a deformed curve) as the perturbation shrinks.
+</TheoremBlock>
+
+<JacobianLinearApproxExplorer client:visible />
+
+![The Jacobian as linear approximation: a circle in input space maps to a deformed curve under f and to an ellipse under the linear approximation J_f, with the gap shrinking as the radius decreases.](/images/topics/jacobian/jacobian-linear-approximation.png)
+
+## The Multivariate Chain Rule
+
+This is the central result of the topic. The chain rule says: the derivative of a composition is the product of the derivatives. In single-variable calculus ([Topic 5](/topics/derivative)), this meant multiplying numbers: $(f \circ g)'(a) = f'(g(a)) \cdot g'(a)$. Now, the "derivatives" are matrices, and the "product" is matrix multiplication.
+
+<TheoremBlock type="theorem" number={2} title="The Multivariate Chain Rule">
+Let $g: \mathbb{R}^n \to \mathbb{R}^k$ be differentiable at $a \in \mathbb{R}^n$, and let $f: \mathbb{R}^k \to \mathbb{R}^m$ be differentiable at $g(a) \in \mathbb{R}^k$. Then the composition $f \circ g: \mathbb{R}^n \to \mathbb{R}^m$ is differentiable at $a$, and
+
+$$J_{f \circ g}(a) = J_f(g(a)) \cdot J_g(a).$$
+
+The Jacobian of the composition is the matrix product of the Jacobians, evaluated at the appropriate points. The dimensions are consistent: $J_f$ is $m \times k$, $J_g$ is $k \times n$, so $J_f \cdot J_g$ is $m \times n$ — matching the expected size for a function from $\mathbb{R}^n$ to $\mathbb{R}^m$.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+This is the most important proof in this topic. We track the error terms through two layers of the total derivative.
+
+By differentiability of $g$ at $a$, we can write
+
+$$g(a + h) = g(a) + J_g(a)h + \varepsilon_g(h)\|h\|$$
+
+where $\varepsilon_g(h) \to 0$ as $h \to 0$ (here $\varepsilon_g(h)$ is a vector in $\mathbb{R}^k$). By differentiability of $f$ at $b = g(a)$, we can write
+
+$$f(b + \ell) = f(b) + J_f(b)\ell + \varepsilon_f(\ell)\|\ell\|$$
+
+where $\varepsilon_f(\ell) \to 0$ as $\ell \to 0$. Set $\ell = g(a+h) - g(a) = J_g(a)h + \varepsilon_g(h)\|h\|$. Then
+
+$$(f \circ g)(a+h) = f(g(a) + \ell) = f(b) + J_f(b)\ell + \varepsilon_f(\ell)\|\ell\|.$$
+
+Substituting the expression for $\ell$:
+
+$$= f(b) + J_f(b)\bigl[J_g(a)h + \varepsilon_g(h)\|h\|\bigr] + \varepsilon_f(\ell)\|\ell\|$$
+
+$$= f(b) + J_f(b)J_g(a)h + \underbrace{J_f(b)\varepsilon_g(h)\|h\| + \varepsilon_f(\ell)\|\ell\|}_{\text{must show this is } o(\|h\|)}.$$
+
+**First error term:** $\|J_f(b)\varepsilon_g(h)\|h\|\| \le \|J_f(b)\| \cdot \|\varepsilon_g(h)\| \cdot \|h\|$. The operator norm $\|J_f(b)\|$ is a fixed constant, and $\|\varepsilon_g(h)\| \to 0$ as $h \to 0$, so this entire term is $o(\|h\|)$.
+
+**Second error term:** We need $\|\ell\|$. From the definition: $\|\ell\| = \|J_g(a)h + \varepsilon_g(h)\|h\|\| \le \|J_g(a)\| \cdot \|h\| + \|\varepsilon_g(h)\| \cdot \|h\|$. For $h$ sufficiently small, $\|\varepsilon_g(h)\| < 1$, so $\|\ell\| \le (\|J_g(a)\| + 1)\|h\| = C\|h\|$ for a constant $C$. As $h \to 0$, we have $\ell \to 0$, so $\varepsilon_f(\ell) \to 0$. Therefore $\|\varepsilon_f(\ell)\| \cdot \|\ell\| \le \|\varepsilon_f(\ell)\| \cdot C\|h\| = o(\|h\|)$.
+
+Combining both error terms, we have shown
+
+$$(f \circ g)(a+h) = (f \circ g)(a) + J_f(g(a)) \cdot J_g(a) \cdot h + o(\|h\|),$$
+
+which proves that $f \circ g$ is differentiable at $a$ with $J_{f \circ g}(a) = J_f(g(a)) \cdot J_g(a)$. $\square$
+</TheoremBlock>
+
+<TheoremBlock type="example" number={5} title="Chain rule with explicit matrices">
+Let $g: \mathbb{R}^2 \to \mathbb{R}^2$ by $g(x, y) = (x^2 + y, xy)$ and $f: \mathbb{R}^2 \to \mathbb{R}$ by $f(u, v) = u^2 + v^2$. Their Jacobians are
+
+$$J_g(x,y) = \begin{pmatrix} 2x & 1 \\ y & x \end{pmatrix}, \qquad J_f(u,v) = \begin{pmatrix} 2u & 2v \end{pmatrix}.$$
+
+At $(x,y) = (1,1)$: $g(1,1) = (2, 1)$, so $J_g(1,1) = \begin{pmatrix} 2 & 1 \\ 1 & 1 \end{pmatrix}$ and $J_f(2,1) = \begin{pmatrix} 4 & 2 \end{pmatrix}$.
+
+Chain rule:
+
+$$J_{f \circ g}(1,1) = \begin{pmatrix} 4 & 2 \end{pmatrix} \begin{pmatrix} 2 & 1 \\ 1 & 1 \end{pmatrix} = \begin{pmatrix} 10 & 6 \end{pmatrix}.$$
+
+**Verification by direct computation:** $(f \circ g)(x,y) = (x^2+y)^2 + (xy)^2$. Then $\frac{\partial}{\partial x}(f \circ g) = 2(x^2+y)(2x) + 2(xy)(y) = 4x(x^2+y) + 2xy^2$. At $(1,1)$: $4(1)(2) + 2(1)(1) = 10$. Confirmed.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={6} title="Three-fold composition">
+For a three-layer chain $h \circ g \circ f$:
+
+$$J_{h \circ g \circ f}(a) = J_h(g(f(a))) \cdot J_g(f(a)) \cdot J_f(a).$$
+
+The chain rule applies recursively — each Jacobian is evaluated at the appropriate intermediate value. This is the prototype for backpropagation through $K$ layers: the end-to-end Jacobian is $J_L \cdot J_{f_K} \cdot J_{f_{K-1}} \cdots J_{f_1}$, with each factor evaluated at the activation from the forward pass.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={2} title="Why matrix multiplication?">
+The chain rule is matrix multiplication because derivatives are linear maps, and composition of linear maps corresponds to matrix multiplication. The single-variable chain rule $(f \circ g)' = f' \cdot g'$ multiplies $1 \times 1$ matrices — it just happens to look like scalar multiplication. In $\mathbb{R}^n$, the matrix structure is exposed, and the product $J_f \cdot J_g$ captures how sensitivities propagate through layers of computation.
+</TheoremBlock>
+
+<ChainRuleMatrixExplorer client:visible />
+
+![The chain rule as matrix multiplication: a computation graph with Jacobian matrices at each node and the accumulated product shown step by step.](/images/topics/jacobian/chain-rule-matrix-product.png)
+
+## The Jacobian Determinant
+
+When $f: \mathbb{R}^n \to \mathbb{R}^n$ (square Jacobian), the determinant $\det J_f(a)$ has a geometric meaning: it measures how $f$ scales volumes near $a$.
+
+<TheoremBlock type="definition" number={4} title="The Jacobian Determinant">
+For $f: \mathbb{R}^n \to \mathbb{R}^n$ with all partial derivatives existing at $a$, the *Jacobian determinant* is
+
+$$\det J_f(a) = \det \begin{pmatrix} \frac{\partial f_1}{\partial x_1} & \cdots & \frac{\partial f_1}{\partial x_n} \\ \vdots & \ddots & \vdots \\ \frac{\partial f_n}{\partial x_1} & \cdots & \frac{\partial f_n}{\partial x_n} \end{pmatrix}(a).$$
+
+The Jacobian determinant is defined only when the Jacobian is square ($m = n$).
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={3} title="Volume Distortion">
+Let $f: \mathbb{R}^n \to \mathbb{R}^n$ be continuously differentiable near $a$, and let $R$ be a small rectangular region containing $a$. Then the image $f(R)$ has volume approximately
+
+$$\text{vol}(f(R)) = |\det J_f(a)| \cdot \text{vol}(R) + o(\text{vol}(R))$$
+
+as the diameter of $R$ shrinks to zero. The absolute value handles orientation: $\det J_f(a) > 0$ means $f$ preserves orientation; $\det J_f(a) < 0$ means it reverses orientation (like a reflection).
+</TheoremBlock>
+
+<TheoremBlock type="example" number={7} title="Polar coordinates">
+For $f(r, \theta) = (r\cos\theta, r\sin\theta)$:
+
+$$\det J_f = \det \begin{pmatrix} \cos\theta & -r\sin\theta \\ \sin\theta & r\cos\theta \end{pmatrix} = r\cos^2\theta + r\sin^2\theta = r.$$
+
+This is the $r$ in "$r\,dr\,d\theta$" for polar integration. A small $dr \times d\theta$ rectangle in polar coordinates maps to a region of area approximately $r\,dr\,d\theta$ in Cartesian coordinates. Far from the origin ($r$ large), the same angular increment covers more Cartesian area; near the origin ($r$ small), less.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={8} title="Scaling transformation">
+For $f(x, y) = (2x, 3y)$: $J_f = \begin{pmatrix} 2 & 0 \\ 0 & 3 \end{pmatrix}$, $\det J_f = 6$. Every region's area is multiplied by 6 — stretching by 2 in $x$ and by 3 in $y$ scales areas by $2 \times 3 = 6$. The determinant of a diagonal matrix is the product of the diagonal entries, and each entry is a stretch factor along one axis.
+</TheoremBlock>
+
+<TheoremBlock type="proposition" number={2} title="Jacobian Determinant of a Composition">
+For $f, g: \mathbb{R}^n \to \mathbb{R}^n$,
+
+$$\det J_{f \circ g}(a) = \det J_f(g(a)) \cdot \det J_g(a).$$
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+This follows from the chain rule (Theorem 2) and the multiplicativity of determinants:
+
+$$\det J_{f \circ g}(a) = \det\bigl(J_f(g(a)) \cdot J_g(a)\bigr) = \det J_f(g(a)) \cdot \det J_g(a).$$
+
+Geometrically: volume distortions compose multiplicatively. If $g$ scales volume by factor 3 and $f$ scales volume by factor 2, then $f \circ g$ scales volume by factor 6. $\square$
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={3} title="When the Jacobian determinant is zero">
+$\det J_f(a) = 0$ means the linear approximation $J_f(a)$ is not invertible — it "collapses" a neighborhood of $a$ into a lower-dimensional set. This is the boundary between the Inverse Function Theorem applying (nonzero determinant implies $f$ is locally invertible) and failing (zero determinant implies a critical value). **Inverse & Implicit Function Theorems** *(coming soon)* develops this connection.
+</TheoremBlock>
+
+<JacobianDeterminantExplorer client:visible />
+
+![The Jacobian determinant as area distortion: a small square mapped through scaling, rotation, and polar-to-Cartesian transformations, with area ratios matching |det J|.](/images/topics/jacobian/jacobian-determinant-area.png)
+
+## Coordinate Transformations
+
+Coordinate transformations are the most concrete application of the Jacobian determinant. We have already seen polar coordinates (Example 7). Here we systematize the pattern.
+
+**Polar coordinates:** $(r, \theta) \mapsto (r\cos\theta, r\sin\theta)$, with $\det J = r$. The area element becomes $dA = r\,dr\,d\theta$. This is why the "extra $r$" appears in polar integrals — it is the Jacobian determinant, accounting for the non-uniform distortion of the polar grid.
+
+**Spherical coordinates:** $(r, \theta, \phi) \mapsto (r\sin\phi\cos\theta,\; r\sin\phi\sin\theta,\; r\cos\phi)$. The full $3 \times 3$ Jacobian computation yields $\det J = r^2\sin\phi$, giving the volume element $dV = r^2\sin\phi\,dr\,d\theta\,d\phi$.
+
+**Affine transformations:** $f(x) = Ax + b$ with $A$ a constant matrix. Then $J_f = A$ everywhere, and $\det J_f = \det A$. Rotations have $|\det A| = 1$ (volume-preserving), reflections have $\det A = -1$ (orientation-reversing), and dilations have $|\det A| \neq 1$ (volume-changing).
+
+<TheoremBlock type="remark" number={4} title="Preview of the change-of-variables formula">
+The pattern we have seen — $\int_{f(U)} h(x)\,dx = \int_U h(f(u)) \cdot |\det J_f(u)|\,du$ — will be formalized as the Change of Variables theorem in the Multivariable Integral Calculus track. **Change of Variables** *(coming soon)* provides the rigorous justification. This topic gives you the differential machinery: the Jacobian determinant is the local volume scaling factor, and integration sums up these local contributions.
+</TheoremBlock>
+
+![Coordinate transformations: polar grid lines mapped to Cartesian, with a heatmap showing |det J| = r — the non-uniform area distortion across the domain.](/images/topics/jacobian/coordinate-transformations.png)
+
+## Computational Notes
+
+**Numerical Jacobian.** Compute $J_f$ by applying central differences to each input dimension: column $j$ of $J_f$ is
+
+$$\frac{f(a + h\mathbf{e}_j) - f(a - h\mathbf{e}_j)}{2h}.$$
+
+This costs $2n$ function evaluations for an $m \times n$ Jacobian — compared to $2$ for a gradient (where $m = 1$).
+
+**Automatic differentiation.** `jax.jacobian(f)(x)` computes the full Jacobian via forward-mode AD: it runs $n$ forward passes, one per input dimension. When $n$ is small relative to $m$, this is efficient.
+
+**JVPs and VJPs.** Computing the full Jacobian matrix is often unnecessary — and for a neural network with millions of parameters, storing it is impossible. Instead:
+- A **Jacobian-vector product** (JVP) $J_f(a) \cdot v$ costs one forward pass (forward-mode AD). This computes how a perturbation $v$ in the input propagates to the output.
+- A **vector-Jacobian product** (VJP) $w^T \cdot J_f(a)$ costs one backward pass (reverse-mode AD). This computes how a sensitivity $w$ in the output traces back to the input.
+
+For backpropagation with a scalar loss, we need the gradient $\nabla L$ — a single row vector. This is one VJP propagated through the entire network, at a cost independent of the number of parameters. That asymmetry is why reverse-mode AD dominates deep learning.
+
+```python
+import jax
+import jax.numpy as jnp
+
+# Full Jacobian (n forward passes)
+J = jax.jacobian(f)(x)
+
+# JVP: forward-mode, one pass
+primals, tangents = jax.jvp(f, (x,), (v,))
+
+# VJP: reverse-mode, one pass
+primals, vjp_fn = jax.vjp(f, x)
+grad = vjp_fn(w)
+```
+
+![Comparison of Jacobian computation methods: numerical central differences, forward-mode AD (JVPs), and reverse-mode AD (VJPs), with cost annotations.](/images/topics/jacobian/forward-vs-reverse-mode.png)
+
+## Connections to ML — Backpropagation & Normalizing Flows
+
+### Backpropagation is the multivariate chain rule
+
+A $K$-layer neural network computes $\hat{y} = f_K \circ f_{K-1} \circ \cdots \circ f_1(x)$, where each $f_k(z) = \sigma_k(W_k z + b_k)$. The loss is $L(\hat{y}, y)$. By the chain rule (Theorem 2, applied recursively):
+
+$$J_{L \circ f_K \circ \cdots \circ f_1}(x) = J_L \cdot J_{f_K} \cdot J_{f_{K-1}} \cdots J_{f_1},$$
+
+where each $J_{f_k}$ is evaluated at the activation from the forward pass. For a scalar loss ($L: \mathbb{R}^{n_{K+1}} \to \mathbb{R}$), $J_L$ is a $1 \times n_{K+1}$ row vector — the gradient of $L$ with respect to the network output. The gradient with respect to *any* intermediate layer is obtained by multiplying Jacobians from the loss backward through the chain.
+
+This is not an analogy. Backpropagation is literally the multivariate chain rule, evaluated right-to-left.
+
+### Forward mode vs. reverse mode
+
+The product $J_L \cdot J_{f_K} \cdots J_{f_1}$ can be evaluated in two orders:
+
+- **Right-to-left** (forward mode): compute $J_{f_1}$, then $J_{f_2} \cdot J_{f_1}$, then $J_{f_3} \cdot (J_{f_2} \cdot J_{f_1})$, and so on. Each step is a JVP. For a scalar loss and $p$ parameters, this requires $p$ forward passes — one per parameter.
+- **Left-to-right** (reverse mode, backprop): compute $J_L$, then $J_L \cdot J_{f_K}$, then $(J_L \cdot J_{f_K}) \cdot J_{f_{K-1}}$, and so on. Each step is a VJP. For a scalar loss, this requires *one* backward pass, regardless of $p$.
+
+The asymmetry is dramatic: reverse mode is $O(1)$ backward passes for a scalar loss, while forward mode is $O(p)$. This is why we can train networks with billions of parameters.
+
+### Jacobians in normalizing flows
+
+Normalizing flows transform a simple base density $p_z(z)$ (e.g., a Gaussian) through an invertible function $f$ to produce a complex density $p_x(x)$. By the change-of-variables formula:
+
+$$p_x(x) = p_z(f^{-1}(x)) \cdot |\det J_{f^{-1}}(x)|,$$
+
+or equivalently, $\log p_x(f(z)) = \log p_z(z) - \log|\det J_f(z)|$. The Jacobian determinant is the "volume correction" that accounts for how $f$ stretches or compresses probability mass. Architectures like RealNVP and GLOW use coupling layers with *triangular* Jacobians, so that $\det J_f$ is the product of diagonal entries — cheap to compute.
+
+### Jacobian regularization
+
+Adding $\|J_f\|_F^2$ (the squared Frobenius norm of the Jacobian) as a regularization term encourages smoothness: a small Jacobian norm means small sensitivity to input perturbations. From the linear approximation (Proposition 1):
+
+$$\|f(x) - f(x')\| \le \|J_f\| \cdot \|x - x'\|,$$
+
+so bounding the Jacobian norm bounds the Lipschitz constant. This appears in adversarial robustness (small perturbations to $x$ produce small changes in $f(x)$), generative models, and physics-informed neural networks.
+
+**Forward links to formalML:**
+- <a href="https://formalml.com/topics/gradient-descent" target="_blank" rel="noopener">Gradient Descent</a> — backpropagation as the chain rule through computation graphs
+- <a href="https://formalml.com/topics/smooth-manifolds" target="_blank" rel="noopener">Smooth Manifolds</a> — the Jacobian as the pushforward between tangent spaces
+- <a href="https://formalml.com/topics/information-geometry" target="_blank" rel="noopener">Information Geometry</a> — the Fisher information matrix transformation under reparametrization via the Jacobian
+
+![Backpropagation as the chain rule: forward pass computes activations (top), backward pass multiplies Jacobians right-to-left via VJPs (bottom).](/images/topics/jacobian/backpropagation-chain-rule.png)
+
+![Normalizing flows: a Gaussian base density transformed through an invertible map f, with the Jacobian determinant providing the volume correction for the output density.](/images/topics/jacobian/normalizing-flows-jacobian.png)
+
+## Connections & Further Reading
+
+**Within formalCalculus:**
+- [Partial Derivatives & the Gradient](/topics/gradient) — The gradient is the $m = 1$ special case of the Jacobian. The total derivative, $C^1$ criterion, and tangent plane from Topic 9 extend directly to vector-valued functions.
+- [The Derivative & Chain Rule](/topics/derivative) — The single-variable chain rule $(f \circ g)' = f' \cdot g'$ is the $1 \times 1$ case of $J_{f \circ g} = J_f \cdot J_g$.
+- [Epsilon-Delta & Continuity](/topics/epsilon-delta) — The total derivative definition uses a multivariable limit, and the chain rule proof requires careful handling of error terms.
+- [Completeness & Compactness](/topics/completeness-compactness) — Compactness in $\mathbb{R}^n$ ensures continuous functions on closed bounded sets achieve their extrema.
+- **The Hessian & Second-Order Analysis** *(coming soon)* — The Hessian is the Jacobian of the gradient: $H_f = J(\nabla f)$. Second-order analysis builds directly on the chain rule and Jacobian framework developed here.
+- **Inverse & Implicit Function Theorems** *(coming soon)* — $\det J_f(a) \neq 0$ implies $f$ is locally invertible near $a$. The Implicit Function Theorem expresses part of the Jacobian as a function of the rest.
+- **Change of Variables** *(coming soon)* — The Jacobian determinant $|\det J_\phi|$ appears as the volume scaling factor in the substitution formula for multiple integrals.
+
+![A gallery of grid deformations: four vector fields applied to a regular grid, each with the Jacobian matrix and determinant at a sample point.](/images/topics/jacobian/grid-deformation-gallery.png)

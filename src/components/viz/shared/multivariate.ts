@@ -12,6 +12,9 @@
  *  - Gradient descent trajectory computation
  *  - Gradient flow (steepest ascent) via Euler integration
  *  - Differentiability checking (total derivative error)
+ *  - Jacobian matrix and determinant computation (Topic 10)
+ *  - Multivariate chain rule with step-by-step tracking (Topic 10)
+ *  - Area distortion and coordinate transform utilities (Topic 10)
  */
 
 import { seededRandom } from './limits';
@@ -92,6 +95,78 @@ export interface WireframeData {
   yGrid: number[];
   /** zValues[i][j] = f(xGrid[i], yGrid[j]) */
   zValues: number[][];
+}
+
+// ── Jacobian interfaces (Topic 10) ────────────────────────
+
+/** Jacobian matrix result at a point */
+export interface JacobianResult {
+  /** Evaluation point a ∈ ℝⁿ */
+  point: number[];
+  /** The m × n Jacobian matrix J_f(a) */
+  matrix: number[][];
+  /** Input dimension n */
+  inputDim: number;
+  /** Output dimension m */
+  outputDim: number;
+}
+
+/** Jacobian determinant result (square Jacobians only) */
+export interface JacobianDetResult {
+  /** Evaluation point */
+  point: number[];
+  /** det J_f(a) — signed */
+  determinant: number;
+  /** |det J_f(a)| — area/volume scaling factor */
+  absDeterminant: number;
+  /** Whether det > 0 (orientation preserved) */
+  orientationPreserved: boolean;
+}
+
+/**
+ * Single step in a multivariate chain rule computation.
+ * Named MultiChainRuleStep to avoid collision with the single-variable
+ * ChainRuleStep in differentiation.ts.
+ */
+export interface MultiChainRuleStep {
+  /** Index of this layer in the chain (0-based) */
+  layerIndex: number;
+  /** Input to this layer */
+  inputPoint: number[];
+  /** Output of this layer */
+  outputPoint: number[];
+  /** Jacobian matrix of this layer at its input */
+  jacobian: number[][];
+  /** Running product of Jacobians up to (and including) this layer */
+  accumulatedProduct: number[][];
+}
+
+/** Complete multivariate chain rule result */
+export interface MultiChainRuleResult {
+  /** Each step in the chain, from first to last */
+  steps: MultiChainRuleStep[];
+  /** Final Jacobian of the full composition */
+  finalJacobian: number[][];
+  /** Input dimension of the first function */
+  inputDim: number;
+  /** Output dimension of the last function */
+  outputDim: number;
+}
+
+/** Area distortion data for 2D visualization */
+export interface AreaDistortionResult {
+  /** Corners of the input square */
+  inputVertices: Array<[number, number]>;
+  /** Corners of the output parallelogram (image under f) */
+  outputVertices: Array<[number, number]>;
+  /** Area of the input square */
+  inputArea: number;
+  /** Area of the output quadrilateral (via shoelace) */
+  outputArea: number;
+  /** det J_f at the center point */
+  detJ: number;
+  /** outputArea / inputArea — converges to |det J| as size → 0 */
+  ratio: number;
 }
 
 // ── Gradient computation ───────────────────────────────────
@@ -523,4 +598,301 @@ export function checkDifferentiability(
   }
 
   return results;
+}
+
+// ── Jacobian computation (Topic 10) ──────────────────────
+
+/**
+ * Compute the determinant of a square matrix.
+ * Uses direct formulas for n ≤ 3, cofactor expansion for n > 3.
+ */
+function determinant(M: number[][]): number {
+  const n = M.length;
+  if (n === 1) return M[0][0];
+  if (n === 2) return M[0][0] * M[1][1] - M[0][1] * M[1][0];
+  if (n === 3) {
+    return (
+      M[0][0] * (M[1][1] * M[2][2] - M[1][2] * M[2][1]) -
+      M[0][1] * (M[1][0] * M[2][2] - M[1][2] * M[2][0]) +
+      M[0][2] * (M[1][0] * M[2][1] - M[1][1] * M[2][0])
+    );
+  }
+  // Cofactor expansion along the first row for n > 3
+  let det = 0;
+  for (let j = 0; j < n; j++) {
+    const minor: number[][] = [];
+    for (let i = 1; i < n; i++) {
+      minor.push([...M[i].slice(0, j), ...M[i].slice(j + 1)]);
+    }
+    det += (j % 2 === 0 ? 1 : -1) * M[0][j] * determinant(minor);
+  }
+  return det;
+}
+
+/**
+ * Compute the Jacobian matrix of f: ℝⁿ → ℝᵐ at a point via central differences.
+ * Returns the m × n matrix where entry (i, j) = ∂fᵢ/∂xⱼ.
+ * Generalizes numericalGradient to vector-valued functions.
+ */
+export function jacobianMatrix(
+  f: (...args: number[]) => number[],
+  point: number[],
+  h: number = 1e-7,
+): JacobianResult {
+  const n = point.length;
+  const f0 = f(...point);
+  const m = f0.length;
+  const matrix: number[][] = Array.from({ length: m }, () => new Array(n).fill(0));
+
+  for (let j = 0; j < n; j++) {
+    const pPlus = [...point];
+    const pMinus = [...point];
+    pPlus[j] += h;
+    pMinus[j] -= h;
+    const fPlus = f(...pPlus);
+    const fMinus = f(...pMinus);
+    for (let i = 0; i < m; i++) {
+      matrix[i][j] = (fPlus[i] - fMinus[i]) / (2 * h);
+    }
+  }
+
+  return { point: [...point], matrix, inputDim: n, outputDim: m };
+}
+
+/**
+ * Compute the Jacobian determinant for f: ℝⁿ → ℝⁿ (square case).
+ * Throws if the Jacobian is not square (m ≠ n).
+ */
+export function jacobianDeterminant(
+  f: (...args: number[]) => number[],
+  point: number[],
+  h: number = 1e-7,
+): JacobianDetResult {
+  const jr = jacobianMatrix(f, point, h);
+  if (jr.inputDim !== jr.outputDim) {
+    throw new Error(
+      `Jacobian determinant requires a square matrix (n = m), ` +
+        `got ${jr.outputDim} × ${jr.inputDim}`,
+    );
+  }
+  const det = determinant(jr.matrix);
+  return {
+    point: [...point],
+    determinant: det,
+    absDeterminant: Math.abs(det),
+    orientationPreserved: det > 0,
+  };
+}
+
+/**
+ * Multiply two matrices: A (m × k) times B (k × n) → C (m × n).
+ * Used for composing Jacobians in the chain rule.
+ */
+export function linearMapComposition(
+  A: number[][],
+  B: number[][],
+): number[][] {
+  const m = A.length;
+  const k = A[0].length;
+  const n = B[0].length;
+  const C: number[][] = Array.from({ length: m }, () => new Array(n).fill(0));
+  for (let i = 0; i < m; i++) {
+    for (let j = 0; j < n; j++) {
+      let sum = 0;
+      for (let p = 0; p < k; p++) {
+        sum += A[i][p] * B[p][j];
+      }
+      C[i][j] = sum;
+    }
+  }
+  return C;
+}
+
+/**
+ * Apply the multivariate chain rule to a sequence of differentiable functions.
+ * Given functions [f₁, f₂, ..., fₖ], computes J_{fₖ ∘ ... ∘ f₁}(x₀).
+ * Returns all intermediate steps for visualization (forward evaluation order).
+ *
+ * Each function must provide both f (the function) and J (its analytical Jacobian).
+ * The chain is evaluated left-to-right (f₁ first), and the Jacobian product
+ * accumulates right-to-left: J_total = J_fₖ · ... · J_f₂ · J_f₁.
+ */
+export function multivariateChainRule(
+  functions: Array<{
+    f: (...args: number[]) => number[];
+    J: (...args: number[]) => number[][];
+  }>,
+  input: number[],
+): MultiChainRuleResult {
+  const steps: MultiChainRuleStep[] = [];
+  let currentPoint = [...input];
+
+  for (let k = 0; k < functions.length; k++) {
+    const { f, J } = functions[k];
+    const jacobian = J(...currentPoint);
+    const outputPoint = f(...currentPoint);
+
+    // Accumulate: product = J_k · J_{k-1} · ... · J_1
+    const accumulatedProduct =
+      k === 0
+        ? jacobian.map((row) => [...row])
+        : linearMapComposition(jacobian, steps[k - 1].accumulatedProduct);
+
+    steps.push({
+      layerIndex: k,
+      inputPoint: [...currentPoint],
+      outputPoint: [...outputPoint],
+      jacobian,
+      accumulatedProduct,
+    });
+
+    currentPoint = outputPoint;
+  }
+
+  const finalJacobian =
+    steps.length > 0
+      ? steps[steps.length - 1].accumulatedProduct
+      : [[1]]; // identity for empty chain
+
+  return {
+    steps,
+    finalJacobian,
+    inputDim: input.length,
+    outputDim: steps.length > 0 ? steps[steps.length - 1].outputPoint.length : input.length,
+  };
+}
+
+/**
+ * Compute area distortion of a small square under f: ℝ² → ℝ².
+ * Maps a square of given size centered at `point` through `f` and
+ * compares the output area to the input area. The ratio converges
+ * to |det J_f(point)| as squareSize → 0.
+ */
+export function areaDistortion(
+  f: (x: number, y: number) => [number, number],
+  point: [number, number],
+  squareSize: number,
+  J?: [[number, number], [number, number]],
+): AreaDistortionResult {
+  const [cx, cy] = point;
+  const s = squareSize / 2;
+
+  // Input square corners (counter-clockwise)
+  const inputVertices: Array<[number, number]> = [
+    [cx - s, cy - s],
+    [cx + s, cy - s],
+    [cx + s, cy + s],
+    [cx - s, cy + s],
+  ];
+
+  // Map through f
+  const outputVertices = inputVertices.map(([x, y]) => f(x, y)) as Array<[number, number]>;
+
+  // Input area is squareSize²
+  const inputArea = squareSize * squareSize;
+
+  // Output area via shoelace formula
+  const n = outputVertices.length;
+  let shoelace = 0;
+  for (let i = 0; i < n; i++) {
+    const [x1, y1] = outputVertices[i];
+    const [x2, y2] = outputVertices[(i + 1) % n];
+    shoelace += x1 * y2 - x2 * y1;
+  }
+  const outputArea = Math.abs(shoelace) / 2;
+
+  // Jacobian determinant at the center
+  let detJ: number;
+  if (J) {
+    detJ = J[0][0] * J[1][1] - J[0][1] * J[1][0];
+  } else {
+    const wrapF = (...args: number[]) => {
+      const result = f(args[0], args[1]);
+      return [result[0], result[1]];
+    };
+    detJ = jacobianDeterminant(wrapF, point).determinant;
+  }
+
+  return {
+    inputVertices,
+    outputVertices,
+    inputArea,
+    outputArea,
+    detJ,
+    ratio: inputArea > 0 ? outputArea / inputArea : 0,
+  };
+}
+
+/**
+ * Apply a coordinate transformation to generate grid data for D3.
+ * Returns grid lines in both input and output spaces.
+ */
+export function coordinateTransform(
+  transform: (u: number, v: number) => [number, number],
+  uDomain: [number, number],
+  vDomain: [number, number],
+  gridSize: number = 20,
+): {
+  inputGrid: Array<[number, number]>;
+  outputGrid: Array<[number, number]>;
+  inputLines: Array<Array<[number, number]>>;
+  outputLines: Array<Array<[number, number]>>;
+} {
+  const inputGrid: Array<[number, number]> = [];
+  const outputGrid: Array<[number, number]> = [];
+  const inputLines: Array<Array<[number, number]>> = [];
+  const outputLines: Array<Array<[number, number]>> = [];
+
+  const uStep = (uDomain[1] - uDomain[0]) / gridSize;
+  const vStep = (vDomain[1] - vDomain[0]) / gridSize;
+  const nSamples = gridSize * 4; // samples per line for smooth curves
+
+  // Constant-u lines (vertical in input space)
+  for (let i = 0; i <= gridSize; i++) {
+    const u = uDomain[0] + i * uStep;
+    const inputLine: Array<[number, number]> = [];
+    const outputLine: Array<[number, number]> = [];
+    for (let j = 0; j <= nSamples; j++) {
+      const v = vDomain[0] + (j / nSamples) * (vDomain[1] - vDomain[0]);
+      inputLine.push([u, v]);
+      const [ox, oy] = transform(u, v);
+      if (isFinite(ox) && isFinite(oy)) {
+        outputLine.push([ox, oy]);
+      }
+    }
+    inputLines.push(inputLine);
+    outputLines.push(outputLine);
+  }
+
+  // Constant-v lines (horizontal in input space)
+  for (let j = 0; j <= gridSize; j++) {
+    const v = vDomain[0] + j * vStep;
+    const inputLine: Array<[number, number]> = [];
+    const outputLine: Array<[number, number]> = [];
+    for (let i = 0; i <= nSamples; i++) {
+      const u = uDomain[0] + (i / nSamples) * (uDomain[1] - uDomain[0]);
+      inputLine.push([u, v]);
+      const [ox, oy] = transform(u, v);
+      if (isFinite(ox) && isFinite(oy)) {
+        outputLine.push([ox, oy]);
+      }
+    }
+    inputLines.push(inputLine);
+    outputLines.push(outputLine);
+  }
+
+  // Grid intersection points
+  for (let i = 0; i <= gridSize; i++) {
+    for (let j = 0; j <= gridSize; j++) {
+      const u = uDomain[0] + i * uStep;
+      const v = vDomain[0] + j * vStep;
+      inputGrid.push([u, v]);
+      const [ox, oy] = transform(u, v);
+      if (isFinite(ox) && isFinite(oy)) {
+        outputGrid.push([ox, oy]);
+      }
+    }
+  }
+
+  return { inputGrid, outputGrid, inputLines, outputLines };
 }
