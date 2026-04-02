@@ -510,7 +510,8 @@ export function coordinateTransform(
 
 ```typescript
 /** Compute determinant of a square matrix.
- *  Uses cofactor expansion for n ≤ 3, LU decomposition for n > 3. */
+ *  Uses direct formulas for n ≤ 3, cofactor expansion for n > 3.
+ *  Guarded to n ≤ 5 to prevent O(n!) blowup in the browser. */
 function determinant(M: number[][]): number;
 ```
 

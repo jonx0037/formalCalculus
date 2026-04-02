@@ -244,8 +244,7 @@ export const COORDINATE_TRANSFORM_PRESETS: CoordinateTransformPreset[] = [
       [-Math.sin(phi) * Math.sin(theta), Math.cos(phi) * Math.cos(theta)],
       [Math.sin(phi) * Math.cos(theta), Math.cos(phi) * Math.sin(theta)],
     ],
-    detJ: (theta, phi) =>
-      Math.sin(phi) * Math.cos(phi) * (Math.cos(theta) ** 2 + Math.sin(theta) ** 2),
+    detJ: (_theta, phi) => -Math.sin(phi) * Math.cos(phi),
     uDomain: [0, 2 * Math.PI],
     vDomain: [0.1, Math.PI - 0.1],
     areaElement: 'r^2 \\sin\\phi\\,dr\\,d\\theta\\,d\\phi',

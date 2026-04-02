@@ -50,7 +50,9 @@ export default function ChainRuleMatrixExplorer() {
     const steps: Array<{ label: string; product: number[][] }> = [];
 
     if (mode === 'reverse') {
-      // Left-to-right: start from J_last, multiply leftward
+      // Reverse mode (backprop): accumulate from output toward input.
+      // Start with J_last, then multiply J_{last} · J_{last-1}, etc.
+      // This is how VJPs propagate: right-to-left through the chain.
       let product = jacobians[n - 1].map((row) => [...row]);
       steps.push({ label: preset.layers[n - 1].label, product: product.map((r) => [...r]) });
       for (let k = n - 2; k >= 0; k--) {
@@ -61,7 +63,9 @@ export default function ChainRuleMatrixExplorer() {
         });
       }
     } else {
-      // Right-to-left: start from J_first, multiply rightward
+      // Forward mode: accumulate from input toward output.
+      // Start with J_first, then multiply J_2 · J_1, then J_3 · (J_2 · J_1), etc.
+      // This is how JVPs propagate: left-to-right through the chain.
       let product = jacobians[0].map((row) => [...row]);
       steps.push({ label: preset.layers[0].label, product: product.map((r) => [...r]) });
       for (let k = 1; k < n; k++) {

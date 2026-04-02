@@ -1,9 +1,9 @@
-import { useState, useMemo, useCallback, useId, type ChangeEvent } from 'react';
+import { useState, useMemo, useCallback, type ChangeEvent } from 'react';
 import * as d3 from 'd3';
 import { useResizeObserver } from './shared/useResizeObserver';
 import { useD3 } from './shared/useD3';
 import { VECTOR_FIELD_PRESETS } from '../../data/jacobian-data';
-import { coordinateTransform, jacobianMatrix } from './shared/multivariate';
+import { coordinateTransform } from './shared/multivariate';
 import { functionColors } from './shared/colorScales';
 
 const margin = { top: 20, right: 16, bottom: 36, left: 42 };
@@ -12,7 +12,6 @@ const GAP = 24; // px between panels
 export default function JacobianGridExplorer() {
   const { ref: containerRef, width } = useResizeObserver<HTMLDivElement>();
   const totalHeight = Math.min(width * 0.5, 420);
-  const id = useId().replace(/:/g, '');
 
   const [selectedIdx, setSelectedIdx] = useState(0);
   const [probePoint, setProbePoint] = useState<[number, number]>(
@@ -36,17 +35,12 @@ export default function JacobianGridExplorer() {
     [selectedIdx, gridDensity],
   );
 
-  // Jacobian at probe point
+  // Jacobian at probe point — use analytical Jacobian from preset (exact, no numerical overhead)
   const jacobianInfo = useMemo(() => {
-    const wrapF = (...args: number[]) => {
-      const [a, b] = preset.f(args[0], args[1]);
-      return [a, b];
-    };
-    const jr = jacobianMatrix(wrapF, [...probePoint]);
     const fVal = preset.f(probePoint[0], probePoint[1]);
     const analyticalJ = preset.J(probePoint[0], probePoint[1]);
     const det = analyticalJ[0][0] * analyticalJ[1][1] - analyticalJ[0][1] * analyticalJ[1][0];
-    return { jr, fVal, analyticalJ, det };
+    return { fVal, analyticalJ, det };
   }, [selectedIdx, probePoint]);
 
   // Unit square corners mapped through the Jacobian

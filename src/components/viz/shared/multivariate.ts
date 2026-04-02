@@ -605,9 +605,19 @@ export function checkDifferentiability(
 /**
  * Compute the determinant of a square matrix.
  * Uses direct formulas for n ≤ 3, cofactor expansion for n > 3.
+ * Note: cofactor expansion is O(n!) — this function is designed for
+ * the small matrices (2×2, 3×3) typical of Jacobian computations.
+ * For n > 5, throws to prevent accidental browser hangs.
  */
 function determinant(M: number[][]): number {
   const n = M.length;
+  if (n === 0) return 1; // empty matrix convention
+  if (n > 5) {
+    throw new Error(
+      `determinant(): matrix size ${n}×${n} exceeds safe limit for cofactor expansion. ` +
+        `Use LU decomposition for large matrices.`,
+    );
+  }
   if (n === 1) return M[0][0];
   if (n === 2) return M[0][0] * M[1][1] - M[0][1] * M[1][0];
   if (n === 3) {
@@ -692,8 +702,16 @@ export function linearMapComposition(
   A: number[][],
   B: number[][],
 ): number[][] {
+  if (A.length === 0 || B.length === 0) {
+    throw new Error('linearMapComposition: cannot multiply empty matrices');
+  }
   const m = A.length;
   const k = A[0].length;
+  if (k !== B.length) {
+    throw new Error(
+      `linearMapComposition: inner dimensions must match — A is ${m}×${k} but B is ${B.length}×${B[0].length}`,
+    );
+  }
   const n = B[0].length;
   const C: number[][] = Array.from({ length: m }, () => new Array(n).fill(0));
   for (let i = 0; i < m; i++) {
@@ -752,7 +770,9 @@ export function multivariateChainRule(
   const finalJacobian =
     steps.length > 0
       ? steps[steps.length - 1].accumulatedProduct
-      : [[1]]; // identity for empty chain
+      : Array.from({ length: input.length }, (_, i) =>
+          Array.from({ length: input.length }, (_, j) => (i === j ? 1 : 0)),
+        ); // n×n identity for empty chain
 
   return {
     steps,
