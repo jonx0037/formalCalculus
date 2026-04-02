@@ -925,6 +925,25 @@ export function coordinateTransform(
 // Topic 11 — The Hessian & Second-Order Analysis
 // ══════════════════════════════════════════════════════════════
 
+// ── Constants (Topic 11) ──────────────────────────────────────
+
+/** Default step size for numerical Hessian computation.
+ *  Larger than the gradient step (1e-7) because second-order
+ *  differences amplify floating-point noise as O(ε/h²). */
+const HESSIAN_STEP_SIZE = 1e-5;
+
+/** Tolerance for classifying eigenvalues as zero vs nonzero */
+const DEFINITENESS_TOL = 1e-8;
+
+/** Tolerance for detecting singular matrices (near-zero determinant) */
+const SINGULARITY_TOL = 1e-10;
+
+/** Convergence tolerance for the Jacobi eigenvalue algorithm */
+const JACOBI_CONVERGENCE_TOL = 1e-12;
+
+/** Max dimension for eigenvalue/determinant computations in the browser */
+const MAX_EIGEN_DIM = 10;
+
 // ── Interfaces (Topic 11) ─────────────────────────────────────
 
 /** Hessian matrix result at a point */
@@ -1017,7 +1036,7 @@ export function eigenvalues2x2(
   let v1: [number, number];
   let v2: [number, number];
 
-  if (Math.abs(b) < 1e-14) {
+  if (Math.abs(b) < SINGULARITY_TOL) {
     // Diagonal matrix — eigenvectors are standard basis
     if (a <= c) {
       v1 = [1, 0];
@@ -1032,12 +1051,12 @@ export function eigenvalues2x2(
     const raw1x = b;
     const raw1y = lambda1 - a;
     const norm1 = Math.sqrt(raw1x * raw1x + raw1y * raw1y);
-    v1 = norm1 > 1e-14 ? [raw1x / norm1, raw1y / norm1] : [1, 0];
+    v1 = norm1 > SINGULARITY_TOL ? [raw1x / norm1, raw1y / norm1] : [1, 0];
 
     const raw2x = b;
     const raw2y = lambda2 - a;
     const norm2 = Math.sqrt(raw2x * raw2x + raw2y * raw2y);
-    v2 = norm2 > 1e-14 ? [raw2x / norm2, raw2y / norm2] : [0, 1];
+    v2 = norm2 > SINGULARITY_TOL ? [raw2x / norm2, raw2y / norm2] : [0, 1];
   }
 
   return {
@@ -1056,9 +1075,9 @@ export function eigenvaluesSymmetric(
 ): { eigenvalues: number[]; eigenvectors: number[][] } {
   const n = M.length;
   if (n === 0) return { eigenvalues: [], eigenvectors: [] };
-  if (n > 10) {
+  if (n > MAX_EIGEN_DIM) {
     throw new Error(
-      `eigenvaluesSymmetric(): matrix size ${n}×${n} exceeds safe limit. ` +
+      `eigenvaluesSymmetric(): matrix size ${n}×${n} exceeds safe limit (${MAX_EIGEN_DIM}). ` +
         `Use a numerical linear algebra library for large matrices.`,
     );
   }
@@ -1101,11 +1120,11 @@ export function eigenvaluesSymmetric(
       }
     }
 
-    if (maxVal < 1e-12) break; // converged
+    if (maxVal < JACOBI_CONVERGENCE_TOL) break; // converged
 
     // Compute Jacobi rotation to zero out A[p][q]
     const theta =
-      Math.abs(A[p][p] - A[q][q]) < 1e-14
+      Math.abs(A[p][p] - A[q][q]) < SINGULARITY_TOL
         ? Math.PI / 4
         : 0.5 * Math.atan2(2 * A[p][q], A[p][p] - A[q][q]);
     const cosT = Math.cos(theta);
@@ -1162,7 +1181,7 @@ export function eigenvaluesSymmetric(
  */
 function classifyDefiniteness(
   eigenvalues: number[],
-  tol: number = 1e-8,
+  tol: number = DEFINITENESS_TOL,
 ): HessianResult['classification'] {
   const allPositive = eigenvalues.every((λ) => λ > tol);
   const allNegative = eigenvalues.every((λ) => λ < -tol);
@@ -1190,7 +1209,7 @@ function classifyDefiniteness(
 export function hessianMatrix(
   f: (...args: number[]) => number,
   point: number[],
-  h: number = 1e-5,
+  h: number = HESSIAN_STEP_SIZE,
 ): HessianResult {
   const n = point.length;
   const step = Math.abs(h);
@@ -1224,7 +1243,11 @@ export function hessianMatrix(
   const { eigenvalues, eigenvectors } = eigenvaluesSymmetric(H);
 
   // Determinant and trace
-  const det = determinant(H);
+  // determinant() uses cofactor expansion which throws for n > 5.
+  // For n > 5, compute det from eigenvalues (product) instead.
+  const det = n <= 5
+    ? determinant(H)
+    : eigenvalues.reduce((prod, λ) => prod * λ, 1);
   const tr = H.reduce((sum, row, i) => sum + row[i], 0);
 
   return {
@@ -1248,7 +1271,7 @@ export function hessianMatrix(
 export function classifyCriticalPoint(
   f: (...args: number[]) => number,
   point: number[],
-  h: number = 1e-5,
+  h: number = HESSIAN_STEP_SIZE,
 ): CriticalPointResult {
   const grad = numericalGradient(f, point);
   const hess = hessianMatrix(f, point, h);
@@ -1299,7 +1322,7 @@ export function quadraticForm(A: number[][], h: number[]): number {
  */
 function invert2x2(
   M: number[][],
-  tol: number = 1e-10,
+  tol: number = SINGULARITY_TOL,
 ): number[][] | null {
   const det = M[0][0] * M[1][1] - M[0][1] * M[1][0];
   if (Math.abs(det) < tol) return null;
@@ -1316,7 +1339,7 @@ function invert2x2(
  */
 function invertMatrix(
   M: number[][],
-  tol: number = 1e-10,
+  tol: number = SINGULARITY_TOL,
 ): number[][] | null {
   const n = M.length;
   if (n === 2) return invert2x2(M, tol);
@@ -1374,7 +1397,7 @@ function invertMatrix(
 export function newtonStep(
   f: (...args: number[]) => number,
   point: number[],
-  h: number = 1e-5,
+  h: number = HESSIAN_STEP_SIZE,
 ): NewtonStepResult {
   const grad = numericalGradient(f, point);
   const hess = hessianMatrix(f, point, h);
@@ -1396,8 +1419,28 @@ export function newtonStep(
       }
     }
   } else {
-    // Fallback to negative gradient (GD step)
-    direction = grad.map((g) => -g);
+    // Fallback to a damped negative-gradient step with backtracking
+    // to avoid excessively large updates when ||∇f|| is large.
+    const descentDir = grad.map((g) => -g);
+    const gradNormSq = grad.reduce((s, g) => s + g * g, 0);
+
+    if (gradNormSq < 1e-24) {
+      direction = new Array(point.length).fill(0);
+    } else {
+      let stepScale = 1;
+      const c = 1e-4; // Armijo sufficient decrease parameter
+      const minStepScale = 1e-6;
+
+      while (stepScale > minStepScale) {
+        const candidate = point.map((x, i) => x + stepScale * descentDir[i]);
+        const candidateVal = f(...candidate);
+        if (Number.isFinite(candidateVal) && candidateVal < fVal - c * stepScale * gradNormSq) {
+          break;
+        }
+        stepScale *= 0.5;
+      }
+      direction = descentDir.map((d) => d * stepScale);
+    }
   }
 
   const nextPoint = point.map((x, i) => x + direction[i]);
@@ -1428,6 +1471,6 @@ export function conditionNumber(M: number[][]): number {
   const maxEig = Math.max(...absEigs);
   const minEig = Math.min(...absEigs);
 
-  if (minEig < 1e-14) return Infinity;
+  if (minEig < SINGULARITY_TOL) return Infinity;
   return maxEig / minEig;
 }

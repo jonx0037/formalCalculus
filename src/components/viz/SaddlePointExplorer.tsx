@@ -7,6 +7,10 @@ import { generateWireframe, project3D, eigenvalues2x2 } from './shared/multivari
 import { functionColors } from './shared/colorScales';
 
 const margin = { top: 20, right: 16, bottom: 20, left: 16 };
+/** Step size for gradient flow trajectory integration */
+const TRAJECTORY_STEP_SIZE = 0.01;
+/** Distance to perturb from saddle point along negative curvature direction */
+const SADDLE_PERTURBATION_SCALE = 0.05;
 
 export default function SaddlePointExplorer() {
   const { ref: containerRef, width } = useResizeObserver<HTMLDivElement>();
@@ -50,11 +54,11 @@ export default function SaddlePointExplorer() {
     const dir = eigenvectors[negIdx];
 
     // Perturb slightly along the negative curvature direction and flow downhill
-    const eta = 0.01;
+    const eta = TRAJECTORY_STEP_SIZE;
     const steps = 200;
     const points: Array<[number, number, number]> = [];
-    let x = cp.point[0] + dir[0] * 0.05;
-    let y = cp.point[1] + dir[1] * 0.05;
+    let x = cp.point[0] + dir[0] * SADDLE_PERTURBATION_SCALE;
+    let y = cp.point[1] + dir[1] * SADDLE_PERTURBATION_SCALE;
 
     for (let k = 0; k < steps; k++) {
       const z = preset.f(x, y);
@@ -249,7 +253,7 @@ export default function SaddlePointExplorer() {
         {cpInfo?.type === 'saddle' && (
           <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
             <input type="checkbox" checked={showTrajectory} onChange={() => setShowTrajectory(!showTrajectory)} />
-            Animate trajectory
+            Show trajectory
           </label>
         )}
       </div>

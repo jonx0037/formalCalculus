@@ -8,6 +8,14 @@ import { convergenceColors } from './shared/colorScales';
 
 const margin = { top: 20, right: 16, bottom: 36, left: 42 };
 const GAP = 16;
+/** Minimum determinant to consider Hessian invertible */
+const DETERMINANT_TOL = 1e-12;
+/** Step size for fallback GD when Hessian is singular */
+const FALLBACK_GD_STEP = 0.01;
+/** Armijo sufficient decrease parameter for backtracking */
+const ARMIJO_C = 1e-4;
+/** Convergence tolerance for gradient norm */
+const GRAD_CONVERGENCE_TOL = 1e-8;
 
 interface OptStep {
   point: [number, number];
@@ -28,7 +36,7 @@ function runGD(
     const g = preset.grad(x, y);
     const gradNorm = Math.sqrt(g[0] * g[0] + g[1] * g[1]);
     steps.push({ point: [x, y], fVal, gradNorm });
-    if (gradNorm < 1e-8) break;
+    if (gradNorm < GRAD_CONVERGENCE_TOL) break;
     x -= eta * g[0];
     y -= eta * g[1];
     // Clamp to domain
@@ -50,16 +58,16 @@ function runNewton(
     const g = preset.grad(x, y);
     const gradNorm = Math.sqrt(g[0] * g[0] + g[1] * g[1]);
     steps.push({ point: [x, y], fVal, gradNorm });
-    if (gradNorm < 1e-8) break;
+    if (gradNorm < GRAD_CONVERGENCE_TOL) break;
 
     const H = preset.hessian(x, y);
     const det = H[0][0] * H[1][1] - H[0][1] * H[1][0];
 
     let dx: number, dy: number;
-    if (Math.abs(det) < 1e-12) {
-      // Fallback to GD step
-      dx = -0.01 * g[0];
-      dy = -0.01 * g[1];
+    if (Math.abs(det) < DETERMINANT_TOL) {
+      // Fallback to damped GD step
+      dx = -FALLBACK_GD_STEP * g[0];
+      dy = -FALLBACK_GD_STEP * g[1];
     } else {
       // Newton step: -H^{-1} grad
       dx = -(H[1][1] * g[0] - H[0][1] * g[1]) / det;
@@ -71,7 +79,7 @@ function runNewton(
     for (let backtrack = 0; backtrack < 10; backtrack++) {
       const nx = x + alpha * dx;
       const ny = y + alpha * dy;
-      if (preset.f(nx, ny) < fVal + 1e-4) break;
+      if (preset.f(nx, ny) < fVal + ARMIJO_C) break;
       alpha *= 0.5;
     }
 

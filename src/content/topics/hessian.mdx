@@ -194,7 +194,7 @@ Let $f: \mathbb{R}^n \to \mathbb{R}$ be $C^2$. The gradient $\nabla f: \mathbb{R
 
 $$J(\nabla f)(a)_{ij} = \frac{\partial}{\partial x_j}\left(\frac{\partial f}{\partial x_i}\right)(a) = \frac{\partial^2 f}{\partial x_j \partial x_i}(a) = H_f(a)_{ij}.$$
 
-Therefore $H_f(a) = J(\nabla f)(a)$. **The Hessian is the Jacobian of the gradient.**
+Therefore $H_f(a) = J(\nabla f)(a)$. **The Hessian is the Jacobian of the gradient.** (The last equality uses the symmetry $\frac{\partial^2 f}{\partial x_j \partial x_i} = \frac{\partial^2 f}{\partial x_i \partial x_j}$ guaranteed by Clairaut's theorem for $C^2$ functions — without symmetry, $J(\nabla f)$ would be the *transpose* of the Hessian as defined above.)
 </TheoremBlock>
 
 <TheoremBlock type="proof">

@@ -7,6 +7,8 @@ import { eigenvalues2x2 } from './shared/multivariate';
 import { functionColors } from './shared/colorScales';
 
 const margin = { top: 20, right: 60, bottom: 36, left: 42 };
+const SINGULARITY_TOL = 1e-14;
+const DEFINITENESS_TOL = 1e-8;
 
 type HeatmapQuantity = 'kappa' | 'lambda_min' | 'lambda_max' | 'det' | 'trace';
 
@@ -27,7 +29,7 @@ function computeQuantity(
   switch (quantity) {
     case 'kappa': {
       const absMin = Math.min(Math.abs(lam1), Math.abs(lam2));
-      if (absMin < 1e-14) return 1000; // cap for visualization
+      if (absMin < SINGULARITY_TOL) return 1000; // cap for visualization
       return Math.max(Math.abs(lam1), Math.abs(lam2)) / absMin;
     }
     case 'lambda_min':
@@ -85,12 +87,12 @@ export default function CurvatureHeatmapExplorer() {
     const det = H[0][0] * H[1][1] - H[0][1] * H[1][0];
     const trace = H[0][0] + H[1][1];
     const absMin = Math.min(...eigenvalues.map(Math.abs));
-    const kappa = absMin < 1e-14 ? Infinity : Math.max(...eigenvalues.map(Math.abs)) / absMin;
+    const kappa = absMin < SINGULARITY_TOL ? Infinity : Math.max(...eigenvalues.map(Math.abs)) / absMin;
 
     let classification: string;
-    if (eigenvalues[0] > 1e-8 && eigenvalues[1] > 1e-8) classification = 'Positive definite';
-    else if (eigenvalues[0] < -1e-8 && eigenvalues[1] < -1e-8) classification = 'Negative definite';
-    else if (eigenvalues[0] < -1e-8 && eigenvalues[1] > 1e-8) classification = 'Indefinite';
+    if (eigenvalues[0] > DEFINITENESS_TOL && eigenvalues[1] > DEFINITENESS_TOL) classification = 'Positive definite';
+    else if (eigenvalues[0] < -DEFINITENESS_TOL && eigenvalues[1] < -DEFINITENESS_TOL) classification = 'Negative definite';
+    else if (eigenvalues[0] < -DEFINITENESS_TOL && eigenvalues[1] > DEFINITENESS_TOL) classification = 'Indefinite';
     else classification = 'Semidefinite';
 
     return { H, eigenvalues, eigenvectors, det, trace, kappa, classification };

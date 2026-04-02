@@ -8,6 +8,10 @@ import { functionColors } from './shared/colorScales';
 
 const margin = { top: 20, right: 16, bottom: 36, left: 42 };
 const GAP = 24;
+/** Tolerance for classifying eigenvalues as positive/negative vs zero */
+const DEFINITENESS_TOL = 1e-8;
+/** Tolerance for detecting singular matrices when computing condition number */
+const SINGULARITY_TOL = 1e-14;
 
 export default function HessianEigenExplorer() {
   const { ref: containerRef, width } = useResizeObserver<HTMLDivElement>();
@@ -45,14 +49,14 @@ export default function HessianEigenExplorer() {
     const { eigenvalues, eigenvectors } = eigenvalues2x2(H);
     const det = H[0][0] * H[1][1] - H[0][1] * H[1][0];
     const trace = H[0][0] + H[1][1];
-    const kappa = Math.min(...eigenvalues.map(Math.abs)) < 1e-14
+    const kappa = Math.min(...eigenvalues.map(Math.abs)) < SINGULARITY_TOL
       ? Infinity
       : Math.max(...eigenvalues.map(Math.abs)) / Math.min(...eigenvalues.map(Math.abs));
 
     let classification: string;
-    if (eigenvalues[0] > 1e-8 && eigenvalues[1] > 1e-8) classification = 'Positive definite (local min)';
-    else if (eigenvalues[0] < -1e-8 && eigenvalues[1] < -1e-8) classification = 'Negative definite (local max)';
-    else if (eigenvalues[0] < -1e-8 && eigenvalues[1] > 1e-8) classification = 'Indefinite (saddle)';
+    if (eigenvalues[0] > DEFINITENESS_TOL && eigenvalues[1] > DEFINITENESS_TOL) classification = 'Positive definite (local min)';
+    else if (eigenvalues[0] < -DEFINITENESS_TOL && eigenvalues[1] < -DEFINITENESS_TOL) classification = 'Negative definite (local max)';
+    else if (eigenvalues[0] < -DEFINITENESS_TOL && eigenvalues[1] > DEFINITENESS_TOL) classification = 'Indefinite (saddle)';
     else classification = 'Semidefinite (inconclusive)';
 
     return { H, eigenvalues, eigenvectors, det, trace, kappa, classification };
@@ -144,7 +148,7 @@ export default function HessianEigenExplorer() {
         for (let k = 0; k < 2; k++) {
           const lam = eigenvalues[k];
           const [vx, vy] = eigenvectors[k];
-          const color = lam > 1e-8 ? functionColors[0] : lam < -1e-8 ? '#DC2626' : '#6B7280';
+          const color = lam > DEFINITENESS_TOL ? functionColors[0] : lam < -DEFINITENESS_TOL ? '#DC2626' : '#6B7280';
           const len = Math.min(Math.abs(lam) * arrowScale, 1.5);
           // Draw bidirectional arrow
           for (const sign of [-1, 1]) {
@@ -162,7 +166,7 @@ export default function HessianEigenExplorer() {
         }
       }
 
-      // Probe point (draggable)
+      // Probe point marker (click the plot to reposition)
       gLeft.append('circle')
         .attr('cx', xScale(probePoint[0]))
         .attr('cy', yScale(probePoint[1]))
@@ -170,7 +174,7 @@ export default function HessianEigenExplorer() {
         .attr('fill', functionColors[0])
         .attr('stroke', '#fff')
         .attr('stroke-width', 2)
-        .style('cursor', 'grab');
+        .style('cursor', 'crosshair');
 
       // Click handler on left panel
       gLeft.append('rect')
