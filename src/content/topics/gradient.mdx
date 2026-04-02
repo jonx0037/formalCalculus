@@ -154,7 +154,7 @@ In $\mathbb{R}^1$, the best linear approximation is a line. In $\mathbb{R}^2$, i
 
 $$f(a + h) \approx f(a) + \sum_{i=1}^n \frac{\partial f}{\partial x_i}(a) \, h_i.$$
 
-The pattern is the same — the derivative provides the coefficients of the linear approximation. In the next topic (**The Jacobian & Multivariate Chain Rule** *(coming soon)*), the derivative of a *vector-valued* function becomes a matrix, and the tangent hyperplane becomes an affine subspace.
+The pattern is the same — the derivative provides the coefficients of the linear approximation. In the next topic ([**The Jacobian & Multivariate Chain Rule**](/topics/jacobian)), the derivative of a *vector-valued* function becomes a matrix, and the tangent hyperplane becomes an affine subspace.
 </TheoremBlock>
 
 ![Tangent plane: the surface with its tangent plane at a point, showing how the plane approximates the surface locally](/images/topics/gradient/tangent-plane.png)
@@ -438,7 +438,7 @@ The gradient is the most operationally important object in machine learning opti
 - [**The Derivative & Chain Rule**](/topics/derivative) — Partial derivatives are single-variable derivatives applied coordinate-by-coordinate. The chain rule proof (Theorem 1 above) directly uses the single-variable chain rule from Topic 5.
 - [**Epsilon-Delta & Continuity**](/topics/epsilon-delta) — The total derivative definition uses a multivariable limit ($\|h\| \to 0$ in $\mathbb{R}^n$). The $C^1$ criterion uses continuity of partial derivatives in the $\varepsilon$-$\delta$ sense.
 - [**Completeness & Compactness**](/topics/completeness-compactness) — Compactness in $\mathbb{R}^n$ (Heine-Borel generalizes) ensures continuous functions on compact domains achieve extrema — the multivariable Extreme Value Theorem that motivates gradient-based search.
-- **The Jacobian & Multivariate Chain Rule** *(coming soon)* — The Jacobian matrix generalizes the gradient to vector-valued functions $f: \mathbb{R}^n \to \mathbb{R}^m$. Where the gradient is a single row of partials, the Jacobian stacks $m$ rows. The multivariate chain rule $J_{f \circ g}(a) = J_f(g(a)) \cdot J_g(a)$ is the backbone of backpropagation.
+- [**The Jacobian & Multivariate Chain Rule**](/topics/jacobian) — The Jacobian matrix generalizes the gradient to vector-valued functions $f: \mathbb{R}^n \to \mathbb{R}^m$. Where the gradient is a single row of partials, the Jacobian stacks $m$ rows. The multivariate chain rule $J_{f \circ g}(a) = J_f(g(a)) \cdot J_g(a)$ is the backbone of backpropagation.
 - **The Hessian & Second-Order Analysis** *(coming soon)* — The Hessian matrix $H_{ij} = \frac{\partial^2 f}{\partial x_i \partial x_j}$ classifies critical points (where $\nabla f = 0$) as minima, maxima, or saddle points. The second-order Taylor expansion in $\mathbb{R}^n$ builds on the gradient as its first-order term.
 - **Inverse & Implicit Function Theorems** *(coming soon)* — The Inverse Function Theorem requires the Jacobian (built from partial derivatives) to be invertible. The Implicit Function Theorem uses $\nabla g$ at the constraint surface.
 
