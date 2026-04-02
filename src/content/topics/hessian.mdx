@@ -1,0 +1,550 @@
+---
+title: "The Hessian & Second-Order Analysis"
+subtitle: "Second-order partial derivatives, the Hessian matrix as the Jacobian of the gradient, critical point classification via eigenvalues, the second-order Taylor expansion, and Newton's method — the curvature machinery behind second-order optimization"
+status: "published"
+difficulty: "intermediate"
+prerequisites:
+  - "jacobian"
+tags:
+  - "calculus"
+  - "hessian"
+  - "second-derivative"
+  - "critical-point"
+  - "saddle-point"
+  - "eigenvalue"
+  - "quadratic-form"
+  - "newton-method"
+  - "curvature"
+  - "convexity"
+  - "loss-surface"
+  - "second-order-optimization"
+domain: "multivar-differential"
+videoId: null
+notebookPath: "notebooks/hessian/11_hessian_second_order.ipynb"
+githubUrl: "https://github.com/jonx0037/formalCalculus/blob/main/src/content/topics/hessian.mdx"
+datePublished: 2026-04-02
+estimatedReadTime: 50
+abstract: "The Hessian matrix H_f(a) collects all second-order partial derivatives of a scalar-valued function f: ℝⁿ → ℝ into an n × n symmetric matrix. It is precisely the Jacobian of the gradient: H_f = J(∇f) — the first-order derivative of the first-order derivative. Where the gradient tells us which direction is uphill (first-order, slope), the Hessian tells us how the surface curves (second-order, curvature). The eigenvalues of the Hessian are the principal curvatures: all positive indicate a bowl (local minimum), all negative indicate a dome (local maximum), and mixed signs indicate a saddle point. The second-order Taylor expansion f(a+h) ≈ f(a) + ∇f(a)·h + ½ hᵀ H_f(a) h approximates the function by a paraboloid, and classifying critical points reduces to analyzing this quadratic form. Newton's method x_{k+1} = x_k - H_f(x_k)⁻¹ ∇f(x_k) exploits the Hessian to take curvature-corrected optimization steps, achieving quadratic convergence where gradient descent converges only linearly. In machine learning, the Hessian governs loss surface geometry: its condition number κ(H) = λ_max/λ_min determines how much gradient descent struggles with elongated valleys, its spectrum reveals whether critical points are minima or saddle points (in high-dimensional problems, saddle points dominate), and second-order methods — from Newton to L-BFGS to natural gradient — all use the Hessian or its approximations to improve convergence. The Hessian is the bridge between the first-order world (gradient descent) and the second-order world (curvature-aware optimization)."
+formalmlConnections:
+  - topic: "gradient-descent"
+    site: "formalml"
+    relationship: "Second-order optimization methods (Newton, quasi-Newton, L-BFGS) use the Hessian to precondition gradient descent. The condition number κ(H_f) = λ_max/λ_min determines the convergence rate — gradient descent takes O(κ) iterations, while Newton's method converges quadratically. Adaptive optimizers like Adam implicitly approximate diagonal Hessian elements."
+  - topic: "convex-analysis"
+    site: "formalml"
+    relationship: "A C² function f is convex if and only if H_f(x) ⪰ 0 for all x. Strong convexity (H_f ⪰ μI) provides the convergence rate guarantee μ/L for gradient descent, where L is the Lipschitz constant of the gradient (equivalently, the largest eigenvalue of the Hessian)."
+  - topic: "information-geometry"
+    site: "formalml"
+    relationship: "The Fisher information matrix I(θ) equals the expected Hessian of the negative log-likelihood E[-H_{log p(x|θ)}] under regularity conditions. The natural gradient I(θ)⁻¹ ∇L(θ) is Newton's method adapted to the Riemannian geometry of the statistical manifold — the curvature here is the Hessian of the KL divergence."
+connections:
+  - topic: "jacobian"
+    relationship: "The Hessian is the Jacobian of the gradient: H_f(a) = J(∇f)(a). This is the foundational identity — it says the Hessian is not a new concept but the Jacobian machinery from Topic 10 applied to the specific vector-valued function ∇f. The chain rule from Topic 10 also enables the second-order chain rule for composed functions."
+  - topic: "gradient"
+    relationship: "The gradient ∇f(a) from Topic 9 provides the first-order information (slope). The Hessian provides the second-order information (curvature). At a critical point where ∇f(a) = 0, the gradient vanishes and the Hessian takes over — it determines whether the critical point is a minimum, maximum, or saddle."
+  - topic: "derivative"
+    relationship: "The single-variable second derivative f''(a) from Topic 5 is the 1 × 1 case of the Hessian. The second derivative test (f''(a) > 0 → local min, f''(a) < 0 → local max) generalizes to the eigenvalue criterion: positive definite Hessian → local min, negative definite → local max."
+  - topic: "mean-value-taylor"
+    relationship: "Taylor's theorem from Topic 6 provides the single-variable version of the second-order expansion f(a+h) = f(a) + f'(a)h + ½f''(a)h² + O(h³). The multivariable second-order Taylor expansion in this topic replaces f''(a)h² with the quadratic form h^T H_f(a) h."
+references:
+  - type: "book"
+    title: "Analysis on Manifolds"
+    authors: "Munkres"
+    year: 1991
+    note: "Chapter 3 develops higher-order derivatives and the second-order Taylor formula in ℝⁿ"
+  - type: "book"
+    title: "Calculus on Manifolds"
+    authors: "Spivak"
+    year: 1965
+    note: "Chapter 2 treats higher derivatives and the Taylor expansion for multilinear maps"
+  - type: "book"
+    title: "Principles of Mathematical Analysis"
+    authors: "Rudin"
+    year: 1976
+    note: "Chapter 9 on second-order differentiation — Theorem 9.41 is Clairaut's theorem on symmetry of mixed partials"
+  - type: "book"
+    title: "Numerical Optimization"
+    authors: "Nocedal & Wright"
+    year: 2006
+    note: "Chapters 2–3 on Newton's method, quasi-Newton methods, and the role of the Hessian in optimization convergence theory"
+  - type: "book"
+    title: "Convex Optimization"
+    authors: "Boyd & Vandenberghe"
+    year: 2004
+    note: "Chapter 9 on Newton's method for unconstrained optimization — convergence analysis via the Hessian's condition number"
+  - type: "book"
+    title: "Deep Learning"
+    authors: "Goodfellow, Bengio & Courville"
+    year: 2016
+    note: "Section 8.2 on challenges in optimization including saddle points, ill-conditioning, and the role of the Hessian spectrum"
+  - type: "paper"
+    title: "Identifying and Attacking the Saddle Point Problem in High-Dimensional Non-Convex Optimization"
+    authors: "Dauphin, Pascanu, Gulcehre, Cho, Ganguli & Bengio"
+    year: 2014
+    url: "https://arxiv.org/abs/1406.2572"
+    note: "Shows that in high-dimensional optimization, saddle points dominate local minima — the Hessian spectrum at critical points has a mixture of positive and negative eigenvalues with high probability"
+  - type: "paper"
+    title: "Adam: A Method for Stochastic Optimization"
+    authors: "Kingma & Ba"
+    year: 2015
+    url: "https://arxiv.org/abs/1412.6980"
+    note: "The Adam optimizer's per-parameter learning rates implicitly approximate diagonal Hessian elements via second-moment estimates"
+---
+
+import TheoremBlock from '../../components/ui/TheoremBlock.astro';
+import HessianEigenExplorer from '../../components/viz/HessianEigenExplorer.tsx';
+import SaddlePointExplorer from '../../components/viz/SaddlePointExplorer.tsx';
+import NewtonMethodExplorer from '../../components/viz/NewtonMethodExplorer.tsx';
+import CurvatureHeatmapExplorer from '../../components/viz/CurvatureHeatmapExplorer.tsx';
+
+## Overview & Motivation
+
+Gradient descent moves "downhill" — in the direction of steepest descent, $-\nabla L(\theta)$. But it ignores *curvature*. In a narrow valley of the loss landscape, the gradient points roughly across the valley rather than along it, causing the optimizer to zigzag back and forth between the valley walls. The gradient tells you which direction is steepest, but it says nothing about how the steepness *changes* as you move.
+
+The Hessian captures this missing information. Where the gradient is a vector of first-order partial derivatives (slope in each direction), the Hessian is a matrix of second-order partial derivatives (how the slope *changes* in each direction). Its eigenvalues tell you how steeply the surface curves in each principal direction, and its eigenvectors tell you which directions those are. A narrow valley has one large eigenvalue (steep walls) and one small eigenvalue (gentle slope along the floor) — and the ratio between them, the *condition number* $\kappa(H_f) = \lambda_{\max}/\lambda_{\min}$, quantifies exactly how much trouble gradient descent will have.
+
+Second-order methods like Newton's method use the Hessian to take smarter steps — correcting for curvature so the optimizer moves along the valley floor instead of bouncing between the walls. The price is computing (or approximating) an $n \times n$ matrix of second derivatives, which is why most deep learning still uses first-order methods. But understanding the Hessian is essential for understanding *why* gradient descent behaves the way it does — and the Hessian is literally the [Jacobian](/topics/jacobian) of the [gradient](/topics/gradient): $H_f = J(\nabla f)$. Everything we built in Topics 9 and 10 converges here.
+
+## Second-Order Partial Derivatives & Clairaut's Theorem
+
+Partial derivatives are themselves functions, so we can differentiate them again. If $f: \mathbb{R}^2 \to \mathbb{R}$ has partial derivatives $f_x$ and $f_y$, then $f_x$ is itself a function of $(x, y)$, and we can take its partial derivative with respect to $x$ or $y$. This gives us four second-order partial derivatives: $f_{xx}$, $f_{xy}$, $f_{yx}$, and $f_{yy}$.
+
+<TheoremBlock type="definition" number={1} title="Second-Order Partial Derivative">
+Let $f: \mathbb{R}^n \to \mathbb{R}$ have partial derivative $\frac{\partial f}{\partial x_j}$ in a neighborhood of $a$. If $\frac{\partial f}{\partial x_j}$ is itself differentiable with respect to $x_i$ at $a$, the *second-order partial derivative* is
+
+$$\frac{\partial^2 f}{\partial x_i \partial x_j}(a) = \frac{\partial}{\partial x_i}\left(\frac{\partial f}{\partial x_j}\right)(a).$$
+
+When $i = j$, this is the *unmixed* (or *pure*) second partial derivative $\frac{\partial^2 f}{\partial x_i^2}$. When $i \neq j$, this is a *mixed* partial derivative.
+
+**Notation:** $f_{x_i x_j}(a)$, $\partial_{ij} f(a)$, $D_i D_j f(a)$.
+</TheoremBlock>
+
+The order in the notation $\frac{\partial^2 f}{\partial x_i \partial x_j}$ matters: we differentiate first with respect to $x_j$ (innermost), then with respect to $x_i$ (outermost). This raises a natural question: does the order of differentiation matter? For mixed partials, is $f_{xy}$ always equal to $f_{yx}$?
+
+<TheoremBlock type="theorem" number={1} title="Clairaut's Theorem (Symmetry of Mixed Partials)">
+Let $f: \mathbb{R}^n \to \mathbb{R}$ and suppose the mixed partial derivatives $\frac{\partial^2 f}{\partial x_i \partial x_j}$ and $\frac{\partial^2 f}{\partial x_j \partial x_i}$ both exist and are continuous in a neighborhood of $a$. Then
+
+$$\frac{\partial^2 f}{\partial x_i \partial x_j}(a) = \frac{\partial^2 f}{\partial x_j \partial x_i}(a).$$
+
+In short: if $f \in C^2$ (all second partial derivatives exist and are continuous), the order of differentiation does not matter. This ensures the Hessian matrix is *symmetric*.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+We prove the $n = 2$ case. Let $f: \mathbb{R}^2 \to \mathbb{R}$ with continuous mixed partials $f_{xy}$ and $f_{yx}$ near $(a, b)$. Define the second-difference quotient:
+
+$$\Delta(h, k) = f(a+h, b+k) - f(a+h, b) - f(a, b+k) + f(a, b).$$
+
+Let $\phi(x) = f(x, b+k) - f(x, b)$. Then $\Delta(h,k) = \phi(a+h) - \phi(a)$. By the Mean Value Theorem, there exists $\xi$ between $a$ and $a+h$ such that:
+
+$$\Delta(h,k) = h\,\phi'(\xi) = h\left[f_x(\xi, b+k) - f_x(\xi, b)\right].$$
+
+Applying the Mean Value Theorem again to $g(y) = f_x(\xi, y)$, there exists $\eta$ between $b$ and $b+k$ such that:
+
+$$\Delta(h,k) = hk \cdot f_{xy}(\xi, \eta).$$
+
+By the same argument with the roles of $x$ and $y$ reversed — define $\psi(y) = f(a+h, y) - f(a, y)$ and apply the MVT twice — we obtain:
+
+$$\Delta(h,k) = hk \cdot f_{yx}(\xi', \eta')$$
+
+for some $\xi'$ between $a$ and $a+h$, $\eta'$ between $b$ and $b+k$.
+
+As $(h, k) \to (0, 0)$, we have $(\xi, \eta) \to (a, b)$ and $(\xi', \eta') \to (a, b)$. Since $f_{xy}$ and $f_{yx}$ are continuous at $(a, b)$:
+
+$$f_{xy}(a, b) = \lim_{(h,k) \to (0,0)} \frac{\Delta(h,k)}{hk} = f_{yx}(a, b).$$
+
+$\square$
+</TheoremBlock>
+
+<TheoremBlock type="example" number={1} title="Second-order partials of f(x,y) = x²y + sin(xy)">
+We compute all four second-order partial derivatives:
+
+**First partials:**
+
+$$f_x = 2xy + y\cos(xy), \qquad f_y = x^2 + x\cos(xy).$$
+
+**Second partials:**
+
+$$f_{xx} = 2y - y^2\sin(xy), \qquad f_{yy} = -x^2\sin(xy),$$
+
+$$f_{xy} = 2x + \cos(xy) - xy\sin(xy), \qquad f_{yx} = 2x + \cos(xy) - xy\sin(xy).$$
+
+Observe $f_{xy} = f_{yx}$ — Clairaut's theorem confirmed. Both mixed partials are continuous, so the order of differentiation is interchangeable. The four second partials, assembled into a $2 \times 2$ matrix, form the Hessian.
+</TheoremBlock>
+
+![The four second-order partial derivatives of a sample function, visualized as surface plots. The two mixed partials f_xy and f_yx are identical — Clairaut's theorem in action.](/images/topics/hessian/second-order-partials.png)
+
+<TheoremBlock type="remark" number={1} title="From second derivative to Hessian matrix">
+In single-variable calculus ([Topic 5](/topics/derivative)), the second derivative $f''(a)$ is a single number. For $f: \mathbb{R}^n \to \mathbb{R}$, the second-order information consists of $n^2$ second partial derivatives. Clairaut's theorem reduces this to $\frac{n(n+1)}{2}$ independent values (the upper triangle of a symmetric matrix). For $n = 2$: 3 values ($f_{xx}$, $f_{xy}$, $f_{yy}$). For $n = 100$ (a small neural network): 5,050 values. For $n = 10^8$ (a large language model): storing the full Hessian is infeasible — motivating the approximations discussed in Section 8.
+</TheoremBlock>
+
+## The Hessian Matrix
+
+<TheoremBlock type="definition" number={2} title="The Hessian Matrix">
+Let $f: \mathbb{R}^n \to \mathbb{R}$ be twice differentiable at $a$. The *Hessian matrix* of $f$ at $a$ is the $n \times n$ matrix
+
+$$H_f(a) = \begin{pmatrix} \frac{\partial^2 f}{\partial x_1^2}(a) & \frac{\partial^2 f}{\partial x_1 \partial x_2}(a) & \cdots & \frac{\partial^2 f}{\partial x_1 \partial x_n}(a) \\[6pt] \frac{\partial^2 f}{\partial x_2 \partial x_1}(a) & \frac{\partial^2 f}{\partial x_2^2}(a) & \cdots & \frac{\partial^2 f}{\partial x_2 \partial x_n}(a) \\[6pt] \vdots & \vdots & \ddots & \vdots \\[6pt] \frac{\partial^2 f}{\partial x_n \partial x_1}(a) & \frac{\partial^2 f}{\partial x_n \partial x_2}(a) & \cdots & \frac{\partial^2 f}{\partial x_n^2}(a) \end{pmatrix}.$$
+
+If $f \in C^2$, then $H_f(a)$ is symmetric by Clairaut's theorem.
+
+**Notation:** $H_f(a)$, $\nabla^2 f(a)$, $D^2 f(a)$.
+</TheoremBlock>
+
+The key insight is that the Hessian is not a new concept — it is the [Jacobian](/topics/jacobian) applied to the [gradient](/topics/gradient).
+
+<TheoremBlock type="proposition" number={1} title="Hessian is the Jacobian of the Gradient">
+Let $f: \mathbb{R}^n \to \mathbb{R}$ be $C^2$. The gradient $\nabla f: \mathbb{R}^n \to \mathbb{R}^n$ is a vector-valued function with component functions $(\nabla f)_i = \frac{\partial f}{\partial x_i}$. Its Jacobian matrix is
+
+$$J(\nabla f)(a)_{ij} = \frac{\partial}{\partial x_j}\left(\frac{\partial f}{\partial x_i}\right)(a) = \frac{\partial^2 f}{\partial x_j \partial x_i}(a) = H_f(a)_{ij}.$$
+
+Therefore $H_f(a) = J(\nabla f)(a)$. **The Hessian is the Jacobian of the gradient.**
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+Direct verification. The $i$-th component of $\nabla f$ is $g_i(x) = \frac{\partial f}{\partial x_i}(x)$. By the definition of the Jacobian ([Topic 10](/topics/jacobian)), the Jacobian of $g = \nabla f$ has entries:
+
+$$J_g(a)_{ij} = \frac{\partial g_i}{\partial x_j}(a) = \frac{\partial}{\partial x_j}\frac{\partial f}{\partial x_i}(a) = \frac{\partial^2 f}{\partial x_j \partial x_i}(a).$$
+
+By Clairaut's theorem (Theorem 1), $\frac{\partial^2 f}{\partial x_j \partial x_i} = \frac{\partial^2 f}{\partial x_i \partial x_j} = H_f(a)_{ij}$. Therefore $J(\nabla f)(a) = H_f(a)$.
+
+$\square$
+</TheoremBlock>
+
+<TheoremBlock type="example" number={2} title="Hessian of a paraboloid">
+$f(x,y) = x^2 + 4y^2$.
+
+**Gradient:** $\nabla f = (2x, 8y)$.
+
+**Hessian:**
+
+$$H_f = \begin{pmatrix} 2 & 0 \\ 0 & 8 \end{pmatrix}$$
+
+— constant, independent of $(x,y)$. The eigenvalues are 2 and 8. The surface curves 4 times more steeply in the $y$-direction than in the $x$-direction. This is the prototypical ill-conditioned loss surface: gradient descent zigzags because the curvatures are unequal. The condition number is $\kappa = 8/2 = 4$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={3} title="Hessian of a saddle function">
+$f(x,y) = x^2 - y^2$.
+
+**Gradient:** $\nabla f = (2x, -2y)$.
+
+**Hessian:**
+
+$$H_f = \begin{pmatrix} 2 & 0 \\ 0 & -2 \end{pmatrix}.$$
+
+One positive eigenvalue (2, curves upward in $x$) and one negative eigenvalue ($-2$, curves downward in $y$). The origin is a saddle point — a critical point that is neither a minimum nor a maximum. The surface looks like a horse saddle: it rises in one direction and descends in the other.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={4} title="Hessian of a neural network loss">
+Consider a loss $L(\theta_1, \theta_2) = (y - \sigma(\theta_1 x_1 + \theta_2 x_2))^2$ where $\sigma$ is the sigmoid function. The Hessian $H_L(\theta)$ has entries involving $\sigma'$ and $\sigma''$ — it depends on the data $(x_1, x_2, y)$ and the current parameters $\theta$. Unlike the paraboloid, this Hessian is *not* constant — the curvature of the loss surface changes as the parameters move. Computing this $2 \times 2$ matrix is cheap; computing a $10^8 \times 10^8$ matrix for a real network is not. This is why practical deep learning relies on Hessian *approximations* rather than the full matrix.
+</TheoremBlock>
+
+<HessianEigenExplorer client:visible />
+
+![Construction of the Hessian matrix: the gradient vector field is differentiated again, and the resulting second-order partials are assembled into a symmetric matrix. Numerical Hessians shown for the paraboloid, saddle, and Rosenbrock functions.](/images/topics/hessian/hessian-matrix-construction.png)
+
+## Critical Point Classification
+
+At a critical point $a$ where $\nabla f(a) = 0$, the first-order Taylor term vanishes. The function near $a$ is governed by the second-order term:
+
+$$f(a + h) \approx f(a) + \frac{1}{2} h^T H_f(a) h.$$
+
+The sign behavior of the quadratic form $h^T H_f(a) h$ — does it produce all positive values, all negative values, or both? — determines whether $a$ is a local min, local max, or saddle. This is where eigenvalue analysis becomes essential.
+
+<TheoremBlock type="definition" number={3} title="Positive Definite, Negative Definite, Indefinite">
+A symmetric $n \times n$ matrix $A$ is:
+
+- *Positive definite* ($A \succ 0$) if $h^T A h > 0$ for all $h \neq 0$. Equivalently, all eigenvalues of $A$ are positive.
+- *Negative definite* ($A \prec 0$) if $h^T A h < 0$ for all $h \neq 0$. Equivalently, all eigenvalues are negative.
+- *Positive semidefinite* ($A \succeq 0$) if $h^T A h \ge 0$ for all $h$. Equivalently, all eigenvalues are nonnegative.
+- *Negative semidefinite* ($A \preceq 0$) if $h^T A h \le 0$ for all $h$. Equivalently, all eigenvalues are nonpositive.
+- *Indefinite* if $h^T A h$ takes both positive and negative values. Equivalently, $A$ has both positive and negative eigenvalues.
+</TheoremBlock>
+
+<TheoremBlock type="proposition" number={2} title="Eigenvalue Criterion for Definiteness">
+Let $A$ be a symmetric $n \times n$ matrix with eigenvalues $\lambda_1 \le \lambda_2 \le \cdots \le \lambda_n$. Then:
+
+(a) $A \succ 0 \iff \lambda_1 > 0$.
+
+(b) $A \prec 0 \iff \lambda_n < 0$.
+
+(c) $A$ is indefinite $\iff \lambda_1 < 0 < \lambda_n$.
+
+For $n = 2$: $A = \begin{pmatrix} a & b \\ b & c \end{pmatrix}$ is positive definite iff $a > 0$ and $\det A = ac - b^2 > 0$. It is indefinite iff $\det A < 0$.
+</TheoremBlock>
+
+<TheoremBlock type="definition" number={4} title="Saddle Point">
+A point $a$ is a *saddle point* of $f$ if $\nabla f(a) = 0$ and $H_f(a)$ is indefinite — i.e., $f$ curves upward in some directions and downward in others. Near a saddle point, $f(a + h) > f(a)$ for some directions $h$ and $f(a + h) < f(a)$ for others. The origin of $f(x,y) = x^2 - y^2$ is the canonical example.
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={2} title="The Second Derivative Test (Multivariable)">
+Let $f: \mathbb{R}^n \to \mathbb{R}$ be $C^2$ near $a$, and suppose $\nabla f(a) = 0$ (so $a$ is a critical point). Then:
+
+1. If $H_f(a) \succ 0$ (positive definite), then $a$ is a **strict local minimum**.
+2. If $H_f(a) \prec 0$ (negative definite), then $a$ is a **strict local maximum**.
+3. If $H_f(a)$ is indefinite, then $a$ is a **saddle point**.
+4. If $H_f(a)$ is positive or negative *semi*definite (has a zero eigenvalue), the test is **inconclusive** — higher-order analysis is needed.
+
+For $n = 2$, write $H_f = \begin{pmatrix} f_{xx} & f_{xy} \\ f_{xy} & f_{yy} \end{pmatrix}$ and let $D = f_{xx} f_{yy} - f_{xy}^2 = \det H_f$. Then:
+
+- $D > 0$ and $f_{xx} > 0$: local minimum.
+- $D > 0$ and $f_{xx} < 0$: local maximum.
+- $D < 0$: saddle point.
+- $D = 0$: inconclusive.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+We sketch the proof via the second-order Taylor expansion (proven in Section 5). At a critical point where $\nabla f(a) = 0$:
+
+$$f(a+h) = f(a) + \frac{1}{2} h^T H_f(a) h + o(\|h\|^2).$$
+
+**Case 1: $H_f(a) \succ 0$.** By the spectral theorem for symmetric matrices, $h^T H_f(a) h \ge \lambda_{\min} \|h\|^2$ where $\lambda_{\min} > 0$ is the smallest eigenvalue. For $\|h\|$ sufficiently small, the $o(\|h\|^2)$ error is dominated by $\frac{1}{2}\lambda_{\min}\|h\|^2$, so $f(a+h) > f(a)$ for all $h \neq 0$ in a neighborhood — $a$ is a strict local minimum.
+
+**Case 2: $H_f(a) \prec 0$.** Analogous, with all inequalities reversed.
+
+**Case 3: $H_f(a)$ indefinite.** Let $v_+$ be an eigenvector with positive eigenvalue $\lambda_+ > 0$ and $v_-$ an eigenvector with negative eigenvalue $\lambda_- < 0$. Along $h = tv_+$ for small $t > 0$: $f(a + tv_+) \approx f(a) + \frac{1}{2}\lambda_+ t^2 > f(a)$. Along $h = tv_-$: $f(a + tv_-) \approx f(a) + \frac{1}{2}\lambda_- t^2 < f(a)$. So $a$ is neither a local min nor a local max — it is a saddle point.
+
+$\square$
+</TheoremBlock>
+
+<TheoremBlock type="example" number={5} title="Critical point classification: f(x,y) = x⁴ + y⁴ − 2x² − 2y² + 1">
+**Gradient:** $\nabla f = (4x^3 - 4x,\; 4y^3 - 4y)$. Setting both components to zero: $4x(x^2 - 1) = 0$ and $4y(y^2 - 1) = 0$. The critical points are all combinations of $x \in \{-1, 0, 1\}$ and $y \in \{-1, 0, 1\}$ — nine points total.
+
+**Hessian:**
+
+$$H_f = \begin{pmatrix} 12x^2 - 4 & 0 \\ 0 & 12y^2 - 4 \end{pmatrix}.$$
+
+At $(0,0)$: $H_f = \begin{pmatrix} -4 & 0 \\ 0 & -4 \end{pmatrix} \prec 0$ — **local maximum**.
+
+At $(1,0)$: $H_f = \begin{pmatrix} 8 & 0 \\ 0 & -4 \end{pmatrix}$ — indefinite — **saddle point**. Similarly for $(-1,0)$, $(0,1)$, $(0,-1)$.
+
+At $(1,1)$: $H_f = \begin{pmatrix} 8 & 0 \\ 0 & 8 \end{pmatrix} \succ 0$ — **local minimum**. Similarly for $(-1,1)$, $(1,-1)$, $(-1,-1)$.
+
+Nine critical points: 1 local max, 4 saddle points, 4 local minima.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={2} title="When the second derivative test is inconclusive">
+The function $f(x,y) = x^4 + y^4$ has $\nabla f(0,0) = 0$ and $H_f(0,0) = \begin{pmatrix} 0 & 0 \\ 0 & 0 \end{pmatrix}$ — the zero matrix. The test is inconclusive. Yet the origin is clearly a local (and global) minimum: $f(x,y) = x^4 + y^4 > 0 = f(0,0)$ for all $(x,y) \neq (0,0)$.
+
+The issue is that the second-order Taylor expansion is not informative when the quadratic term vanishes — the fourth-order terms dominate. Compare with $g(x,y) = x^4 - y^4$: same zero Hessian at the origin, but now the origin is a saddle point (of fourth order). The zero Hessian tells us the second-order analysis has nothing to say — we need higher-order derivatives to classify the point.
+</TheoremBlock>
+
+<SaddlePointExplorer client:visible />
+
+![Critical point classification on three surfaces: a bowl (all eigenvalues positive), a standard saddle (mixed eigenvalue signs), and a monkey saddle (degenerate — zero Hessian). Critical points are colored by type with Hessian eigenvalue annotations.](/images/topics/hessian/critical-point-classification.png)
+
+## The Second-Order Taylor Expansion
+
+Just as the first-order Taylor expansion approximates $f$ by a hyperplane (the tangent plane from [Topic 9](/topics/gradient)), the second-order expansion approximates $f$ by a paraboloid. The Hessian provides the curvature information that the gradient approximation misses.
+
+<TheoremBlock type="theorem" number={3} title="Second-Order Taylor Expansion">
+Let $f: \mathbb{R}^n \to \mathbb{R}$ be $C^2$ in a neighborhood of $a$. Then for all $h$ with $a + h$ in that neighborhood:
+
+$$f(a + h) = f(a) + \nabla f(a) \cdot h + \frac{1}{2} h^T H_f(a)\, h + R_2(h)$$
+
+where the remainder satisfies $\lim_{h \to 0} \frac{R_2(h)}{\|h\|^2} = 0$, i.e., $R_2(h) = o(\|h\|^2)$.
+
+In expanded form:
+
+$$f(a+h) = f(a) + \sum_{i=1}^n \frac{\partial f}{\partial x_i}(a)\, h_i + \frac{1}{2} \sum_{i=1}^n \sum_{j=1}^n \frac{\partial^2 f}{\partial x_i \partial x_j}(a)\, h_i h_j + o(\|h\|^2).$$
+
+This is the multivariable generalization of $f(a+h) = f(a) + f'(a)h + \frac{1}{2}f''(a)h^2 + o(h^2)$ from [Topic 6](/topics/mean-value-taylor).
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+Apply the single-variable Taylor expansion to the function $g(t) = f(a + th)$ at $t = 0$:
+
+$$g(t) = g(0) + g'(0)\,t + \frac{1}{2}g''(0)\,t^2 + o(t^2).$$
+
+We compute the derivatives of $g$:
+
+- $g(0) = f(a)$.
+- $g'(t) = \nabla f(a + th) \cdot h$ by the chain rule. So $g'(0) = \nabla f(a) \cdot h$.
+- $g''(t) = \sum_{i,j} \frac{\partial^2 f}{\partial x_i \partial x_j}(a + th)\, h_i h_j = h^T H_f(a + th)\, h$. So $g''(0) = h^T H_f(a)\, h$.
+
+Setting $t = 1$:
+
+$$f(a+h) = g(1) = f(a) + \nabla f(a) \cdot h + \frac{1}{2} h^T H_f(a)\, h + o(\|h\|^2).$$
+
+The error bound conversion from $o(t^2)$ at $t = 1$ to $o(\|h\|^2)$ uses the continuity of the second partial derivatives.
+
+$\square$
+</TheoremBlock>
+
+<TheoremBlock type="example" number={6} title="Quadratic approximation of f(x,y) = eˣ⁺ʸ near the origin">
+At $(0, 0)$: $f(0,0) = 1$, $\nabla f(0,0) = (1, 1)$, $H_f(0,0) = \begin{pmatrix} 1 & 1 \\ 1 & 1 \end{pmatrix}$.
+
+The second-order Taylor expansion:
+
+$$e^{x+y} \approx 1 + (x + y) + \frac{1}{2}(x^2 + 2xy + y^2) = 1 + (x+y) + \frac{1}{2}(x+y)^2.$$
+
+This matches the known Taylor series $e^u \approx 1 + u + \frac{1}{2}u^2$ with $u = x + y$. The Hessian captures the curvature of $e^{x+y}$ at the origin: it curves equally in all directions within the subspace $\{(t, t) : t \in \mathbb{R}\}$ and is flat in the perpendicular direction — reflected by the eigenvalues 0 and 2.
+</TheoremBlock>
+
+![Three panels showing the original surface, the first-order Taylor approximation (tangent plane), and the second-order Taylor approximation (paraboloid). The quadratic approximation captures the curvature that the linear approximation misses.](/images/topics/hessian/second-order-taylor.png)
+
+## Eigenvalue Analysis & Curvature
+
+The eigenvalues and eigenvectors of $H_f(a)$ have direct geometric meaning. The eigenvalues are the *principal curvatures* — the maximum and minimum curvatures of $f$ at $a$. The eigenvectors are the *principal curvature directions*. This section connects the algebraic classification (Definition 3) to geometric visualization.
+
+<TheoremBlock type="example" number={7} title="Curvature of the elliptic paraboloid">
+For $f(x,y) = ax^2 + by^2$ with $a, b > 0$:
+
+$$H_f = \begin{pmatrix} 2a & 0 \\ 0 & 2b \end{pmatrix}.$$
+
+Eigenvalues: $\lambda_1 = 2a$, $\lambda_2 = 2b$, with eigenvectors along the coordinate axes. The condition number $\kappa = \lambda_{\max}/\lambda_{\min} = \max(a,b)/\min(a,b)$ measures eccentricity.
+
+When $a = b$: $\kappa = 1$ (circular contours, isotropic curvature — gradient descent converges in a straight line).
+
+When $a \gg b$ or $a \ll b$: $\kappa \gg 1$ (elliptical contours, anisotropic curvature — gradient descent zigzags). The severity of the zigzag is directly proportional to $\kappa$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={8} title="The monkey saddle: f(x,y) = x³ − 3xy²">
+**Gradient:** $\nabla f = (3x^2 - 3y^2,\; -6xy)$, so $(0,0)$ is a critical point.
+
+**Hessian at origin:**
+
+$$H_f(0,0) = \begin{pmatrix} 6x & -6y \\ -6y & -6x \end{pmatrix}\bigg|_{(0,0)} = \begin{pmatrix} 0 & 0 \\ 0 & 0 \end{pmatrix}.$$
+
+The second derivative test is inconclusive. Yet the surface has three "valleys" meeting at the origin (picture a monkey sitting with both legs and a tail hanging down). This is a degenerate critical point requiring third-order analysis — the Hessian's silence here tells us that the curvature is zero in all directions, so the second-order Taylor expansion provides no useful local information.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={3} title="The condition number and optimization">
+For a quadratic $f(x) = \frac{1}{2}x^T A x - b^T x + c$ with $A \succ 0$, gradient descent with optimal step size converges in $O(\kappa \log(1/\epsilon))$ iterations, where $\kappa = \lambda_{\max}(A)/\lambda_{\min}(A)$ is the condition number. Newton's method converges in $O(\log\log(1/\epsilon))$ iterations (quadratic convergence).
+
+The gap is dramatic: for $\kappa = 1000$, gradient descent needs roughly 7,000 steps while Newton needs roughly 10. The condition number $\kappa(H_f)$ at a local minimum of a non-quadratic loss measures the local version of this problem — it tells you how much the loss landscape stretches gradient descent steps in the worst direction relative to the best.
+</TheoremBlock>
+
+<CurvatureHeatmapExplorer client:visible />
+
+![Contour plots with eigenvector arrows scaled by eigenvalue magnitude and colored by sign: blue for positive curvature, red for negative curvature. Shown for the paraboloid (all blue, uniform) and Rosenbrock (highly anisotropic near the valley).](/images/topics/hessian/eigenvalue-curvature.png)
+
+## Newton's Method
+
+Newton's method uses the quadratic approximation from the second-order Taylor expansion to take curvature-corrected steps. At each iterate, we approximate $f$ by a paraboloid, find the minimum of the paraboloid (which has a closed-form solution), and move there.
+
+<TheoremBlock type="example" number={9} title="Newton's method derivation">
+At the current iterate $x_k$, approximate $f$ by its second-order Taylor expansion:
+
+$$f(x_k + h) \approx f(x_k) + \nabla f(x_k) \cdot h + \frac{1}{2} h^T H_f(x_k)\, h.$$
+
+This is a quadratic function of $h$. Its gradient with respect to $h$ is $\nabla f(x_k) + H_f(x_k)\, h$, which vanishes when:
+
+$$h^* = -H_f(x_k)^{-1}\, \nabla f(x_k).$$
+
+The **Newton update** is:
+
+$$x_{k+1} = x_k + h^* = x_k - H_f(x_k)^{-1}\, \nabla f(x_k).$$
+
+Compare with gradient descent: $x_{k+1} = x_k - \eta\, \nabla f(x_k)$. Newton replaces the scalar step size $\eta$ with the matrix $H_f^{-1}$ — a direction- and curvature-dependent step that accounts for the local shape of the surface.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={10} title="Newton on the Rosenbrock function">
+$f(x,y) = (1-x)^2 + 100(y-x^2)^2$.
+
+The minimum is at $(1, 1)$. Gradient descent converges slowly because the loss landscape is a narrow, curved valley with condition number $\kappa \approx 2500$ at the minimum. The gradient points nearly perpendicular to the valley floor, so GD bounces between the walls with each step.
+
+Newton's method converges in a few iterations because it uses the Hessian to navigate the curvature. The Hessian-inverse premultiplication rotates the gradient to align with the valley floor and scales the step to match the local curvature — exactly the correction that gradient descent is missing.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={4} title="Newton's method can fail">
+Newton's method requires $H_f(x_k)$ to be positive definite — otherwise the quadratic model has no minimum (it has a maximum or saddle). At a saddle point, $H_f$ is indefinite, and the Newton step may move *toward* the saddle rather than away from it.
+
+This is why second-order methods in practice often use *modified* Newton methods that ensure the step direction is always a descent direction. Common modifications include:
+
+- **Levenberg-Marquardt damping:** Replace $H_f^{-1}$ with $(H_f + \mu I)^{-1}$ for some $\mu > 0$, shifting all eigenvalues to be positive.
+- **Trust region methods:** Constrain $\|h\| \le \Delta$ and solve the constrained quadratic subproblem.
+- **Eigenvalue modification:** Replace negative eigenvalues with their absolute values before inverting.
+</TheoremBlock>
+
+<NewtonMethodExplorer client:visible />
+
+![Side-by-side contour trajectories: gradient descent zigzags on an ill-conditioned surface while Newton's method converges in a few direct steps. The convergence curve comparison shows linear (GD) vs quadratic (Newton) convergence on a log scale.](/images/topics/hessian/newton-vs-gd.png)
+
+## Connections to ML
+
+### Loss surface curvature
+
+The Hessian of the loss function $L(\theta)$ at the current parameters $\theta$ determines how the loss surface curves. The eigenvalues of $H_L(\theta)$ are the curvatures in each principal direction. A large condition number $\kappa(H_L) = \lambda_{\max}/\lambda_{\min}$ means the surface is an elongated valley — gradient descent overshoots in steep directions and barely moves in flat directions.
+
+This is why learning rate tuning is difficult: no single scalar $\eta$ works well for all directions simultaneously. If $\eta$ is small enough not to overshoot in the steepest direction, it makes negligible progress in the flattest direction. If $\eta$ is large enough to make progress in the flat direction, it oscillates wildly in the steep direction.
+
+Batch normalization, layer normalization, and careful weight initialization schemes all implicitly improve the Hessian's condition number by making the loss surface more isotropic — reducing the gap between the largest and smallest curvatures.
+
+### Saddle points in high dimensions
+
+Dauphin et al. (2014) showed that in high-dimensional optimization, saddle points are exponentially more common than local minima. At a random critical point of a generic function on $\mathbb{R}^n$, each eigenvalue of the Hessian is independently positive or negative with roughly equal probability.
+
+A local minimum requires *all* $n$ eigenvalues to be positive — probability roughly $2^{-n}$. A saddle point (mixed eigenvalue signs) has probability roughly $1 - 2^{1-n}$. For $n = 1000$: the probability of a random critical point being a local minimum is approximately $2^{-1000} \approx 0$.
+
+The practical implication: when gradient descent appears to "get stuck" in high-dimensional optimization, it is almost certainly near a saddle point, not a local minimum. Gradient descent can escape saddle points (slowly, along directions of negative curvature), but Newton's method can actually be attracted *to* saddle points (because $H_f^{-1}$ amplifies components along eigenvectors with small eigenvalues, which near saddle points includes directions with negative curvature).
+
+![Histogram of Hessian eigenvalue distributions at random critical points for increasing dimension n. As n grows, essentially all critical points are saddle points — local minima become exponentially rare.](/images/topics/hessian/saddle-points-high-dim.png)
+
+### Second-order optimizers
+
+- **Full Newton:** $\theta_{k+1} = \theta_k - H_L^{-1} \nabla L$. Quadratic convergence but $O(n^2)$ memory and $O(n^3)$ computation per step. Impractical for $n > 10^4$.
+
+- **Quasi-Newton (L-BFGS):** Approximates $H_L^{-1}$ from gradient differences across recent steps — stores $O(mn)$ where $m \sim 10$–$20$ is the memory parameter. Widely used in scientific computing and small-scale ML.
+
+- **Hessian-free optimization:** Uses conjugate gradient to solve $H_f(x_k)\, h = -\nabla f(x_k)$ without forming $H_f$ explicitly — only requires Hessian-vector products $H_f v$, which can be computed via automatic differentiation in $O(n)$ time (one forward + one backward pass per product).
+
+- **Natural gradient:** $\theta_{k+1} = \theta_k - I(\theta_k)^{-1} \nabla L(\theta_k)$ where $I(\theta)$ is the Fisher information matrix. This is Newton's method on the KL divergence rather than the loss — it adapts the step to the geometry of the probability distribution. See <a href="https://formalml.com/topics/information-geometry" target="_blank" rel="noopener">Information Geometry</a> on formalML.
+
+- **Adam and diagonal approximations:** Adam's per-parameter adaptive learning rate $\eta / \sqrt{v_t + \epsilon}$ implicitly approximates the diagonal of $|H_L|^{1/2}$. The second-moment estimate $v_t$ tracks the mean square of gradients, which under stationary conditions approximates the diagonal Fisher information.
+
+### Hessian spectrum in practice
+
+Empirical studies of neural network loss surfaces show that the Hessian spectrum is highly structured: most eigenvalues are near zero (flat directions corresponding to redundant parameters), a few are large and positive (high-curvature directions), and at saddle points, a few are negative. The "effective dimension" of the optimization problem is much smaller than $n$, which explains why first-order methods work surprisingly well despite the theoretical superiority of second-order methods.
+
+The Gauss-Newton approximation $G = J^T J$ (where $J$ is the Jacobian of the residuals) is always positive semidefinite and provides a useful approximation to the Hessian for least-squares problems, avoiding the indefiniteness issue of the full Hessian.
+
+![Three panels showing the full Hessian H, the Gauss-Newton approximation J^T J, and their difference H − J^T J, for a nonlinear least-squares problem.](/images/topics/hessian/gauss-newton-approximation.png)
+
+**Forward links:**
+
+- <a href="https://formalml.com/topics/gradient-descent" target="_blank" rel="noopener">Gradient Descent</a> on formalML — second-order optimization, convergence rate analysis, adaptive methods
+- <a href="https://formalml.com/topics/convex-analysis" target="_blank" rel="noopener">Convex Analysis</a> on formalML — positive semidefinite Hessian as the second-order certificate of convexity
+- <a href="https://formalml.com/topics/information-geometry" target="_blank" rel="noopener">Information Geometry</a> on formalML — Fisher information as the expected Hessian of the negative log-likelihood
+
+**Within formalCalculus:**
+
+- **Inverse & Implicit Function Theorems** *(coming soon)* — uses the Hessian to analyze the local structure of constraint surfaces near critical points
+- **Stability & Dynamical Systems** *(coming soon)* — eigenvalue analysis of the Hessian of a Lyapunov function determines equilibrium stability
+
+![Heatmap of the condition number κ(H_f) over the domain for the Rosenbrock function, showing the narrow high-κ valley where gradient descent struggles most.](/images/topics/hessian/condition-number-heatmap.png)
+
+## Connections & Further Reading
+
+This topic connects to the full prerequisite chain of the Multivariable Differential Calculus track:
+
+| Topic | Connection |
+|-------|-----------|
+| [The Derivative](/topics/derivative) | The single-variable $f''(a)$ is the $1 \times 1$ Hessian. The second derivative test generalizes to eigenvalue analysis. |
+| [Taylor's Theorem](/topics/mean-value-taylor) | The single-variable Taylor expansion $f(a+h) = f(a) + f'h + \frac{1}{2}f''h^2 + O(h^3)$ generalizes to the multivariable second-order expansion with the quadratic form $h^T H_f h$. |
+| [Partial Derivatives & the Gradient](/topics/gradient) | The gradient provides first-order information (slope). The Hessian provides second-order information (curvature). At critical points, the gradient vanishes and the Hessian determines the local structure. |
+| [The Jacobian & Multivariate Chain Rule](/topics/jacobian) | The Hessian *is* the Jacobian of the gradient: $H_f = J(\nabla f)$. The chain rule enables computing Hessians of composed functions. |
+
+```python
+import jax
+import jax.numpy as jnp
+
+def f(x):
+    return (1 - x[0])**2 + 100 * (x[1] - x[0]**2)**2
+
+x = jnp.array([0.5, 0.5])
+
+# Gradient
+grad_f = jax.grad(f)
+print("∇f:", grad_f(x))
+
+# Hessian
+hessian_f = jax.hessian(f)
+H = hessian_f(x)
+print("H_f:\n", H)
+
+# Eigenvalues of the Hessian
+eigenvalues = jnp.linalg.eigvalsh(H)
+print("Eigenvalues:", eigenvalues)
+print("Condition number:", eigenvalues[-1] / eigenvalues[0])
+
+# Newton step: x_new = x - H⁻¹ ∇f
+newton_dir = -jnp.linalg.solve(H, grad_f(x))
+print("Newton direction:", newton_dir)
+```

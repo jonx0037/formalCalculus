@@ -15,6 +15,10 @@
  *  - Jacobian matrix and determinant computation (Topic 10)
  *  - Multivariate chain rule with step-by-step tracking (Topic 10)
  *  - Area distortion and coordinate transform utilities (Topic 10)
+ *  - Hessian matrix and eigenvalue decomposition (Topic 11)
+ *  - Critical point classification via eigenvalue signs (Topic 11)
+ *  - Newton's method step computation (Topic 11)
+ *  - Condition number and quadratic form evaluation (Topic 11)
  */
 
 import { seededRandom } from './limits';
@@ -915,4 +919,515 @@ export function coordinateTransform(
   }
 
   return { inputGrid, outputGrid, inputLines, outputLines };
+}
+
+// ══════════════════════════════════════════════════════════════
+// Topic 11 — The Hessian & Second-Order Analysis
+// ══════════════════════════════════════════════════════════════
+
+// ── Interfaces (Topic 11) ─────────────────────────────────────
+
+/** Hessian matrix result at a point */
+export interface HessianResult {
+  /** Evaluation point */
+  point: number[];
+  /** n × n Hessian matrix (symmetric for C² functions) */
+  matrix: number[][];
+  /** Eigenvalues sorted ascending */
+  eigenvalues: number[];
+  /** Corresponding unit eigenvectors */
+  eigenvectors: number[][];
+  /** det(H) */
+  determinant: number;
+  /** tr(H) = sum of diagonal entries */
+  trace: number;
+  /** Definiteness classification */
+  classification:
+    | 'positive-definite'
+    | 'negative-definite'
+    | 'indefinite'
+    | 'positive-semidefinite'
+    | 'negative-semidefinite'
+    | 'zero';
+}
+
+/** Critical point classification result */
+export interface CriticalPointResult {
+  /** The critical point */
+  point: number[];
+  /** Gradient at the point (should be near zero) */
+  gradient: number[];
+  /** Full Hessian analysis */
+  hessian: HessianResult;
+  /** Classification: min, max, saddle, or degenerate */
+  type: 'local-min' | 'local-max' | 'saddle' | 'degenerate';
+}
+
+/** Newton step result */
+export interface NewtonStepResult {
+  /** Current iterate */
+  currentPoint: number[];
+  /** Gradient at current iterate */
+  gradient: number[];
+  /** Hessian matrix at current iterate */
+  hessian: number[][];
+  /** Newton direction: -H⁻¹ ∇f */
+  newtonDirection: number[];
+  /** Next iterate: current + direction */
+  nextPoint: number[];
+  /** f(currentPoint) */
+  functionValue: number;
+  /** ||∇f(currentPoint)|| */
+  gradientNorm: number;
+  /** Condition number κ(H) */
+  conditionNumber: number;
+}
+
+/** Quadratic form evaluation result */
+export interface QuadraticFormResult {
+  /** Evaluation point h */
+  point: number[];
+  /** The symmetric matrix A */
+  matrix: number[][];
+  /** h^T A h */
+  value: number;
+}
+
+// ── Eigenvalue computation ────────────────────────────────────
+
+/**
+ * Compute eigenvalues and eigenvectors of a 2×2 symmetric matrix.
+ * Uses the closed-form formula: λ = (a+c)/2 ± √((a-c)²/4 + b²).
+ * Returns eigenvalues sorted ascending with corresponding unit eigenvectors.
+ */
+export function eigenvalues2x2(
+  M: [[number, number], [number, number]],
+): { eigenvalues: [number, number]; eigenvectors: [[number, number], [number, number]] } {
+  const a = M[0][0];
+  const b = M[0][1]; // = M[1][0] by symmetry
+  const c = M[1][1];
+
+  const mean = (a + c) / 2;
+  const disc = Math.sqrt(((a - c) / 2) ** 2 + b * b);
+
+  const lambda1 = mean - disc; // smaller
+  const lambda2 = mean + disc; // larger
+
+  // Compute eigenvectors
+  let v1: [number, number];
+  let v2: [number, number];
+
+  if (Math.abs(b) < 1e-14) {
+    // Diagonal matrix — eigenvectors are standard basis
+    if (a <= c) {
+      v1 = [1, 0];
+      v2 = [0, 1];
+    } else {
+      v1 = [0, 1];
+      v2 = [1, 0];
+    }
+  } else {
+    // For (A - λI)v = 0, use the first row: (a - λ)v₁ + b·v₂ = 0
+    // So v = (b, λ - a) normalized
+    const raw1x = b;
+    const raw1y = lambda1 - a;
+    const norm1 = Math.sqrt(raw1x * raw1x + raw1y * raw1y);
+    v1 = norm1 > 1e-14 ? [raw1x / norm1, raw1y / norm1] : [1, 0];
+
+    const raw2x = b;
+    const raw2y = lambda2 - a;
+    const norm2 = Math.sqrt(raw2x * raw2x + raw2y * raw2y);
+    v2 = norm2 > 1e-14 ? [raw2x / norm2, raw2y / norm2] : [0, 1];
+  }
+
+  return {
+    eigenvalues: [lambda1, lambda2],
+    eigenvectors: [v1, v2],
+  };
+}
+
+/**
+ * Compute eigenvalues of a symmetric n×n matrix via the Jacobi eigenvalue algorithm.
+ * Guarded to n ≤ 10 for browser performance.
+ * Returns eigenvalues sorted ascending with corresponding eigenvectors.
+ */
+export function eigenvaluesSymmetric(
+  M: number[][],
+): { eigenvalues: number[]; eigenvectors: number[][] } {
+  const n = M.length;
+  if (n === 0) return { eigenvalues: [], eigenvectors: [] };
+  if (n > 10) {
+    throw new Error(
+      `eigenvaluesSymmetric(): matrix size ${n}×${n} exceeds safe limit. ` +
+        `Use a numerical linear algebra library for large matrices.`,
+    );
+  }
+
+  // Special case: 1×1
+  if (n === 1) {
+    return { eigenvalues: [M[0][0]], eigenvectors: [[1]] };
+  }
+
+  // Special case: 2×2 — delegate to closed-form
+  if (n === 2) {
+    const result = eigenvalues2x2(M as [[number, number], [number, number]]);
+    return {
+      eigenvalues: [...result.eigenvalues],
+      eigenvectors: result.eigenvectors.map((v) => [...v]),
+    };
+  }
+
+  // Jacobi eigenvalue algorithm for n ≥ 3
+  // Work on a copy
+  const A: number[][] = M.map((row) => [...row]);
+  // V accumulates eigenvectors (starts as identity)
+  const V: number[][] = Array.from({ length: n }, (_, i) =>
+    Array.from({ length: n }, (_, j) => (i === j ? 1 : 0)),
+  );
+
+  const maxIter = 100 * n * n;
+  for (let iter = 0; iter < maxIter; iter++) {
+    // Find largest off-diagonal element
+    let maxVal = 0;
+    let p = 0;
+    let q = 1;
+    for (let i = 0; i < n; i++) {
+      for (let j = i + 1; j < n; j++) {
+        if (Math.abs(A[i][j]) > maxVal) {
+          maxVal = Math.abs(A[i][j]);
+          p = i;
+          q = j;
+        }
+      }
+    }
+
+    if (maxVal < 1e-12) break; // converged
+
+    // Compute Jacobi rotation to zero out A[p][q]
+    const theta =
+      Math.abs(A[p][p] - A[q][q]) < 1e-14
+        ? Math.PI / 4
+        : 0.5 * Math.atan2(2 * A[p][q], A[p][p] - A[q][q]);
+    const cosT = Math.cos(theta);
+    const sinT = Math.sin(theta);
+
+    // Apply rotation A' = G^T A G
+    const newA: number[][] = A.map((row) => [...row]);
+    for (let i = 0; i < n; i++) {
+      if (i !== p && i !== q) {
+        newA[i][p] = cosT * A[i][p] + sinT * A[i][q];
+        newA[p][i] = newA[i][p];
+        newA[i][q] = -sinT * A[i][p] + cosT * A[i][q];
+        newA[q][i] = newA[i][q];
+      }
+    }
+    newA[p][p] = cosT * cosT * A[p][p] + 2 * sinT * cosT * A[p][q] + sinT * sinT * A[q][q];
+    newA[q][q] = sinT * sinT * A[p][p] - 2 * sinT * cosT * A[p][q] + cosT * cosT * A[q][q];
+    newA[p][q] = 0;
+    newA[q][p] = 0;
+
+    // Copy back
+    for (let i = 0; i < n; i++) {
+      for (let j = 0; j < n; j++) {
+        A[i][j] = newA[i][j];
+      }
+    }
+
+    // Accumulate eigenvector rotation: V' = V G
+    for (let i = 0; i < n; i++) {
+      const vip = V[i][p];
+      const viq = V[i][q];
+      V[i][p] = cosT * vip + sinT * viq;
+      V[i][q] = -sinT * vip + cosT * viq;
+    }
+  }
+
+  // Extract eigenvalues (diagonal of A) and sort ascending
+  const eigs = Array.from({ length: n }, (_, i) => ({
+    value: A[i][i],
+    vector: V.map((row) => row[i]),
+  }));
+  eigs.sort((a, b) => a.value - b.value);
+
+  return {
+    eigenvalues: eigs.map((e) => e.value),
+    eigenvectors: eigs.map((e) => e.vector),
+  };
+}
+
+// ── Hessian computation ───────────────────────────────────────
+
+/**
+ * Classify definiteness from eigenvalues.
+ */
+function classifyDefiniteness(
+  eigenvalues: number[],
+  tol: number = 1e-8,
+): HessianResult['classification'] {
+  const allPositive = eigenvalues.every((λ) => λ > tol);
+  const allNegative = eigenvalues.every((λ) => λ < -tol);
+  const allNonneg = eigenvalues.every((λ) => λ >= -tol);
+  const allNonpos = eigenvalues.every((λ) => λ <= tol);
+  const allZero = eigenvalues.every((λ) => Math.abs(λ) <= tol);
+
+  if (allZero) return 'zero';
+  if (allPositive) return 'positive-definite';
+  if (allNegative) return 'negative-definite';
+  if (allNonneg) return 'positive-semidefinite';
+  if (allNonpos) return 'negative-semidefinite';
+  return 'indefinite';
+}
+
+/**
+ * Compute the Hessian matrix of f: ℝⁿ → ℝ at a point via central differences.
+ *
+ * Uses a larger step size (h = 1e-5) than the gradient (h = 1e-7) because
+ * second-order differences amplify floating-point noise as O(ε/h²).
+ *
+ * Internally computes gradients at shifted points and differences them:
+ *   H_{ij} ≈ (∂f/∂x_i(x + h·e_j) − ∂f/∂x_i(x − h·e_j)) / (2h)
+ */
+export function hessianMatrix(
+  f: (...args: number[]) => number,
+  point: number[],
+  h: number = 1e-5,
+): HessianResult {
+  const n = point.length;
+  const step = Math.abs(h);
+  const H: number[][] = Array.from({ length: n }, () => new Array(n).fill(0));
+
+  // Compute Hessian via central differences on the gradient
+  for (let j = 0; j < n; j++) {
+    const pPlus = [...point];
+    const pMinus = [...point];
+    pPlus[j] += step;
+    pMinus[j] -= step;
+
+    const gradPlus = numericalGradient(f, pPlus, step * 0.1);
+    const gradMinus = numericalGradient(f, pMinus, step * 0.1);
+
+    for (let i = 0; i < n; i++) {
+      H[i][j] = (gradPlus[i] - gradMinus[i]) / (2 * step);
+    }
+  }
+
+  // Symmetrize: H_sym = (H + H^T) / 2
+  for (let i = 0; i < n; i++) {
+    for (let j = i + 1; j < n; j++) {
+      const avg = (H[i][j] + H[j][i]) / 2;
+      H[i][j] = avg;
+      H[j][i] = avg;
+    }
+  }
+
+  // Eigenvalue decomposition
+  const { eigenvalues, eigenvectors } = eigenvaluesSymmetric(H);
+
+  // Determinant and trace
+  const det = determinant(H);
+  const tr = H.reduce((sum, row, i) => sum + row[i], 0);
+
+  return {
+    point: [...point],
+    matrix: H,
+    eigenvalues,
+    eigenvectors,
+    determinant: det,
+    trace: tr,
+    classification: classifyDefiniteness(eigenvalues),
+  };
+}
+
+// ── Critical point classification ────────────────────────────
+
+/**
+ * Classify a critical point of f: ℝⁿ → ℝ.
+ * Computes gradient (should be near zero) and Hessian, then classifies
+ * based on eigenvalue signs.
+ */
+export function classifyCriticalPoint(
+  f: (...args: number[]) => number,
+  point: number[],
+  h: number = 1e-5,
+): CriticalPointResult {
+  const grad = numericalGradient(f, point);
+  const hess = hessianMatrix(f, point, h);
+
+  let type: CriticalPointResult['type'];
+  switch (hess.classification) {
+    case 'positive-definite':
+      type = 'local-min';
+      break;
+    case 'negative-definite':
+      type = 'local-max';
+      break;
+    case 'indefinite':
+      type = 'saddle';
+      break;
+    default:
+      type = 'degenerate';
+  }
+
+  return {
+    point: [...point],
+    gradient: grad,
+    hessian: hess,
+    type,
+  };
+}
+
+// ── Quadratic form ───────────────────────────────────────────
+
+/**
+ * Evaluate the quadratic form h^T A h for a symmetric matrix A.
+ */
+export function quadraticForm(A: number[][], h: number[]): number {
+  const n = A.length;
+  let value = 0;
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j < n; j++) {
+      value += h[i] * A[i][j] * h[j];
+    }
+  }
+  return value;
+}
+
+// ── Matrix inversion (for Newton's method) ───────────────────
+
+/**
+ * Invert a 2×2 matrix. Returns null if singular (|det| < tol).
+ */
+function invert2x2(
+  M: number[][],
+  tol: number = 1e-10,
+): number[][] | null {
+  const det = M[0][0] * M[1][1] - M[0][1] * M[1][0];
+  if (Math.abs(det) < tol) return null;
+  const invDet = 1 / det;
+  return [
+    [M[1][1] * invDet, -M[0][1] * invDet],
+    [-M[1][0] * invDet, M[0][0] * invDet],
+  ];
+}
+
+/**
+ * Invert an n×n matrix via Gauss-Jordan elimination.
+ * Returns null if singular. Guarded to n ≤ 10.
+ */
+function invertMatrix(
+  M: number[][],
+  tol: number = 1e-10,
+): number[][] | null {
+  const n = M.length;
+  if (n === 2) return invert2x2(M, tol);
+
+  // Augmented matrix [M | I]
+  const aug: number[][] = M.map((row, i) => [
+    ...row,
+    ...Array.from({ length: n }, (_, j) => (i === j ? 1 : 0)),
+  ]);
+
+  for (let col = 0; col < n; col++) {
+    // Partial pivoting
+    let maxRow = col;
+    let maxVal = Math.abs(aug[col][col]);
+    for (let row = col + 1; row < n; row++) {
+      if (Math.abs(aug[row][col]) > maxVal) {
+        maxVal = Math.abs(aug[row][col]);
+        maxRow = row;
+      }
+    }
+    if (maxVal < tol) return null; // singular
+
+    if (maxRow !== col) {
+      [aug[col], aug[maxRow]] = [aug[maxRow], aug[col]];
+    }
+
+    // Scale pivot row
+    const pivot = aug[col][col];
+    for (let j = col; j < 2 * n; j++) {
+      aug[col][j] /= pivot;
+    }
+
+    // Eliminate column
+    for (let row = 0; row < n; row++) {
+      if (row === col) continue;
+      const factor = aug[row][col];
+      for (let j = col; j < 2 * n; j++) {
+        aug[row][j] -= factor * aug[col][j];
+      }
+    }
+  }
+
+  // Extract inverse from right half
+  return aug.map((row) => row.slice(n));
+}
+
+// ── Newton's method ──────────────────────────────────────────
+
+/**
+ * Compute one Newton step: x_{k+1} = x_k − H_f(x_k)⁻¹ ∇f(x_k).
+ *
+ * If the Hessian is singular or near-singular, falls back to a
+ * gradient descent step with unit step size.
+ */
+export function newtonStep(
+  f: (...args: number[]) => number,
+  point: number[],
+  h: number = 1e-5,
+): NewtonStepResult {
+  const grad = numericalGradient(f, point);
+  const hess = hessianMatrix(f, point, h);
+  const gradNorm = Math.sqrt(grad.reduce((s, g) => s + g * g, 0));
+  const fVal = f(...point);
+  const kappa = conditionNumber(hess.matrix);
+
+  // Try to invert the Hessian
+  const Hinv = invertMatrix(hess.matrix);
+
+  let direction: number[];
+  if (Hinv) {
+    // Newton direction: -H⁻¹ ∇f
+    const n = point.length;
+    direction = new Array(n).fill(0);
+    for (let i = 0; i < n; i++) {
+      for (let j = 0; j < n; j++) {
+        direction[i] -= Hinv[i][j] * grad[j];
+      }
+    }
+  } else {
+    // Fallback to negative gradient (GD step)
+    direction = grad.map((g) => -g);
+  }
+
+  const nextPoint = point.map((x, i) => x + direction[i]);
+
+  return {
+    currentPoint: [...point],
+    gradient: grad,
+    hessian: hess.matrix,
+    newtonDirection: direction,
+    nextPoint,
+    functionValue: fVal,
+    gradientNorm: gradNorm,
+    conditionNumber: kappa,
+  };
+}
+
+// ── Condition number ─────────────────────────────────────────
+
+/**
+ * Compute the condition number κ = |λ_max| / |λ_min| of a symmetric matrix.
+ * Returns Infinity if the smallest eigenvalue is zero.
+ */
+export function conditionNumber(M: number[][]): number {
+  const { eigenvalues } = eigenvaluesSymmetric(M);
+  if (eigenvalues.length === 0) return 1;
+
+  const absEigs = eigenvalues.map(Math.abs);
+  const maxEig = Math.max(...absEigs);
+  const minEig = Math.min(...absEigs);
+
+  if (minEig < 1e-14) return Infinity;
+  return maxEig / minEig;
 }
