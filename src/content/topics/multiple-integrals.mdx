@@ -1,0 +1,551 @@
+---
+title: "Multiple Integrals & Fubini's Theorem"
+subtitle: "Extending integration to functions of several variables — double and triple integrals defined via multidimensional Riemann sums, Fubini's theorem reducing them to iterated single integrals, integration over general regions, and Monte Carlo methods for high-dimensional computation"
+status: "published"
+difficulty: "intermediate"
+prerequisites:
+  - "riemann-integral"
+  - "gradient"
+tags:
+  - "calculus"
+  - "multiple-integrals"
+  - "double-integral"
+  - "triple-integral"
+  - "fubini-theorem"
+  - "iterated-integrals"
+  - "monte-carlo"
+  - "joint-density"
+  - "marginal-density"
+  - "expected-value"
+domain: "multivar-integral"
+videoId: null
+notebookPath: "notebooks/multiple-integrals/13_multiple_integrals.ipynb"
+githubUrl: "https://github.com/jonx0037/formalCalculus/blob/main/src/content/topics/multiple-integrals.mdx"
+datePublished: 2026-04-15
+estimatedReadTime: 50
+abstract: "The Riemann integral integrates a function of one variable over an interval. Multiple integrals extend this to functions of several variables over regions in higher dimensions. The double integral over a rectangle R = [a,b] × [c,d] is defined via two-dimensional Riemann sums: partition R into sub-rectangles, evaluate f at sample points, sum the volume contributions, and take the limit as the mesh goes to zero. Fubini's Theorem is the computational engine: for continuous f, the double integral equals the iterated integral in either order. For non-rectangular regions, Fubini extends to Type I domains (vertical slices with variable y-limits) and Type II domains (horizontal slices with variable x-limits). Triple integrals extend the construction to three dimensions. In machine learning, multiple integrals are pervasive: joint densities, marginal densities obtained by integrating out variables, expected values, and covariance are all multiple integrals. When closed-form evaluation is impossible in high dimensions, Monte Carlo integration approximates by random sampling, connecting to the mini-batch strategy of SGD."
+formalmlConnections:
+  - topic: "measure-theoretic-probability"
+    site: "formalml"
+    relationship: "Joint densities and marginals are computed via Fubini's theorem. Every two-variable probabilistic computation is a multiple integral. The Fubini-Tonelli theorem generalizes this to Lebesgue integrals."
+  - topic: "bayesian-nonparametrics"
+    site: "formalml"
+    relationship: "Multi-parameter posteriors require integrating over high-dimensional parameter spaces. Fubini enables Gibbs sampling, and Monte Carlo methods estimate intractable integrals."
+  - topic: "gradient-descent"
+    site: "formalml"
+    relationship: "The expected risk is a double integral over the joint distribution. Each SGD mini-batch is a Monte Carlo estimate. Monte Carlo error bounds inform stochastic gradient variance."
+connections:
+  - topic: "riemann-integral"
+    relationship: "The double integral generalizes the 1D Riemann sum construction. Fubini reduces double integrals to nested single integrals. All proofs rely on 1D integral properties."
+  - topic: "gradient"
+    relationship: "Iterated integration uses the partial-derivative perspective: integrate with respect to y while treating x as constant."
+  - topic: "epsilon-delta"
+    relationship: "Uniform continuity on compact rectangular domains (Heine-Cantor) is the key hypothesis in Fubini's proof."
+  - topic: "completeness-compactness"
+    relationship: "Compactness of R = [a,b] × [c,d] ensures continuous functions are bounded and uniformly continuous."
+  - topic: "improper-integrals"
+    relationship: "The Gaussian integral proof via polar coordinates is revisited as a motivating example for change of variables."
+  - topic: "jacobian"
+    relationship: "The Jacobian determinant appears in the next topic (Change of Variables) as the volume scaling factor."
+references:
+  - type: "book"
+    title: "Calculus on Manifolds"
+    authors: "Spivak"
+    year: 1965
+    note: "Chapter 3 — Riemann integral in Rⁿ via partitions and Fubini's theorem"
+  - type: "book"
+    title: "Principles of Mathematical Analysis"
+    authors: "Rudin"
+    year: 1976
+    note: "Chapter 10 — rigorous treatment of multiple integrals via iterated integration"
+  - type: "book"
+    title: "Analysis on Manifolds"
+    authors: "Munkres"
+    year: 1991
+    note: "Chapters 2-3 — Riemann integration in Rⁿ with measurability conditions for Fubini"
+  - type: "book"
+    title: "Vector Calculus, Linear Algebra, and Differential Forms"
+    authors: "Hubbard & Hubbard"
+    year: 2015
+    note: "Chapter 4 — geometric motivation and computational techniques for multiple integrals"
+  - type: "book"
+    title: "Pattern Recognition and Machine Learning"
+    authors: "Bishop"
+    year: 2006
+    note: "Chapter 2 — marginal, conditional, and joint densities via multiple integrals"
+---
+
+import TheoremBlock from '../../components/ui/TheoremBlock.astro';
+import DoubleIntegralExplorer from '../../components/viz/DoubleIntegralExplorer.tsx';
+import FubiniOrderExplorer from '../../components/viz/FubiniOrderExplorer.tsx';
+import RegionExplorer from '../../components/viz/RegionExplorer.tsx';
+import MonteCarloExplorer from '../../components/viz/MonteCarloExplorer.tsx';
+import MarginalDensityExplorer from '../../components/viz/MarginalDensityExplorer.tsx';
+
+## Overview & Motivation
+
+In machine learning, the expected loss over a joint distribution of data and parameters is
+
+$$\mathbb{E}[\ell] = \iint \ell(y, \hat{y}(x)) \, p(x, y) \, dx \, dy.$$
+
+This is a *double integral* — the function $\ell \cdot p$ is integrated over two variables simultaneously. But how do we define this integral rigorously? And more importantly, how do we *compute* it?
+
+The answer comes in two parts. First, we define the double integral as a limit of two-dimensional Riemann sums, directly generalizing the 1D construction from [The Riemann Integral](/topics/riemann-integral). Second, **Fubini's theorem** tells us we can evaluate the double integral as two nested single integrals — and the order doesn't matter (for continuous functions). This transforms a genuinely two-dimensional problem into a sequence of one-dimensional problems we already know how to solve.
+
+This topic opens the Multivariable Integral Calculus track. We combine the integration machinery from [The Riemann Integral & FTC](/topics/riemann-integral) with the partial-derivative perspective from [Partial Derivatives & the Gradient](/topics/gradient): an iterated integral is "integrate with respect to $y$, treating $x$ as constant" — precisely the partial-derivative viewpoint applied to integration rather than differentiation.
+
+## Double Integrals over Rectangles
+
+We start where [The Riemann Integral](/topics/riemann-integral) started — with Riemann sums — but now in two dimensions. The surface $z = f(x, y)$ hovers above a rectangle $R$ in the $xy$-plane. We want to compute the "volume" between the surface and $R$.
+
+<TheoremBlock type="definition" number={1} title="Partition of a Rectangle">
+Let $R = [a, b] \times [c, d]$ be a closed rectangle in $\mathbb{R}^2$. A **partition** of $R$ is a pair $(P_x, P_y)$ where
+
+$$P_x = \{x_0, x_1, \ldots, x_m\}, \quad a = x_0 < x_1 < \cdots < x_m = b$$
+
+is a partition of $[a, b]$ and
+
+$$P_y = \{y_0, y_1, \ldots, y_n\}, \quad c = y_0 < y_1 < \cdots < y_n = d$$
+
+is a partition of $[c, d]$. This creates $m \times n$ **sub-rectangles** $R_{ij} = [x_{i-1}, x_i] \times [y_{j-1}, y_j]$, each with area $\Delta A_{ij} = \Delta x_i \cdot \Delta y_j$.
+
+The **mesh** (or norm) of the partition is $\|P\| = \max(\|P_x\|, \|P_y\|)$ — the larger of the two 1D meshes.
+</TheoremBlock>
+
+<TheoremBlock type="definition" number={2} title="Double Riemann Sum">
+Given a function $f: R \to \mathbb{R}$, a partition $(P_x, P_y)$ of $R$, and sample points $(x_{ij}^*, y_{ij}^*) \in R_{ij}$ in each sub-rectangle, the **double Riemann sum** is
+
+$$S(f, P) = \sum_{i=1}^{m} \sum_{j=1}^{n} f(x_{ij}^*, y_{ij}^*) \, \Delta A_{ij}.$$
+
+Each term $f(x_{ij}^*, y_{ij}^*) \, \Delta A_{ij}$ is the signed volume of a box with base $R_{ij}$ and height $f(x_{ij}^*, y_{ij}^*)$.
+</TheoremBlock>
+
+<TheoremBlock type="definition" number={3} title="The Double Integral">
+The **double integral** of $f$ over $R$ is the limit of double Riemann sums as the mesh of the partition tends to zero:
+
+$$\iint_R f(x, y) \, dA = \lim_{\|P\| \to 0} \sum_{i=1}^{m} \sum_{j=1}^{n} f(x_{ij}^*, y_{ij}^*) \, \Delta A_{ij}$$
+
+provided this limit exists and is the same for all choices of sample points. When this limit exists, we say $f$ is **integrable** on $R$.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={1} title="Notation">
+The notations $\iint_R f(x,y) \, dA$, $\iint_R f(x,y) \, dx \, dy$, and $\iint_R f \, dA$ are all equivalent. The "$dA$" notation emphasizes the area element $dA = dx \, dy$; the "$dx \, dy$" notation makes the variables explicit. We use whichever is clearest in context.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={1} title="Constant Function: Area Computation">
+Let $f(x, y) = 1$ on $R = [0, 1]^2$. Every Riemann sum equals
+
+$$S(f, P) = \sum_{i,j} 1 \cdot \Delta A_{ij} = \sum_{i,j} \Delta x_i \cdot \Delta y_j = \left(\sum_i \Delta x_i\right)\left(\sum_j \Delta y_j\right) = 1 \cdot 1 = 1.$$
+
+So $\iint_R 1 \, dA = 1$, which is the area of $R$. This generalizes the 1D fact that $\int_a^b 1 \, dx = b - a$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={2} title="f(x,y) = x + y on the Unit Square">
+Let $f(x, y) = x + y$ on $R = [0, 1]^2$. Using a uniform partition with $n$ subdivisions per axis and center sample points, the Riemann sum is
+
+$$S_n = \sum_{i=1}^{n} \sum_{j=1}^{n} \left(\frac{2i - 1}{2n} + \frac{2j - 1}{2n}\right) \frac{1}{n^2} = \frac{1}{n^2} \sum_{i=1}^{n} \sum_{j=1}^{n} \frac{2i + 2j - 2}{2n}.$$
+
+As $n \to \infty$, this converges to $\iint_R (x + y) \, dA = 1$.
+
+Try the interactive explorer below — increase $n$ and watch the boxes fill the volume:
+</TheoremBlock>
+
+<DoubleIntegralExplorer client:visible />
+
+![Three-panel visualization showing 2D Riemann sums converging at 4×4, 8×8, and 20×20 partitions for f(x,y) = x+y on the unit square](/images/topics/multiple-integrals/double-riemann-sum.png)
+
+## Iterated Integrals
+
+Instead of computing a two-dimensional limit, can we reduce the double integral to a sequence of ordinary integrals? The idea is to integrate "one variable at a time."
+
+<TheoremBlock type="definition" number={4} title="Iterated Integral">
+Given $f: R = [a,b] \times [c,d] \to \mathbb{R}$, the **iterated integral** (with $x$ outer, $y$ inner) is
+
+$$\int_a^b \left[ \int_c^d f(x, y) \, dy \right] dx.$$
+
+First, fix $x$ and integrate $f(x, y)$ over $y \in [c, d]$ to obtain the **slice function** $A(x) = \int_c^d f(x, y) \, dy$. Then integrate $A(x)$ over $x \in [a, b]$.
+
+The iterated integral with the reversed order is $\int_c^d \left[ \int_a^b f(x, y) \, dx \right] dy$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={3} title="Iterated Integral of x + y">
+Compute $\int_0^1 \int_0^1 (x + y) \, dy \, dx$. Inner integral first:
+
+$$A(x) = \int_0^1 (x + y) \, dy = \left[ xy + \frac{y^2}{2} \right]_0^1 = x + \frac{1}{2}.$$
+
+Then the outer integral:
+
+$$\int_0^1 A(x) \, dx = \int_0^1 \left(x + \frac{1}{2}\right) dx = \left[\frac{x^2}{2} + \frac{x}{2}\right]_0^1 = \frac{1}{2} + \frac{1}{2} = 1.$$
+</TheoremBlock>
+
+<TheoremBlock type="example" number={4} title="Reversed Order Gives the Same Answer">
+Now compute $\int_0^1 \int_0^1 (x + y) \, dx \, dy$. Inner integral:
+
+$$B(y) = \int_0^1 (x + y) \, dx = \left[\frac{x^2}{2} + xy\right]_0^1 = \frac{1}{2} + y.$$
+
+Outer integral:
+
+$$\int_0^1 \left(\frac{1}{2} + y\right) dy = \left[\frac{y}{2} + \frac{y^2}{2}\right]_0^1 = \frac{1}{2} + \frac{1}{2} = 1.$$
+
+Both orders give 1 — this is not a coincidence.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={2} title="Cavalieri's Principle">
+The slice function $A(x) = \int_c^d f(x, y) \, dy$ represents the **cross-sectional area** at position $x$. The iterated integral $\int_a^b A(x) \, dx$ sums these cross-sectional areas — this is precisely **Cavalieri's principle**: *the volume of a solid is the integral of its cross-sectional areas.* Cavalieri stated this in 1635 as a geometric principle; we now prove it as a consequence of Fubini's theorem.
+</TheoremBlock>
+
+![Cavalieri's principle: cross-sectional slicing of a surface, showing the slice function A(x)](/images/topics/multiple-integrals/iterated-integral-slices.png)
+
+## Fubini's Theorem
+
+This is the central result of this topic. It says that the double integral equals either iterated integral — the "two-dimensional" computation reduces to a pair of "one-dimensional" computations.
+
+<TheoremBlock type="theorem" number={1} title="Fubini's Theorem (Rectangle Case)">
+Let $f: R = [a,b] \times [c,d] \to \mathbb{R}$ be continuous. Then $f$ is integrable on $R$, and
+
+$$\iint_R f(x, y) \, dA = \int_a^b \left[\int_c^d f(x, y) \, dy\right] dx = \int_c^d \left[\int_a^b f(x, y) \, dx\right] dy.$$
+
+That is, the double integral equals the iterated integral in either order.
+</TheoremBlock>
+
+<TheoremBlock type="proof" number={1}>
+We prove that $\iint_R f \, dA = \int_a^b \left[\int_c^d f(x,y) \, dy\right] dx$. The equality with the other iterated integral follows by symmetry (swap the roles of $x$ and $y$).
+
+**Step 1: Integrability.** Since $f$ is continuous on the compact set $R = [a,b] \times [c,d]$, it is uniformly continuous (Heine-Cantor theorem, [Completeness & Compactness](/topics/completeness-compactness)). In particular, $f$ is bounded on $R$. For any $\varepsilon > 0$, uniform continuity provides $\delta > 0$ such that $|f(x_1, y_1) - f(x_2, y_2)| < \varepsilon$ whenever $\|(x_1, y_1) - (x_2, y_2)\| < \delta$. For any partition $P$ with $\|P\| < \delta$, on each sub-rectangle $R_{ij}$:
+
+$$M_{ij} - m_{ij} = \sup_{R_{ij}} f - \inf_{R_{ij}} f < \varepsilon$$
+
+where $M_{ij}$ and $m_{ij}$ are the supremum and infimum of $f$ on $R_{ij}$. Therefore the gap between upper and lower Darboux sums is
+
+$$U(f, P) - L(f, P) = \sum_{i,j} (M_{ij} - m_{ij}) \Delta A_{ij} < \varepsilon \cdot \text{Area}(R).$$
+
+Since $\varepsilon$ was arbitrary, $f$ is integrable on $R$.
+
+**Step 2: The slice function is well-defined.** For each fixed $x \in [a, b]$, the function $y \mapsto f(x, y)$ is continuous on $[c, d]$ (since $f$ is continuous on $R$). By the 1D integrability theorem ([The Riemann Integral](/topics/riemann-integral), Theorem 1), $f(x, \cdot)$ is integrable, so the slice function
+
+$$A(x) = \int_c^d f(x, y) \, dy$$
+
+is well-defined for every $x \in [a, b]$.
+
+**Step 3: $A(x)$ is continuous.** We show $A$ is continuous using uniform continuity of $f$. For the $\delta$ from Step 1:
+
+$$|A(x_1) - A(x_2)| = \left|\int_c^d [f(x_1, y) - f(x_2, y)] \, dy\right| \le \int_c^d |f(x_1, y) - f(x_2, y)| \, dy.$$
+
+If $|x_1 - x_2| < \delta$, then $\|(x_1, y) - (x_2, y)\| = |x_1 - x_2| < \delta$, so $|f(x_1, y) - f(x_2, y)| < \varepsilon$ for all $y$. Therefore $|A(x_1) - A(x_2)| < \varepsilon(d - c)$. Since $A$ is continuous on $[a, b]$, it is integrable.
+
+**Step 4: Squeeze.** Take a partition $P = (P_x, P_y)$ with $\|P\| < \delta$. For each sub-rectangle $R_{ij}$:
+
+$$m_{ij} \, \Delta y_j \le \int_{y_{j-1}}^{y_j} f(x, y) \, dy \le M_{ij} \, \Delta y_j \quad \text{for all } x \in [x_{i-1}, x_i].$$
+
+Summing over $j$: $\sum_j m_{ij} \Delta y_j \le A(x) \le \sum_j M_{ij} \Delta y_j$ for all $x \in [x_{i-1}, x_i]$. Integrating over $[x_{i-1}, x_i]$:
+
+$$\sum_j m_{ij} \Delta y_j \cdot \Delta x_i \le \int_{x_{i-1}}^{x_i} A(x) \, dx \le \sum_j M_{ij} \Delta y_j \cdot \Delta x_i.$$
+
+Summing over all $i$:
+
+$$L(f, P) \le \int_a^b A(x) \, dx \le U(f, P).$$
+
+But $\iint_R f \, dA$ also lies between $L(f, P)$ and $U(f, P)$. Since $U(f, P) - L(f, P) < \varepsilon \cdot \text{Area}(R)$ and $\varepsilon$ is arbitrary:
+
+$$\iint_R f(x, y) \, dA = \int_a^b A(x) \, dx = \int_a^b \left[\int_c^d f(x, y) \, dy\right] dx. \qquad \blacksquare$$
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={3} title="Fubini Beyond Continuity">
+Fubini's theorem extends well beyond continuous functions. The **Fubini-Tonelli theorem** applies to Lebesgue-integrable functions: if $\int |f| \, dA < \infty$ (or if $f \ge 0$), then the iterated integrals exist and are equal to the double integral. The continuity hypothesis above is a convenient sufficient condition, but not necessary. The full generalization lives in measure theory — a topic for the Measure & Integration track *(coming soon)*.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={5} title="∫∫ x sin(xy) dA over [0, π] × [0, 1]">
+Compute $\iint_R x \sin(xy) \, dA$ where $R = [0, \pi] \times [0, 1]$.
+
+**dy-first:** Fix $x$. Inner integral:
+$$\int_0^1 x \sin(xy) \, dy = \left[-\cos(xy)\right]_{y=0}^{y=1} = -\cos(x) + 1 = 1 - \cos x.$$
+
+Outer integral:
+$$\int_0^\pi (1 - \cos x) \, dx = \left[x - \sin x\right]_0^\pi = \pi - 0 = \pi.$$
+
+The other order ($dx$-first) requires integration by parts twice — both orders give $\pi$, but $dy$-first is dramatically simpler.
+</TheoremBlock>
+
+<FubiniOrderExplorer client:visible />
+
+![Side-by-side comparison of both integration orders: vertical slices (dy-first) vs. horizontal slices (dx-first)](/images/topics/multiple-integrals/fubini-both-orders.png)
+
+## Integration over General Regions
+
+So far we've integrated over rectangles. Real applications require integration over non-rectangular regions — disks, triangles, regions bounded by curves.
+
+<TheoremBlock type="definition" number={5} title="Type I Region">
+A **Type I region** $D$ in $\mathbb{R}^2$ is described by
+
+$$D = \{(x, y) : a \le x \le b, \quad g_1(x) \le y \le g_2(x)\}$$
+
+where $g_1$ and $g_2$ are continuous on $[a, b]$ with $g_1(x) \le g_2(x)$. The $y$-limits depend on $x$ — we slice $D$ with **vertical** strips.
+</TheoremBlock>
+
+<TheoremBlock type="definition" number={6} title="Type II Region">
+A **Type II region** $D$ is described by
+
+$$D = \{(x, y) : c \le y \le d, \quad h_1(y) \le x \le h_2(y)\}$$
+
+where $h_1$ and $h_2$ are continuous on $[c, d]$ with $h_1(y) \le h_2(y)$. The $x$-limits depend on $y$ — we slice $D$ with **horizontal** strips.
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={2} title="Fubini's Theorem (General Regions)">
+Let $f$ be continuous on a region $D$.
+
+If $D$ is Type I: $\displaystyle\iint_D f(x, y) \, dA = \int_a^b \int_{g_1(x)}^{g_2(x)} f(x, y) \, dy \, dx.$
+
+If $D$ is Type II: $\displaystyle\iint_D f(x, y) \, dA = \int_c^d \int_{h_1(y)}^{h_2(y)} f(x, y) \, dx \, dy.$
+
+If $D$ is both Type I and Type II, both iterated integrals are equal.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={6} title="Triangle: Both Orders">
+Let $D = \{(x, y) : 0 \le y \le x, \; 0 \le x \le 1\}$ — the triangle below the line $y = x$.
+
+**Type I** ($x$ outer): $x$ ranges from $0$ to $1$; for each $x$, $y$ ranges from $0$ to $x$:
+$$\int_0^1 \int_0^x 1 \, dy \, dx = \int_0^1 x \, dx = \frac{1}{2}.$$
+
+**Type II** ($y$ outer): $y$ ranges from $0$ to $1$; for each $y$, $x$ ranges from $y$ to $1$:
+$$\int_0^1 \int_y^1 1 \, dx \, dy = \int_0^1 (1 - y) \, dy = \frac{1}{2}.$$
+
+Both give $\frac{1}{2}$ — the area of the triangle.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={7} title="Disk — Painful in Cartesian">
+The area of the unit disk $D = \{(x,y) : x^2 + y^2 \le 1\}$ as a Type I integral:
+
+$$\int_{-1}^{1} \int_{-\sqrt{1 - x^2}}^{\sqrt{1 - x^2}} 1 \, dy \, dx = \int_{-1}^{1} 2\sqrt{1 - x^2} \, dx = \pi.$$
+
+This is computable (via $x = \sin\theta$ substitution) but awkward. In **polar coordinates** the same integral becomes $\int_0^{2\pi} \int_0^1 r \, dr \, d\theta = \pi$ — trivially. This is the motivation for the next topic: **Change of Variables** *(coming soon)*.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={4} title="Regions That Are Neither Type I Nor Type II">
+Some regions (e.g., an annulus, or an L-shaped domain) cannot be described as a single Type I or Type II region. The solution: **decompose** the region into finitely many pieces, each of which is Type I or Type II, and use the additivity property (Theorem 3 below). Alternatively, a change of coordinates (polar, cylindrical, spherical) may reduce the region to a simple rectangle in the new coordinates.
+</TheoremBlock>
+
+<RegionExplorer client:visible />
+
+![Four-panel comparison: two regions shown as both Type I (vertical strips) and Type II (horizontal strips), with labeled boundaries and integration formulas](/images/topics/multiple-integrals/region-type-comparison.png)
+
+![Paraboloid z = x² + y² capped by the plane z = 4: the natural coordinates are polar, motivating the next topic](/images/topics/multiple-integrals/volume-paraboloid.png)
+
+## Choosing Integration Order
+
+Sometimes one integration order leads to an impossible inner integral, while the other order is elementary. Recognizing this — and knowing how to reverse the order — is an essential computational skill.
+
+<TheoremBlock type="example" number={8} title="e^{x³}: Impossible in One Order, Elementary in the Other">
+Compute $\int_0^4 \int_{\sqrt{y}}^2 e^{x^3} \, dx \, dy$.
+
+The inner integral $\int_{\sqrt{y}}^2 e^{x^3} \, dx$ has no closed-form antiderivative — $e^{x^3}$ cannot be integrated in terms of elementary functions. We are stuck.
+
+**Reverse the order.** Sketch the region: $0 \le y \le 4$, $\sqrt{y} \le x \le 2$. Equivalently: $0 \le x \le 2$, $0 \le y \le x^2$. In the reversed order:
+
+$$\int_0^2 \int_0^{x^2} e^{x^3} \, dy \, dx = \int_0^2 x^2 e^{x^3} \, dx = \left[\frac{e^{x^3}}{3}\right]_0^2 = \frac{e^8 - 1}{3}.$$
+
+The key move: the inner integral $\int_0^{x^2} e^{x^3} \, dy = x^2 e^{x^3}$, and now $x^2 e^{x^3}$ is a perfect $u$-substitution candidate with $u = x^3$.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={5} title="When to Switch Order">
+Consider switching the integration order when:
+
+1. The inner integral has no elementary antiderivative.
+2. The limits in the current order are complicated but would simplify if swapped.
+3. The integrand factors nicely in the other variable.
+
+The procedure: (1) sketch the region, (2) re-describe it as the other type (Type I ↔ Type II), (3) write the new limits, (4) evaluate.
+</TheoremBlock>
+
+![Three-panel diagram: the original impossible integral, the region sketch, and the tractable reversed integral](/images/topics/multiple-integrals/order-reversal.png)
+
+## Properties of Double Integrals
+
+The double integral inherits the familiar properties of the 1D integral — linearity, monotonicity, additivity — because Fubini reduces it to 1D integrals.
+
+<TheoremBlock type="theorem" number={3} title="Properties of the Double Integral">
+Let $f, g$ be continuous on a region $D$, and let $c \in \mathbb{R}$. Then:
+
+1. **Linearity:** $\iint_D [f + cg] \, dA = \iint_D f \, dA + c \iint_D g \, dA.$
+2. **Monotonicity:** If $f(x,y) \le g(x,y)$ on $D$, then $\iint_D f \, dA \le \iint_D g \, dA.$
+3. **Additivity:** If $D = D_1 \cup D_2$ with $D_1 \cap D_2$ having zero area, then $\iint_D f \, dA = \iint_{D_1} f \, dA + \iint_{D_2} f \, dA.$
+4. **Triangle Inequality:** $\left|\iint_D f \, dA\right| \le \iint_D |f| \, dA.$
+5. **Area:** $\iint_D 1 \, dA = \text{Area}(D).$
+</TheoremBlock>
+
+<TheoremBlock type="proof" number={2}>
+Each property follows from Fubini's theorem + the corresponding 1D property. For example, linearity: by Fubini,
+
+$$\iint_D [f + cg] \, dA = \int_a^b \int_{g_1(x)}^{g_2(x)} [f(x,y) + cg(x,y)] \, dy \, dx.$$
+
+By linearity of the 1D integral ([The Riemann Integral](/topics/riemann-integral), Theorem 3), the inner integral splits:
+
+$$= \int_a^b \left[\int_{g_1(x)}^{g_2(x)} f(x,y) \, dy + c \int_{g_1(x)}^{g_2(x)} g(x,y) \, dy\right] dx.$$
+
+Linearity of the outer integral then gives
+
+$$= \int_a^b \int_{g_1(x)}^{g_2(x)} f \, dy \, dx + c \int_a^b \int_{g_1(x)}^{g_2(x)} g \, dy \, dx = \iint_D f \, dA + c \iint_D g \, dA.$$
+
+The other properties follow similarly — monotonicity from the 1D monotonicity property, additivity from additivity of 1D integrals over adjacent intervals, and the triangle inequality from $|f| \ge 0$ and monotonicity. $\blacksquare$
+</TheoremBlock>
+
+<TheoremBlock type="proposition" number={1} title="Mean Value Theorem for Double Integrals">
+If $f$ is continuous on a connected, bounded region $D$ with $\text{Area}(D) > 0$, then there exists a point $(x_0, y_0) \in D$ such that
+
+$$\iint_D f(x, y) \, dA = f(x_0, y_0) \cdot \text{Area}(D).$$
+
+In other words, $f$ attains its average value somewhere in $D$.
+</TheoremBlock>
+
+<TheoremBlock type="proof" number={3}>
+Since $f$ is continuous on the compact set $\overline{D}$, the Extreme Value Theorem ([Completeness & Compactness](/topics/completeness-compactness)) gives $m \le f(x,y) \le M$ for all $(x,y) \in D$, where $m$ and $M$ are the minimum and maximum of $f$ on $D$. By monotonicity of the integral:
+
+$$m \cdot \text{Area}(D) \le \iint_D f \, dA \le M \cdot \text{Area}(D).$$
+
+Dividing by $\text{Area}(D)$:
+
+$$m \le \frac{1}{\text{Area}(D)} \iint_D f \, dA \le M.$$
+
+The quantity in the middle lies between $m = f(p_1)$ and $M = f(p_2)$ for some $p_1, p_2 \in D$. Since $D$ is connected and $f$ is continuous, the Intermediate Value Theorem guarantees there exists $(x_0, y_0) \in D$ with $f(x_0, y_0) = \frac{1}{\text{Area}(D)} \iint_D f \, dA$. $\blacksquare$
+</TheoremBlock>
+
+## Triple Integrals and Higher Dimensions
+
+The construction extends naturally to three (and more) dimensions. We partition a box $B = [a_1, b_1] \times [a_2, b_2] \times [a_3, b_3]$ into sub-boxes, form Riemann sums with volume elements $\Delta V_{ijk}$, and take the limit.
+
+<TheoremBlock type="definition" number={7} title="Triple Integral">
+The **triple integral** of $f$ over a region $E \subset \mathbb{R}^3$ is
+
+$$\iiint_E f(x, y, z) \, dV = \lim_{\|P\| \to 0} \sum_{i,j,k} f(x_{ijk}^*, y_{ijk}^*, z_{ijk}^*) \, \Delta V_{ijk}.$$
+
+Fubini's theorem extends: for continuous $f$, the triple integral equals any of the six possible iterated integrals (three nested single integrals in any order of the three variables).
+</TheoremBlock>
+
+<TheoremBlock type="example" number={9} title="Volume of a Tetrahedron">
+Compute $\iiint_E z \, dV$ where $E = \{(x,y,z) : x, y, z \ge 0, \; x + y + z \le 1\}$ — the standard tetrahedron.
+
+Set up as a Type-I-style iterated integral: $x$ ranges from $0$ to $1$; for each $x$, $y$ ranges from $0$ to $1 - x$; for each $(x, y)$, $z$ ranges from $0$ to $1 - x - y$.
+
+$$\int_0^1 \int_0^{1-x} \int_0^{1-x-y} z \, dz \, dy \, dx.$$
+
+Innermost: $\int_0^{1-x-y} z \, dz = \frac{(1-x-y)^2}{2}.$
+
+Middle: $\int_0^{1-x} \frac{(1-x-y)^2}{2} \, dy.$ Substituting $u = 1-x-y$: $= \frac{1}{2} \int_0^{1-x} u^2 \, du = \frac{(1-x)^3}{6}.$
+
+Outer: $\int_0^1 \frac{(1-x)^3}{6} \, dx = \frac{1}{6} \cdot \frac{1}{4} = \frac{1}{24}.$
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={6} title="The Curse of Dimensionality">
+For a product-rule grid in $d$ dimensions with $k$ points per axis, the total number of evaluations is $k^d$. With $k = 100$ and $d = 10$, that's $100^{10} = 10^{20}$ evaluations — far beyond any computer. This exponential scaling is the **curse of dimensionality**. It's why the ML integrals over 10,000-dimensional parameter spaces don't use quadrature. They use Monte Carlo — next section.
+</TheoremBlock>
+
+![3D tetrahedron with vertices labeled and integration limits annotated at each nesting level](/images/topics/multiple-integrals/triple-integral-tetrahedron.png)
+
+## Monte Carlo Integration
+
+When deterministic quadrature fails (high dimensions, complex regions), we turn to randomness. Monte Carlo integration replaces systematic grids with random samples.
+
+<TheoremBlock type="definition" number={8} title="Monte Carlo Estimate">
+Let $D \subset \mathbb{R}^d$ be a region with volume $|D|$, and let $X_1, \ldots, X_N$ be independent, uniformly distributed random points in $D$. The **Monte Carlo estimate** of $\int_D f \, dV$ is
+
+$$\hat{I}_N = \frac{|D|}{N} \sum_{k=1}^{N} f(X_k).$$
+
+This is the sample mean of $f$ scaled by the volume of $D$.
+</TheoremBlock>
+
+<TheoremBlock type="proposition" number={2} title="Monte Carlo Error">
+The Monte Carlo estimate is unbiased: $\mathbb{E}[\hat{I}_N] = \int_D f \, dV$. Its standard error is
+
+$$\text{SE}(\hat{I}_N) = \frac{|D| \cdot \sigma_f}{\sqrt{N}}$$
+
+where $\sigma_f^2 = \frac{1}{|D|}\int_D [f(x) - \bar{f}]^2 \, dV$ is the variance of $f$ over $D$. The convergence rate is $O(1/\sqrt{N})$ — **independent of dimension**. This is why Monte Carlo wins in high dimensions.
+</TheoremBlock>
+
+<TheoremBlock type="proof" number={4}>
+*Sketch.* Since the $X_k$ are i.i.d. uniform on $D$, $\mathbb{E}[f(X_k)] = \frac{1}{|D|} \int_D f \, dV$. So
+
+$$\mathbb{E}[\hat{I}_N] = \frac{|D|}{N} \cdot N \cdot \frac{1}{|D|} \int_D f \, dV = \int_D f \, dV.$$
+
+The variance: $\text{Var}(\hat{I}_N) = \frac{|D|^2}{N^2} \cdot N \cdot \text{Var}(f(X_k)) = \frac{|D|^2 \sigma_f^2}{N}$.
+
+Taking square root gives the standard error $O(1/\sqrt{N})$. $\blacksquare$
+</TheoremBlock>
+
+<TheoremBlock type="example" number={10} title="Estimating π via Monte Carlo">
+The area of the unit disk is $\pi$. Inscribe it in the square $[-1, 1]^2$ (area 4). Sample $N$ uniform points in the square. The fraction inside the disk estimates $\pi / 4$:
+
+$$\hat{\pi}_N = 4 \cdot \frac{\text{points inside disk}}{N}.$$
+
+With $N = 10{,}000$ points, we typically get $\hat{\pi} \approx 3.14 \pm 0.02$. Try it below:
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={7} title="Monte Carlo vs. Quadrature — and SGD">
+In $d$ dimensions, quadrature needs $O(k^d)$ evaluations for accuracy $O(k^{-2/d})$ (for the trapezoidal rule). Monte Carlo needs $O(N)$ evaluations for accuracy $O(1/\sqrt{N})$ — and $N$ is independent of $d$. For $d > 4$ or so, Monte Carlo dominates.
+
+This is exactly why **stochastic gradient descent** (SGD) uses random mini-batches. The expected risk $\mathbb{E}[\ell] = \iint \ell \cdot p \, dx \, dy$ is a high-dimensional integral. Each mini-batch of size $B$ is a Monte Carlo estimate with error $O(1/\sqrt{B})$.
+
+→ [Gradient Descent](https://formalml.com/topics/gradient-descent) on formalML
+</TheoremBlock>
+
+<MonteCarloExplorer client:visible />
+
+![Monte Carlo estimation of π: scatter plots at N=500 and N=5000, plus log-log convergence plot with O(1/√N) reference line](/images/topics/multiple-integrals/monte-carlo-convergence.png)
+
+## Connections to ML
+
+Multiple integrals are not just mathematical machinery — they are the language of probability and statistical learning.
+
+### Joint and Marginal Densities
+
+A joint density $f_{X,Y}(x, y)$ satisfies $\iint f_{X,Y}(x,y) \, dx \, dy = 1$. The **marginal density** of $X$ is obtained by "integrating out" $Y$:
+
+$$f_X(x) = \int_{-\infty}^{\infty} f_{X,Y}(x, y) \, dy.$$
+
+This is Fubini applied to probability. Every time you marginalize — whether computing the marginal likelihood in Bayesian inference or the evidence lower bound (ELBO) in variational inference — you're invoking Fubini's theorem.
+
+→ [Measure-Theoretic Probability](https://formalml.com/topics/measure-theoretic-probability) on formalML
+
+### Expected Values and Covariance
+
+The expected value of a function $g(X, Y)$ under a joint density is
+
+$$\mathbb{E}[g(X,Y)] = \iint g(x,y) \, f_{X,Y}(x,y) \, dx \, dy.$$
+
+Covariance is: $\text{Cov}(X,Y) = \mathbb{E}[XY] - \mathbb{E}[X]\mathbb{E}[Y]$ — each term a double integral, simplified by Fubini + linearity.
+
+### Monte Carlo Estimation and SGD
+
+The expected risk $R(\theta) = \iint \ell(y, h_\theta(x)) \, p(x, y) \, dx \, dy$ is a double integral we can't compute (we don't know $p(x,y)$). Each SGD mini-batch of size $B$ is a Monte Carlo estimate:
+
+$$\hat{R}_B(\theta) = \frac{1}{B} \sum_{k=1}^{B} \ell(y_k, h_\theta(x_k))$$
+
+with standard error $O(1/\sqrt{B})$. Larger batches reduce variance but cost more computation — the fundamental trade-off of stochastic optimization.
+
+→ [Gradient Descent](https://formalml.com/topics/gradient-descent) on formalML
+
+### Partition Function in Energy-Based Models
+
+In models like the Boltzmann machine, the partition function $Z = \int e^{-E(x)} \, dx$ is an intractable integral over a high-dimensional space. Contrastive divergence and other training methods are essentially schemes for estimating ratios of such integrals without computing them directly.
+
+### Preview: Change of Variables
+
+The [Gaussian integral](/topics/improper-integrals) $\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}$ was proved by converting to polar coordinates — a *change of variables* that transforms the double integral into a simpler form. The general theory requires the [Jacobian determinant](/topics/jacobian) as a volume scaling factor. This is the subject of the next topic: **Change of Variables** *(coming soon)*.
+
+<MarginalDensityExplorer client:visible />
+
+![Three-panel ML connections: joint density with marginal integration, expected loss as double integral with SGD as Monte Carlo, and curse of dimensionality comparison](/images/topics/multiple-integrals/ml-connections.png)
+
+## Connections & Further Reading
+
+This topic builds on:
+- [The Riemann Integral & FTC](/topics/riemann-integral) — the 1D integration machinery that gets iterated here
+- [Partial Derivatives & the Gradient](/topics/gradient) — the "hold one variable constant" viewpoint used in iterated integration
+- [Epsilon-Delta & Continuity](/topics/epsilon-delta) — uniform continuity is the engine of Fubini's proof
+- [Completeness & Compactness](/topics/completeness-compactness) — Heine-Cantor theorem ensures integrability
+- [Improper Integrals & Special Functions](/topics/improper-integrals) — the Gaussian integral motivates change of variables
+- [The Jacobian & Multivariate Chain Rule](/topics/jacobian) — the Jacobian determinant appears in the next topic
+
+This topic leads to:
+- **Change of Variables** *(coming soon)* — the substitution rule for multiple integrals, with the Jacobian determinant as the volume scaling factor
+- **Line Integrals & Conservative Fields** *(coming soon)* — Green's theorem connects line integrals to double integrals
+- **Surface Integrals & the Divergence Theorem** *(coming soon)* — triple integrals and the divergence theorem
+- **The Lebesgue Integral** *(coming soon)* — the Fubini-Tonelli theorem generalizes from Riemann to Lebesgue
