@@ -54,7 +54,7 @@ export default function ContractionMappingExplorer() {
   const stopAnimation = useCallback(() => {
     runningRef.current = false;
     if (animFrameRef.current !== null) {
-      cancelAnimationFrame(animFrameRef.current);
+      clearTimeout(animFrameRef.current);
       animFrameRef.current = null;
     }
   }, []);

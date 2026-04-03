@@ -1610,28 +1610,29 @@ export function inverseJacobianApprox(
   let invJ: number[][] = [];
   let kappa = Infinity;
 
-  if (isInvertible) {
-    const inv = invertMatrix(J, threshold);
-    if (inv) {
-      invJ = inv;
-      // Condition number: use singular value approximation for small n
-      // For 2x2, use eigenvalues of J^T J
-      if (n === 2) {
-        const JtJ = [
-          [J[0][0] * J[0][0] + J[1][0] * J[1][0], J[0][0] * J[0][1] + J[1][0] * J[1][1]],
-          [J[0][1] * J[0][0] + J[1][1] * J[1][0], J[0][1] * J[0][1] + J[1][1] * J[1][1]],
-        ];
-        const { eigenvalues: eigs } = eigenvalues2x2(JtJ);
-        const sVals = eigs.map((e) => Math.sqrt(Math.max(0, e)));
-        const sMax = Math.max(...sVals);
-        const sMin = Math.min(...sVals);
-        kappa = sMin > SINGULARITY_TOL ? sMax / sMin : Infinity;
-      } else {
-        // Rough estimate via matrix norms
-        const normJ = Math.sqrt(J.flat().reduce((s, v) => s + v * v, 0));
-        const normInv = Math.sqrt(invJ.flat().reduce((s, v) => s + v * v, 0));
-        kappa = normJ * normInv;
-      }
+  // Derive isInvertible from actually obtaining an inverse, not just the determinant,
+  // to avoid inconsistency between det check and pivot-tolerance check in invertMatrix.
+  const inv = Math.abs(det) > threshold ? invertMatrix(J, threshold) : null;
+  const actuallyInvertible = inv !== null;
+  if (inv) {
+    invJ = inv;
+    // Condition number: use singular value approximation for small n
+    // For 2x2, use eigenvalues of J^T J
+    if (n === 2) {
+      const JtJ = [
+        [J[0][0] * J[0][0] + J[1][0] * J[1][0], J[0][0] * J[0][1] + J[1][0] * J[1][1]],
+        [J[0][1] * J[0][0] + J[1][1] * J[1][0], J[0][1] * J[0][1] + J[1][1] * J[1][1]],
+      ];
+      const { eigenvalues: eigs } = eigenvalues2x2(JtJ);
+      const sVals = eigs.map((e) => Math.sqrt(Math.max(0, e)));
+      const sMax = Math.max(...sVals);
+      const sMin = Math.min(...sVals);
+      kappa = sMin > SINGULARITY_TOL ? sMax / sMin : Infinity;
+    } else {
+      // Rough estimate via matrix norms
+      const normJ = Math.sqrt(J.flat().reduce((s, v) => s + v * v, 0));
+      const normInv = Math.sqrt(invJ.flat().reduce((s, v) => s + v * v, 0));
+      kappa = normJ * normInv;
     }
   }
 
@@ -1641,7 +1642,7 @@ export function inverseJacobianApprox(
     inverseJacobian: invJ,
     determinant: det,
     conditionNumber: kappa,
-    isInvertible,
+    isInvertible: actuallyInvertible,
   };
 }
 
@@ -1670,22 +1671,17 @@ export function implicitFunctionSlice(
   const sortedIndices = Array.from({ length: nPoints }, (_, i) => i)
     .sort((i, j) => Math.abs(xRange[0] + i * dx - a) - Math.abs(xRange[0] + j * dx - a));
 
+  // Seed yCache with the grid index nearest to the base point.
+  // sortedIndices[0] is already the closest since the array is sorted by |x_i - a|.
   const yCache = new Map<number, number>();
-  yCache.set(sortedIndices.find((i) => Math.abs(xRange[0] + i * dx - a) ===
-    Math.min(...sortedIndices.map((i) => Math.abs(xRange[0] + i * dx - a))))!, b);
+  yCache.set(sortedIndices[0], b);
 
   for (const idx of sortedIndices) {
     const x = xRange[0] + idx * dx;
-    // Use nearest known y as initial guess
-    let y0 = b;
-    let minDist = Infinity;
-    for (const [knownIdx, knownY] of yCache) {
-      const dist = Math.abs(idx - knownIdx);
-      if (dist < minDist) {
-        minDist = dist;
-        y0 = knownY;
-      }
-    }
+    // Use immediate grid neighbors as initial guess — O(1) per point.
+    // Since we process outward from the base point, adjacent indices
+    // are always the most recently computed neighbors.
+    const y0 = yCache.get(idx - 1) ?? yCache.get(idx + 1) ?? b;
 
     // Newton iteration on F(x, ·) = 0
     let y = y0;
