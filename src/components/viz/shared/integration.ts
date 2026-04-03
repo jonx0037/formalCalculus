@@ -1079,3 +1079,231 @@ export function generateRegionBoundary(
     typeII: { yRange: [yMin, yMax], leftCurve, rightCurve },
   };
 }
+
+// ══════════════════════════════════════════════════════════════
+// Change of Variables — coordinate-transform integration (Topic 14)
+// ══════════════════════════════════════════════════════════════
+
+/**
+ * Evaluate a 2D integral under a coordinate substitution.
+ *
+ * ∫∫_D f(x,y) dA = ∫∫_{D*} f(φ(u,v)) |det J_φ(u,v)| du dv
+ *
+ * Uses midpoint rule on a uniform grid in (u,v)-space.
+ * `vRange` may be a fixed interval or a function of u for non-rectangular parameter domains.
+ */
+export function changeOfVariables2D(
+  f: (x: number, y: number) => number,
+  phi: (u: number, v: number) => [number, number],
+  detJ: (u: number, v: number) => number,
+  uRange: [number, number],
+  vRange: [number, number] | ((u: number) => [number, number]),
+  nu: number = 50,
+  nv: number = 50,
+): number {
+  const du = (uRange[1] - uRange[0]) / nu;
+  let total = 0;
+
+  for (let i = 0; i < nu; i++) {
+    const uMid = uRange[0] + (i + 0.5) * du;
+    const [vLo, vHi] = typeof vRange === 'function' ? vRange(uMid) : vRange;
+    const dv = (vHi - vLo) / nv;
+
+    for (let j = 0; j < nv; j++) {
+      const vMid = vLo + (j + 0.5) * dv;
+      const [x, y] = phi(uMid, vMid);
+      total += f(x, y) * Math.abs(detJ(uMid, vMid)) * du * dv;
+    }
+  }
+  return total;
+}
+
+/**
+ * Evaluate a double integral in polar coordinates.
+ *
+ * ∫∫ f(r,θ) · r dr dθ   (the Jacobian factor r is built in)
+ */
+export function polarIntegral(
+  f: (r: number, theta: number) => number,
+  rRange: [number, number],
+  thetaRange: [number, number],
+  nr: number = 50,
+  ntheta: number = 50,
+): number {
+  const dr = (rRange[1] - rRange[0]) / nr;
+  const dtheta = (thetaRange[1] - thetaRange[0]) / ntheta;
+  let total = 0;
+
+  for (let i = 0; i < nr; i++) {
+    const rMid = rRange[0] + (i + 0.5) * dr;
+    for (let j = 0; j < ntheta; j++) {
+      const thetaMid = thetaRange[0] + (j + 0.5) * dtheta;
+      total += f(rMid, thetaMid) * rMid * dr * dtheta;
+    }
+  }
+  return total;
+}
+
+/**
+ * Evaluate a triple integral in cylindrical coordinates.
+ *
+ * ∫∫∫ f(r,θ,z) · r dr dθ dz
+ *
+ * `zRange` may be fixed or a function of (r,θ) for non-rectangular domains.
+ */
+export function cylindricalIntegral(
+  f: (r: number, theta: number, z: number) => number,
+  rRange: [number, number],
+  thetaRange: [number, number],
+  zRange: [number, number] | ((r: number, theta: number) => [number, number]),
+  nr: number = 20,
+  ntheta: number = 20,
+  nz: number = 20,
+): number {
+  const dr = (rRange[1] - rRange[0]) / nr;
+  const dtheta = (thetaRange[1] - thetaRange[0]) / ntheta;
+  let total = 0;
+
+  for (let i = 0; i < nr; i++) {
+    const rMid = rRange[0] + (i + 0.5) * dr;
+    for (let j = 0; j < ntheta; j++) {
+      const thetaMid = thetaRange[0] + (j + 0.5) * dtheta;
+      const [zLo, zHi] = typeof zRange === 'function' ? zRange(rMid, thetaMid) : zRange;
+      const dz = (zHi - zLo) / nz;
+      for (let k = 0; k < nz; k++) {
+        const zMid = zLo + (k + 0.5) * dz;
+        total += f(rMid, thetaMid, zMid) * rMid * dr * dtheta * dz;
+      }
+    }
+  }
+  return total;
+}
+
+/**
+ * Evaluate a triple integral in spherical coordinates.
+ *
+ * ∫∫∫ f(ρ,θ,φ) · ρ²sinφ dρ dθ dφ
+ *
+ * Convention: ρ = radial, θ = azimuthal [0,2π), φ = polar [0,π].
+ */
+export function sphericalIntegral(
+  f: (rho: number, theta: number, phi: number) => number,
+  rhoRange: [number, number],
+  thetaRange: [number, number],
+  phiRange: [number, number],
+  nrho: number = 20,
+  ntheta: number = 20,
+  nphi: number = 20,
+): number {
+  const drho = (rhoRange[1] - rhoRange[0]) / nrho;
+  const dtheta = (thetaRange[1] - thetaRange[0]) / ntheta;
+  const dphi = (phiRange[1] - phiRange[0]) / nphi;
+  let total = 0;
+
+  for (let i = 0; i < nrho; i++) {
+    const rhoMid = rhoRange[0] + (i + 0.5) * drho;
+    for (let j = 0; j < ntheta; j++) {
+      const thetaMid = thetaRange[0] + (j + 0.5) * dtheta;
+      for (let k = 0; k < nphi; k++) {
+        const phiMid = phiRange[0] + (k + 0.5) * dphi;
+        total += f(rhoMid, thetaMid, phiMid) * rhoMid * rhoMid * Math.sin(phiMid) * drho * dtheta * dphi;
+      }
+    }
+  }
+  return total;
+}
+
+/**
+ * Numerically approximate |det J_φ(u,v)| via finite differences.
+ * Useful when an analytical Jacobian is not available.
+ */
+export function jacobianAreaElement(
+  phi: (u: number, v: number) => [number, number],
+  u: number,
+  v: number,
+  h: number = 1e-6,
+): number {
+  const [x1, y1] = phi(u + h, v);
+  const [x2, y2] = phi(u - h, v);
+  const [x3, y3] = phi(u, v + h);
+  const [x4, y4] = phi(u, v - h);
+
+  const dxdu = (x1 - x2) / (2 * h);
+  const dydu = (y1 - y2) / (2 * h);
+  const dxdv = (x3 - x4) / (2 * h);
+  const dydv = (y3 - y4) / (2 * h);
+
+  return Math.abs(dxdu * dydv - dxdv * dydu);
+}
+
+/**
+ * A single cell in a coordinate-transform grid, used for
+ * visualizing how φ deforms area elements.
+ */
+export interface CoordinateTransformGridCell {
+  /** Center of the cell in parameter space */
+  uCenter: number;
+  vCenter: number;
+  /** Four corners of the deformed cell in image space, in order */
+  corners: Array<{ x: number; y: number }>;
+  /** |det J_φ| evaluated at the cell center */
+  detJ: number;
+  /** Approximate area of the deformed cell */
+  area: number;
+}
+
+/**
+ * Generate a grid of cells in (u,v)-space, mapped through φ to (x,y)-space.
+ * Each cell carries its deformed corner coordinates and Jacobian determinant.
+ *
+ * This is the data backbone of ChangeOfVariablesExplorer.
+ */
+export function coordinateTransformGrid(
+  phi: (u: number, v: number) => [number, number],
+  uRange: [number, number],
+  vRange: [number, number],
+  nu: number,
+  nv: number,
+): CoordinateTransformGridCell[] {
+  const du = (uRange[1] - uRange[0]) / nu;
+  const dv = (vRange[1] - vRange[0]) / nv;
+  const cells: CoordinateTransformGridCell[] = [];
+
+  for (let i = 0; i < nu; i++) {
+    const uLo = uRange[0] + i * du;
+    const uHi = uLo + du;
+    const uMid = uLo + du / 2;
+
+    for (let j = 0; j < nv; j++) {
+      const vLo = vRange[0] + j * dv;
+      const vHi = vLo + dv;
+      const vMid = vLo + dv / 2;
+
+      // Map the four corners through φ
+      const [x00, y00] = phi(uLo, vLo);
+      const [x10, y10] = phi(uHi, vLo);
+      const [x11, y11] = phi(uHi, vHi);
+      const [x01, y01] = phi(uLo, vHi);
+
+      const corners = [
+        { x: x00, y: y00 },
+        { x: x10, y: y10 },
+        { x: x11, y: y11 },
+        { x: x01, y: y01 },
+      ];
+
+      // Approximate area via shoelace formula on the quadrilateral
+      const area = 0.5 * Math.abs(
+        (x00 * y10 - x10 * y00)
+        + (x10 * y11 - x11 * y10)
+        + (x11 * y01 - x01 * y11)
+        + (x01 * y00 - x00 * y01),
+      );
+
+      const detJVal = jacobianAreaElement(phi, uMid, vMid);
+
+      cells.push({ uCenter: uMid, vCenter: vMid, corners, detJ: detJVal, area });
+    }
+  }
+  return cells;
+}

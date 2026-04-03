@@ -1,0 +1,435 @@
+---
+title: "Change of Variables & the Jacobian Determinant"
+subtitle: "Transforming integrals under coordinate substitution — the Jacobian determinant as the volume scaling factor, polar, cylindrical, and spherical coordinates, the Gaussian integral, and density transformations in normalizing flows"
+status: "published"
+difficulty: "intermediate"
+prerequisites:
+  - "multiple-integrals"
+  - "inverse-implicit"
+tags:
+  - "calculus"
+  - "change-of-variables"
+  - "jacobian-determinant"
+  - "polar-coordinates"
+  - "spherical-coordinates"
+  - "gaussian-integral"
+  - "normalizing-flows"
+  - "reparameterization-trick"
+  - "density-transformation"
+  - "coordinate-transformation"
+domain: "multivar-integral"
+videoId: null
+notebookPath: "notebooks/change-of-variables/14_change_of_variables.ipynb"
+githubUrl: "https://github.com/jonx0037/formalCalculus/blob/main/src/content/topics/change-of-variables.mdx"
+datePublished: 2026-04-20
+estimatedReadTime: 50
+abstract: "The change of variables formula transforms a multiple integral from one coordinate system to another: if φ: D* → D is a C¹ diffeomorphism, then ∫∫_D f(x,y) dA = ∫∫_{D*} f(φ(u,v)) |det J_φ(u,v)| du dv. The Jacobian determinant |det J_φ| measures how φ distorts area elements — it is the volume scaling factor that was introduced abstractly in the Jacobian topic and now does real computational work. Polar coordinates are the canonical example: the map (r,θ) → (r cos θ, r sin θ) has Jacobian determinant r, producing the area element r dr dθ. This immediately resolves the painful disk integral from Topic 13 and enables the classic proof that the Gaussian integral equals √π — a result that propagates throughout probability and statistical mechanics. Cylindrical and spherical coordinates extend the framework to three dimensions. The general theorem, proved via the Inverse Function Theorem and a partition of unity argument, guarantees that integration is coordinate-independent for any C¹ diffeomorphism. In machine learning, the change of variables formula is the mathematical engine of normalizing flows: the density of a transformed variable X = f(Z) satisfies p_X(x) = p_Z(f⁻¹(x)) · |det J_{f⁻¹}(x)|, and the entire architecture of flow-based generative models is designed to make this Jacobian determinant tractable. The reparameterization trick in variational autoencoders is the same formula applied to move gradient computation outside the expectation."
+formalmlConnections:
+  - topic: "gradient-descent"
+    site: "formalml"
+    relationship: "The reparameterization trick in variational inference — writing z = μ + σε with ε ~ N(0,1) — is a change of variables that moves parameters outside the expectation, enabling gradient computation through sampling."
+  - topic: "measure-theoretic-probability"
+    site: "formalml"
+    relationship: "The density transformation formula p_X(x) = p_Z(φ⁻¹(x)) · |det J_{φ⁻¹}(x)| is the probabilistic form of the change of variables theorem."
+  - topic: "smooth-manifolds"
+    site: "formalml"
+    relationship: "Integration on manifolds requires coordinate charts, and the change of variables formula ensures that integrals are well-defined independent of chart choice."
+  - topic: "information-geometry"
+    site: "formalml"
+    relationship: "The Fisher information matrix transforms under reparameterization via Ĩ(θ̃) = JᵀI(θ)J, where J is the Jacobian of the parameter change."
+connections:
+  - topic: "multiple-integrals"
+    relationship: "Every integral in this topic is a multiple integral evaluated via Fubini. The disk integral (Example 7 from Topic 13) is resolved here in polar coordinates."
+  - topic: "inverse-implicit"
+    relationship: "The change of variables formula requires φ to be a C¹ diffeomorphism — locally invertible with C¹ inverse. The IFT guarantees this when det J_φ ≠ 0."
+  - topic: "jacobian"
+    relationship: "The Jacobian determinant |det J_φ| as a volume scaling factor was introduced in Topic 10. This topic gives it its computational starring role."
+  - topic: "riemann-integral"
+    relationship: "The 1D substitution rule is the single-variable ancestor. This topic generalizes it from |g'(x)| to |det J_φ|."
+  - topic: "improper-integrals"
+    relationship: "The Gaussian integral ∫e^{-x²}dx = √π, previewed in Topic 8, is proved here via polar coordinates."
+  - topic: "completeness-compactness"
+    relationship: "Compactness of the integration domain ensures the partition of unity is finite in the general proof."
+references:
+  - type: "book"
+    title: "Calculus on Manifolds"
+    authors: "Spivak"
+    year: 1965
+    note: "Chapter 3, Theorem 3-13 — the change of variables theorem with full proof via partition of unity"
+  - type: "book"
+    title: "Principles of Mathematical Analysis"
+    authors: "Rudin"
+    year: 1976
+    note: "Theorem 10.9 — change of variables for Riemann integrals in Rⁿ"
+  - type: "book"
+    title: "Analysis on Manifolds"
+    authors: "Munkres"
+    year: 1991
+    note: "Chapter 3 — change of variables with extended Jacobian and boundary conditions"
+  - type: "book"
+    title: "Vector Calculus, Linear Algebra, and Differential Forms"
+    authors: "Hubbard & Hubbard"
+    year: 2015
+    note: "Chapter 4 — geometric treatment of coordinate transformations and the Jacobian"
+  - type: "paper"
+    title: "Variational Inference with Normalizing Flows"
+    authors: "Rezende & Mohamed"
+    year: 2015
+    note: "The normalizing flow framework: density transformation via the change of variables formula with tractable Jacobian determinants"
+  - type: "paper"
+    title: "Auto-Encoding Variational Bayes"
+    authors: "Kingma & Welling"
+    year: 2014
+    note: "The reparameterization trick: change of variables applied to move parameters outside the expectation for gradient estimation"
+---
+
+import TheoremBlock from '../../components/ui/TheoremBlock.astro';
+import ChangeOfVariablesExplorer from '../../components/viz/ChangeOfVariablesExplorer.tsx';
+import PolarIntegralExplorer from '../../components/viz/PolarIntegralExplorer.tsx';
+import GaussianIntegralExplorer from '../../components/viz/GaussianIntegralExplorer.tsx';
+import CoordinateSystemExplorer from '../../components/viz/CoordinateSystemExplorer.tsx';
+import NormalizingFlowExplorer from '../../components/viz/NormalizingFlowExplorer.tsx';
+
+## 1. Overview & Motivation
+
+You've built a generative model — a neural network that maps simple noise $z \sim \mathcal{N}(0, I)$ to complex data $x = f(z)$. To train it, you need the density $p_X(x)$. The change of variables formula gives it:
+
+$$p_X(x) = p_Z(f^{-1}(x)) \cdot |\det J_{f^{-1}}(x)|.$$
+
+The entire architecture of normalizing flows is designed to make the right side of this equation tractable. And the formula itself — "adjust the density by the Jacobian determinant" — is exactly the integration change of variables from multivariable calculus, applied to probability.
+
+This topic brings together the Jacobian determinant ([Topic 10](/topics/jacobian)), the Inverse Function Theorem ([Topic 12](/topics/inverse-implicit)), and multiple integrals ([Topic 13](/topics/multiple-integrals)) into a single powerful formula. The reader already has all the ingredients; this topic assembles them.
+
+## 2. Substitution in One Variable — The Template
+
+We know $u$-substitution from [Topic 7](/topics/riemann-integral), but we reframe it through the lens of coordinate transformation to set up the multivariable version.
+
+<TheoremBlock type="theorem" number={1} title="Substitution Rule (1D)">
+Let $g: [\alpha, \beta] \to [a, b]$ be a $C^1$ bijection with $g'(t) \neq 0$ on $(\alpha, \beta)$. Then for any continuous $f: [a, b] \to \mathbb{R}$:
+
+$$\int_a^b f(x)\,dx = \int_\alpha^\beta f(g(t))\,|g'(t)|\,dt.$$
+
+The factor $|g'(t)|$ adjusts for how $g$ stretches or compresses the interval. When $g$ is increasing, $|g'(t)| = g'(t)$; when decreasing, $|g'(t)| = -g'(t)$, which also reverses the limits to compensate.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={1} title="Why the Absolute Value?">
+In 1D, you can track orientation via limit ordering. In $\mathbb{R}^n$, there are no "limits" to reverse — the absolute value of the Jacobian determinant is the only way to ensure positivity of the volume element. The absolute value is the conceptual bridge from 1D to $n$D.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={1} title="Quarter-Circle Area via Substitution">
+Compute $\int_0^1 \sqrt{1 - x^2}\,dx$ via $x = \sin\theta$. We have $g(\theta) = \sin\theta$, $g'(\theta) = \cos\theta$, limits $[0, \pi/2]$:
+
+$$\int_0^1 \sqrt{1 - x^2}\,dx = \int_0^{\pi/2} \sqrt{1 - \sin^2\theta} \cdot \cos\theta\,d\theta = \int_0^{\pi/2} \cos^2\theta\,d\theta = \frac{\pi}{4}.$$
+
+This is one quarter of the unit disk area — a preview of polar coordinates.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={2} title="Gaussian Integral via Gamma Function">
+Compute $\int_0^\infty e^{-x^2/2}\,dx$ via $u = x^2/2$. We get $x = \sqrt{2u}$, $dx = du/\sqrt{2u}$:
+
+$$\int_0^\infty e^{-x^2/2}\,dx = \frac{1}{\sqrt{2}} \int_0^\infty u^{-1/2} e^{-u}\,du = \frac{1}{\sqrt{2}} \,\Gamma(1/2) = \sqrt{\pi/2}.$$
+
+This connects to the Gamma function ([Topic 8](/topics/improper-integrals)) and previews the Gaussian integral computation later in this topic.
+</TheoremBlock>
+
+![1D substitution: original integral with x-axis, transformed integral with u-axis](/images/topics/change-of-variables/1d-substitution.png)
+
+## 3. The Change of Variables Formula in 2D
+
+This is where the Jacobian determinant enters integration. Draw a grid in the $(u, v)$-plane. The map $\varphi$ sends each small rectangle $du \times dv$ to a small parallelogram in the $(x, y)$-plane. The area of that parallelogram is approximately $|\det J_\varphi(u, v)| \cdot du\,dv$ — this is exactly the Volume Distortion Theorem from [Topic 10](/topics/jacobian). The change of variables formula says: sum up $f$ over the deformed parallelograms, weighting each by its area.
+
+<TheoremBlock type="definition" number={1} title="Coordinate Transformation">
+A *coordinate transformation* (or *change of variables*) on an open set $D^* \subseteq \mathbb{R}^2$ is a $C^1$ function $\varphi: D^* \to D \subseteq \mathbb{R}^2$ that is a diffeomorphism: bijective, $C^1$, and with $C^1$ inverse $\varphi^{-1}: D \to D^*$.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={2} title="Diffeomorphism vs. Local Diffeomorphism">
+The IFT ([Topic 12](/topics/inverse-implicit)) guarantees a *local* diffeomorphism wherever $\det J_\varphi \neq 0$. For the change of variables formula, we need a *global* diffeomorphism on $D^*$ (or at least injectivity, with $\det J_\varphi = 0$ only on a set of measure zero). Polar coordinates fail to be a global diffeomorphism on $\{r > 0\}$ because of the $2\pi$-periodicity in $\theta$, but they are a diffeomorphism on any domain that doesn't wrap all the way around.
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={2} title="Change of Variables (2D)">
+Let $\varphi: D^* \to D$ be a $C^1$ diffeomorphism between open subsets of $\mathbb{R}^2$, and let $f: D \to \mathbb{R}$ be continuous. Then:
+
+$$\iint_D f(x, y)\,dA = \iint_{D^*} f(\varphi(u, v))\,|\det J_\varphi(u, v)|\,du\,dv.$$
+
+The Jacobian determinant $|\det J_\varphi|$ converts the area element $du\,dv$ in the $(u,v)$-coordinate system to the area element $dA$ in the $(x,y)$-coordinate system.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={3} title="Linear Change of Variables">
+For $\varphi(u, v) = (au + bv,\, cu + dv)$ with $A = \begin{pmatrix} a & b \\ c & d \end{pmatrix}$ and $\det A \neq 0$: $\det J_\varphi = \det A$ (constant). The formula reduces to $\iint_D f(x,y)\,dA = |\det A| \iint_{D^*} f(Au)\,du\,dv$. Linear maps scale all areas by the same factor.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={4} title="Affine Shear">
+For $\varphi(u,v) = (u + v, v)$: $\det J_\varphi = 1$. The integral is unchanged: $\iint_D f\,dA = \iint_{D^*} f(u+v, v)\,du\,dv$. Area-preserving transformations have a unit Jacobian determinant.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={3} title="The Formula in Reverse">
+Often we *start* with an integral in $(x, y)$ and want to transform *to* $(u, v)$. If $\varphi: D^* \to D$ is the transformation $(u, v) \mapsto (x, y)$, then we substitute $x = \varphi_1(u,v)$, $y = \varphi_2(u,v)$, $dA = |\det J_\varphi|\,du\,dv$, and change the region from $D$ to $D^* = \varphi^{-1}(D)$. The conceptual direction is: "I want simpler limits, so I find a $\varphi$ that maps a simple $D^*$ to the complicated $D$."
+</TheoremBlock>
+
+<ChangeOfVariablesExplorer client:visible />
+
+![Uniform grid in (u,v) space deformed by φ into (x,y) space, cells colored by |det J|](/images/topics/change-of-variables/change-of-variables-2d.png)
+
+## 4. Polar Coordinates
+
+The reader has been waiting for this since [Example 7 of Topic 13](/topics/multiple-integrals) (the disk integral that was "painful in Cartesian"). Polar coordinates are the prototypical 2D change of variables.
+
+<TheoremBlock type="definition" number={2} title="Polar Coordinates">
+The *polar coordinate transformation* is $\varphi(r, \theta) = (r\cos\theta, r\sin\theta)$, mapping from $D^* = \{(r, \theta) : r > 0,\, \theta \in (0, 2\pi)\}$ to $D = \mathbb{R}^2 \setminus \{x \ge 0, y = 0\}$ (the plane minus the positive $x$-axis). The Jacobian is:
+
+$$J_\varphi(r, \theta) = \begin{pmatrix} \cos\theta & -r\sin\theta \\ \sin\theta & r\cos\theta \end{pmatrix}, \qquad |\det J_\varphi| = r.$$
+
+The area element is $dA = r\,dr\,d\theta$.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={4} title="Why r > 0?">
+At $r = 0$, $\det J_\varphi = 0$, and $\varphi$ collapses all $\theta$ values to the origin — it is not injective. The origin is a single point (measure zero), so excluding it does not affect the integral. This is typical: changes of variables are allowed to fail on sets of measure zero.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={5} title="Area of the Unit Disk (Resolved)">
+$$\iint_{x^2+y^2 \le 1} dA = \int_0^{2\pi} \int_0^1 r\,dr\,d\theta = 2\pi \cdot \frac{1}{2} = \pi.$$
+
+Compare with the Cartesian computation from [Topic 13, Example 7](/topics/multiple-integrals): $\int_{-1}^1 \int_{-\sqrt{1-x^2}}^{\sqrt{1-x^2}} dy\,dx = \int_{-1}^1 2\sqrt{1-x^2}\,dx = \pi$. Same answer, but polar reduces the integral to a product of two elementary 1D integrals.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={6} title="Integral over an Annulus">
+$\iint_D (x^2 + y^2)\,dA$ over the annulus $1 \le x^2+y^2 \le 4$: in polar, $x^2 + y^2 = r^2$:
+
+$$\int_0^{2\pi} \int_1^2 r^2 \cdot r\,dr\,d\theta = 2\pi \cdot \frac{r^4}{4}\Big|_1^2 = 2\pi \cdot \frac{15}{4} = \frac{15\pi}{2}.$$
+
+The circular symmetry of both the region and the integrand makes polar coordinates the natural choice.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={7} title="Volume Under the Paraboloid (Resolved)">
+From [Topic 13, §7](/topics/multiple-integrals): the volume between $z = x^2 + y^2$ and $z = 4$ over the disk $x^2 + y^2 \le 4$. In polar:
+
+$$V = \int_0^{2\pi} \int_0^2 (4 - r^2)\,r\,dr\,d\theta = 2\pi \int_0^2 (4r - r^3)\,dr = 2\pi \left[2r^2 - \frac{r^4}{4}\right]_0^2 = 2\pi(8 - 4) = 8\pi.$$
+</TheoremBlock>
+
+<PolarIntegralExplorer client:visible />
+
+![Cartesian grid vs. polar grid on the unit disk, area element comparison](/images/topics/change-of-variables/polar-coordinates.png)
+
+## 5. The Gaussian Integral
+
+The computation of $\int_{-\infty}^{\infty} e^{-x^2}\,dx = \sqrt{\pi}$ is one of the most important results in all of mathematics, appearing in probability (the normalizing constant of the normal distribution), statistical mechanics (the partition function), and quantum mechanics (path integrals). The proof is a triumph of the change-of-variables formula.
+
+<TheoremBlock type="proposition" number={1} title="The Gaussian Integral">
+$$\int_{-\infty}^{\infty} e^{-x^2}\,dx = \sqrt{\pi}.$$
+</TheoremBlock>
+
+<TheoremBlock type="proof" number={1}>
+*Step 1: Square the integral.* Let $I = \int_{-\infty}^{\infty} e^{-x^2}\,dx$. Then:
+
+$$I^2 = \left(\int_{-\infty}^{\infty} e^{-x^2}\,dx\right)\left(\int_{-\infty}^{\infty} e^{-y^2}\,dy\right) = \iint_{\mathbb{R}^2} e^{-(x^2+y^2)}\,dA.$$
+
+The first equality uses Fubini ([Topic 13, Theorem 1](/topics/multiple-integrals)) to convert the product of two 1D integrals into a double integral. This requires justifying that $e^{-(x^2+y^2)}$ is integrable over $\mathbb{R}^2$ — it suffices to note that $\int_0^R \int_0^{2\pi} e^{-r^2} r\,d\theta\,dr = 2\pi \int_0^R r e^{-r^2}\,dr = \pi(1 - e^{-R^2}) \to \pi$ as $R \to \infty$, so the improper integral converges.
+
+*Step 2: Switch to polar coordinates.* Using $x^2 + y^2 = r^2$ and $dA = r\,dr\,d\theta$:
+
+$$I^2 = \int_0^{2\pi}\int_0^{\infty} e^{-r^2}\,r\,dr\,d\theta.$$
+
+The inner integral is elementary: $\int_0^{\infty} r e^{-r^2}\,dr = \left[-\frac{1}{2}e^{-r^2}\right]_0^\infty = \frac{1}{2}$.
+
+*Step 3: Evaluate.* $I^2 = 2\pi \cdot \frac{1}{2} = \pi$. Since $I > 0$, we conclude $I = \sqrt{\pi}$.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={5} title="Why Is This Hard in Cartesian?">
+The function $e^{-x^2}$ has no elementary antiderivative (this is a theorem, not a failure of technique). The 1D integral is genuinely intractable without the 2D "trick." The change-of-variables formula transforms a hard 1D problem into an easy 2D one by exploiting radial symmetry.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={8} title="The Gaussian Normalizing Constant">
+The PDF of $\mathcal{N}(\mu, \sigma^2)$ is $\frac{1}{\sigma\sqrt{2\pi}} e^{-(x-\mu)^2/(2\sigma^2)}$. Verify normalization using the substitution $u = (x - \mu)/(\sigma\sqrt{2})$ and $\int_{-\infty}^{\infty} e^{-u^2}\,du = \sqrt{\pi}$:
+
+$$\int_{-\infty}^{\infty} \frac{1}{\sigma\sqrt{2\pi}} e^{-(x-\mu)^2/(2\sigma^2)}\,dx = \frac{1}{\sigma\sqrt{2\pi}} \cdot \sigma\sqrt{2} \cdot \sqrt{\pi} = 1.$$
+
+This is why the $\sqrt{2\pi}$ appears in the Gaussian density — it is the Gaussian integral.
+</TheoremBlock>
+
+<GaussianIntegralExplorer client:visible mode="proof-steps" />
+
+![3D Gaussian surface with polar radial rings and convergence plot](/images/topics/change-of-variables/gaussian-integral.png)
+
+## 6. Cylindrical and Spherical Coordinates
+
+The change of variables formula works in any dimension. Here we cover the two standard 3D coordinate systems.
+
+<TheoremBlock type="definition" number={3} title="Cylindrical Coordinates">
+The *cylindrical coordinate transformation* is $\varphi(r, \theta, z) = (r\cos\theta, r\sin\theta, z)$, with $r > 0$, $\theta \in (0, 2\pi)$, $z \in \mathbb{R}$. The Jacobian is:
+
+$$J_\varphi = \begin{pmatrix} \cos\theta & -r\sin\theta & 0 \\ \sin\theta & r\cos\theta & 0 \\ 0 & 0 & 1 \end{pmatrix}, \qquad |\det J_\varphi| = r.$$
+
+The volume element is $dV = r\,dr\,d\theta\,dz$.
+</TheoremBlock>
+
+<TheoremBlock type="definition" number={4} title="Spherical Coordinates">
+The *spherical coordinate transformation* is $\varphi(\rho, \theta, \phi) = (\rho\sin\phi\cos\theta,\, \rho\sin\phi\sin\theta,\, \rho\cos\phi)$, with $\rho > 0$, $\theta \in (0, 2\pi)$, $\phi \in (0, \pi)$. The Jacobian matrix is:
+
+$$J_\varphi = \begin{pmatrix} \sin\phi\cos\theta & -\rho\sin\phi\sin\theta & \rho\cos\phi\cos\theta \\ \sin\phi\sin\theta & \rho\sin\phi\cos\theta & \rho\cos\phi\sin\theta \\ \cos\phi & 0 & -\rho\sin\phi \end{pmatrix}$$
+
+Computing $|\det J_\varphi|$ by cofactor expansion along the third row:
+
+$$\det J_\varphi = \cos\phi \cdot (-\rho^2\sin\phi\cos\phi\sin^2\theta - \rho^2\sin\phi\cos\phi\cos^2\theta) + (-\rho\sin\phi)(\rho\sin^2\phi\cos^2\theta + \rho\sin^2\phi\sin^2\theta)$$
+
+$$= -\rho^2\sin\phi\cos^2\phi - \rho^2\sin^3\phi = -\rho^2\sin\phi(\cos^2\phi + \sin^2\phi) = -\rho^2\sin\phi.$$
+
+Since $\sin\phi \ge 0$ for $\phi \in [0, \pi]$: $|\det J_\varphi| = \rho^2\sin\phi$. The volume element is $dV = \rho^2\sin\phi\,d\rho\,d\theta\,d\phi$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={9} title="Volume of the Unit Ball">
+$$V = \iiint_{x^2+y^2+z^2 \le 1} dV = \int_0^{2\pi}\int_0^{\pi}\int_0^1 \rho^2 \sin\phi\,d\rho\,d\phi\,d\theta = 2\pi \cdot 2 \cdot \frac{1}{3} = \frac{4\pi}{3}.$$
+
+Three decoupled 1D integrals — the spherical symmetry of the ball makes the computation trivial.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={10} title="Moment of Inertia of a Solid Sphere">
+For a uniform solid sphere of mass $M$ and radius $R$ with density $\rho_{\text{mass}} = \frac{3M}{4\pi R^3}$, the moment of inertia about the $z$-axis is $I = \iiint \rho_{\text{mass}} (x^2 + y^2)\,dV$. In spherical coordinates, $x^2 + y^2 = \rho^2 \sin^2\phi$:
+
+$$I = \frac{3M}{4\pi R^3} \int_0^{2\pi}\int_0^{\pi}\int_0^R \rho^2 \sin^2\phi \cdot \rho^2 \sin\phi\,d\rho\,d\phi\,d\theta.$$
+
+Evaluating each factor: $\int_0^{2\pi}d\theta = 2\pi$, $\int_0^{\pi}\sin^3\phi\,d\phi = \frac{4}{3}$, $\int_0^R \rho^4\,d\rho = \frac{R^5}{5}$. So $I = \frac{3M}{4\pi R^3} \cdot 2\pi \cdot \frac{4}{3} \cdot \frac{R^5}{5} = \frac{2}{5}MR^2$.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={6} title="Which Coordinate System to Use?">
+- **Polar:** circular symmetry in 2D ($x^2 + y^2$ appears, region is a disk or annulus).
+- **Cylindrical:** cylindrical symmetry in 3D (the region or integrand is symmetric about the $z$-axis).
+- **Spherical:** spherical symmetry ($x^2 + y^2 + z^2$ appears, region is a ball or spherical shell).
+- If none of these symmetries are present, a custom coordinate transformation may still simplify the integral.
+</TheoremBlock>
+
+<CoordinateSystemExplorer client:visible />
+
+![Side-by-side: cylindrical coordinate surfaces and spherical coordinate surfaces](/images/topics/change-of-variables/coordinate-systems-3d.png)
+
+## 7. The General Change of Variables Theorem
+
+Polar, cylindrical, and spherical are special cases. The general theorem handles any $C^1$ diffeomorphism.
+
+<TheoremBlock type="definition" number={5} title="C¹ Diffeomorphism">
+A function $\varphi: D^* \to D$ between open subsets of $\mathbb{R}^n$ is a *$C^1$ diffeomorphism* if: (i) $\varphi$ is bijective, (ii) $\varphi$ is $C^1$ (continuously differentiable), and (iii) $\varphi^{-1}: D \to D^*$ is $C^1$. By the Inverse Function Theorem ([Topic 12, Theorem 1](/topics/inverse-implicit)), conditions (ii) and (iii) are equivalent to: $\varphi$ is $C^1$ and $\det J_\varphi(u) \neq 0$ for all $u \in D^*$.
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={3} title="Change of Variables (General)">
+Let $\varphi: D^* \to D$ be a $C^1$ diffeomorphism between open subsets of $\mathbb{R}^n$. Let $f: D \to \mathbb{R}$ be continuous and integrable over $D$. Then:
+
+$$\int_D f(x)\,dx = \int_{D^*} f(\varphi(u))\,|\det J_\varphi(u)|\,du.$$
+
+This reduces to the 1D substitution rule (Theorem 1) when $n = 1$, and to the 2D formula (Theorem 2) when $n = 2$.
+</TheoremBlock>
+
+<TheoremBlock type="proof" number={2}>
+We follow Spivak's approach (*Calculus on Manifolds*, Theorem 3-13).
+
+*Step 1: The linear case.* If $\varphi(u) = Au + b$ is an affine map with $A$ invertible, then $D = A(D^*) + b$, $J_\varphi = A$, and the formula follows from the definition of the Riemann integral: the Riemann sum over $D$ with partition $P$ corresponds to the Riemann sum over $D^*$ with partition $A^{-1}(P - b)$, with each cell volume scaled by $|\det A|$.
+
+*Step 2: Local validity.* For a general $C^1$ diffeomorphism and any $u_0 \in D^*$, the linear approximation $\varphi(u) \approx \varphi(u_0) + J_\varphi(u_0)(u - u_0)$ is accurate on a small ball $B_\epsilon(u_0)$. Because $J_\varphi$ is continuous and $\det J_\varphi \neq 0$, on a sufficiently small ball:
+
+$$\left|\frac{|\det J_\varphi(u)|}{|\det J_\varphi(u_0)|} - 1\right| < \delta$$
+
+for any prescribed $\delta > 0$. The integral formula holds locally up to an error controlled by $\delta$.
+
+*Step 3: Partition of unity.* Cover $D^*$ with a finite collection of balls $\{B_k\}$ (using compactness of $\overline{D^*}$ if $D^*$ is bounded; the general case uses exhaustion by compact subsets — see [Topic 3](/topics/completeness-compactness) for compactness). Choose a subordinate partition of unity $\{\psi_k\}$: smooth functions $\psi_k \ge 0$ with $\text{supp}(\psi_k) \subset B_k$ and $\sum_k \psi_k = 1$ on $D^*$. Then:
+
+$$\int_D f\,dx = \sum_k \int_D (\psi_k \circ \varphi^{-1}) \cdot f\,dx = \sum_k \int_{B_k} (\psi_k \cdot f \circ \varphi)\,|\det J_\varphi|\,du = \int_{D^*} f(\varphi(u))\,|\det J_\varphi(u)|\,du.$$
+
+Each step uses: (i) the partition of unity decomposes $f$ into locally supported pieces, (ii) the linear case applies locally on each $B_k$ (up to the error in Step 2), (iii) summing recovers the full integral. The rigorous details involve showing the error terms from Step 2 sum to zero — this uses the uniform continuity of $J_\varphi$ on compact subsets.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={7} title="Relaxing the Hypotheses">
+The theorem extends to $\varphi$ that fails to be injective or has $\det J_\varphi = 0$ on a set of measure zero (e.g., the origin for polar coordinates, or the $z$-axis for cylindrical coordinates). The Lebesgue version of the change-of-variables theorem handles this rigorously — see Sigma-Algebras & Measures and The Lebesgue Integral (coming soon).
+</TheoremBlock>
+
+![Arbitrary diffeomorphism deforming a grid, with Jacobian determinant heatmap overlay](/images/topics/change-of-variables/general-diffeomorphism.png)
+
+## 8. A Gallery of Coordinate Transformations
+
+This section builds computational fluency through a series of worked examples with different transformations.
+
+<TheoremBlock type="example" number={11} title="Elliptical Coordinates — Area of an Ellipse">
+Let $\varphi(u, v) = (au\cos v, bu\sin v)$ with $a, b > 0$. The Jacobian determinant is $|\det J_\varphi| = abu$. The area of the ellipse $\frac{x^2}{a^2} + \frac{y^2}{b^2} \le 1$:
+
+$$\int_0^{2\pi}\int_0^1 ab\,u\,du\,dv = 2\pi \cdot ab \cdot \frac{1}{2} = \pi ab.$$
+
+This generalizes the disk area $\pi r^2$ to $\pi ab$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={12} title="Parabolic Coordinates">
+$\varphi(u, v) = \left(\frac{u^2 - v^2}{2},\, uv\right)$ has $|\det J_\varphi| = u^2 + v^2$. Useful for problems with parabolic symmetry (e.g., electrostatics near a parabolic reflector).
+</TheoremBlock>
+
+<TheoremBlock type="proposition" number={2} title="Composition of Transformations">
+If $\varphi_1: D_1^* \to D_1$ and $\varphi_2: D_1 \to D$ are $C^1$ diffeomorphisms, then $\varphi = \varphi_2 \circ \varphi_1: D_1^* \to D$ is a $C^1$ diffeomorphism with:
+
+$$\det J_\varphi(u) = \det J_{\varphi_2}(\varphi_1(u)) \cdot \det J_{\varphi_1}(u).$$
+
+This follows from the chain rule for Jacobians ([Topic 10, Theorem 2](/topics/jacobian)) and the multiplicativity of determinants. Geometrically: volume distortions compose multiplicatively, as established in [Topic 10, Proposition 2](/topics/jacobian).
+</TheoremBlock>
+
+<TheoremBlock type="example" number={13} title="Composed Transformation — Rotated Ellipse">
+To integrate over the region $x^2 + xy + y^2 \le 1$ (a rotated ellipse), first rotate by $\pi/4$ to diagonalize the quadratic form, then scale to a unit disk. The composed Jacobian determinant is the product of the individual determinants.
+</TheoremBlock>
+
+![Four-panel: elliptical, parabolic, composed, and shear transformations](/images/topics/change-of-variables/transformation-gallery.png)
+
+## 9. The Density Transformation Formula
+
+This section reframes the change of variables formula for probability densities and connects to normalizing flows — the most direct ML application of this calculus.
+
+<TheoremBlock type="definition" number={6} title="Density Transformation">
+Let $Z$ be a random vector with density $p_Z$ and let $X = \varphi(Z)$ where $\varphi$ is a $C^1$ diffeomorphism. The density of $X$ is:
+
+$$p_X(x) = p_Z(\varphi^{-1}(x)) \cdot |\det J_{\varphi^{-1}}(x)| = \frac{p_Z(\varphi^{-1}(x))}{|\det J_\varphi(\varphi^{-1}(x))|}.$$
+
+This follows directly from the change of variables theorem applied to $P(X \in A) = \int_A p_X(x)\,dx = \int_{\varphi^{-1}(A)} p_Z(z)\,dz = \int_A p_Z(\varphi^{-1}(x)) |\det J_{\varphi^{-1}}(x)|\,dx$ for all measurable $A$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={14} title="Log-Normal from Normal">
+If $Z \sim \mathcal{N}(0, 1)$ and $X = e^Z$, then $\varphi(z) = e^z$, $\varphi^{-1}(x) = \ln x$, $|(\varphi^{-1})'(x)| = 1/x$. So:
+
+$$p_X(x) = \frac{1}{\sqrt{2\pi}} e^{-(\ln x)^2/2} \cdot \frac{1}{x} = \frac{1}{x\sqrt{2\pi}} e^{-(\ln x)^2/2} \quad \text{for } x > 0.$$
+
+This is the log-normal density.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={8} title="Normalizing Flows">
+A normalizing flow is a composition of $K$ diffeomorphisms: $x = f_K \circ f_{K-1} \circ \cdots \circ f_1(z)$. By the composition rule (Proposition 2):
+
+$$\log p_X(x) = \log p_Z(z) - \sum_{k=1}^K \log |\det J_{f_k}(z_{k-1})|$$
+
+where $z_0 = z$ and $z_k = f_k(z_{k-1})$. The entire architecture of flow-based generative models (RealNVP, Glow, Neural Spline Flows) is designed to make each $|\det J_{f_k}|$ cheap to compute — typically $O(n)$ instead of $O(n^3)$ — by using triangular Jacobians (coupling layers, autoregressive transforms). This is the change-of-variables formula doing heavy lifting in generative modeling.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={15} title="Affine Coupling Layer (RealNVP)">
+The RealNVP coupling layer splits $z = (z_a, z_b)$ and defines $x_a = z_a$, $x_b = z_b \odot \exp(s(z_a)) + t(z_a)$. The Jacobian is lower-triangular with diagonal entries $1$ (for $x_a$) and $\exp(s_i(z_a))$ (for $x_b$). So $\log|\det J| = \sum_i s_i(z_a)$ — a sum, not a determinant. This is $O(n)$ and trivially differentiable. The IFT ([Topic 12](/topics/inverse-implicit)) guarantees invertibility since $\exp(s_i) > 0$ everywhere.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={9} title="The Reparameterization Trick">
+In variational autoencoders, we need $\nabla_{\mu, \sigma} \mathbb{E}_{q_\phi(z)}[f(z)]$ where $q_\phi(z) = \mathcal{N}(\mu, \sigma^2)$. The expectation depends on $\mu, \sigma$ through the distribution, so we can't just differentiate under the integral sign. The trick: write $z = \mu + \sigma\epsilon$ with $\epsilon \sim \mathcal{N}(0, 1)$. This is a change of variables from $\epsilon$ to $z$. Now $\mathbb{E}_{q_\phi(z)}[f(z)] = \mathbb{E}_{\epsilon \sim \mathcal{N}(0,1)}[f(\mu + \sigma\epsilon)]$, and the gradient moves inside: $\nabla_{\mu, \sigma} \mathbb{E}[f(\mu + \sigma\epsilon)]$ is just a standard derivative of a deterministic function of $\mu, \sigma$ evaluated at a random $\epsilon$. The change-of-variables formula separates the randomness ($\epsilon$) from the parameters ($\mu, \sigma$).
+</TheoremBlock>
+
+<NormalizingFlowExplorer client:visible />
+
+![Multi-layer normalizing flow diagram showing densities at each stage](/images/topics/change-of-variables/ml-normalizing-flows.png)
+
+## 10. Connections & Further Reading
+
+**This topic resolves forward references from:**
+- [The Riemann Integral & FTC](/topics/riemann-integral) — The substitution rule (§2) generalizes $u$-substitution to multiple variables.
+- [The Jacobian & Multivariate Chain Rule](/topics/jacobian) — The Jacobian determinant, introduced as an abstract volume scaling factor in Topic 10, now does concrete computational work in every integral.
+- [Multiple Integrals & Fubini's Theorem](/topics/multiple-integrals) — The painful disk integral (Example 7) is resolved by polar coordinates (§4). The Gaussian integral preview (§10) is proved in full (§5).
+- [Improper Integrals & Special Functions](/topics/improper-integrals) — The Gaussian integral $\int e^{-x^2}\,dx = \sqrt{\pi}$, previewed in Topic 8, is proved here.
+
+**Prerequisites used:**
+- [Multiple Integrals & Fubini's Theorem](/topics/multiple-integrals) — Every integral in this topic is a multiple integral evaluated via Fubini.
+- [Inverse & Implicit Function Theorems](/topics/inverse-implicit) — The IFT guarantees that $\varphi$ is a local diffeomorphism when $\det J_\varphi \neq 0$.
+
+**What comes next within formalCalculus:**
+- **Surface Integrals & the Divergence Theorem** (coming soon) — Surface parameterization requires the Jacobian of the parameterization map; the surface area element involves the cross product of tangent vectors, which is the 2D analog of the Jacobian determinant.
+- **The Lebesgue Integral** (coming soon) — The Lebesgue change of variables theorem generalizes the Riemann version, relaxing the diffeomorphism requirement to almost-everywhere injectivity.
+- **Sigma-Algebras & Measures** (coming soon) — Pushforward measures and the change-of-variables formula for Lebesgue integrals depend on the Jacobian determinant.
+
+**Connections to formalML:**
+- [Gradient Descent](https://formalml.com/topics/gradient-descent) → formalML — The reparameterization trick in variational inference is a change of variables applied to make gradients tractable.
+- [Measure-Theoretic Probability](https://formalml.com/topics/measure-theoretic-probability) → formalML — The density transformation formula is the probabilistic form of the change of variables theorem.
+- [Smooth Manifolds](https://formalml.com/topics/smooth-manifolds) → formalML — The partition-of-unity argument in the general proof connects to manifold integration.
+- [Information Geometry](https://formalml.com/topics/information-geometry) → formalML — The Fisher information matrix transforms under reparameterization via the Jacobian.

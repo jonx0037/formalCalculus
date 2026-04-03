@@ -8,16 +8,22 @@ import { functionColors, regionColors } from './shared/colorScales';
 const margin = { top: 20, right: 30, bottom: 40, left: 55 };
 const GAP = 40;
 
-export default function GaussianIntegralExplorer() {
+interface GaussianIntegralExplorerProps {
+  /** 'basic' (default, Topic 8) — sliders + heatmap. 'proof-steps' (Topic 14) — step-through proof. */
+  mode?: 'basic' | 'proof-steps';
+}
+
+export default function GaussianIntegralExplorer({ mode = 'basic' }: GaussianIntegralExplorerProps) {
   const { ref: containerRef, width } = useResizeObserver<HTMLDivElement>();
   const totalHeight = Math.min(width * 0.85, 680);
   const topH = totalHeight * 0.5;
   const botH = totalHeight - topH - GAP;
 
-  const [limitB, setLimitB] = useState(3);
+  const [limitB, setLimitB] = useState(mode === 'proof-steps' ? 5 : 3);
   const [scaleA, setScaleA] = useState(1);
   const [showPolar, setShowPolar] = useState(true);
   const [showDensity, setShowDensity] = useState(false);
+  const [proofStep, setProofStep] = useState(1);
 
   // 1D Gaussian curve
   const curveData = useMemo(() => {
@@ -229,6 +235,74 @@ export default function GaussianIntegralExplorer() {
     },
     [limitB, scaleA, showPolar, heatmapData, integralValue, exactValue, width, botH],
   );
+
+  const proofStepLabels = [
+    'Step 1: The 1D integral I',
+    'Step 2: Square it — I² as a double integral',
+    'Step 3: Switch to polar coordinates',
+    'Step 4: Evaluate — I = √π',
+  ];
+
+  const proofStepDescriptions = [
+    'I = ∫e^{-x²}dx from -∞ to ∞. We cannot find a closed-form antiderivative.',
+    'I² = (∫e^{-x²}dx)(∫e^{-y²}dy) = ∬e^{-(x²+y²)}dA by Fubini.',
+    'In polar: x²+y² = r², dA = r dr dθ. The integral becomes ∫₀²π∫₀^∞ e^{-r²}r dr dθ.',
+    'Inner integral: ∫₀^∞ re^{-r²}dr = ½. So I² = 2π·½ = π, giving I = √π.',
+  ];
+
+  if (mode === 'proof-steps') {
+    return (
+      <div ref={containerRef} style={{ width: '100%' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center', marginBottom: '8px', fontSize: '13px' }}>
+          {proofStepLabels.map((label, i) => (
+            <button
+              key={i}
+              onClick={() => {
+                setProofStep(i + 1);
+                if (i + 1 >= 3) setShowPolar(true);
+                else setShowPolar(false);
+              }}
+              style={{
+                padding: '4px 10px',
+                borderRadius: '4px',
+                border: proofStep === i + 1 ? '2px solid #2563EB' : '1px solid #CBD5E1',
+                background: proofStep === i + 1 ? '#EFF6FF' : 'transparent',
+                cursor: 'pointer',
+                fontSize: '12px',
+                fontWeight: proofStep === i + 1 ? 600 : 400,
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        <div style={{ fontSize: '13px', color: '#555', marginBottom: '8px', padding: '6px 10px', background: '#F8FAFC', borderRadius: '4px', borderLeft: '3px solid #2563EB' }}>
+          {proofStepDescriptions[proofStep - 1]}
+        </div>
+
+        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', marginBottom: '8px' }}>
+          Truncation R = {limitB.toFixed(1)}
+          <input type="range" min={1} max={8} step={0.1} value={limitB}
+            onChange={(e) => setLimitB(Number(e.target.value))}
+            style={{ width: '140px' }} />
+        </label>
+
+        <div style={{ display: 'flex', gap: '16px', fontSize: '13px', marginBottom: '8px', color: '#555' }}>
+          <span>I_R = {integralValue.toFixed(6)}</span>
+          <span>I² ≈ {(integralValue * integralValue).toFixed(6)}</span>
+          <span style={{ color: '#059669' }}>
+            √π = {Math.sqrt(Math.PI).toFixed(6)} | Error: {Math.abs(integralValue - Math.sqrt(Math.PI)).toExponential(2)}
+          </span>
+        </div>
+
+        <svg width={width} height={totalHeight}>
+          <g ref={topRef} transform={`translate(${margin.left},${margin.top})`} />
+          <g ref={botRef} transform={`translate(${margin.left},${topH + GAP + margin.top})`} />
+        </svg>
+      </div>
+    );
+  }
 
   return (
     <div ref={containerRef} style={{ width: '100%' }}>

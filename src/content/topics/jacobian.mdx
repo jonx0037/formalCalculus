@@ -333,7 +333,7 @@ Coordinate transformations are the most concrete application of the Jacobian det
 **Affine transformations:** $f(x) = Ax + b$ with $A$ a constant matrix. Then $J_f = A$ everywhere, and $\det J_f = \det A$. Rotations have $|\det A| = 1$ (volume-preserving), reflections have $\det A = -1$ (orientation-reversing), and dilations have $|\det A| \neq 1$ (volume-changing).
 
 <TheoremBlock type="remark" number={4} title="Preview of the change-of-variables formula">
-The pattern we have seen — $\int_{f(U)} h(x)\,dx = \int_U h(f(u)) \cdot |\det J_f(u)|\,du$ — will be formalized as the Change of Variables theorem in the Multivariable Integral Calculus track. **Change of Variables** *(coming soon)* provides the rigorous justification. This topic gives you the differential machinery: the Jacobian determinant is the local volume scaling factor, and integration sums up these local contributions.
+The pattern we have seen — $\int_{f(U)} h(x)\,dx = \int_U h(f(u)) \cdot |\det J_f(u)|\,du$ — is formalized as the [Change of Variables theorem](/topics/change-of-variables) in the Multivariable Integral Calculus track. That topic provides the rigorous justification. This topic gives you the differential machinery: the Jacobian determinant is the local volume scaling factor, and integration sums up these local contributions.
 </TheoremBlock>
 
 ![Coordinate transformations: polar grid lines mapped to Cartesian, with a heatmap showing |det J| = r — the non-uniform area distortion across the domain.](/images/topics/jacobian/coordinate-transformations.png)
@@ -426,6 +426,6 @@ so bounding the Jacobian norm bounds the Lipschitz constant. This appears in adv
 - [Completeness & Compactness](/topics/completeness-compactness) — Compactness in $\mathbb{R}^n$ ensures continuous functions on closed bounded sets achieve their extrema.
 - [The Hessian & Second-Order Analysis](/topics/hessian) — The Hessian is the Jacobian of the gradient: $H_f = J(\nabla f)$. Second-order analysis builds directly on the chain rule and Jacobian framework developed here.
 - [**Inverse & Implicit Function Theorems**](/topics/inverse-implicit) — $\det J_f(a) \neq 0$ implies $f$ is locally invertible near $a$. The Implicit Function Theorem expresses part of the Jacobian as a function of the rest.
-- **Change of Variables** *(coming soon)* — The Jacobian determinant $|\det J_\phi|$ appears as the volume scaling factor in the substitution formula for multiple integrals.
+- [**Change of Variables & the Jacobian Determinant**](/topics/change-of-variables) — The Jacobian determinant $|\det J_\phi|$ appears as the volume scaling factor in the substitution formula for multiple integrals.
 
 ![A gallery of grid deformations: four vector fields applied to a regular grid, each with the Jacobian matrix and determinant at a sample point.](/images/topics/jacobian/grid-deformation-gallery.png)
