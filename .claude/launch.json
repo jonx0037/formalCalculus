@@ -3,8 +3,9 @@
   "configurations": [
     {
       "name": "Astro Dev",
-      "runtimeExecutable": "pnpm",
+      "runtimeExecutable": "/opt/homebrew/bin/pnpm",
       "runtimeArgs": ["dev"],
+      "env": { "PATH": "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin" },
       "port": 4321
     },
     {
