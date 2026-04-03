@@ -16,7 +16,7 @@
     { "id": "inverse-implicit", "label": "Inverse & Implicit Function Theorems", "domain": "multivar-differential", "status": "published", "url": "/topics/inverse-implicit" },
 
     { "id": "multiple-integrals", "label": "Multiple Integrals & Fubini's Theorem", "domain": "multivar-integral", "status": "published", "url": "/topics/multiple-integrals" },
-    { "id": "change-of-variables", "label": "Change of Variables", "domain": "multivar-integral", "status": "planned", "url": "/topics/change-of-variables" },
+    { "id": "change-of-variables", "label": "Change of Variables & the Jacobian Determinant", "domain": "multivar-integral", "status": "published", "url": "/topics/change-of-variables" },
     { "id": "line-integrals", "label": "Line Integrals & Conservative Fields", "domain": "multivar-integral", "status": "planned", "url": "/topics/line-integrals" },
     { "id": "surface-integrals", "label": "Surface Integrals & the Divergence Theorem", "domain": "multivar-integral", "status": "planned", "url": "/topics/surface-integrals" },
 

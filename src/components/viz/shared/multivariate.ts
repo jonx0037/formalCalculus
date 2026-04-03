@@ -2009,3 +2009,61 @@ export function conditionalDensity(
   if (pX < 1e-15) return 0;
   return density(x, y) / pX;
 }
+
+// ══════════════════════════════════════════════════════════════
+// Density transformations — change of variables for probability (Topic 14)
+// ══════════════════════════════════════════════════════════════
+
+/**
+ * Apply the 1D density transformation formula.
+ *
+ * p_X(x) = p_Z(φ⁻¹(x)) · |det J_{φ⁻¹}(x)|
+ *        = p_Z(φ⁻¹(x)) · |(φ⁻¹)'(x)|
+ *
+ * where X = φ(Z).
+ */
+export function densityTransform(
+  pZ: (z: number) => number,
+  phiInverse: (x: number) => number,
+  detJInverse: (x: number) => number,
+  x: number,
+): number {
+  return pZ(phiInverse(x)) * Math.abs(detJInverse(x));
+}
+
+/**
+ * Apply the 2D density transformation formula.
+ *
+ * p_X(x₁,x₂) = p_Z(φ⁻¹(x₁,x₂)) · |det J_{φ⁻¹}(x₁,x₂)|
+ */
+export function densityTransform2D(
+  pZ: (z1: number, z2: number) => number,
+  phiInverse: (x1: number, x2: number) => [number, number],
+  detJInverse: (x1: number, x2: number) => number,
+  x1: number,
+  x2: number,
+): number {
+  const [z1, z2] = phiInverse(x1, x2);
+  return pZ(z1, z2) * Math.abs(detJInverse(x1, x2));
+}
+
+/**
+ * Apply a single normalizing flow layer.
+ *
+ * Given p_{k-1}(z) and a diffeomorphism f_k with z_k = f_k(z_{k-1}):
+ * p_k(x) = p_{k-1}(f_k⁻¹(x)) · exp(-logDetJ(f_k⁻¹(x)))
+ *
+ * In log-space: log p_k(x) = log p_{k-1}(f_k⁻¹(x)) - log|det J_{f_k}(f_k⁻¹(x))|
+ */
+export function normalizingFlowStep(
+  pPrev: (z: number) => number,
+  _forward: (z: number) => number,
+  inverse: (x: number) => number,
+  logDetJ: (z: number) => number,
+  x: number,
+): number {
+  const z = inverse(x);
+  const pZ = pPrev(z);
+  if (pZ <= 0) return 0;
+  return pZ * Math.exp(-logDetJ(z));
+}

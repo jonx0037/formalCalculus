@@ -37,9 +37,8 @@ export const tracks: Track[] = [
     title: 'Multivariable Integral Calculus',
     description: 'Multiple integrals, change of variables, and the big theorems of vector calculus.',
     domain: 'multivar-integral',
-    published: ['Multiple Integrals & Fubini\'s Theorem'],
+    published: ['Multiple Integrals & Fubini\'s Theorem', 'Change of Variables & the Jacobian Determinant'],
     planned: [
-      'Change of Variables',
       'Line Integrals & Conservative Fields',
       'Surface Integrals & the Divergence Theorem',
     ],

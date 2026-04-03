@@ -317,7 +317,7 @@ The area of the unit disk $D = \{(x,y) : x^2 + y^2 \le 1\}$ as a Type I integral
 
 $$\int_{-1}^{1} \int_{-\sqrt{1 - x^2}}^{\sqrt{1 - x^2}} 1 \, dy \, dx = \int_{-1}^{1} 2\sqrt{1 - x^2} \, dx = \pi.$$
 
-This is computable (via $x = \sin\theta$ substitution) but awkward. In **polar coordinates** the same integral becomes $\int_0^{2\pi} \int_0^1 r \, dr \, d\theta = \pi$ — trivially. This is the motivation for the next topic: **Change of Variables** *(coming soon)*.
+This is computable (via $x = \sin\theta$ substitution) but awkward. In [**polar coordinates**](/topics/change-of-variables) the same integral becomes $\int_0^{2\pi} \int_0^1 r \, dr \, d\theta = \pi$ — trivially. This is the motivation for the next topic: [Change of Variables & the Jacobian Determinant](/topics/change-of-variables).
 </TheoremBlock>
 
 <TheoremBlock type="remark" number={4} title="Regions That Are Neither Type I Nor Type II">
@@ -528,7 +528,7 @@ In models like the Boltzmann machine, the partition function $Z = \int e^{-E(x)}
 
 ### Preview: Change of Variables
 
-The [Gaussian integral](/topics/improper-integrals) $\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}$ was proved by converting to polar coordinates — a *change of variables* that transforms the double integral into a simpler form. The general theory requires the [Jacobian determinant](/topics/jacobian) as a volume scaling factor. This is the subject of the next topic: **Change of Variables** *(coming soon)*.
+The [Gaussian integral](/topics/improper-integrals) $\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}$ is proved by converting to polar coordinates — a *change of variables* that transforms the double integral into a simpler form. The general theory requires the [Jacobian determinant](/topics/jacobian) as a volume scaling factor. The full proof appears in [Change of Variables & the Jacobian Determinant, §5](/topics/change-of-variables).
 
 <MarginalDensityExplorer client:visible />
 
@@ -545,7 +545,7 @@ This topic builds on:
 - [The Jacobian & Multivariate Chain Rule](/topics/jacobian) — the Jacobian determinant appears in the next topic
 
 This topic leads to:
-- **Change of Variables** *(coming soon)* — the substitution rule for multiple integrals, with the Jacobian determinant as the volume scaling factor
+- [**Change of Variables & the Jacobian Determinant**](/topics/change-of-variables) — the substitution rule for multiple integrals, with the Jacobian determinant as the volume scaling factor
 - **Line Integrals & Conservative Fields** *(coming soon)* — Green's theorem connects line integrals to double integrals
 - **Surface Integrals & the Divergence Theorem** *(coming soon)* — triple integrals and the divergence theorem
 - **The Lebesgue Integral** *(coming soon)* — the Fubini-Tonelli theorem generalizes from Riemann to Lebesgue
