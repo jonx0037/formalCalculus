@@ -13,7 +13,7 @@
     { "id": "gradient", "label": "Partial Derivatives & the Gradient", "domain": "multivar-differential", "status": "published", "url": "/topics/gradient" },
     { "id": "jacobian", "label": "The Jacobian & Multivariate Chain Rule", "domain": "multivar-differential", "status": "published", "url": "/topics/jacobian" },
     { "id": "hessian", "label": "The Hessian & Second-Order Analysis", "domain": "multivar-differential", "status": "published", "url": "/topics/hessian" },
-    { "id": "inverse-implicit", "label": "Inverse & Implicit Function Theorems", "domain": "multivar-differential", "status": "planned", "url": "/topics/inverse-implicit" },
+    { "id": "inverse-implicit", "label": "Inverse & Implicit Function Theorems", "domain": "multivar-differential", "status": "published", "url": "/topics/inverse-implicit" },
 
     { "id": "multiple-integrals", "label": "Multiple Integrals & Fubini's Theorem", "domain": "multivar-integral", "status": "planned", "url": "/topics/multiple-integrals" },
     { "id": "change-of-variables", "label": "Change of Variables", "domain": "multivar-integral", "status": "planned", "url": "/topics/change-of-variables" },
@@ -63,7 +63,10 @@
     { "source": "derivative", "target": "gradient" },
     { "source": "gradient", "target": "jacobian" },
     { "source": "jacobian", "target": "hessian" },
+    { "source": "jacobian", "target": "inverse-implicit" },
     { "source": "hessian", "target": "inverse-implicit" },
+    { "source": "inverse-implicit", "target": "change-of-variables" },
+    { "source": "inverse-implicit", "target": "first-order-odes" },
 
     { "source": "riemann-integral", "target": "multiple-integrals" },
     { "source": "multiple-integrals", "target": "change-of-variables" },

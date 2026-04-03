@@ -19,6 +19,11 @@
  *  - Critical point classification via eigenvalue signs (Topic 11)
  *  - Newton's method step computation (Topic 11)
  *  - Condition number and quadratic form evaluation (Topic 11)
+ *  - Inverse Jacobian and local invertibility analysis (Topic 12)
+ *  - Implicit function slice computation via Newton iteration (Topic 12)
+ *  - Multivariate Newton's method for systems F(x) = 0 (Topic 12)
+ *  - Contraction mapping iteration with convergence diagnostics (Topic 12)
+ *  - Lagrange multiplier computation for constrained optimization (Topic 12)
  */
 
 import { seededRandom } from './limits';
@@ -1473,4 +1478,460 @@ export function conditionNumber(M: number[][]): number {
 
   if (minEig < SINGULARITY_TOL) return Infinity;
   return maxEig / minEig;
+}
+
+// ══════════════════════════════════════════════════════════════
+// Topic 12 — Inverse & Implicit Function Theorems
+// ══════════════════════════════════════════════════════════════
+
+// ── Interfaces (Topic 12) ────────────────────────────────────
+
+/** Result of computing an approximate inverse Jacobian */
+export interface InverseJacobianResult {
+  /** Evaluation point */
+  point: number[];
+  /** J_f(point) */
+  jacobian: number[][];
+  /** [J_f(point)]^{-1}, or empty if singular */
+  inverseJacobian: number[][];
+  /** det J_f(point) */
+  determinant: number;
+  /** κ(J_f) = |λ_max| / |λ_min| */
+  conditionNumber: number;
+  /** Whether |det| > threshold */
+  isInvertible: boolean;
+}
+
+/** Result of computing a local implicit function slice */
+export interface ImplicitSliceResult {
+  /** x grid values */
+  xValues: number[];
+  /** y = g(x) values (NaN where Newton failed) */
+  yValues: number[];
+  /** g'(x) = -F_x / F_y at each point */
+  derivatives: number[];
+  /** (a, b) where F(a,b) ≈ 0 */
+  basePoint: [number, number];
+  /** Whether the ImFT applies at each x (F_y ≠ 0 and Newton converged) */
+  valid: boolean[];
+}
+
+/** Single step of Newton's method for systems F(x) = 0 */
+export interface NewtonSystemStep {
+  iteration: number;
+  point: number[];
+  /** F(x_k) */
+  functionValue: number[];
+  jacobian: number[][];
+  /** -J^{-1} F */
+  newtonDirection: number[];
+  nextPoint: number[];
+  /** ‖F(x_k)‖ */
+  residualNorm: number;
+}
+
+/** Newton method trajectory for systems */
+export interface NewtonSystemResult {
+  steps: NewtonSystemStep[];
+  converged: boolean;
+  /** Final point (root if converged) */
+  root: number[];
+  iterations: number;
+}
+
+/** Contraction mapping iteration result */
+export interface ContractionResult {
+  /** x_0, x_1, ..., x_k */
+  iterates: number[];
+  /** Final iterate */
+  fixedPoint: number;
+  converged: boolean;
+  /** λ^k / (1-λ) · |x_1 - x_0| per iterate */
+  errorBounds: number[];
+  /** Estimated λ from consecutive iterate ratios */
+  contractionFactor: number;
+}
+
+/** Lagrange multiplier result */
+export interface LagrangeResult {
+  /** Constrained optimum x* */
+  optimum: number[];
+  /** Lagrange multiplier(s) */
+  lambda: number[];
+  /** ∇f at x* */
+  gradF: number[];
+  /** ∇g_i at x* (one row per constraint) */
+  gradG: number[][];
+  /** f(x*) */
+  objectiveValue: number;
+}
+
+// ── Functions (Topic 12) ─────────────────────────────────────
+
+/**
+ * Solve a 2×2 linear system Ax = b via Cramer's rule.
+ * Returns null if A is singular.
+ */
+export function solve2x2(
+  A: [[number, number], [number, number]],
+  b: [number, number],
+  threshold: number = SINGULARITY_TOL,
+): [number, number] | null {
+  const det = A[0][0] * A[1][1] - A[0][1] * A[1][0];
+  if (Math.abs(det) < threshold) return null;
+  const invDet = 1 / det;
+  return [
+    (b[0] * A[1][1] - b[1] * A[0][1]) * invDet,
+    (A[0][0] * b[1] - A[1][0] * b[0]) * invDet,
+  ];
+}
+
+/**
+ * Compute the inverse of the Jacobian matrix at a point.
+ * f: ℝⁿ → ℝⁿ (must be square). Returns invertibility analysis.
+ * Uses existing jacobianMatrix and invertMatrix helpers.
+ */
+export function inverseJacobianApprox(
+  f: (...args: number[]) => number[],
+  point: number[],
+  h: number = 1e-7,
+  threshold: number = SINGULARITY_TOL,
+): InverseJacobianResult {
+  // Wrap f to match jacobianMatrix's expected signature
+  const fWrapped = (...args: number[]) => f(...args);
+  const n = point.length;
+
+  // Compute J_f(point) using existing jacobianMatrix
+  const jResult = jacobianMatrix(fWrapped, point, h);
+  const J = jResult.matrix;
+  const det = determinant(J);
+  const isInvertible = Math.abs(det) > threshold;
+
+  let invJ: number[][] = [];
+  let kappa = Infinity;
+
+  // Derive isInvertible from actually obtaining an inverse, not just the determinant,
+  // to avoid inconsistency between det check and pivot-tolerance check in invertMatrix.
+  const inv = Math.abs(det) > threshold ? invertMatrix(J, threshold) : null;
+  const actuallyInvertible = inv !== null;
+  if (inv) {
+    invJ = inv;
+    // Condition number: use singular value approximation for small n
+    // For 2x2, use eigenvalues of J^T J
+    if (n === 2) {
+      const JtJ = [
+        [J[0][0] * J[0][0] + J[1][0] * J[1][0], J[0][0] * J[0][1] + J[1][0] * J[1][1]],
+        [J[0][1] * J[0][0] + J[1][1] * J[1][0], J[0][1] * J[0][1] + J[1][1] * J[1][1]],
+      ];
+      const { eigenvalues: eigs } = eigenvalues2x2(JtJ);
+      const sVals = eigs.map((e) => Math.sqrt(Math.max(0, e)));
+      const sMax = Math.max(...sVals);
+      const sMin = Math.min(...sVals);
+      kappa = sMin > SINGULARITY_TOL ? sMax / sMin : Infinity;
+    } else {
+      // Rough estimate via matrix norms
+      const normJ = Math.sqrt(J.flat().reduce((s, v) => s + v * v, 0));
+      const normInv = Math.sqrt(invJ.flat().reduce((s, v) => s + v * v, 0));
+      kappa = normJ * normInv;
+    }
+  }
+
+  return {
+    point: [...point],
+    jacobian: J,
+    inverseJacobian: invJ,
+    determinant: det,
+    conditionNumber: kappa,
+    isInvertible: actuallyInvertible,
+  };
+}
+
+/**
+ * Compute a local implicit function slice near (a, b) where F(a, b) ≈ 0.
+ * F: ℝ² → ℝ (scalar). Returns y = g(x) values near x = a
+ * using Newton's method on F(x, ·) = 0 for each x.
+ */
+export function implicitFunctionSlice(
+  F: (x: number, y: number) => number,
+  Fy: (x: number, y: number) => number,
+  basePoint: [number, number],
+  xRange: [number, number],
+  nPoints: number = 100,
+  maxNewtonIter: number = 20,
+): ImplicitSliceResult {
+  const [a, b] = basePoint;
+  const xValues: number[] = [];
+  const yValues: number[] = [];
+  const derivatives: number[] = [];
+  const valid: boolean[] = [];
+
+  const dx = (xRange[1] - xRange[0]) / (nPoints - 1);
+
+  // Start from the base point and march outward for continuity
+  const sortedIndices = Array.from({ length: nPoints }, (_, i) => i)
+    .sort((i, j) => Math.abs(xRange[0] + i * dx - a) - Math.abs(xRange[0] + j * dx - a));
+
+  // Seed yCache with the grid index nearest to the base point.
+  // sortedIndices[0] is already the closest since the array is sorted by |x_i - a|.
+  const yCache = new Map<number, number>();
+  yCache.set(sortedIndices[0], b);
+
+  for (const idx of sortedIndices) {
+    const x = xRange[0] + idx * dx;
+    // Use immediate grid neighbors as initial guess — O(1) per point.
+    // Since we process outward from the base point, adjacent indices
+    // are always the most recently computed neighbors.
+    const y0 = yCache.get(idx - 1) ?? yCache.get(idx + 1) ?? b;
+
+    // Newton iteration on F(x, ·) = 0
+    let y = y0;
+    let converged = false;
+    for (let iter = 0; iter < maxNewtonIter; iter++) {
+      const fVal = F(x, y);
+      const fyVal = Fy(x, y);
+      if (Math.abs(fyVal) < SINGULARITY_TOL) break;
+      const step = -fVal / fyVal;
+      y += step;
+      if (Math.abs(fVal) < 1e-12) {
+        converged = true;
+        break;
+      }
+    }
+
+    xValues[idx] = x;
+    yValues[idx] = converged ? y : NaN;
+    valid[idx] = converged && Math.abs(Fy(x, y)) > SINGULARITY_TOL;
+
+    if (converged) {
+      yCache.set(idx, y);
+      // Compute implicit derivative g'(x) = -F_x / F_y
+      const Fx = (F(x + 1e-7, y) - F(x - 1e-7, y)) / (2e-7);
+      const fyAtPoint = Fy(x, y);
+      derivatives[idx] = Math.abs(fyAtPoint) > SINGULARITY_TOL ? -Fx / fyAtPoint : NaN;
+    } else {
+      derivatives[idx] = NaN;
+    }
+  }
+
+  return { xValues, yValues, derivatives, basePoint, valid };
+}
+
+/**
+ * Newton's method for systems F(x) = 0.
+ * F: ℝⁿ → ℝⁿ. Iterates x_{k+1} = x_k - J_F(x_k)^{-1} F(x_k).
+ * Returns all intermediate steps for visualization.
+ */
+export function newtonMethodMultivariate(
+  F: (...args: number[]) => number[],
+  x0: number[],
+  maxIter: number = 50,
+  tol: number = 1e-10,
+  h: number = 1e-7,
+): NewtonSystemResult {
+  const steps: NewtonSystemStep[] = [];
+  let point = [...x0];
+
+  for (let k = 0; k < maxIter; k++) {
+    const fVal = F(...point);
+    const residualNorm = Math.sqrt(fVal.reduce((s, v) => s + v * v, 0));
+
+    const J = jacobianMatrix(F, point, h).matrix;
+    const invJ = invertMatrix(J);
+
+    let direction: number[];
+    if (invJ) {
+      // Newton direction: -J^{-1} F
+      direction = invJ.map((row) =>
+        -row.reduce((s, val, j) => s + val * fVal[j], 0),
+      );
+    } else {
+      // Singular Jacobian — use gradient descent fallback
+      direction = fVal.map((v) => -v * 0.01);
+    }
+
+    const nextPoint = point.map((x, i) => x + direction[i]);
+
+    steps.push({
+      iteration: k,
+      point: [...point],
+      functionValue: [...fVal],
+      jacobian: J,
+      newtonDirection: direction,
+      nextPoint: [...nextPoint],
+      residualNorm,
+    });
+
+    if (residualNorm < tol) {
+      return { steps, converged: true, root: [...point], iterations: k };
+    }
+
+    point = nextPoint;
+  }
+
+  return { steps, converged: false, root: [...point], iterations: maxIter };
+}
+
+/**
+ * Iterate a contraction mapping T: ℝ → ℝ from x₀.
+ * Returns all iterates and convergence diagnostics including
+ * the a priori error bound λ^k / (1 - λ) · |x₁ - x₀|.
+ */
+export function contractionIteration(
+  T: (x: number) => number,
+  x0: number,
+  maxIter: number = 100,
+  tol: number = 1e-12,
+): ContractionResult {
+  const iterates: number[] = [x0];
+  const errorBounds: number[] = [Infinity];
+
+  let x = x0;
+  let converged = false;
+
+  for (let k = 0; k < maxIter; k++) {
+    const xNext = T(x);
+    iterates.push(xNext);
+
+    if (Math.abs(xNext - x) < tol) {
+      converged = true;
+      // Fill remaining error bounds
+      errorBounds.push(0);
+      break;
+    }
+
+    x = xNext;
+  }
+
+  // Estimate contraction factor λ from consecutive iterate ratios
+  let lambda = 0;
+  let ratioCount = 0;
+  for (let k = 2; k < iterates.length; k++) {
+    const d1 = Math.abs(iterates[k] - iterates[k - 1]);
+    const d0 = Math.abs(iterates[k - 1] - iterates[k - 2]);
+    if (d0 > SINGULARITY_TOL) {
+      lambda += d1 / d0;
+      ratioCount++;
+    }
+  }
+  lambda = ratioCount > 0 ? lambda / ratioCount : 0.5;
+
+  // Compute a priori error bounds: λ^k / (1 - λ) · |x₁ - x₀|
+  const d0 = iterates.length > 1 ? Math.abs(iterates[1] - iterates[0]) : 0;
+  const errorScale = lambda < 1 ? d0 / (1 - lambda) : Infinity;
+  while (errorBounds.length < iterates.length) {
+    const k = errorBounds.length;
+    errorBounds.push(Math.pow(lambda, k) * errorScale);
+  }
+
+  return {
+    iterates,
+    fixedPoint: iterates[iterates.length - 1],
+    converged,
+    errorBounds,
+    contractionFactor: lambda,
+  };
+}
+
+/**
+ * Solve a constrained optimization problem via Lagrange conditions.
+ * For f: ℝ² → ℝ with single constraint g(x,y) = c.
+ * Numerically searches along the constraint curve for ∇f ∥ ∇g.
+ */
+export function lagrangeMultiplier(
+  f: (x: number, y: number) => number,
+  gradf: (x: number, y: number) => [number, number],
+  g: (x: number, y: number) => number,
+  gradg: (x: number, y: number) => [number, number],
+  c: number,
+  searchDomain: { x: [number, number]; y: [number, number] },
+  nGrid: number = 200,
+): LagrangeResult {
+  // Strategy: sample points near the constraint g(x,y) = c and find
+  // where the cross product ∇f × ∇g ≈ 0 (parallelism in 2D)
+  const { x: [xMin, xMax], y: [yMin, yMax] } = searchDomain;
+
+  let bestX = (xMin + xMax) / 2;
+  let bestY = (yMin + yMax) / 2;
+  let bestScore = Infinity;
+
+  // Coarse grid search
+  for (let i = 0; i < nGrid; i++) {
+    for (let j = 0; j < nGrid; j++) {
+      const x = xMin + (xMax - xMin) * i / (nGrid - 1);
+      const y = yMin + (yMax - yMin) * j / (nGrid - 1);
+
+      const constraintErr = Math.abs(g(x, y) - c);
+      if (constraintErr > 0.1) continue;
+
+      const gf = gradf(x, y);
+      const gg = gradg(x, y);
+      const ggNorm = Math.sqrt(gg[0] * gg[0] + gg[1] * gg[1]);
+      if (ggNorm < SINGULARITY_TOL) continue;
+
+      // Cross product in 2D: gf[0]*gg[1] - gf[1]*gg[0]
+      const cross = Math.abs(gf[0] * gg[1] - gf[1] * gg[0]);
+      // Score = parallelism error + constraint error (weighted)
+      const score = cross + constraintErr * 100;
+
+      if (score < bestScore) {
+        bestScore = score;
+        bestX = x;
+        bestY = y;
+      }
+    }
+  }
+
+  // Refine with local Newton-like iteration
+  for (let iter = 0; iter < 20; iter++) {
+    const gVal = g(bestX, bestY);
+    const gg = gradg(bestX, bestY);
+    const ggNorm = Math.sqrt(gg[0] * gg[0] + gg[1] * gg[1]);
+    if (ggNorm < SINGULARITY_TOL) break;
+
+    // Project onto constraint: move along ∇g to satisfy g = c
+    const err = gVal - c;
+    bestX -= err * gg[0] / (ggNorm * ggNorm);
+    bestY -= err * gg[1] / (ggNorm * ggNorm);
+
+    // Move along constraint tangent to minimize cross product
+    const gf = gradf(bestX, bestY);
+    const gg2 = gradg(bestX, bestY);
+    const tangent: [number, number] = [-gg2[1], gg2[0]]; // perpendicular to ∇g
+    const tNorm = Math.sqrt(tangent[0] * tangent[0] + tangent[1] * tangent[1]);
+    if (tNorm < SINGULARITY_TOL) break;
+    tangent[0] /= tNorm;
+    tangent[1] /= tNorm;
+
+    // Directional derivative of the Lagrangian condition along tangent
+    const dt = 1e-6;
+    const crossHere = gf[0] * gg2[1] - gf[1] * gg2[0];
+    const xp = bestX + dt * tangent[0];
+    const yp = bestY + dt * tangent[1];
+    const gfp = gradf(xp, yp);
+    const ggp = gradg(xp, yp);
+    const crossThere = gfp[0] * ggp[1] - gfp[1] * ggp[0];
+    const dCross = (crossThere - crossHere) / dt;
+
+    if (Math.abs(dCross) > SINGULARITY_TOL) {
+      const step = -crossHere / dCross;
+      const clampedStep = Math.max(-0.5, Math.min(0.5, step));
+      bestX += clampedStep * tangent[0];
+      bestY += clampedStep * tangent[1];
+    }
+  }
+
+  const gf = gradf(bestX, bestY);
+  const gg = gradg(bestX, bestY);
+
+  // Compute λ: ∇f = λ ∇g → λ = (∇f · ∇g) / (∇g · ∇g)
+  const ggDot = gg[0] * gg[0] + gg[1] * gg[1];
+  const lam = ggDot > SINGULARITY_TOL ? (gf[0] * gg[0] + gf[1] * gg[1]) / ggDot : 0;
+
+  return {
+    optimum: [bestX, bestY],
+    lambda: [lam],
+    gradF: gf,
+    gradG: [gg],
+    objectiveValue: f(bestX, bestY),
+  };
 }

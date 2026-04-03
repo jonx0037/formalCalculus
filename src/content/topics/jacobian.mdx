@@ -315,7 +315,7 @@ Geometrically: volume distortions compose multiplicatively. If $g$ scales volume
 </TheoremBlock>
 
 <TheoremBlock type="remark" number={3} title="When the Jacobian determinant is zero">
-$\det J_f(a) = 0$ means the linear approximation $J_f(a)$ is not invertible — it "collapses" a neighborhood of $a$ into a lower-dimensional set. This is the boundary between the Inverse Function Theorem applying (nonzero determinant implies $f$ is locally invertible) and failing (zero determinant implies a critical value). **Inverse & Implicit Function Theorems** *(coming soon)* develops this connection.
+$\det J_f(a) = 0$ means the linear approximation $J_f(a)$ is not invertible — it "collapses" a neighborhood of $a$ into a lower-dimensional set. This is the boundary between the Inverse Function Theorem applying (nonzero determinant implies $f$ is locally invertible) and failing (zero determinant implies a critical value). [Inverse & Implicit Function Theorems](/topics/inverse-implicit) develops this connection.
 </TheoremBlock>
 
 <JacobianDeterminantExplorer client:visible />
@@ -425,7 +425,7 @@ so bounding the Jacobian norm bounds the Lipschitz constant. This appears in adv
 - [Epsilon-Delta & Continuity](/topics/epsilon-delta) — The total derivative definition uses a multivariable limit, and the chain rule proof requires careful handling of error terms.
 - [Completeness & Compactness](/topics/completeness-compactness) — Compactness in $\mathbb{R}^n$ ensures continuous functions on closed bounded sets achieve their extrema.
 - [The Hessian & Second-Order Analysis](/topics/hessian) — The Hessian is the Jacobian of the gradient: $H_f = J(\nabla f)$. Second-order analysis builds directly on the chain rule and Jacobian framework developed here.
-- **Inverse & Implicit Function Theorems** *(coming soon)* — $\det J_f(a) \neq 0$ implies $f$ is locally invertible near $a$. The Implicit Function Theorem expresses part of the Jacobian as a function of the rest.
+- [**Inverse & Implicit Function Theorems**](/topics/inverse-implicit) — $\det J_f(a) \neq 0$ implies $f$ is locally invertible near $a$. The Implicit Function Theorem expresses part of the Jacobian as a function of the rest.
 - **Change of Variables** *(coming soon)* — The Jacobian determinant $|\det J_\phi|$ appears as the volume scaling factor in the substitution formula for multiple integrals.
 
 ![A gallery of grid deformations: four vector fields applied to a regular grid, each with the Jacobian matrix and determinant at a sample point.](/images/topics/jacobian/grid-deformation-gallery.png)

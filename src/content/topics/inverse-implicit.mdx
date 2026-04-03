@@ -1,0 +1,915 @@
+---
+title: "Inverse & Implicit Function Theorems"
+subtitle: "When can you locally invert a function? When can you solve F(x, y) = 0 for y?"
+status: "published"
+difficulty: "advanced"
+prerequisites:
+  - "hessian"
+tags:
+  - "calculus"
+  - "multivariable"
+  - "inverse-function-theorem"
+  - "implicit-function-theorem"
+  - "manifolds"
+  - "lagrange-multipliers"
+domain: "multivar-differential"
+videoId: null
+notebookPath: "notebooks/inverse-implicit/12_inverse_implicit.ipynb"
+githubUrl: "https://github.com/jonx0037/formalCalculus/blob/main/src/content/topics/inverse-implicit.mdx"
+datePublished: 2026-04-15
+estimatedReadTime: 45
+abstract: "The Inverse Function Theorem and the Implicit Function Theorem are the two great existence theorems of multivariable calculus. The IFT tells you when a differentiable function is locally invertible: if the Jacobian matrix is non-singular at a point, the function has a smooth local inverse. The ImFT tells you when a level set F(x, y) = 0 can be locally described as the graph of a function y = g(x): when the partial Jacobian with respect to y is invertible. Together, they provide the rigorous foundation for constraint optimization (Lagrange multipliers), the definition of smooth manifolds, change of variables in integration, and the local structure of parameter spaces in machine learning."
+formalmlConnections:
+  - topic: "gradient-descent"
+    site: "formalml"
+    relationship: "The IFT guarantees local convergence of gradient descent near non-degenerate minima: the gradient map is locally invertible when the Hessian is non-singular, ensuring that small perturbations from the optimum produce proportional gradient signals."
+  - topic: "smooth-manifolds"
+    site: "formalml"
+    relationship: "The Implicit Function Theorem is the foundational tool for proving that level sets are smooth manifolds. The regular value theorem — that F⁻¹(c) is a manifold when J_F has full rank on the level set — is a direct consequence of the ImFT."
+  - topic: "information-geometry"
+    site: "formalml"
+    relationship: "The statistical manifold of a parametric family is locally diffeomorphic to ℝⁿ via the IFT when the Fisher information matrix is non-singular. Reparametrization invariance relies on the IFT to guarantee that coordinate changes on the parameter space are locally invertible."
+connections:
+  - topic: "hessian"
+    relationship: "The Hessian H_f(a) = J(∇f)(a) is the Jacobian of the gradient map. Non-singularity of the Hessian at a critical point — the condition that makes the second derivative test conclusive — is exactly the IFT condition applied to ∇f: the gradient map is locally invertible, so the critical point is isolated."
+  - topic: "jacobian"
+    relationship: "The Jacobian matrix J_f(a) is the central object of both theorems. The IFT hypothesis det J_f(a) ≠ 0 says the linear approximation is invertible; the conclusion is that the nonlinear function itself is locally invertible. The chain rule J_{f⁻¹}(f(a)) · J_f(a) = I gives the derivative of the inverse."
+  - topic: "gradient"
+    relationship: "For scalar-valued functions f: ℝⁿ → ℝ, the gradient ∇f is the constraint surface normal. The Implicit Function Theorem applied to the level set f(x) = c recovers the geometry of gradient orthogonality to contours developed in Topic 9."
+  - topic: "completeness-compactness"
+    relationship: "The contraction mapping proof of the IFT uses completeness of ℝⁿ as a metric space: Cauchy sequences converge, so the iterative scheme converges to a fixed point. This is the first time completeness is used in a multivariable context — connecting Track 1 foundations to Track 3 existence theorems."
+  - topic: "epsilon-delta"
+    relationship: "The IFT is an existence theorem — its proof requires careful ε-δ arguments to control the size of neighborhoods where invertibility holds. The continuity of J_f (the C¹ hypothesis) is essential: it ensures that the Jacobian stays invertible in a neighborhood, not just at a single point."
+references:
+  - type: "book"
+    title: "Analysis on Manifolds"
+    authors: "Munkres"
+    year: 1991
+    note: "Chapter 7 develops the Inverse Function Theorem and the Implicit Function Theorem with careful attention to the neighborhoods where invertibility holds — the primary reference for our treatment"
+  - type: "book"
+    title: "Calculus on Manifolds"
+    authors: "Spivak"
+    year: 1965
+    note: "Chapter 2 proves the IFT via contraction mapping and derives the ImFT as a corollary — the cleanest modern treatment and our model for the proof structure"
+  - type: "book"
+    title: "Principles of Mathematical Analysis"
+    authors: "Rudin"
+    year: 1976
+    note: "Chapter 9, Theorems 9.24 and 9.28 — the IFT and ImFT in Rudin's characteristically concise style. Useful for the contraction mapping setup"
+  - type: "book"
+    title: "Introduction to Smooth Manifolds"
+    authors: "Lee"
+    year: 2013
+    note: "Chapter 4 uses the IFT/ImFT to define submersions, immersions, and the regular value theorem — the direct bridge to the smooth manifolds topic on formalml.com"
+  - type: "book"
+    title: "Numerical Optimization"
+    authors: "Nocedal & Wright"
+    year: 2006
+    note: "Chapter 12 on constrained optimization via Lagrange multipliers — the practical application of the ImFT in optimization"
+  - type: "paper"
+    title: "Neural Ordinary Differential Equations"
+    authors: "Chen, Rubanova, Bettencourt & Duvenaud"
+    year: 2018
+    url: "https://arxiv.org/abs/1806.07366"
+    note: "Neural ODEs use the IFT implicitly: the flow map of an ODE is locally invertible when the vector field is smooth, and the adjoint method computes gradients through this inverse"
+  - type: "paper"
+    title: "Density Estimation using Real-NVP"
+    authors: "Dinh, Sohl-Dickstein & Bengio"
+    year: 2017
+    url: "https://arxiv.org/abs/1605.08803"
+    note: "Normalizing flows construct diffeomorphisms with tractable Jacobian determinants — the IFT guarantees invertibility at every point in the flow"
+  - type: "paper"
+    title: "Deep Equilibrium Models"
+    authors: "Bai, Kolter & Koltun"
+    year: 2019
+    url: "https://arxiv.org/abs/1909.01377"
+    note: "DEQs find fixed points of implicit layers and differentiate through them via the ImFT — the canonical ML application of implicit differentiation"
+---
+
+import TheoremBlock from '../../components/ui/TheoremBlock.astro';
+import InverseMapExplorer from '../../components/viz/InverseMapExplorer.tsx';
+import ImplicitCurveExplorer from '../../components/viz/ImplicitCurveExplorer.tsx';
+import LagrangeMultiplierExplorer from '../../components/viz/LagrangeMultiplierExplorer.tsx';
+import ContractionMappingExplorer from '../../components/viz/ContractionMappingExplorer.tsx';
+
+## Overview & Motivation
+
+A normalizing flow transforms a simple distribution — say, a standard Gaussian — into a complex one by composing a sequence of invertible maps $f_1, f_2, \ldots, f_K$. The density of the transformed distribution involves the Jacobian determinant of each layer: $p_K(z_K) = p_0(z_0) \prod_{k=1}^{K} |\det J_{f_k}(z_{k-1})|^{-1}$. Every layer must be invertible, and we need to *know* it is invertible — not just hope. The Inverse Function Theorem provides exactly this guarantee: if the Jacobian matrix $J_f(a)$ is non-singular at a point $a$, then $f$ is locally invertible near $a$, with a smooth inverse whose own Jacobian is the matrix inverse $[J_f(f^{-1}(y))]^{-1}$. This is the foundational *existence* theorem that underpins the entire normalizing flow framework.
+
+The Implicit Function Theorem addresses a complementary question. Given a system of equations $F(x, y) = 0$ — such as the constraints in a Lagrangian optimization problem, or the fixed-point equation defining the output of a deep equilibrium model — when can we *solve* for $y$ as a smooth function of $x$? The ImFT says: when the partial Jacobian $D_y F$ is invertible at the point of interest, the level set $F(x, y) = 0$ is locally the graph of a $C^1$ function $y = g(x)$, and it hands us a formula for the derivative $g'(x)$. This is implicit differentiation elevated from a calculus trick to a rigorous existence theorem.
+
+These are *existence* theorems — they do not compute the inverse or the implicit function. They tell you *when* the thing you want exists and *what properties* it has. The computational toolkit was built in Topics 9 through 11: the [gradient](/topics/gradient) for first-order information, the [Jacobian](/topics/jacobian) for multivariate derivatives, the [Hessian](/topics/hessian) for second-order structure. This topic provides the theoretical guarantees that make the entire framework coherent.
+
+## Local Invertibility — The Geometric Picture
+
+Before stating the theorem, we need to be precise about what "invertible" means in the multivariable context — and in particular, the crucial distinction between local and global invertibility.
+
+<TheoremBlock type="definition" number={1} title="Local Diffeomorphism">
+Let $U \subseteq \mathbb{R}^n$ be open. A $C^1$ map $f: U \to \mathbb{R}^n$ is a *local diffeomorphism at $a \in U$* if there exist open sets $V \ni a$ and $W \ni f(a)$ such that $f|_V: V \to W$ is:
+
+1. **Bijective** (one-to-one and onto),
+2. **$C^1$** (continuously differentiable), and
+3. **Its inverse $f|_V^{-1}: W \to V$ is also $C^1$.**
+
+If $f$ is a local diffeomorphism at every point of $U$, we call it a *local diffeomorphism on $U$*. If $f: U \to f(U)$ is a bijective local diffeomorphism, it is a *(global) diffeomorphism*.
+</TheoremBlock>
+
+The word "local" is essential. A function can be a local diffeomorphism at every point and yet fail to be globally injective. The critical distinction: the IFT guarantees local invertibility from a *pointwise* condition (non-singular Jacobian at a single point), but global invertibility requires additional structure.
+
+<TheoremBlock type="example" number={1} title="Polar coordinates — local diffeomorphism with a singularity">
+The polar coordinate map $f: \mathbb{R}^2 \to \mathbb{R}^2$ defined by
+
+$$f(r, \theta) = (r\cos\theta,\; r\sin\theta)$$
+
+has Jacobian
+
+$$J_f(r, \theta) = \begin{pmatrix} \cos\theta & -r\sin\theta \\ \sin\theta & r\cos\theta \end{pmatrix}$$
+
+with determinant $\det J_f = r\cos^2\theta + r\sin^2\theta = r$. This is non-zero when $r \neq 0$, so $f$ is a local diffeomorphism everywhere except at the origin. At $r = 0$, the Jacobian is singular — and geometrically, all angles $\theta$ map to the same point $(0, 0)$. The polar coordinate map collapses an entire line ($r = 0$, all $\theta$) to a single point, which is the geometric source of the singularity.
+
+Restricting to $r > 0$ and $\theta \in (0, 2\pi)$, the map becomes a diffeomorphism onto $\mathbb{R}^2 \setminus \{(x, 0) : x \geq 0\}$. The restriction to $\theta \in (0, 2\pi)$ is necessary to prevent $\theta = 0$ and $\theta = 2\pi$ from mapping to the same point.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={2} title="Exponential map — everywhere locally invertible, not globally injective">
+Define $f: \mathbb{R}^2 \to \mathbb{R}^2$ by
+
+$$f(x, y) = (e^x \cos y,\; e^x \sin y).$$
+
+The Jacobian is
+
+$$J_f(x, y) = \begin{pmatrix} e^x\cos y & -e^x\sin y \\ e^x\sin y & e^x\cos y \end{pmatrix}$$
+
+with $\det J_f = e^{2x}(\cos^2 y + \sin^2 y) = e^{2x} > 0$ everywhere. The Jacobian is *never* singular — the IFT guarantees that $f$ is a local diffeomorphism at every point. Yet $f$ is not globally injective: $f(x, y) = f(x, y + 2\pi)$ for all $(x, y)$, because the complex exponential $e^{x+iy}$ is $2\pi i$-periodic. This is a clean example of the gap between "locally invertible everywhere" and "globally invertible."
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={1} title="Local vs. global invertibility in normalizing flows">
+The distinction between local and global invertibility is not merely a mathematical subtlety — it drives architectural decisions in machine learning. The IFT only guarantees *local* invertibility: given a non-singular Jacobian at one point, the function has a smooth inverse in *some* neighborhood. Normalizing flows need *global* bijectivity (every input maps to a unique output over the entire domain) to define valid density transformations.
+
+Architectures like Real-NVP and NICE achieve global bijectivity *by construction*: affine coupling layers $y_{1:d} = x_{1:d}$, $y_{d+1:n} = x_{d+1:n} \odot \exp(s(x_{1:d})) + t(x_{1:d})$ are globally invertible because the triangular structure makes the inverse explicit. The IFT is not needed for these architectures — but it *is* needed for residual flows $f(x) = x + g(x)$, where global invertibility requires additional conditions (e.g., Lipschitz constant of $g$ less than 1).
+</TheoremBlock>
+
+![The geometry of local invertibility: a map f sends a small neighborhood of a to a small neighborhood of f(a), with the Jacobian controlling the local distortion. When det J_f = 0, the map collapses a direction — the tangent space image loses a dimension.](/images/topics/inverse-implicit/local-invertibility-geometry.png)
+
+## The Inverse Function Theorem
+
+This is the central result. The hypothesis is a *pointwise* condition on the Jacobian; the conclusion is *local* invertibility with a smooth inverse.
+
+<TheoremBlock type="theorem" number={1} title="Inverse Function Theorem (IFT)">
+Let $U \subseteq \mathbb{R}^n$ be open and let $f: U \to \mathbb{R}^n$ be $C^1$ (continuously differentiable). Let $a \in U$ and $b = f(a)$. Suppose that the Jacobian matrix $J_f(a)$ is invertible (equivalently, $\det J_f(a) \neq 0$).
+
+Then there exist open sets $V \subseteq U$ with $a \in V$ and $W \subseteq \mathbb{R}^n$ with $b \in W$ such that:
+
+1. **Bijection:** $f: V \to W$ is a bijection.
+2. **Smooth inverse:** The inverse function $g = f^{-1}: W \to V$ is $C^1$.
+3. **Derivative formula:** For every $y \in W$,
+
+$$J_g(y) = [J_f(g(y))]^{-1}.$$
+
+In words: if the linear approximation to $f$ at $a$ is invertible, then $f$ itself is invertible in a neighborhood of $a$, with a $C^1$ inverse whose Jacobian is the matrix inverse of $J_f$ evaluated at the corresponding point.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+We prove the IFT via the Contraction Mapping Theorem (Theorem 2 below). The strategy: reformulate the equation $f(x) = y$ as a fixed-point problem $T_y(x) = x$, show that $T_y$ is a contraction on a closed ball near $a$, and invoke completeness to obtain the unique fixed point $g(y) = f^{-1}(y)$.
+
+**Setup.** Let $A = J_f(a)$. Since $\det A \neq 0$, the inverse $A^{-1}$ exists. Define the auxiliary map
+
+$$T_y(x) = x + A^{-1}(y - f(x)) = x - A^{-1}(f(x) - y).$$
+
+Observe that $T_y(x) = x$ if and only if $A^{-1}(y - f(x)) = 0$, which (since $A^{-1}$ is invertible) happens if and only if $f(x) = y$. So finding a fixed point of $T_y$ is equivalent to solving $f(x) = y$.
+
+**Step 1: $T_y$ is a contraction near $a$.** The Jacobian of $T_y$ with respect to $x$ is
+
+$$DT_y(x) = I - A^{-1} J_f(x) = A^{-1}(A - J_f(x)).$$
+
+Since $J_f$ is continuous (the $C^1$ hypothesis) and $J_f(a) = A$, for any $\varepsilon > 0$ there exists $\delta > 0$ such that
+
+$$\|x - a\| < \delta \implies \|J_f(x) - A\| < \varepsilon.$$
+
+Choose $\varepsilon = \frac{1}{2\|A^{-1}\|}$. Then for $\|x - a\| < \delta$:
+
+$$\|DT_y(x)\| = \|A^{-1}(A - J_f(x))\| \leq \|A^{-1}\| \cdot \|A - J_f(x)\| < \|A^{-1}\| \cdot \frac{1}{2\|A^{-1}\|} = \frac{1}{2}.$$
+
+By the Mean Value Inequality (the multivariable Mean Value Theorem), for any $x_1, x_2 \in B(a, \delta)$:
+
+$$\|T_y(x_1) - T_y(x_2)\| \leq \sup_{x \in B(a, \delta)} \|DT_y(x)\| \cdot \|x_1 - x_2\| \leq \frac{1}{2}\|x_1 - x_2\|.$$
+
+So $T_y$ is a contraction with Lipschitz constant $\lambda = \frac{1}{2}$ on $B(a, \delta)$.
+
+**Step 2: $T_y$ maps $\overline{B}(a, r)$ to itself for $y$ near $b$.** Fix $r \leq \delta$ (so the contraction estimate holds on $\overline{B}(a, r)$). For any $x \in \overline{B}(a, r)$:
+
+$$\|T_y(x) - a\| \leq \|T_y(x) - T_y(a)\| + \|T_y(a) - a\|.$$
+
+The first term is controlled by the contraction:
+
+$$\|T_y(x) - T_y(a)\| \leq \frac{1}{2}\|x - a\| \leq \frac{r}{2}.$$
+
+For the second term:
+
+$$\|T_y(a) - a\| = \|a + A^{-1}(y - f(a)) - a\| = \|A^{-1}(y - b)\| \leq \|A^{-1}\| \cdot \|y - b\|.$$
+
+Therefore:
+
+$$\|T_y(x) - a\| \leq \frac{r}{2} + \|A^{-1}\| \cdot \|y - b\|.$$
+
+This is $\leq r$ provided $\|y - b\| \leq \frac{r}{2\|A^{-1}\|}$. So let $W = B\!\left(b, \frac{r}{2\|A^{-1}\|}\right)$. For every $y \in W$, the map $T_y$ sends $\overline{B}(a, r)$ to itself.
+
+**Step 3: Fixed point existence and uniqueness.** The closed ball $\overline{B}(a, r) \subset \mathbb{R}^n$ is a complete metric space (closed subsets of complete metric spaces are complete, and $\mathbb{R}^n$ is complete — this is where [completeness](/topics/completeness-compactness) enters the proof). The map $T_y: \overline{B}(a, r) \to \overline{B}(a, r)$ is a contraction with constant $\frac{1}{2}$.
+
+By the Contraction Mapping Theorem (Theorem 2), $T_y$ has a unique fixed point $g(y) \in \overline{B}(a, r)$. Since $T_y(g(y)) = g(y)$ if and only if $f(g(y)) = y$, we have constructed a function $g: W \to V = B(a, r)$ such that $f(g(y)) = y$ for all $y \in W$.
+
+**Injectivity of $f$ on $V$:** If $f(x_1) = f(x_2) = y$ for $x_1, x_2 \in V$, then both $x_1$ and $x_2$ are fixed points of $T_y$ on $\overline{B}(a, r)$. By uniqueness of the fixed point, $x_1 = x_2$. So $f|_V$ is injective.
+
+**Surjectivity onto $W$:** For every $y \in W$, the fixed point $g(y)$ satisfies $f(g(y)) = y$, so $y \in f(V)$. Therefore $f(V) \supseteq W$. (We may shrink $V$ so that $f(V) = W$.)
+
+This establishes part (1): $f: V \to W$ is a bijection with inverse $g$.
+
+**Step 4: $g$ is $C^1$.** We show that $g$ is continuous, then differentiable, then $C^1$.
+
+*Continuity of $g$:* For $y_1, y_2 \in W$, let $x_i = g(y_i)$, so $f(x_i) = y_i$. Then:
+
+$$\|x_1 - x_2\| = \|T_{y_1}(x_1) - T_{y_2}(x_2)\|$$
+$$= \|(x_1 + A^{-1}(y_1 - f(x_1))) - (x_2 + A^{-1}(y_2 - f(x_2)))\|$$
+$$= \|(x_1 - x_2) + A^{-1}((y_1 - y_2) - (f(x_1) - f(x_2)))\|$$
+$$= \|T_{y_1}(x_1) - T_{y_1}(x_2) + A^{-1}(y_1 - y_2)\|$$
+$$\leq \|T_{y_1}(x_1) - T_{y_1}(x_2)\| + \|A^{-1}\|\|y_1 - y_2\|$$
+$$\leq \frac{1}{2}\|x_1 - x_2\| + \|A^{-1}\|\|y_1 - y_2\|.$$
+
+Rearranging: $\|g(y_1) - g(y_2)\| = \|x_1 - x_2\| \leq 2\|A^{-1}\|\|y_1 - y_2\|$. So $g$ is Lipschitz (hence continuous).
+
+*Differentiability:* Since $f(g(y)) = y$ and $f$ is differentiable with invertible Jacobian $J_f(g(y))$ (invertibility persists in a neighborhood because $\det J_f$ is a continuous function that is nonzero at $a$, hence nonzero near $a$), we differentiate both sides using the [chain rule](/topics/jacobian):
+
+$$J_f(g(y)) \cdot J_g(y) = I.$$
+
+Solving: $J_g(y) = [J_f(g(y))]^{-1}$.
+
+*$C^1$ regularity:* The map $y \mapsto J_g(y)$ is the composition
+
+$$y \xrightarrow{g} g(y) \xrightarrow{J_f} J_f(g(y)) \xrightarrow{\text{inv}} [J_f(g(y))]^{-1}.$$
+
+Each arrow is continuous: $g$ is continuous (shown above), $J_f$ is continuous (by the $C^1$ hypothesis on $f$), and matrix inversion $M \mapsto M^{-1}$ is continuous on $GL(n)$ (the set of invertible matrices). Therefore $J_g$ is continuous, which means $g$ is $C^1$.
+
+$\square$
+</TheoremBlock>
+
+The proof uses the Contraction Mapping Theorem as a black box. Let us now state and prove it.
+
+<TheoremBlock type="theorem" number={2} title="Contraction Mapping Theorem (Banach Fixed-Point Theorem)">
+Let $(X, d)$ be a *complete* metric space and let $T: X \to X$ be a *contraction*: there exists $\lambda \in [0, 1)$ such that
+
+$$d(T(x), T(y)) \leq \lambda \, d(x, y) \quad \text{for all } x, y \in X.$$
+
+Then $T$ has a unique fixed point $x^* \in X$ (i.e., $T(x^*) = x^*$). Moreover, for any starting point $x_0 \in X$, the iterates $x_{k+1} = T(x_k)$ converge to $x^*$, with the convergence rate bound
+
+$$d(x_k, x^*) \leq \frac{\lambda^k}{1 - \lambda} \, d(x_0, x_1).$$
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+**Existence.** Pick any $x_0 \in X$ and define $x_{k+1} = T(x_k)$. We show $(x_k)$ is Cauchy. By the contraction property:
+
+$$d(x_{k+1}, x_k) = d(T(x_k), T(x_{k-1})) \leq \lambda \, d(x_k, x_{k-1}) \leq \cdots \leq \lambda^k d(x_1, x_0).$$
+
+For $m > n$, the triangle inequality gives:
+
+$$d(x_n, x_m) \leq \sum_{k=n}^{m-1} d(x_k, x_{k+1}) \leq \sum_{k=n}^{m-1} \lambda^k d(x_0, x_1) \leq \frac{\lambda^n}{1 - \lambda}\, d(x_0, x_1).$$
+
+Since $0 \leq \lambda < 1$, we have $\lambda^n \to 0$ as $n \to \infty$. For any $\varepsilon > 0$, choose $N$ such that $\frac{\lambda^N}{1-\lambda} d(x_0, x_1) < \varepsilon$. Then for all $m > n \geq N$, $d(x_n, x_m) < \varepsilon$. So $(x_k)$ is Cauchy.
+
+Since $X$ is complete, the Cauchy sequence $(x_k)$ converges to some $x^* \in X$.
+
+**$x^*$ is a fixed point.** Since $T$ is a contraction, it is Lipschitz, hence continuous. Therefore:
+
+$$T(x^*) = T\!\left(\lim_{k \to \infty} x_k\right) = \lim_{k \to \infty} T(x_k) = \lim_{k \to \infty} x_{k+1} = x^*.$$
+
+**Uniqueness.** Suppose $T(x^*) = x^*$ and $T(y^*) = y^*$. Then:
+
+$$d(x^*, y^*) = d(T(x^*), T(y^*)) \leq \lambda \, d(x^*, y^*).$$
+
+Since $\lambda < 1$, this implies $(1 - \lambda) d(x^*, y^*) \leq 0$, so $d(x^*, y^*) = 0$, hence $x^* = y^*$.
+
+**Rate bound.** Letting $m \to \infty$ in the estimate $d(x_n, x_m) \leq \frac{\lambda^n}{1-\lambda} d(x_0, x_1)$:
+
+$$d(x_n, x^*) = \lim_{m \to \infty} d(x_n, x_m) \leq \frac{\lambda^n}{1 - \lambda}\, d(x_0, x_1).$$
+
+$\square$
+</TheoremBlock>
+
+<TheoremBlock type="example" number={3} title="Inverse Jacobian for the complex squaring map">
+Define $f: \mathbb{R}^2 \to \mathbb{R}^2$ by $f(x, y) = (x^2 - y^2,\; 2xy)$ — this is the real-variable form of the complex map $z \mapsto z^2$, where $z = x + iy$.
+
+The Jacobian is:
+
+$$J_f(x, y) = \begin{pmatrix} 2x & -2y \\ 2y & 2x \end{pmatrix}, \qquad \det J_f = 4x^2 + 4y^2 = 4|z|^2.$$
+
+At $a = (1, 1)$: $\det J_f(1, 1) = 8 \neq 0$, so the IFT guarantees a local inverse near $b = f(1, 1) = (0, 2)$.
+
+The inverse Jacobian is:
+
+$$[J_f(1,1)]^{-1} = \frac{1}{8}\begin{pmatrix} 2 & 2 \\ -2 & 2 \end{pmatrix} = \begin{pmatrix} 1/4 & 1/4 \\ -1/4 & 1/4 \end{pmatrix}.$$
+
+This tells us that a small perturbation $\Delta y = (\Delta u, \Delta v)$ near $b = (0, 2)$ produces a perturbation $\Delta x \approx [J_f(1,1)]^{-1} \Delta y$ near $a = (1,1)$.
+
+The Jacobian is singular when $|z| = 0$, i.e., at the origin — exactly where the complex squaring map $z^2$ has a branch point. The IFT fails at the origin, and indeed $z^2$ is two-to-one in every neighborhood of $0$ (except at $0$ itself).
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={2} title="Higher regularity: the C^k version">
+The IFT as stated gives a $C^1$ inverse when $f$ is $C^1$. But the regularity transfers: if $f$ is $C^k$ (all partial derivatives up to order $k$ exist and are continuous), then the local inverse $g$ is also $C^k$. If $f$ is $C^\infty$ (smooth), so is $g$. If $f$ is real-analytic, so is $g$.
+
+The key to the induction is the derivative formula $J_g(y) = [J_f(g(y))]^{-1}$. If $g$ is $C^{k-1}$ and $J_f$ is $C^{k-1}$ (which follows from $f$ being $C^k$), then $J_g$ is a composition of $C^{k-1}$ maps with matrix inversion, hence $C^{k-1}$. But $J_g$ being $C^{k-1}$ means $g$ is $C^k$.
+</TheoremBlock>
+
+<InverseMapExplorer client:visible />
+
+![The Inverse Function Theorem: a C^1 map f with non-singular Jacobian at a point a is a local diffeomorphism — it maps a neighborhood of a bijectively onto a neighborhood of f(a), with a smooth inverse.](/images/topics/inverse-implicit/inverse-function-theorem.png)
+
+## The Derivative of the Inverse
+
+The derivative formula $J_g(y) = [J_f(g(y))]^{-1}$ from the IFT proof deserves its own spotlight — it is the tool you actually use to compute derivatives of inverse functions in practice.
+
+<TheoremBlock type="proposition" number={1} title="Jacobian of the Inverse">
+Let $f: V \to W$ be a $C^1$ diffeomorphism with inverse $g = f^{-1}: W \to V$. Then for every $y \in W$:
+
+$$J_g(y) = [J_f(g(y))]^{-1}.$$
+
+In components: if $f = (f_1, \ldots, f_n)$ and $g = (g_1, \ldots, g_n)$, then
+
+$$\frac{\partial g_i}{\partial y_j}(y) = \left([J_f(g(y))]^{-1}\right)_{ij}.$$
+
+In the scalar case $n = 1$, this reduces to the familiar formula $(f^{-1})'(y) = \frac{1}{f'(f^{-1}(y))}$.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+Differentiate $f(g(y)) = y$ with respect to $y$ using the [chain rule](/topics/jacobian):
+
+$$J_f(g(y)) \cdot J_g(y) = I_n.$$
+
+Since $J_f(g(y))$ is invertible (invertibility persists in a neighborhood of $a$ by continuity of $\det J_f$), multiply both sides on the left by $[J_f(g(y))]^{-1}$:
+
+$$J_g(y) = [J_f(g(y))]^{-1}.$$
+
+$\square$
+</TheoremBlock>
+
+<TheoremBlock type="example" number={4} title="Inverse derivative for polar coordinates">
+Polar coordinates: $f(r, \theta) = (r\cos\theta, r\sin\theta)$ with inverse $g(x, y) = \left(\sqrt{x^2 + y^2},\; \arctan(y/x)\right)$ (for $x > 0$).
+
+**Via the formula:** At the point $(r, \theta) = (2, \pi/6)$, so $(x, y) = (\sqrt{3}, 1)$:
+
+$$J_f(2, \pi/6) = \begin{pmatrix} \cos(\pi/6) & -2\sin(\pi/6) \\ \sin(\pi/6) & 2\cos(\pi/6) \end{pmatrix} = \begin{pmatrix} \sqrt{3}/2 & -1 \\ 1/2 & \sqrt{3} \end{pmatrix}.$$
+
+The determinant is $r = 2$. So:
+
+$$J_g(\sqrt{3}, 1) = [J_f(2, \pi/6)]^{-1} = \frac{1}{2}\begin{pmatrix} \sqrt{3} & 1 \\ -1/2 & \sqrt{3}/2 \end{pmatrix} = \begin{pmatrix} \sqrt{3}/2 & 1/2 \\ -1/4 & \sqrt{3}/4 \end{pmatrix}.$$
+
+**Direct computation (verification):**
+
+$$\frac{\partial r}{\partial x} = \frac{x}{\sqrt{x^2+y^2}} = \frac{\sqrt{3}}{2}, \quad \frac{\partial r}{\partial y} = \frac{y}{\sqrt{x^2+y^2}} = \frac{1}{2},$$
+
+$$\frac{\partial \theta}{\partial x} = \frac{-y}{x^2+y^2} = \frac{-1}{4}, \quad \frac{\partial \theta}{\partial y} = \frac{x}{x^2+y^2} = \frac{\sqrt{3}}{4}.$$
+
+The results agree. The formula $J_g = [J_f(g(y))]^{-1}$ saves us the trouble of computing the inverse function and differentiating it directly — which in higher dimensions may not be feasible.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={5} title="Inverse derivative in a normalizing flow coupling layer">
+An affine coupling layer in Real-NVP splits the input $z = (z_a, z_b) \in \mathbb{R}^d \times \mathbb{R}^{d'}$ and defines:
+
+$$f(z_a, z_b) = (z_a,\; z_b \odot \exp(s(z_a)) + t(z_a))$$
+
+where $s, t: \mathbb{R}^d \to \mathbb{R}^{d'}$ are neural networks and $\odot$ is elementwise multiplication. The Jacobian is block-triangular:
+
+$$J_f = \begin{pmatrix} I_d & 0 \\ \frac{\partial}{\partial z_a}[z_b \odot e^{s(z_a)} + t(z_a)] & \operatorname{diag}(e^{s(z_a)}) \end{pmatrix}.$$
+
+The determinant is $\det J_f = \prod_{j=1}^{d'} \exp(s_j(z_a)) = \exp\!\left(\sum_j s_j(z_a)\right)$, which is always positive — so the IFT is satisfied everywhere. The inverse is explicit: $g(y_a, y_b) = (y_a,\; (y_b - t(y_a)) \odot \exp(-s(y_a)))$. The inverse Jacobian is:
+
+$$J_g = [J_f]^{-1} = \begin{pmatrix} I_d & 0 \\ * & \operatorname{diag}(e^{-s(y_a)}) \end{pmatrix}$$
+
+with $\log|\det J_g| = -\sum_j s_j(y_a)$. The entire normalizing flow density computation reduces to evaluating the $s$ network — this is why coupling layers are popular.
+</TheoremBlock>
+
+![Computing the inverse Jacobian: the formula avoids computing the inverse function explicitly. The left panel shows the forward Jacobian field; the right panel shows the inverse Jacobian field.](/images/topics/inverse-implicit/local-inverse-computation.png)
+
+## The Implicit Function Theorem
+
+The Inverse Function Theorem answers "when is $f(x) = y$ solvable for $x$ near a known solution?" The Implicit Function Theorem answers a more structured question: given a system $F(x, y) = 0$ where $x$ and $y$ play different roles, when can we solve for $y$ as a function of $x$?
+
+<TheoremBlock type="definition" number={2} title="Implicit Equation and Level Set">
+Let $F: \mathbb{R}^n \times \mathbb{R}^m \to \mathbb{R}^m$ be a $C^1$ map. An *implicit equation* is the system $F(x, y) = 0$, where $x \in \mathbb{R}^n$ and $y \in \mathbb{R}^m$. The *level set* (or *solution set*) is
+
+$$S = \{(x, y) \in \mathbb{R}^{n+m} : F(x, y) = 0\}.$$
+
+We say $y = g(x)$ is an *implicit function defined by $F$* near a point $(a, b)$ if $g$ is a $C^1$ map defined on a neighborhood of $a$ such that $F(x, g(x)) = 0$ for all $x$ in that neighborhood, and $g(a) = b$.
+</TheoremBlock>
+
+To state the theorem, we need to decompose the Jacobian of $F$ into parts corresponding to the $x$-variables and $y$-variables.
+
+<TheoremBlock type="definition" number={3} title="Partial Jacobians">
+Let $F: \mathbb{R}^n \times \mathbb{R}^m \to \mathbb{R}^m$ be $C^1$. At a point $(a, b)$, the *partial Jacobian with respect to $x$* is the $m \times n$ matrix
+
+$$D_x F(a,b) = \left(\frac{\partial F_i}{\partial x_j}(a,b)\right)_{\substack{1 \leq i \leq m \\ 1 \leq j \leq n}}$$
+
+and the *partial Jacobian with respect to $y$* is the $m \times m$ matrix
+
+$$D_y F(a,b) = \left(\frac{\partial F_i}{\partial y_k}(a,b)\right)_{\substack{1 \leq i \leq m \\ 1 \leq k \leq m}}.$$
+
+The full Jacobian of $F$ viewed as a map $\mathbb{R}^{n+m} \to \mathbb{R}^m$ is the $m \times (n+m)$ block matrix $J_F(a,b) = \begin{pmatrix} D_x F(a,b) & D_y F(a,b) \end{pmatrix}$.
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={3} title="Implicit Function Theorem (ImFT)">
+Let $F: \mathbb{R}^n \times \mathbb{R}^m \to \mathbb{R}^m$ be $C^1$ in a neighborhood of $(a, b) \in \mathbb{R}^{n+m}$. Suppose:
+
+- $F(a, b) = 0$, and
+- the partial Jacobian $D_y F(a, b)$ is invertible ($\det D_y F(a, b) \neq 0$).
+
+Then there exist open sets $U \ni a$ in $\mathbb{R}^n$ and $V \ni b$ in $\mathbb{R}^m$ such that:
+
+1. **Existence and uniqueness:** For every $x \in U$, there is a unique $y = g(x) \in V$ with $F(x, g(x)) = 0$.
+2. **Smoothness:** The implicit function $g: U \to V$ is $C^1$.
+3. **Derivative formula:**
+
+$$J_g(x) = -[D_y F(x, g(x))]^{-1} \, D_x F(x, g(x)).$$
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+We derive the ImFT from the IFT by a standard augmentation trick.
+
+**Step 1: Construct an auxiliary map.** Define $\Phi: \mathbb{R}^n \times \mathbb{R}^m \to \mathbb{R}^n \times \mathbb{R}^m$ by
+
+$$\Phi(x, y) = (x, \, F(x, y)).$$
+
+So $\Phi$ keeps $x$ unchanged and applies $F$ to get the second component. Note $\Phi(a, b) = (a, F(a,b)) = (a, 0)$.
+
+**Step 2: Compute the Jacobian of $\Phi$.** The Jacobian of $\Phi$ at $(a, b)$ is the $(n+m) \times (n+m)$ block matrix:
+
+$$J_\Phi(a, b) = \begin{pmatrix} I_n & 0 \\ D_x F(a,b) & D_y F(a,b) \end{pmatrix}.$$
+
+The determinant of this block-triangular matrix is:
+
+$$\det J_\Phi(a, b) = \det I_n \cdot \det D_y F(a, b) = \det D_y F(a, b) \neq 0$$
+
+by hypothesis. So $J_\Phi(a, b)$ is invertible.
+
+**Step 3: Apply the IFT to $\Phi$.** By the Inverse Function Theorem (Theorem 1), $\Phi$ is locally invertible near $(a, b)$: there exist neighborhoods $\widetilde{V} \ni (a, b)$ and $\widetilde{W} \ni (a, 0)$ and a $C^1$ inverse $\Psi = \Phi^{-1}: \widetilde{W} \to \widetilde{V}$.
+
+Since $\Phi(x, y) = (x, F(x, y))$, the first component of $\Phi$ is the identity on $x$. Therefore the inverse $\Psi$ has the form $\Psi(x, w) = (x, \psi(x, w))$ for some $C^1$ function $\psi$, because the first component must invert the identity.
+
+**Step 4: Extract $g$.** Set $w = 0$: the equation $\Phi(x, y) = (x, 0)$ means $F(x, y) = 0$. Its unique solution near $(a, b)$ is $(x, y) = \Psi(x, 0) = (x, \psi(x, 0))$. Define $g(x) = \psi(x, 0)$. Then:
+
+- $g(a) = \psi(a, 0) = b$ (since $\Psi(a, 0) = (a, b)$),
+- $F(x, g(x)) = 0$ for all $x$ near $a$,
+- $g$ is $C^1$ (as a restriction of the $C^1$ map $\psi$).
+
+**Step 5: Derive the derivative formula.** Differentiate $F(x, g(x)) = 0$ with respect to $x$ using the chain rule:
+
+$$D_x F(x, g(x)) + D_y F(x, g(x)) \cdot J_g(x) = 0.$$
+
+Solving for $J_g(x)$ (using the invertibility of $D_y F$):
+
+$$J_g(x) = -[D_y F(x, g(x))]^{-1}\, D_x F(x, g(x)).$$
+
+$\square$
+</TheoremBlock>
+
+<TheoremBlock type="example" number={6} title="The unit circle: x^2 + y^2 = 1">
+Let $F(x, y) = x^2 + y^2 - 1$. The level set $F = 0$ is the unit circle $S^1$.
+
+We have $F_x = 2x$ and $F_y = 2y$. The ImFT applies at any $(a, b) \in S^1$ where $F_y(a, b) = 2b \neq 0$, i.e., where $b \neq 0$.
+
+Near $(0, 1)$: $F_y(0, 1) = 2 \neq 0$. The ImFT gives $g(x) = \sqrt{1 - x^2}$ (the upper semicircle) with
+
+$$g'(x) = -\frac{F_x}{F_y} = -\frac{2x}{2\sqrt{1-x^2}} = -\frac{x}{\sqrt{1-x^2}}.$$
+
+Near $(0, -1)$: $F_y(0, -1) = -2 \neq 0$. The ImFT gives $g(x) = -\sqrt{1 - x^2}$ (the lower semicircle).
+
+At $(\pm 1, 0)$: $F_y = 0$. The ImFT *does not apply*, and indeed the circle has vertical tangent lines there — $y$ cannot be expressed as a function of $x$ near these points. However, $F_x(\pm 1, 0) = \pm 2 \neq 0$, so by applying the ImFT with the roles of $x$ and $y$ reversed, we can solve for $x = h(y)$ near these points.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={7} title="A 2D system: two constraints in four variables">
+Let $F: \mathbb{R}^2 \times \mathbb{R}^2 \to \mathbb{R}^2$ be defined by
+
+$$F(x_1, x_2, y_1, y_2) = \begin{pmatrix} x_1 y_1 + x_2 y_2 - 1 \\ x_1^2 + y_1^2 - x_2 \end{pmatrix}.$$
+
+At the point $(a, b) = ((1, 1), (1, 0))$: $F(1, 1, 1, 0) = (1 \cdot 1 + 1 \cdot 0 - 1,\; 1 + 1 - 1) = (0, 1) \neq 0$. Let us adjust: take $(a, b) = ((1, 2), (1, 0))$. Then $F(1, 2, 1, 0) = (1 + 0 - 1,\; 1 + 1 - 2) = (0, 0)$. Good.
+
+The partial Jacobian with respect to $(y_1, y_2)$:
+
+$$D_y F = \begin{pmatrix} x_1 & x_2 \\ 2y_1 & 0 \end{pmatrix}.$$
+
+At our point: $D_y F(1, 2, 1, 0) = \begin{pmatrix} 1 & 2 \\ 2 & 0 \end{pmatrix}$ with $\det D_y F = -4 \neq 0$.
+
+The ImFT guarantees a $C^1$ function $g = (g_1, g_2): U \to \mathbb{R}^2$ with $g(1, 2) = (1, 0)$ and $F(x, g(x)) = 0$ near $(1, 2)$. The derivative is:
+
+$$J_g(x) = -[D_y F]^{-1} D_x F = -\frac{1}{-4}\begin{pmatrix} 0 & -2 \\ -2 & 1 \end{pmatrix}\begin{pmatrix} y_1 & y_2 \\ 2x_1 & 0 \end{pmatrix}.$$
+
+At our point: $D_x F = \begin{pmatrix} 1 & 0 \\ 2 & 0 \end{pmatrix}$, so $J_g = \frac{1}{4}\begin{pmatrix} 0 & -2 \\ -2 & 1 \end{pmatrix}\begin{pmatrix} 1 & 0 \\ 2 & 0 \end{pmatrix} = \frac{1}{4}\begin{pmatrix} -4 & 0 \\ 0 & 0 \end{pmatrix} = \begin{pmatrix} -1 & 0 \\ 0 & 0 \end{pmatrix}$.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={3} title="The ImFT as a corollary of the IFT">
+The proof above makes the logical relationship clear: the Implicit Function Theorem is a *corollary* of the Inverse Function Theorem. The augmentation trick — defining $\Phi(x, y) = (x, F(x, y))$ to turn a rectangular system into a square one — is the standard reduction. Conversely, the IFT is a special case of the ImFT: to find $x$ such that $f(x) = y$, set $F(x, y) = f(x) - y$ and apply the ImFT. The two theorems are logically equivalent.
+</TheoremBlock>
+
+<ImplicitCurveExplorer client:visible />
+
+![Implicit curves defined by F(x,y) = 0 for various functions F. The Implicit Function Theorem guarantees local graph structure wherever the gradient of F is nonzero — the curve has a well-defined tangent line and can be locally parameterized.](/images/topics/inverse-implicit/implicit-curves.png)
+
+## Implicit Differentiation
+
+The derivative formula from the ImFT is the rigorous version of the "implicit differentiation" technique from introductory calculus. Let us spell it out and apply it.
+
+<TheoremBlock type="proposition" number={2} title="Implicit Differentiation Formula">
+Let $F: \mathbb{R}^n \times \mathbb{R}^m \to \mathbb{R}^m$ be $C^1$ with $F(a, b) = 0$ and $\det D_y F(a, b) \neq 0$. If $y = g(x)$ is the implicit function guaranteed by the ImFT, then:
+
+$$J_g(x) = -[D_y F(x, g(x))]^{-1}\, D_x F(x, g(x)).$$
+
+In the scalar case $n = m = 1$ (one equation $F(x, y) = 0$, one unknown $y$):
+
+$$g'(x) = -\frac{F_x(x, g(x))}{F_y(x, g(x))}.$$
+</TheoremBlock>
+
+<TheoremBlock type="example" number={8} title="Implicit differentiation on the circle (verification)">
+$F(x, y) = x^2 + y^2 - 1$. Near $(0, 1)$, the ImFT gives $g(x) = \sqrt{1 - x^2}$.
+
+**Implicit differentiation:**
+
+$$g'(x) = -\frac{F_x}{F_y} = -\frac{2x}{2y} = -\frac{x}{y} = -\frac{x}{g(x)} = -\frac{x}{\sqrt{1 - x^2}}.$$
+
+**Direct differentiation of $g(x) = \sqrt{1-x^2}$:**
+
+$$g'(x) = \frac{-2x}{2\sqrt{1-x^2}} = -\frac{x}{\sqrt{1-x^2}}.$$
+
+The results agree. The point of implicit differentiation is that we obtained $g'$ *without* solving for $g$ explicitly — we only needed the partial derivatives of $F$. In higher dimensions, where explicit solutions are typically impossible, the implicit formula is the only option.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={9} title="Tangent to an elliptic curve — singular points">
+Consider the elliptic curve $F(x, y) = y^2 - x^3 + x = 0$.
+
+**Partial derivatives:** $F_x = -3x^2 + 1$, $F_y = 2y$.
+
+**Implicit derivative:** $g'(x) = -\frac{-3x^2 + 1}{2y} = \frac{3x^2 - 1}{2y}$.
+
+At $(0, 0)$: $F(0, 0) = 0$ (the origin is on the curve), but $F_y(0, 0) = 0$, so the ImFT does not apply. Also $F_x(0, 0) = 1 \neq 0$, so we *can* solve for $x$ as a function of $y$ near the origin. The curve passes through the origin with a vertical tangent? Let us check: near $(0, 0)$, $y^2 \approx x^3 - x = x(x^2 - 1) \approx -x$ for small $x$. So $y \approx \pm\sqrt{-x}$, defined only for $x \leq 0$. The curve has a *cusp-like* structure near the origin.
+
+At $(1, 0)$: $F(1, 0) = 0 - 1 + 1 = 0$ and $F_y(1, 0) = 0$, but $F_x(1, 0) = -3 + 1 = -2 \neq 0$. Similar analysis: we can solve for $x = h(y)$ but not $y = g(x)$.
+
+At $(1, 1)$: $F(1, 1) = 1 - 1 + 1 = 1 \neq 0$. This point is not on the curve.
+
+At a regular point like $(-1, 1)$: $F(-1, 1) = 1 + 1 - 1 = 1 \neq 0$. Also not on the curve. Let us find a regular point: $(x, y)$ with $y^2 = x^3 - x$ and $F_y = 2y \neq 0$. Take $x = 2$: $y^2 = 8 - 2 = 6$, so $y = \sqrt{6}$. Then $g'(2) = \frac{12 - 1}{2\sqrt{6}} = \frac{11}{2\sqrt{6}}$.
+
+The singular points of an elliptic curve (where both $F_x = 0$ and $F_y = 0$) are precisely where the ImFT fails in both the $x$-for-$y$ and $y$-for-$x$ directions. For a *non-singular* elliptic curve, the gradient $\nabla F$ never vanishes on the curve, so the ImFT guarantees local graph structure everywhere on $S$.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={4} title="Second-order implicit differentiation">
+The ImFT derivative formula gives the first derivative of $g$. To find $g''(x)$ (which connects to the [Hessian](/topics/hessian)), differentiate $g'(x) = -F_x/F_y$ using the quotient rule and the chain rule — remembering that $y = g(x)$ depends on $x$:
+
+$$g''(x) = -\frac{F_{xx} F_y^2 - 2F_{xy} F_x F_y + F_{yy} F_x^2}{F_y^3}$$
+
+(all partials evaluated at $(x, g(x))$). This expression involves the second-order partials $F_{xx}$, $F_{xy}$, $F_{yy}$ — the entries of the Hessian of $F$. The curvature of the implicit curve $F(x, y) = 0$ is governed by the interplay between the Hessian of $F$ and the gradient of $F$. This is the bridge between the implicit function machinery and the second-order analysis from [Topic 11](/topics/hessian).
+</TheoremBlock>
+
+![Implicit differentiation in higher dimensions: the derivative formula computes the derivative of the implicit function without solving for it explicitly. The left panel shows a constraint surface in 3D; the right panel shows the resulting implicit function and its derivative.](/images/topics/inverse-implicit/implicit-differentiation-higher-dim.png)
+
+## Constraint Optimization & Lagrange Multipliers
+
+The ImFT provides the theoretical backbone for constrained optimization — the setting where we minimize a function subject to equality constraints.
+
+<TheoremBlock type="definition" number={4} title="Constrained Optimization Problem">
+Given $f: \mathbb{R}^n \to \mathbb{R}$ (the *objective function*) and $G: \mathbb{R}^n \to \mathbb{R}^m$ with $m < n$ (the *constraint map*), the constrained optimization problem is:
+
+$$\min_{x \in \mathbb{R}^n} f(x) \quad \text{subject to} \quad G(x) = 0.$$
+
+The *constraint set* (or *feasible set*) is $S = \{x \in \mathbb{R}^n : G(x) = 0\}$.
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={4} title="Lagrange Multiplier Necessary Condition">
+Let $f: \mathbb{R}^n \to \mathbb{R}$ and $G = (G_1, \ldots, G_m): \mathbb{R}^n \to \mathbb{R}^m$ be $C^1$. Suppose $a \in S = G^{-1}(0)$ is a local extremum of $f$ restricted to $S$.
+
+**Constraint qualification:** If the Jacobian $J_G(a)$ has full rank $m$ (equivalently, the gradients $\nabla G_1(a), \ldots, \nabla G_m(a)$ are linearly independent), then there exist unique *Lagrange multipliers* $\lambda_1, \ldots, \lambda_m \in \mathbb{R}$ such that
+
+$$\nabla f(a) = \sum_{i=1}^{m} \lambda_i \nabla G_i(a),$$
+
+or equivalently, $\nabla f(a) = J_G(a)^T \lambda$ where $\lambda = (\lambda_1, \ldots, \lambda_m)^T$.
+
+In the scalar constraint case ($m = 1$, single constraint $g(x) = 0$): $\nabla f(a) = \lambda \nabla g(a)$.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+We use the ImFT to reduce the constrained problem to an unconstrained one.
+
+**Step 1: Apply the ImFT.** Since $J_G(a)$ has rank $m$, there is an $m \times m$ submatrix of $J_G(a)$ with nonzero determinant. After reindexing, we may assume that the last $m$ columns of $J_G(a)$ form an invertible matrix. Write $x = (u, v)$ with $u \in \mathbb{R}^{n-m}$ (the "free" variables) and $v \in \mathbb{R}^m$ (the "constrained" variables). Then
+
+$$D_v G(a) \text{ is invertible.}$$
+
+By the Implicit Function Theorem, there exists a $C^1$ function $v = \varphi(u)$ defined near $u_0 = (a_1, \ldots, a_{n-m})$ such that $G(u, \varphi(u)) = 0$. The constraint surface $S$ is locally the graph of $\varphi$.
+
+**Step 2: Reduce to unconstrained optimization.** Define $h(u) = f(u, \varphi(u))$. Since $a$ is a local extremum of $f$ on $S$, and $S$ is locally parametrized by $u \mapsto (u, \varphi(u))$, the point $u_0$ is a local extremum of $h$ on $\mathbb{R}^{n-m}$. By the standard first-order necessary condition (no constraints), $\nabla_u h(u_0) = 0$, which gives:
+
+$$\frac{\partial f}{\partial u_j}(a) + \sum_{k=1}^{m} \frac{\partial f}{\partial v_k}(a) \cdot \frac{\partial \varphi_k}{\partial u_j}(u_0) = 0 \quad \text{for } j = 1, \ldots, n-m.$$
+
+**Step 3: Use the ImFT derivative formula.** From the ImFT, $J_\varphi(u_0) = -[D_v G(a)]^{-1} D_u G(a)$. Substituting:
+
+$$\nabla_u f(a) - \nabla_v f(a)^T [D_v G(a)]^{-1} D_u G(a) = 0.$$
+
+Define $\lambda^T = \nabla_v f(a)^T [D_v G(a)]^{-1}$, i.e., $\lambda = [D_v G(a)]^{-T} \nabla_v f(a)$. Then:
+
+$$\nabla_u f(a) = \lambda^T D_u G(a) = \sum_{i=1}^{m} \lambda_i \frac{\partial G_i}{\partial u}(a).$$
+
+And from the definition of $\lambda$:
+
+$$\nabla_v f(a) = D_v G(a)^T \lambda = \sum_{i=1}^{m} \lambda_i \frac{\partial G_i}{\partial v}(a).$$
+
+Combining both sets of equations: $\nabla f(a) = \sum_{i=1}^{m} \lambda_i \nabla G_i(a)$.
+
+$\square$
+</TheoremBlock>
+
+<TheoremBlock type="example" number={10} title="Maximum entropy on the probability simplex">
+Maximize the entropy $H(p) = -\sum_{i=1}^{n} p_i \ln p_i$ subject to the constraint $G(p) = \sum_{i=1}^{n} p_i - 1 = 0$ (probabilities sum to 1). Set $f = -H$ to convert to a minimization problem.
+
+The Lagrange condition $\nabla f(a) = \lambda \nabla G(a)$ gives:
+
+$$\ln p_i + 1 = \lambda \quad \text{for each } i.$$
+
+So $p_i = e^{\lambda - 1}$ for all $i$. The constraint $\sum p_i = 1$ gives $n \cdot e^{\lambda-1} = 1$, hence $p_i = 1/n$ for all $i$. The *uniform distribution* maximizes entropy on the simplex — a foundational result in information theory.
+
+The constraint qualification holds: $\nabla G = (1, 1, \ldots, 1) \neq 0$, so $J_G$ has rank 1 everywhere.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={11} title="Nearest point on a constraint surface">
+Find the point on the surface $G(x, y, z) = x^2 + y^2 + z^2 - 4xz = 0$ nearest to the origin. We minimize $f(x, y, z) = x^2 + y^2 + z^2$ (distance squared) subject to $G = 0$.
+
+Lagrange condition: $\nabla f = \lambda \nabla G$.
+
+$$\nabla f = (2x, 2y, 2z), \quad \nabla G = (2x - 4z,\; 2y,\; 2z - 4x).$$
+
+This gives the system:
+- $2x = \lambda(2x - 4z)$
+- $2y = 2\lambda y$
+- $2z = \lambda(2z - 4x)$
+
+From the second equation: either $y = 0$ or $\lambda = 1$.
+
+**Case $\lambda = 1$:** Equation 1 gives $2x = 2x - 4z$, so $z = 0$. Equation 3 gives $2z = 2z - 4x$, so $x = 0$. Then $G(0, y, 0) = y^2 = 0$, so $y = 0$. The origin satisfies $G = 0$ but $f = 0$ — this is the minimum, but it's a degenerate case (the origin is on the surface).
+
+**Case $y = 0$:** Equations 1 and 3 become $2x = \lambda(2x - 4z)$ and $2z = \lambda(2z - 4x)$. Adding: $2(x+z) = 2\lambda(x+z) - 4\lambda(x+z) = -2\lambda(x+z)$. So $(1+\lambda)(x+z) = 0$. If $\lambda = -1$: $2x = -2x + 4z$, giving $4x = 4z$, so $x = z$. Then $G = x^2 + x^2 - 4x^2 = -2x^2 = 0$, requiring $x = 0$. If $x + z = 0$: $z = -x$. Then $G = x^2 + 4x^2 = 5x^2 = 0$, giving $x = 0$ again.
+
+The geometry reveals that the only point where $G = 0$ and $y = 0$ is the origin — the surface passes through the origin as an isolated point (in this particular slice). The nearest nonzero point requires a more careful analysis of the full surface structure.
+</TheoremBlock>
+
+<LagrangeMultiplierExplorer client:visible />
+
+![Lagrange multipliers: at a constrained extremum, the gradient of the objective is a linear combination of the constraint gradients. The left panel shows contours of f, the constraint curve G = 0, and the tangent/normal vectors. At the optimum, ∇f is parallel to ∇G — perpendicular to the constraint surface.](/images/topics/inverse-implicit/lagrange-multipliers.png)
+
+## The Contraction Mapping Principle
+
+The Contraction Mapping Theorem (Theorem 2) played a supporting role in the IFT proof, but it is a powerful tool in its own right — one of the most versatile fixed-point theorems in analysis.
+
+<TheoremBlock type="definition" number={5} title="Contraction Mapping">
+Let $(X, d)$ be a metric space. A map $T: X \to X$ is a *contraction* (or *contraction mapping*) if there exists a constant $\lambda \in [0, 1)$ such that
+
+$$d(T(x), T(y)) \leq \lambda \, d(x, y) \quad \text{for all } x, y \in X.$$
+
+The constant $\lambda$ is the *contraction constant* (or *Lipschitz constant*). Every contraction is continuous (it is Lipschitz), but the crucial point is that $\lambda < 1$ — each application of $T$ brings points strictly closer together.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={5} title="Newton's method as approximate contraction">
+Newton's method for solving $f(x) = 0$ defines the iteration $x_{k+1} = x_k - [J_f(x_k)]^{-1} f(x_k)$. Near a root $x^*$ where $J_f(x^*)$ is invertible, the Newton map $N(x) = x - [J_f(x)]^{-1}f(x)$ satisfies $DN(x^*) = 0$ (the derivative of the Newton map vanishes at the fixed point). This means $N$ is *super-contractive* near $x^*$ — the contraction constant is not merely less than 1, but tends to 0, which is why Newton's method converges *quadratically* rather than geometrically.
+
+The connection to the IFT is direct: the map $T_y(x) = x + A^{-1}(y - f(x))$ used in the IFT proof is a "frozen Newton" iteration — it uses the fixed matrix $A^{-1} = [J_f(a)]^{-1}$ instead of updating $[J_f(x_k)]^{-1}$ at each step. Freezing the matrix makes the analysis cleaner (the contraction constant is uniform) at the cost of slower convergence (linear instead of quadratic).
+</TheoremBlock>
+
+<TheoremBlock type="example" number={12} title="Fixed-point iteration for x = cos(x)">
+The equation $x = \cos(x)$ has a unique solution $x^* \approx 0.7390851332$ — the *Dottie number*. Define $T(x) = \cos(x)$ on $[0, 1]$.
+
+Is $T$ a contraction? We need $|T'(x)| = |\sin(x)| \leq \lambda < 1$ for all $x \in [0, 1]$. Since $|\sin(x)| \leq \sin(1) \approx 0.8415 < 1$ on $[0, 1]$, the map $T$ is a contraction with $\lambda \approx 0.8415$. Also, $T([0,1]) = [\cos(1), 1] \approx [0.5403, 1] \subset [0, 1]$.
+
+Starting from $x_0 = 0$: the iterates $x_1 = 1$, $x_2 = 0.5403$, $x_3 = 0.8576$, $x_4 = 0.6543$, ... converge (slowly) to $x^* \approx 0.7391$. The rate bound gives:
+
+$$|x_k - x^*| \leq \frac{0.8415^k}{1 - 0.8415} \cdot |x_1 - x_0| = \frac{0.8415^k}{0.1585} \cdot 1 \approx 6.31 \cdot 0.8415^k.$$
+
+After $k = 50$ iterations: $0.8415^{50} \approx 1.5 \times 10^{-4}$, giving about 3 digits of accuracy. Convergence is slow because $\lambda \approx 0.84$ is close to 1 — contrast this with the IFT proof where $\lambda = 1/2$, which gives an extra digit of accuracy every 3-4 iterations.
+</TheoremBlock>
+
+<ContractionMappingExplorer client:visible />
+
+![The Contraction Mapping Principle: iterating T(x) = cos(x) from any starting point produces a sequence that converges to the unique fixed point x* ≈ 0.739. The cobweb diagram (left) and error plot (right) show the geometric convergence rate.](/images/topics/inverse-implicit/contraction-mapping.png)
+
+## Connections to ML
+
+The IFT and ImFT are not abstract existence theorems that sit on the shelf — they are active structural guarantees used throughout modern machine learning. Here are three central connections.
+
+### Normalizing flows and invertible neural networks
+
+A normalizing flow transforms a simple base distribution $p_0(z_0)$ into a complex target distribution by composing invertible layers $z_K = f_K \circ \cdots \circ f_1(z_0)$. The change-of-variables formula gives the density:
+
+$$\log p_K(z_K) = \log p_0(z_0) - \sum_{k=1}^{K} \log |\det J_{f_k}(z_{k-1})|.$$
+
+The IFT is the theoretical guarantee behind this formula: at each layer, if $\det J_{f_k} \neq 0$, the layer is locally invertible and the density formula is valid. Architectures like Real-NVP, Glow, and Neural Spline Flows are designed so that each layer is *globally* invertible by construction (triangular Jacobians, monotone splines), sidestepping the "local vs. global" issue. But residual flows $f(x) = x + g(x)$ require the IFT: the Jacobian $I + J_g(x)$ must be invertible at every point, which holds when $\|J_g(x)\| < 1$ (the spectral norm is less than 1) — making the map a contraction-like perturbation of the identity.
+
+See <a href="https://formalml.com/topics/gradient-descent" target="_blank" rel="noopener">Gradient Descent → formalML</a> for the optimization perspective on these architectures.
+
+### Deep Equilibrium Models and implicit layers
+
+A Deep Equilibrium Model (DEQ) defines its output implicitly: instead of stacking $L$ layers $z_{l+1} = f_\theta(z_l)$, it finds the fixed point $z^* = f_\theta(z^*)$ — the "equilibrium" of the infinite-depth limit. The output is $z^*(\theta, x)$, which depends implicitly on the parameters $\theta$ and input $x$.
+
+How do we differentiate through this implicit layer? The ImFT. Define $F(\theta, z) = f_\theta(z) - z$. At the fixed point, $F(\theta, z^*) = 0$. The partial Jacobian is $D_z F = J_{f_\theta}(z^*) - I$. If $I - J_{f_\theta}(z^*)$ is invertible (i.e., $1$ is not an eigenvalue of $J_{f_\theta}(z^*)$), the ImFT guarantees that $z^*$ varies smoothly with $\theta$, and the derivative is:
+
+$$\frac{\partial z^*}{\partial \theta} = -[D_z F]^{-1} D_\theta F = [I - J_{f_\theta}(z^*)]^{-1} \frac{\partial f_\theta}{\partial \theta}(z^*).$$
+
+This is *implicit differentiation* — we compute gradients through the equilibrium without backpropagating through the fixed-point iteration. The ImFT is not just a convenience here; it is the theoretical foundation guaranteeing that the gradient exists and is well-defined.
+
+See <a href="https://formalml.com/topics/smooth-manifolds" target="_blank" rel="noopener">Smooth Manifolds → formalML</a> for the geometric perspective on implicit layers.
+
+### Constrained optimization on manifolds
+
+Many ML problems involve optimization on constraint sets that are smooth manifolds: the Stiefel manifold $V_k(\mathbb{R}^n)$ (orthonormal $k$-frames, used in spectral methods), the probability simplex $\Delta^{n-1}$ (used in attention mechanisms and mixture models), and the manifold of positive definite matrices $S^n_{++}$ (used in covariance estimation).
+
+The ImFT is the theorem that makes these sets manifolds in the first place. The Stiefel manifold is the level set $\{W \in \mathbb{R}^{n \times k} : W^T W = I_k\}$ of the map $F(W) = W^T W - I_k$. The ImFT (via the Regular Value Theorem, Theorem 5 below) guarantees that this is a smooth manifold of dimension $nk - \frac{k(k+1)}{2}$, with tangent spaces that can be computed from the Jacobian of $F$.
+
+Lagrange multipliers (Theorem 4) are then the first-order optimality conditions on these manifolds — and the entire framework of Riemannian optimization (projecting gradients onto tangent spaces, geodesic line search, retraction maps) rests on the smooth manifold structure guaranteed by the ImFT.
+
+See <a href="https://formalml.com/topics/information-geometry" target="_blank" rel="noopener">Information Geometry → formalML</a> for the Riemannian optimization perspective.
+
+![Normalizing flows (left): each invertible layer transforms a simple distribution into a complex one, with the IFT guaranteeing local invertibility. Deep Equilibrium Models (right): the output z* is defined implicitly as a fixed point, with the ImFT enabling gradient computation through the equilibrium.](/images/topics/inverse-implicit/normalizing-flows-deq.png)
+
+## Degenerate Cases
+
+What happens when the IFT or ImFT hypotheses fail? When $\det J_f(a) = 0$, the function is not locally invertible — but the failure can be analyzed, and it leads to rich mathematical structure.
+
+<TheoremBlock type="definition" number={6} title="Critical Point of a Map">
+Let $f: \mathbb{R}^n \to \mathbb{R}^m$ be $C^1$. A point $a$ is a *critical point* of $f$ if the Jacobian $J_f(a)$ does not have full rank, i.e., $\text{rank}\, J_f(a) < \min(n, m)$. The image $f(a)$ of a critical point is a *critical value*. A value $c \in \mathbb{R}^m$ that is *not* a critical value is a *regular value* — this means that for every $x \in f^{-1}(c)$, the Jacobian $J_f(x)$ has full rank.
+
+Note: a value $c$ is regular even if $f^{-1}(c) = \emptyset$ — the condition is vacuously satisfied when no preimage exists.
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={5} title="Regular Value Theorem">
+Let $f: \mathbb{R}^n \to \mathbb{R}^m$ be $C^1$ with $n \geq m$. If $c \in \mathbb{R}^m$ is a regular value of $f$ and the level set $M = f^{-1}(c) = \{x \in \mathbb{R}^n : f(x) = c\}$ is nonempty, then $M$ is a smooth $(n-m)$-dimensional manifold.
+
+More precisely: for every $a \in M$, there exist an open neighborhood $U$ of $a$ in $\mathbb{R}^n$ and a $C^1$ diffeomorphism $\phi: U \to \phi(U) \subseteq \mathbb{R}^n$ such that
+
+$$\phi(M \cap U) = \phi(U) \cap (\mathbb{R}^{n-m} \times \{0\}).$$
+
+The tangent space of $M$ at $a$ is $T_a M = \ker J_f(a)$, which has dimension $n - m$ by the rank-nullity theorem (since $J_f(a)$ has rank $m$).
+</TheoremBlock>
+
+The proof follows directly from the ImFT: rewrite $f(x) = c$ as $F(x) = f(x) - c = 0$. Since $c$ is regular, $J_f(a) = J_F(a)$ has rank $m$ at every point of $M$. After reindexing variables into "free" and "constrained" groups, the ImFT provides local graph representations $x_{\text{constrained}} = g(x_{\text{free}})$, which are the chart maps of the manifold structure.
+
+<TheoremBlock type="example" number={13} title="The fold catastrophe: f(x) = x³ − tx">
+Consider the family of functions $f_t(x) = x^3 - tx$ parametrized by $t \in \mathbb{R}$. The critical points of $f_t$ satisfy $f_t'(x) = 3x^2 - t = 0$, giving $x = \pm\sqrt{t/3}$ (for $t > 0$). Define the gradient map $F: \mathbb{R} \times \mathbb{R} \to \mathbb{R}$ by $F(t, x) = 3x^2 - t$.
+
+The level set $F(t, x) = 0$ is the parabola $t = 3x^2$ — the *bifurcation curve* in the $(t, x)$ parameter space. On this curve, $F_x = 6x$, which vanishes at $(t, x) = (0, 0)$. The ImFT fails at the origin: $F_x(0, 0) = 0$, so we cannot solve for $x$ as a smooth function of $t$ near $(t, x) = (0, 0)$.
+
+This is a *fold bifurcation*: for $t < 0$, $f_t$ has no critical points; for $t > 0$, $f_t$ has two critical points (a local max and a local min); at $t = 0$, the two critical points collide and annihilate. The ImFT detects this qualitative change in structure — the smooth implicit function $x(t)$ ceases to exist precisely at the bifurcation point.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={14} title="Loss landscape bifurcations in neural networks">
+Consider a two-layer neural network $f_\theta(x) = w_2 \sigma(w_1 x)$ with scalar weights $\theta = (w_1, w_2)$ and ReLU activation $\sigma(z) = \max(0, z)$. The loss on a single data point $(x_0, y_0)$ is $L(\theta) = (f_\theta(x_0) - y_0)^2$.
+
+The critical points satisfy $\nabla L = 0$. For the ReLU network, the gradient is:
+
+$$\frac{\partial L}{\partial w_2} = 2(w_2\sigma(w_1 x_0) - y_0)\sigma(w_1 x_0), \qquad \frac{\partial L}{\partial w_1} = 2(w_2\sigma(w_1 x_0) - y_0)w_2 x_0 \cdot \mathbf{1}_{w_1 x_0 > 0}.$$
+
+The Hessian $H_L(\theta) = J(\nabla L)(\theta)$ — the Jacobian of the gradient — is singular whenever the ReLU transitions between active and inactive: at $w_1 x_0 = 0$, the function is not differentiable, and the smooth landscape splits into two regions. This is a form of bifurcation in the loss landscape: the topology of the critical point set changes as $w_1$ crosses zero. The IFT applied to the gradient map $\nabla L$ tells us that critical points are *isolated* (and vary smoothly with hyperparameters) wherever $H_L$ is non-singular — exactly the [Hessian](/topics/hessian) condition from Topic 11.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={6} title="The rank theorem and the road to differential topology">
+The IFT and ImFT are the starting points of *differential topology* — the study of smooth manifolds and smooth maps between them. The Regular Value Theorem (Theorem 5) is the bridge: it tells us that level sets of smooth maps are generically manifolds. The *rank theorem* generalizes this: near a point where $J_f$ has constant rank $r$, the map $f$ can be locally reduced (by smooth coordinate changes in both domain and range) to the linear projection $(x_1, \ldots, x_n) \mapsto (x_1, \ldots, x_r, 0, \ldots, 0)$. Maps of constant rank are *submersions* (when $r = m$, the map is "onto" locally) and *immersions* (when $r = n$, the map is "one-to-one" locally). The IFT is the special case where $r = n = m$.
+
+For the connection to manifold theory in the ML context, see <a href="https://formalml.com/topics/smooth-manifolds" target="_blank" rel="noopener">Smooth Manifolds → formalML</a>.
+</TheoremBlock>
+
+![Degenerate cases: the fold catastrophe (left) shows a bifurcation where two critical points collide and vanish as a parameter changes. The cusp catastrophe (right) shows a higher-order degeneracy. These are the simplest examples of catastrophe theory — the classification of degeneracies of smooth maps.](/images/topics/inverse-implicit/degenerate-bifurcation.png)
+
+## Computational Notes
+
+The IFT and ImFT tell us *when* inverse and implicit functions exist; computation requires numerical methods. Here are the essential tools.
+
+### Solving implicit equations: `scipy.optimize.fsolve`
+
+```python
+import numpy as np
+from scipy.optimize import fsolve
+
+# Find y such that F(x, y) = x^2 + y^2 - 1 = 0, near y = 0.8
+def F(y, x):
+    return x**2 + y**2 - 1
+
+x_val = 0.5
+y_solution = fsolve(F, x0=0.8, args=(x_val,))
+print(f"y = {y_solution[0]:.6f}")  # y ≈ 0.866025 = sqrt(3)/2
+```
+
+### Computing inverse Jacobians: `np.linalg.solve` vs. `np.linalg.inv`
+
+```python
+import numpy as np
+
+# Jacobian of the complex squaring map at (1, 1)
+J_f = np.array([[2, -2],
+                [2,  2]])
+
+# Bad: explicit inverse (O(n^3), numerically unstable for large n)
+J_g_bad = np.linalg.inv(J_f)
+
+# Good: solve J_f @ J_g = I directly (same cost, better stability)
+J_g_good = np.linalg.solve(J_f, np.eye(2))
+
+print("Inverse Jacobian:\n", J_g_good)
+print("Condition number:", np.linalg.cond(J_f))
+```
+
+### Implicit differentiation with JAX: `jax.custom_vjp`
+
+```python
+import jax
+import jax.numpy as jnp
+from functools import partial
+
+def fixed_point_layer(params, x, f, max_iter=100, tol=1e-6):
+    """Find z* such that z* = f(params, x, z*)."""
+    z = jnp.zeros_like(x)
+    for _ in range(max_iter):
+        z_new = f(params, x, z)
+        if jnp.max(jnp.abs(z_new - z)) < tol:
+            break
+        z = z_new
+    return z
+
+@jax.custom_vjp
+def deq_layer(params, x):
+    f = lambda p, x, z: jnp.tanh(p @ z + x)  # Example implicit layer
+    return fixed_point_layer(params, x, f)
+
+def deq_layer_fwd(params, x):
+    z_star = deq_layer(params, x)
+    return z_star, (params, x, z_star)
+
+def deq_layer_bwd(res, g):
+    """Backward pass via ImFT: dz*/dtheta = (I - df/dz)^{-1} df/dtheta."""
+    params, x, z_star = res
+    # Solve (I - J_f) @ v = g for v, where J_f = df/dz at z*
+    f = lambda z: jnp.tanh(params @ z + x)
+    J_f = jax.jacobian(f)(z_star)
+    v = jnp.linalg.solve(jnp.eye(len(z_star)) - J_f, g)
+    # Propagate through df/dparams and df/dx
+    params_grad = jnp.outer(v, jnp.where(1 - jnp.tanh(params @ z_star + x)**2 > 0,
+                                          z_star, 0))
+    x_grad = v * (1 - jnp.tanh(params @ z_star + x)**2)
+    return params_grad, x_grad
+
+deq_layer.defvjp(deq_layer_fwd, deq_layer_bwd)
+```
+
+### Constrained optimization with SciPy
+
+```python
+from scipy.optimize import minimize
+
+# Maximize entropy on the simplex (n=3)
+def neg_entropy(p):
+    return np.sum(p * np.log(p + 1e-12))
+
+def constraint_sum(p):
+    return np.sum(p) - 1.0
+
+result = minimize(neg_entropy, x0=[0.2, 0.3, 0.5],
+                  constraints={'type': 'eq', 'fun': constraint_sum},
+                  bounds=[(1e-10, 1)] * 3)
+print(f"Optimal p: {result.x}")  # Should be ≈ [1/3, 1/3, 1/3]
+```
+
+<TheoremBlock type="remark" number={7} title="Numerical vs. mathematical invertibility — the condition number">
+The IFT says that $f$ is locally invertible when $\det J_f(a) \neq 0$. Numerically, the question is *how far from zero* the determinant is — or more precisely, how well-conditioned the Jacobian is. The *condition number* $\kappa(J_f) = \|J_f\| \cdot \|J_f^{-1}\| = \sigma_{\max}/\sigma_{\min}$ (where $\sigma_i$ are the singular values) measures the sensitivity of the inverse to perturbations.
+
+If $\kappa(J_f) = 10^{16}$ and you are working in double precision (about 16 digits), the inverse is computed with roughly *zero* digits of accuracy. The map is mathematically invertible but numerically singular. In normalizing flows, this manifests as numerical overflow in $\log|\det J_f|$ computations — the density estimate blows up. Architectures like Real-NVP avoid this by ensuring triangular Jacobians with bounded diagonal entries.
+
+The rule: **never compute $J_f^{-1}$ explicitly**. Instead, solve $J_f \cdot v = b$ using `np.linalg.solve` (LU decomposition) or iterative methods. This is more numerically stable and often faster.
+</TheoremBlock>
+
+## Connections & Further Reading
+
+This topic connects the entire Multivariable Differential Calculus track into a unified framework:
+
+| Topic | Connection |
+|-------|-----------|
+| [Epsilon-Delta Continuity](/topics/epsilon-delta) | The IFT proof requires $\varepsilon$-$\delta$ control of the neighborhood size. The $C^1$ hypothesis ensures continuity of $J_f$, which is used to guarantee $\|DT_y(x)\| < 1/2$. |
+| [Partial Derivatives & the Gradient](/topics/gradient) | The gradient $\nabla f$ is the constraint surface normal. The ImFT applied to $f(x) = c$ recovers gradient orthogonality to level sets. |
+| [The Jacobian & Multivariate Chain Rule](/topics/jacobian) | The Jacobian $J_f(a)$ is the central hypothesis of the IFT. The chain rule gives $J_{f^{-1}} = [J_f]^{-1}$. |
+| [The Hessian & Second-Order Analysis](/topics/hessian) | The Hessian $H_f = J(\nabla f)$. Non-singularity of $H_f$ at a critical point is the IFT condition applied to the gradient map: critical points are isolated when the Hessian is non-singular. |
+| [Completeness & Compactness](/topics/completeness-compactness) | The Contraction Mapping Theorem uses completeness of $\mathbb{R}^n$: the iterates form a Cauchy sequence that converges because the space is complete. |
+
+**Prerequisites met:**
+
+This topic assumes familiarity with:
+- [The Jacobian & Multivariate Chain Rule](/topics/jacobian) — for the Jacobian matrix, chain rule, and determinant
+- [The Hessian & Second-Order Analysis](/topics/hessian) — for second-order structure at critical points
+- [Completeness & Compactness](/topics/completeness-compactness) — for the completeness of $\mathbb{R}^n$ used in the contraction mapping proof
+
+**Within formalCalculus — forward references:**
+
+- **Change of Variables in Integration** *(coming soon)* — the IFT provides the theoretical foundation for the substitution formula $\int_{\phi(U)} f = \int_U (f \circ \phi)|\det J_\phi|$
+- **First-Order ODEs** *(coming soon)* — existence and uniqueness of ODE solutions via the contraction mapping principle (Picard-Lindelöf theorem)
+- **Metric Spaces** *(coming soon)* — the contraction mapping theorem in abstract metric spaces, with applications to integral equations
+
+**Forward links to formalML:**
+
+- <a href="https://formalml.com/topics/gradient-descent" target="_blank" rel="noopener">Gradient Descent → formalML</a> — the IFT guarantees local convergence near non-degenerate critical points; the Hessian condition number governs convergence rate
+- <a href="https://formalml.com/topics/smooth-manifolds" target="_blank" rel="noopener">Smooth Manifolds → formalML</a> — the Regular Value Theorem (Theorem 5) is the primary tool for constructing smooth manifolds from level sets
+- <a href="https://formalml.com/topics/information-geometry" target="_blank" rel="noopener">Information Geometry → formalML</a> — the Fisher information matrix as Hessian of the KL divergence; the IFT guarantees reparametrization invariance when the Fisher matrix is non-singular
