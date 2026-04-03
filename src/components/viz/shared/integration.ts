@@ -983,7 +983,6 @@ export function monteCarloIntegral(
 
   let sumF = 0;
   let sumF2 = 0;
-  let insideCount = 0;
 
   // Logarithmic checkpoints for convergence plot
   const checkpoints = new Set<number>();
@@ -1001,7 +1000,6 @@ export function monteCarloIntegral(
     samples.push({ x, y, fValue: fVal, inRegion: inside });
 
     if (inside) {
-      insideCount++;
       sumF += fVal;
       sumF2 += fVal * fVal;
     }

@@ -67,13 +67,9 @@ export default function MarginalDensityExplorer() {
     const data: { y: number; pY: number }[] = [];
     for (let i = 0; i <= MARGINAL_N; i++) {
       const y = yMin + (i / MARGINAL_N) * (yMax - yMin);
-      // p_Y(y) = ∫ p(x,y) dx — integrate over x
-      const h = (xMax - xMin) / 200;
-      let sum = (preset.density(xMin, y) + preset.density(xMax, y)) / 2;
-      for (let j = 1; j < 200; j++) {
-        sum += preset.density(xMin + j * h, y);
-      }
-      data.push({ y, pY: sum * h });
+      // p_Y(y) = ∫ p(x,y) dx — reuse marginalDensity with swapped arguments
+      const pY = marginalDensity((yVal, xVal) => preset.density(xVal, yVal), y, [xMin, xMax]);
+      data.push({ y, pY });
     }
     return data;
   }, [selectedIdx]);

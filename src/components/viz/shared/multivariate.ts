@@ -1959,11 +1959,16 @@ export function bivariateDensity(
   sigmaY: number = 1,
   rho: number = 0,
 ): number {
-  const zx = (x - muX) / sigmaX;
-  const zy = (y - muY) / sigmaY;
+  if (!Number.isFinite(sigmaX) || !Number.isFinite(sigmaY) || sigmaX <= 0 || sigmaY <= 0) {
+    return 0; // invalid standard deviation
+  }
+
   const rhoSq = rho * rho;
   const denom = 1 - rhoSq;
-  if (denom <= 0) return 0; // degenerate case
+  if (!Number.isFinite(rho) || denom <= 0) return 0; // degenerate case
+
+  const zx = (x - muX) / sigmaX;
+  const zy = (y - muY) / sigmaY;
 
   const Q = (zx * zx - 2 * rho * zx * zy + zy * zy) / denom;
   const norm = 2 * Math.PI * sigmaX * sigmaY * Math.sqrt(denom);

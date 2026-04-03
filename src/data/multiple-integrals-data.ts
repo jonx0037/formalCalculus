@@ -97,7 +97,8 @@ export const DOUBLE_INTEGRAL_PRESETS: DoubleIntegralPreset[] = [
     name: 'gaussian-bump',
     label: 'f(x,y) = e^{-(x²+y²)}',
     f: (x, y) => Math.exp(-(x * x + y * y)),
-    exactIntegral: null, // No closed form over [0,1]²; ≈ 0.5577
+    // ∫₀¹ e^{-x²} dx = √π/2 · erf(1), so ∫∫ e^{-(x²+y²)} dA = (√π/2 · erf(1))²
+    exactIntegral: Math.pow(Math.sqrt(Math.PI) / 2 * 0.8427007929497149, 2), // ≈ 0.5577
     domain: { x: [0, 1], y: [0, 1] },
     mlNote: 'Radial basis function kernel',
   },
@@ -150,8 +151,8 @@ export const REGION_PRESETS: RegionPreset[] = [
     },
     typeII: {
       yRange: [0, 1],
-      h1: (_y) => 0,
-      h2: (y) => y, // Wait — for the triangle 0 ≤ y ≤ x, Type II: y ≤ x ≤ 1
+      h1: (y) => y,   // at height y, x ranges from y to 1
+      h2: (_y) => 1,
     },
     area: 0.5,
     preferredOrder: 'xy',
@@ -205,10 +206,6 @@ export const REGION_PRESETS: RegionPreset[] = [
     preferredOrder: 'xy',
   },
 ];
-
-// Fix the triangle Type II description: for 0 ≤ y ≤ x ≤ 1, at height y the x-range is [y, 1]
-REGION_PRESETS[0].typeII.h1 = (y) => y;
-REGION_PRESETS[0].typeII.h2 = (_y) => 1;
 
 // ── Monte Carlo Presets ─────────────────────────────────────
 

@@ -43,31 +43,6 @@ export default function FubiniOrderExplorer() {
     return () => clearInterval(id);
   }, [playing]);
 
-  // Compute slice integral curves
-  const xySliceData = useMemo(() => {
-    // A(x) = ∫ f(x,y) dy for each x
-    const nPts = 60;
-    const data: { t: number; integral: number }[] = [];
-    for (let i = 0; i <= nPts; i++) {
-      const x = xMin + (i / nPts) * (xMax - xMin);
-      const val = simpsonRule((y: number) => preset.f(x, y), yMin, yMax, N_QUAD).value;
-      data.push({ t: x, integral: val });
-    }
-    return data;
-  }, [selectedIdx]);
-
-  const yxSliceData = useMemo(() => {
-    // B(y) = ∫ f(x,y) dx for each y
-    const nPts = 60;
-    const data: { t: number; integral: number }[] = [];
-    for (let i = 0; i <= nPts; i++) {
-      const y = yMin + (i / nPts) * (yMax - yMin);
-      const val = simpsonRule((x: number) => preset.f(x, y), xMin, xMax, N_QUAD).value;
-      data.push({ t: y, integral: val });
-    }
-    return data;
-  }, [selectedIdx]);
-
   // Current slice values
   const currentX = xMin + slicePos * (xMax - xMin);
   const currentY = yMin + slicePos * (yMax - yMin);
