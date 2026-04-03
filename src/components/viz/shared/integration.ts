@@ -1256,6 +1256,9 @@ export interface CoordinateTransformGridCell {
  * Generate a grid of cells in (u,v)-space, mapped through φ to (x,y)-space.
  * Each cell carries its deformed corner coordinates and Jacobian determinant.
  *
+ * If `detJ` is provided, it is used directly (faster, exact). Otherwise,
+ * |det J_φ| is approximated via finite differences.
+ *
  * This is the data backbone of ChangeOfVariablesExplorer.
  */
 export function coordinateTransformGrid(
@@ -1264,6 +1267,7 @@ export function coordinateTransformGrid(
   vRange: [number, number],
   nu: number,
   nv: number,
+  detJ?: (u: number, v: number) => number,
 ): CoordinateTransformGridCell[] {
   const du = (uRange[1] - uRange[0]) / nu;
   const dv = (vRange[1] - vRange[0]) / nv;
@@ -1300,7 +1304,7 @@ export function coordinateTransformGrid(
         + (x01 * y00 - x00 * y01),
       );
 
-      const detJVal = jacobianAreaElement(phi, uMid, vMid);
+      const detJVal = detJ ? Math.abs(detJ(uMid, vMid)) : jacobianAreaElement(phi, uMid, vMid);
 
       cells.push({ uCenter: uMid, vCenter: vMid, corners, detJ: detJVal, area });
     }

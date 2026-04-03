@@ -2057,7 +2057,7 @@ export function densityTransform2D(
  */
 export function normalizingFlowStep(
   pPrev: (z: number) => number,
-  forward: (z: number) => number,
+  _forward: (z: number) => number,
   inverse: (x: number) => number,
   logDetJ: (z: number) => number,
   x: number,

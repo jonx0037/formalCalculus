@@ -21,7 +21,7 @@ export default function GaussianIntegralExplorer({ mode = 'basic' }: GaussianInt
 
   const [limitB, setLimitB] = useState(mode === 'proof-steps' ? 5 : 3);
   const [scaleA, setScaleA] = useState(1);
-  const [showPolar, setShowPolar] = useState(true);
+  const [showPolar, setShowPolar] = useState(mode !== 'proof-steps');
   const [showDensity, setShowDensity] = useState(false);
   const [proofStep, setProofStep] = useState(1);
 

@@ -4,7 +4,7 @@ import { useResizeObserver } from './shared/useResizeObserver';
 import { useD3 } from './shared/useD3';
 import { POLAR_INTEGRAL_PRESETS } from '../../data/change-of-variables-data';
 import { polarIntegral } from './shared/integration';
-import { functionColors, regionColors } from './shared/colorScales';
+import { functionColors } from './shared/colorScales';
 
 const margin = { top: 20, right: 16, bottom: 36, left: 42 };
 const GAP = 24;
@@ -99,8 +99,8 @@ export default function PolarIntegralExplorer() {
           const arc = d3.arc<unknown>()
             .innerRadius(xScale(cell.rLo) - xScale(0))
             .outerRadius(xScale(cell.rHi) - xScale(0))
-            .startAngle(cell.thetaLo - Math.PI / 2)
-            .endAngle(cell.thetaHi - Math.PI / 2);
+            .startAngle(Math.PI / 2 - cell.thetaHi)
+            .endAngle(Math.PI / 2 - cell.thetaLo);
 
           gLeft.append('path')
             .attr('d', arc({}) as string)
@@ -115,8 +115,8 @@ export default function PolarIntegralExplorer() {
         const arcBoundary = d3.arc<unknown>()
           .innerRadius(xScale(preset.region.rRange[0]) - xScale(0))
           .outerRadius(xScale(preset.region.rRange[1]) - xScale(0))
-          .startAngle(preset.region.thetaRange[0] - Math.PI / 2)
-          .endAngle(preset.region.thetaRange[1] - Math.PI / 2);
+          .startAngle(Math.PI / 2 - preset.region.thetaRange[1])
+          .endAngle(Math.PI / 2 - preset.region.thetaRange[0]);
 
         gLeft.append('path')
           .attr('d', arcBoundary({}) as string)

@@ -1,10 +1,8 @@
 import { useState, useMemo, useCallback, type ChangeEvent } from 'react';
-import * as d3 from 'd3';
 import { useResizeObserver } from './shared/useResizeObserver';
 import { useD3 } from './shared/useD3';
 import { COORDINATE_SYSTEM_3D_PRESETS } from '../../data/change-of-variables-data';
 import { project3D } from './shared/multivariate';
-import { functionColors } from './shared/colorScales';
 
 const margin = { top: 10, right: 10, bottom: 30, left: 10 };
 

@@ -3,7 +3,6 @@ import * as d3 from 'd3';
 import { useResizeObserver } from './shared/useResizeObserver';
 import { useD3 } from './shared/useD3';
 import { FLOW_PRESETS, type FlowPreset } from '../../data/change-of-variables-data';
-import { densityTransform } from './shared/multivariate';
 import { functionColors } from './shared/colorScales';
 
 const margin = { top: 20, right: 16, bottom: 36, left: 50 };
@@ -30,12 +29,21 @@ function buildFlow(preset: FlowPreset, paramValues: Record<string, number>): {
       logDetJ: () => Math.log(Math.abs(s)),
     };
   }
-  if (preset.name === 'quadratic') {
+  if (preset.name === 'cubic') {
     const alpha = paramValues.alpha ?? 0.5;
     return {
-      forward: (z) => z + alpha * z * z,
-      inverse: (x) => (-1 + Math.sqrt(1 + 4 * alpha * x)) / (2 * alpha),
-      logDetJ: (z) => Math.log(Math.abs(1 + 2 * alpha * z)),
+      forward: (z) => z + alpha * z * z * z / 3,
+      inverse: (x) => {
+        // Newton's method for z + αz³/3 = x
+        let z = x;
+        for (let i = 0; i < 10; i++) {
+          const fz = z + alpha * z * z * z / 3 - x;
+          const dfz = 1 + alpha * z * z;
+          z = z - fz / dfz;
+        }
+        return z;
+      },
+      logDetJ: (z) => Math.log(1 + alpha * z * z),
     };
   }
   if (preset.name === 'coupling') {
@@ -118,15 +126,10 @@ export default function NormalizingFlowExplorer() {
         detJCurve.push({ x, val: 0 });
         continue;
       }
-      const pVal = densityTransform(
-        stdGaussian,
-        flow.inverse,
-        (xv) => {
-          const h = 1e-6;
-          return (flow.inverse(xv + h) - flow.inverse(xv - h)) / (2 * h);
-        },
-        x,
-      );
+      // Use analytical logDetJ: p_X(x) = p_Z(f⁻¹(x)) · exp(-logDetJ(f⁻¹(x)))
+      const pZVal = stdGaussian(invX);
+      const logDetVal = flow.logDetJ(invX);
+      const pVal = pZVal * Math.exp(-logDetVal);
       pX.push({ x, p: isFinite(pVal) ? Math.max(0, pVal) : 0 });
 
       const logDet = flow.logDetJ(invX);

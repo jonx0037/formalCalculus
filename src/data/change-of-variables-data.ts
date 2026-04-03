@@ -51,11 +51,15 @@ export interface CoordinateSystem3DPreset {
 export interface FlowPreset {
   name: string;
   label: string;
-  /** Forward map z → x */
+  /**
+   * Forward map z → x, evaluated at default param values.
+   * The explorer rebuilds these from `params` via `buildFlow` — these
+   * static versions are for documentation and non-interactive callers.
+   */
   forward: (z: number) => number;
-  /** Inverse map x → z */
+  /** Inverse map x → z at default params */
   inverse: (x: number) => number;
-  /** log|det J_f(z)| = log|f'(z)| for 1D */
+  /** log|det J_f(z)| at default params */
   logDetJ: (z: number) => number;
   /** Adjustable parameters with ranges */
   params: Record<string, { min: number; max: number; default: number; label: string }>;
@@ -215,11 +219,17 @@ export const FLOW_PRESETS: FlowPreset[] = [
     },
   },
   {
-    name: 'quadratic',
-    label: 'Quadratic',
-    forward: (z) => z + 0.5 * z * z,
-    inverse: (x) => -1 + Math.sqrt(1 + 2 * x),
-    logDetJ: (z) => Math.log(Math.abs(1 + z)),
+    name: 'cubic',
+    label: 'Cubic',
+    forward: (z) => z + 0.5 * z * z * z / 3,
+    inverse: (x) => {
+      let z = x;
+      for (let i = 0; i < 10; i++) {
+        z = z - (z + 0.5 * z * z * z / 3 - x) / (1 + 0.5 * z * z);
+      }
+      return z;
+    },
+    logDetJ: (z) => Math.log(1 + 0.5 * z * z),
     params: {
       alpha: { min: 0.1, max: 1.0, default: 0.5, label: 'Curvature (α)' },
     },

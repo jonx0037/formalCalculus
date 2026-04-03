@@ -34,6 +34,7 @@ export default function ChangeOfVariablesExplorer() {
         preset.paramDomain.v,
         gridResolution,
         gridResolution,
+        preset.detJ,
       ),
     [selectedIdx, gridResolution],
   );
@@ -115,9 +116,9 @@ export default function ChangeOfVariablesExplorer() {
         .style('fill', 'var(--color-text-primary)')
         .text('Parameter space (u, v)');
 
-      // Color scale for |det J|
-      const colorScale = d3.scaleSequential(d3.interpolateRdBu)
-        .domain([detJRange[1], detJRange[0]]); // reversed so blue=low, red=high
+      // Diverging color scale anchored at 1 (no distortion = white)
+      const colorScale = d3.scaleDiverging(d3.interpolateRdBu)
+        .domain([Math.max(detJRange[1], 1.1), 1, Math.min(detJRange[0], 0.9)]);
 
       const du = (preset.paramDomain.u[1] - preset.paramDomain.u[0]) / gridResolution;
       const dv = (preset.paramDomain.v[1] - preset.paramDomain.v[0]) / gridResolution;
