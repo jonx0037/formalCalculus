@@ -1,7 +1,8 @@
 /**
  * Shared utility module for Riemann integration and numerical quadrature.
  * Created by Topic 7 (riemann-integral), extended by Topic 8 (improper-integrals).
- * To be further extended by Track 4 topics (multiple-integrals, change-of-variables).
+ * Extended by Topic 13 (multiple-integrals) with 2D integration and Monte Carlo.
+ * To be further extended by Topic 14 (change-of-variables).
  * All functions are pure and deterministic — no Math.random().
  *
  * Provides:
@@ -18,7 +19,8 @@
  *  - Stirling's approximation
  */
 
-// Re-export seededRandom for downstream consumers
+// Import seededRandom for use in this module and re-export for downstream consumers
+import { seededRandom } from './limits';
 export { seededRandom } from './limits';
 
 // ── Interfaces ──────────────────────────────────────────────
@@ -737,5 +739,345 @@ export function stirlingApproximation(n: number): {
     logValue: logStirling,
     relativeError,
     improvedValue: improved,
+  };
+}
+
+// ══════════════════════════════════════════════════════════════
+// Topic 13: Multiple Integrals & Fubini's Theorem
+// ══════════════════════════════════════════════════════════════
+
+// ── 2D Integration Interfaces ─────────────────────────────────
+
+/** A 2D partition of [a,b] × [c,d] as a pair of 1D partitions. */
+export interface Partition2D {
+  xPartition: IntegrationPartition;
+  yPartition: IntegrationPartition;
+  /** Number of subdivisions in x */
+  nx: number;
+  /** Number of subdivisions in y */
+  ny: number;
+  /** Total sub-rectangles: nx × ny */
+  totalCells: number;
+  /** Mesh = max(mesh_x, mesh_y) */
+  mesh: number;
+}
+
+/** Result of a double Riemann sum, including per-cell data for visualization. */
+export interface DoubleRiemannSumResult {
+  /** The numerical value of the double Riemann sum */
+  value: number;
+  /** The 2D partition used */
+  partition: Partition2D;
+  /** Sampling rule applied within each sub-rectangle */
+  sampleRule: 'lower-left' | 'center' | 'random';
+  /** Per-cell data: position, size, f-value, volume contribution */
+  cells: Array<{
+    /** Left edge x-coordinate of the sub-rectangle */
+    x: number;
+    /** Bottom edge y-coordinate of the sub-rectangle */
+    y: number;
+    /** Width (Δx) */
+    width: number;
+    /** Height (Δy) */
+    height: number;
+    /** f evaluated at the sample point */
+    fValue: number;
+    /** Volume contribution: f(x*, y*) Δx Δy */
+    volume: number;
+  }>;
+}
+
+/** Result of Monte Carlo integration with convergence history. */
+export interface MonteCarloResult {
+  /** Final estimate of the integral */
+  estimate: number;
+  /** Standard error: σ / √N */
+  standardError: number;
+  /** Number of samples drawn */
+  nSamples: number;
+  /** Per-sample data for scatter-plot visualization */
+  samples: Array<{
+    x: number;
+    y: number;
+    fValue: number;
+    /** Whether the point falls inside the integration region */
+    inRegion: boolean;
+  }>;
+  /** Running estimate at logarithmic checkpoints for convergence plots */
+  convergenceHistory: Array<{ n: number; estimate: number }>;
+}
+
+/** Boundary data for Type I / Type II integration regions. */
+export interface RegionBoundary {
+  /** Dense boundary polygon for filling the region */
+  points: Array<{ x: number; y: number }>;
+  /** Type I description: x in [a, b], g1(x) ≤ y ≤ g2(x) */
+  typeI: {
+    xRange: [number, number];
+    lowerCurve: Array<{ x: number; y: number }>;
+    upperCurve: Array<{ x: number; y: number }>;
+  };
+  /** Type II description: y in [c, d], h1(y) ≤ x ≤ h2(y) */
+  typeII: {
+    yRange: [number, number];
+    leftCurve: Array<{ x: number; y: number }>;
+    rightCurve: Array<{ x: number; y: number }>;
+  };
+}
+
+// ── 2D Partition ──────────────────────────────────────────────
+
+/** Create a uniform 2D partition of [xRange] × [yRange]. */
+export function uniformPartition2D(
+  xRange: [number, number],
+  yRange: [number, number],
+  nx: number,
+  ny: number,
+): Partition2D {
+  const xPartition = uniformPartition(xRange[0], xRange[1], nx);
+  const yPartition = uniformPartition(yRange[0], yRange[1], ny);
+  return {
+    xPartition,
+    yPartition,
+    nx,
+    ny,
+    totalCells: nx * ny,
+    mesh: Math.max(xPartition.mesh, yPartition.mesh),
+  };
+}
+
+// ── Double Riemann Sum ────────────────────────────────────────
+
+/**
+ * Compute a double Riemann sum of f over [xRange] × [yRange].
+ * Returns the numerical value plus per-cell data for heatmap visualization.
+ * Uses the existing uniformPartition() for each axis.
+ */
+export function doubleRiemannSum(
+  f: (x: number, y: number) => number,
+  xRange: [number, number],
+  yRange: [number, number],
+  nx: number,
+  ny: number,
+  sampleRule: 'lower-left' | 'center' | 'random' = 'center',
+  seed: number = 42,
+): DoubleRiemannSumResult {
+  const partition = uniformPartition2D(xRange, yRange, nx, ny);
+  const { xPartition, yPartition } = partition;
+  const cells: DoubleRiemannSumResult['cells'] = [];
+  let value = 0;
+
+  // Seeded RNG for reproducible "random" sample points
+  const rng = sampleRule === 'random' ? seededRandom(seed) : null;
+
+  for (let i = 0; i < nx; i++) {
+    const xi = xPartition.points[i];
+    const dx = xPartition.widths[i];
+    for (let j = 0; j < ny; j++) {
+      const yj = yPartition.points[j];
+      const dy = yPartition.widths[j];
+
+      // Choose sample point within sub-rectangle
+      let sx: number, sy: number;
+      if (sampleRule === 'lower-left') {
+        sx = xi;
+        sy = yj;
+      } else if (sampleRule === 'center') {
+        sx = xi + dx / 2;
+        sy = yj + dy / 2;
+      } else {
+        sx = xi + rng!() * dx;
+        sy = yj + rng!() * dy;
+      }
+
+      const fVal = f(sx, sy);
+      const vol = fVal * dx * dy;
+      value += vol;
+      cells.push({ x: xi, y: yj, width: dx, height: dy, fValue: fVal, volume: vol });
+    }
+  }
+
+  return { value, partition, sampleRule, cells };
+}
+
+// ── Iterated Integral ─────────────────────────────────────────
+
+/**
+ * Compute an iterated integral via nested 1D quadrature.
+ * Supports both fixed bounds (yRange as [c, d]) and variable bounds
+ * (yRange as a function (x) => [g1(x), g2(x)]) for general regions.
+ *
+ * order = 'xy': outer x, inner y — ∫∫ f(x,y) dy dx
+ * order = 'yx': outer y, inner x — ∫∫ f(x,y) dx dy
+ */
+export function iteratedIntegral(
+  f: (x: number, y: number) => number,
+  xRange: [number, number],
+  yRange: [number, number] | ((x: number) => [number, number]),
+  nOuter: number = 100,
+  nInner: number = 100,
+  order: 'xy' | 'yx' = 'xy',
+): number {
+  if (order === 'xy') {
+    // Outer integral over x, inner integral over y
+    const outerIntegrand = (x: number): number => {
+      const [yLo, yHi] = typeof yRange === 'function' ? yRange(x) : yRange;
+      if (yLo >= yHi) return 0;
+      return simpsonRule(
+        (y: number) => f(x, y),
+        yLo, yHi, nInner,
+      ).value;
+    };
+    return simpsonRule(outerIntegrand, xRange[0], xRange[1], nOuter).value;
+  } else {
+    // Outer integral over y, inner integral over x
+    // For variable bounds, interpret yRange as fixed [c, d] and xRange as fixed [a, b]
+    const [yLo, yHi] = typeof yRange === 'function'
+      ? (() => { throw new Error('Variable bounds not supported with yx order; swap arguments.'); })()
+      : yRange;
+    const outerIntegrand = (y: number): number => {
+      return simpsonRule(
+        (x: number) => f(x, y),
+        xRange[0], xRange[1], nInner,
+      ).value;
+    };
+    return simpsonRule(outerIntegrand, yLo, yHi, nOuter).value;
+  }
+}
+
+/**
+ * Convenience wrapper: compute ∬_R f dA over a rectangle or general region.
+ * Uses Simpson's rule for both axes (accurate for smooth f).
+ */
+export function doubleIntegral(
+  f: (x: number, y: number) => number,
+  xRange: [number, number],
+  yRange: [number, number] | ((x: number) => [number, number]),
+  nx: number = 100,
+  ny: number = 100,
+): number {
+  return iteratedIntegral(f, xRange, yRange, nx, ny, 'xy');
+}
+
+// ── Monte Carlo Integration ───────────────────────────────────
+
+/**
+ * Estimate ∬_D f dA via Monte Carlo sampling within a bounding box.
+ * If inRegion is provided, only samples inside D are counted (rejection sampling).
+ * Returns convergence history at logarithmic checkpoints.
+ */
+export function monteCarloIntegral(
+  f: (x: number, y: number) => number,
+  boundingBox: { x: [number, number]; y: [number, number] },
+  nSamples: number,
+  inRegion?: (x: number, y: number) => boolean,
+  seed: number = 42,
+): MonteCarloResult {
+  const rng = seededRandom(seed);
+  const [xMin, xMax] = boundingBox.x;
+  const [yMin, yMax] = boundingBox.y;
+  const boxArea = (xMax - xMin) * (yMax - yMin);
+
+  const samples: MonteCarloResult['samples'] = [];
+  const convergenceHistory: MonteCarloResult['convergenceHistory'] = [];
+
+  let sumF = 0;
+  let sumF2 = 0;
+  let insideCount = 0;
+
+  // Logarithmic checkpoints for convergence plot
+  const checkpoints = new Set<number>();
+  for (let k = 1; k <= nSamples; k = Math.ceil(k * 1.15)) {
+    checkpoints.add(k);
+  }
+  checkpoints.add(nSamples);
+
+  for (let k = 1; k <= nSamples; k++) {
+    const x = xMin + rng() * (xMax - xMin);
+    const y = yMin + rng() * (yMax - yMin);
+    const inside = inRegion ? inRegion(x, y) : true;
+    const fVal = inside ? f(x, y) : 0;
+
+    samples.push({ x, y, fValue: fVal, inRegion: inside });
+
+    if (inside) {
+      insideCount++;
+      sumF += fVal;
+      sumF2 += fVal * fVal;
+    }
+
+    if (checkpoints.has(k)) {
+      // Estimate using all samples (including outside → contributes 0)
+      const estimate = (boxArea * sumF) / k;
+      convergenceHistory.push({ n: k, estimate });
+    }
+  }
+
+  const estimate = (boxArea * sumF) / nSamples;
+
+  // Sample variance of f (treating outside-region as 0)
+  const meanF = sumF / nSamples;
+  const variance = (sumF2 / nSamples) - meanF * meanF;
+  const standardError = boxArea * Math.sqrt(Math.max(0, variance) / nSamples);
+
+  return { estimate, standardError, nSamples, samples, convergenceHistory };
+}
+
+// ── Region Boundary ───────────────────────────────────────────
+
+/**
+ * Generate dense boundary data for a Type I region: a ≤ x ≤ b, g1(x) ≤ y ≤ g2(x).
+ * Also computes the equivalent Type II curves by inverting the boundary.
+ */
+export function generateRegionBoundary(
+  xRange: [number, number],
+  g1: (x: number) => number,
+  g2: (x: number) => number,
+  nPoints: number = 200,
+): RegionBoundary {
+  const [a, b] = xRange;
+  const lowerCurve: Array<{ x: number; y: number }> = [];
+  const upperCurve: Array<{ x: number; y: number }> = [];
+
+  for (let i = 0; i <= nPoints; i++) {
+    const x = a + (i / nPoints) * (b - a);
+    lowerCurve.push({ x, y: g1(x) });
+    upperCurve.push({ x, y: g2(x) });
+  }
+
+  // Closed polygon: upper curve forward, lower curve backward
+  const points = [...upperCurve, ...lowerCurve.slice().reverse()];
+
+  // Compute y-range for Type II description
+  let yMin = Infinity, yMax = -Infinity;
+  for (const p of points) {
+    if (p.y < yMin) yMin = p.y;
+    if (p.y > yMax) yMax = p.y;
+  }
+
+  // Type II curves: for each y, find the leftmost and rightmost x on the boundary
+  const leftCurve: Array<{ x: number; y: number }> = [];
+  const rightCurve: Array<{ x: number; y: number }> = [];
+  for (let j = 0; j <= nPoints; j++) {
+    const y = yMin + (j / nPoints) * (yMax - yMin);
+    let xLeft = Infinity, xRight = -Infinity;
+    // Scan x to find where y falls between g1(x) and g2(x)
+    for (let i = 0; i <= nPoints; i++) {
+      const x = a + (i / nPoints) * (b - a);
+      if (g1(x) <= y + 1e-10 && y - 1e-10 <= g2(x)) {
+        if (x < xLeft) xLeft = x;
+        if (x > xRight) xRight = x;
+      }
+    }
+    if (xLeft <= xRight) {
+      leftCurve.push({ x: xLeft, y });
+      rightCurve.push({ x: xRight, y });
+    }
+  }
+
+  return {
+    points,
+    typeI: { xRange, lowerCurve, upperCurve },
+    typeII: { yRange: [yMin, yMax], leftCurve, rightCurve },
   };
 }

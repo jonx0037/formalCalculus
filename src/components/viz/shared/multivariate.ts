@@ -24,6 +24,9 @@
  *  - Multivariate Newton's method for systems F(x) = 0 (Topic 12)
  *  - Contraction mapping iteration with convergence diagnostics (Topic 12)
  *  - Lagrange multiplier computation for constrained optimization (Topic 12)
+ *  - Bivariate normal density evaluation (Topic 13)
+ *  - Marginal density via numerical integration (Topic 13)
+ *  - Conditional density computation (Topic 13)
  */
 
 import { seededRandom } from './limits';
@@ -1934,4 +1937,70 @@ export function lagrangeMultiplier(
     gradG: [gg],
     objectiveValue: f(bestX, bestY),
   };
+}
+
+// ══════════════════════════════════════════════════════════════
+// Topic 13: Multiple Integrals — Density Functions
+// ══════════════════════════════════════════════════════════════
+
+/**
+ * Evaluate the bivariate normal density at (x, y).
+ *
+ *   p(x, y) = (1 / 2π σ_x σ_y √(1 - ρ²)) exp(-Q/2)
+ *
+ * where Q = [((x-μ_x)/σ_x)² - 2ρ((x-μ_x)/σ_x)((y-μ_y)/σ_y) + ((y-μ_y)/σ_y)²] / (1 - ρ²).
+ */
+export function bivariateDensity(
+  x: number,
+  y: number,
+  muX: number = 0,
+  muY: number = 0,
+  sigmaX: number = 1,
+  sigmaY: number = 1,
+  rho: number = 0,
+): number {
+  const zx = (x - muX) / sigmaX;
+  const zy = (y - muY) / sigmaY;
+  const rhoSq = rho * rho;
+  const denom = 1 - rhoSq;
+  if (denom <= 0) return 0; // degenerate case
+
+  const Q = (zx * zx - 2 * rho * zx * zy + zy * zy) / denom;
+  const norm = 2 * Math.PI * sigmaX * sigmaY * Math.sqrt(denom);
+  return Math.exp(-Q / 2) / norm;
+}
+
+/**
+ * Compute the marginal density p_X(x) = ∫ p(x, y) dy
+ * via the trapezoidal rule over [yMin, yMax].
+ */
+export function marginalDensity(
+  density: (x: number, y: number) => number,
+  x: number,
+  yRange: [number, number],
+  nPoints: number = 200,
+): number {
+  const [yMin, yMax] = yRange;
+  const h = (yMax - yMin) / nPoints;
+  let sum = (density(x, yMin) + density(x, yMax)) / 2;
+  for (let i = 1; i < nPoints; i++) {
+    sum += density(x, yMin + i * h);
+  }
+  return sum * h;
+}
+
+/**
+ * Compute the conditional density p(y | x) = p(x, y) / p_X(x).
+ * Uses marginalDensity for the denominator.
+ */
+export function conditionalDensity(
+  density: (x: number, y: number) => number,
+  x: number,
+  y: number,
+  yRange: [number, number],
+  nPoints: number = 200,
+): number {
+  const pX = marginalDensity(density, x, yRange, nPoints);
+  if (pX < 1e-15) return 0;
+  return density(x, y) / pX;
 }
