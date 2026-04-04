@@ -3,15 +3,17 @@
   "configurations": [
     {
       "name": "Astro Dev",
-      "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["dev"],
-      "port": 4321
+      "runtimeExecutable": "/Users/jonathanrocha/.nvm/versions/node/v24.11.1/bin/node",
+      "runtimeArgs": ["/opt/homebrew/bin/pnpm", "dev"],
+      "port": 4321,
+      "env": { "PATH": "/Users/jonathanrocha/.nvm/versions/node/v24.11.1/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin" }
     },
     {
       "name": "Astro Preview",
-      "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["preview"],
-      "port": 4321
+      "runtimeExecutable": "/Users/jonathanrocha/.nvm/versions/node/v24.11.1/bin/node",
+      "runtimeArgs": ["/opt/homebrew/bin/pnpm", "preview"],
+      "port": 4321,
+      "env": { "PATH": "/Users/jonathanrocha/.nvm/versions/node/v24.11.1/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin" }
     }
   ]
 }
