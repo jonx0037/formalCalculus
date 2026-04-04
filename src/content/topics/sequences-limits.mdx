@@ -422,7 +422,7 @@ $$\sum_{t=1}^{\infty} \eta_t = \infty \quad \text{and} \quad \sum_{t=1}^{\infty}
 
 The first condition ($\sum \eta_t = \infty$) ensures the steps are large enough to reach the optimum from any starting point. The second ($\sum \eta_t^2 < \infty$) ensures the accumulated noise variance is finite, so the iterates settle down. Common schedules satisfying both: $\eta_t = c/t$ and $\eta_t = c/\sqrt{t}$.
 
-These are *series convergence* conditions — statements about infinite sums. We'll formalize series in **Series Convergence & Tests** *(coming soon)*, but the key point is that learning rate theory rests on the sequence and series machinery we've built here.
+These are *series convergence* conditions — statements about infinite sums. We formalize series in [Series Convergence & Tests](/topics/series-convergence), but the key point is that learning rate theory rests on the sequence and series machinery we've built here.
 
 ![Learning rate schedules with Robbins-Monro conditions](/images/topics/sequences-limits/robbins-monro-schedules.png)
 
@@ -513,7 +513,7 @@ result = minimize(lambda x: x[0]**2 + x[1]**2, x0=[3.0, 4.0],
 
 - [**Epsilon-Delta & Continuity**](/topics/epsilon-delta) extends the $\varepsilon$-$N$ framework to function limits and continuity. The $\varepsilon$-$\delta$ definition is the function-level analogue of what we did here for sequences.
 - [**The Riemann Integral & FTC**](/topics/riemann-integral) defines the integral as a limit of Riemann sums — each sum is a term in a sequence, and convergence of that sequence *is* the integral.
-- **Series Convergence & Tests** *(coming soon)* treats partial sums of infinite series as sequences. The Robbins-Monro conditions from §8 are formalized as series convergence criteria.
+- [**Series Convergence & Tests**](/topics/series-convergence) treats partial sums of infinite series as sequences. The Robbins-Monro conditions from §8 are formalized as series convergence criteria.
 - [**Completeness & Compactness**](/topics/completeness-compactness) — elevates the Bolzano-Weierstrass theorem and Cauchy completeness from useful results to consequences of a single structural axiom: the completeness of ℝ.
 - [**Uniform Convergence**](/topics/uniform-convergence) — extends convergence from sequences of numbers to sequences of functions, with the Cauchy criterion for uniform convergence as the function-space analog of Cauchy sequences.
 
