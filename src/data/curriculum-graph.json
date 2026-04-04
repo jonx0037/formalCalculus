@@ -17,7 +17,7 @@
 
     { "id": "multiple-integrals", "label": "Multiple Integrals & Fubini's Theorem", "domain": "multivar-integral", "status": "published", "url": "/topics/multiple-integrals" },
     { "id": "change-of-variables", "label": "Change of Variables & the Jacobian Determinant", "domain": "multivar-integral", "status": "published", "url": "/topics/change-of-variables" },
-    { "id": "line-integrals", "label": "Line Integrals & Conservative Fields", "domain": "multivar-integral", "status": "planned", "url": "/topics/line-integrals" },
+    { "id": "line-integrals", "label": "Line Integrals & Conservative Fields", "domain": "multivar-integral", "status": "published", "url": "/topics/line-integrals" },
     { "id": "surface-integrals", "label": "Surface Integrals & the Divergence Theorem", "domain": "multivar-integral", "status": "planned", "url": "/topics/surface-integrals" },
 
     { "id": "series-convergence", "label": "Series Convergence & Tests", "domain": "series-approximation", "status": "planned", "url": "/topics/series-convergence" },

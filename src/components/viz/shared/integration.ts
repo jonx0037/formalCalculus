@@ -1311,3 +1311,138 @@ export function coordinateTransformGrid(
   }
   return cells;
 }
+
+// ══════════════════════════════════════════════════════════════
+// Topic 15: Line Integrals & Conservative Fields
+// ══════════════════════════════════════════════════════════════
+
+/**
+ * Compute scalar line integral ∫_C f ds via parameterization.
+ *
+ * ∫_C f ds = ∫_a^b f(r(t)) · ‖r'(t)‖ dt
+ *
+ * The arc-length element ds = ‖r'(t)‖ dt weights the function by how fast
+ * the curve is traversed — the integral is parameterization-independent.
+ */
+export function lineIntegralScalar(
+  f: (x: number, y: number) => number,
+  r: (t: number) => [number, number],
+  rPrime: (t: number) => [number, number],
+  domain: [number, number],
+  nPoints: number = 200,
+): number {
+  const [a, b] = domain;
+  const integrand = (t: number): number => {
+    const [x, y] = r(t);
+    const [dx, dy] = rPrime(t);
+    const speed = Math.sqrt(dx * dx + dy * dy);
+    return f(x, y) * speed;
+  };
+  return simpsonRule(integrand, a, b, nPoints).value;
+}
+
+/**
+ * Compute vector line integral ∫_C F · dr via parameterization.
+ *
+ * ∫_C F · dr = ∫_a^b F(r(t)) · r'(t) dt
+ *
+ * This is the "work integral" — it measures how much the vector field F
+ * pushes along the direction of travel. Unlike the scalar line integral,
+ * this integral is orientation-sensitive: reversing the curve negates it.
+ */
+export function lineIntegralVector(
+  F: (x: number, y: number) => [number, number],
+  r: (t: number) => [number, number],
+  rPrime: (t: number) => [number, number],
+  domain: [number, number],
+  nPoints: number = 200,
+): number {
+  const [a, b] = domain;
+  const integrand = (t: number): number => {
+    const [x, y] = r(t);
+    const [Fx, Fy] = F(x, y);
+    const [dx, dy] = rPrime(t);
+    return Fx * dx + Fy * dy;
+  };
+  return simpsonRule(integrand, a, b, nPoints).value;
+}
+
+/**
+ * Compute circulation ∮_C F · dr around a closed curve.
+ *
+ * Semantically identical to lineIntegralVector but named for clarity
+ * when working with closed curves and Green's theorem.
+ */
+export function computeCirculation(
+  F: (x: number, y: number) => [number, number],
+  r: (t: number) => [number, number],
+  rPrime: (t: number) => [number, number],
+  domain: [number, number],
+  nPoints: number = 200,
+): number {
+  return lineIntegralVector(F, r, rPrime, domain, nPoints);
+}
+
+/**
+ * Compute arc length L = ∫_a^b ‖r'(t)‖ dt.
+ */
+export function arcLength(
+  rPrime: (t: number) => [number, number],
+  domain: [number, number],
+  nPoints: number = 200,
+): number {
+  const [a, b] = domain;
+  const integrand = (t: number): number => {
+    const [dx, dy] = rPrime(t);
+    return Math.sqrt(dx * dx + dy * dy);
+  };
+  return simpsonRule(integrand, a, b, nPoints).value;
+}
+
+/**
+ * Compute work integral incrementally, returning per-step data for animation.
+ *
+ * Returns an array of { t, position, contribution, cumulative } at nSteps
+ * uniformly spaced parameter values. The LineIntegralExplorer uses this to
+ * animate a particle traversing a curve with an accumulating work bar chart.
+ */
+export function computeWorkIntegral(
+  F: (x: number, y: number) => [number, number],
+  r: (t: number) => [number, number],
+  rPrime: (t: number) => [number, number],
+  domain: [number, number],
+  nSteps: number,
+): { t: number; position: [number, number]; contribution: number; cumulative: number }[] {
+  const [a, b] = domain;
+  const dt = (b - a) / nSteps;
+  const result: { t: number; position: [number, number]; contribution: number; cumulative: number }[] = [];
+  let cumulative = 0;
+
+  let prevIntegrand = 0;
+  for (let i = 0; i <= nSteps; i++) {
+    const t = a + i * dt;
+    const pos = r(t);
+    const [Fx, Fy] = F(pos[0], pos[1]);
+    const [dx, dy] = rPrime(t);
+    const integrandValue = Fx * dx + Fy * dy;
+
+    // Trapezoidal accumulation — contribution equals the trapezoidal increment
+    // so that sum(contribution) === final cumulative value.
+    let contribution = 0;
+    if (i > 0) {
+      contribution = 0.5 * (prevIntegrand + integrandValue) * dt;
+      cumulative += contribution;
+    }
+
+    result.push({
+      t,
+      position: pos,
+      contribution,
+      cumulative,
+    });
+
+    prevIntegrand = integrandValue;
+  }
+
+  return result;
+}
