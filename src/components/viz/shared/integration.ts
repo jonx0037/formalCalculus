@@ -1446,3 +1446,73 @@ export function computeWorkIntegral(
 
   return result;
 }
+
+// ══════════════════════════════════════════════════════════════
+// Surface integrals & volume integrals (Topic 16)
+// ══════════════════════════════════════════════════════════════
+
+/**
+ * Compute the surface area element ‖r_u × r_v‖ from tangent vectors.
+ *
+ * This is the area scaling factor of the parameterization map r: D* → S.
+ * It equals √det(J_r^T J_r) — the Gram determinant — which generalizes
+ * the 2D Jacobian determinant |det J_φ| from the change of variables
+ * formula (Topic 14) to maps ℝ² → ℝ³.
+ */
+export function surfaceAreaElement(
+  r_u: [number, number, number],
+  r_v: [number, number, number],
+): number {
+  // Cross product r_u × r_v
+  const cx = r_u[1] * r_v[2] - r_u[2] * r_v[1];
+  const cy = r_u[2] * r_v[0] - r_u[0] * r_v[2];
+  const cz = r_u[0] * r_v[1] - r_u[1] * r_v[0];
+  return Math.sqrt(cx * cx + cy * cy + cz * cz);
+}
+
+/**
+ * Compute a triple integral ∭_E divF dV over a region with variable bounds.
+ *
+ * Uses the midpoint rule on an nx × ny × nz grid. The bounds support
+ * both constant and variable ranges:
+ *   - xRange: [x_min, x_max]
+ *   - yRange: [y_min, y_max] or (x) => [y_min(x), y_max(x)]
+ *   - zRange: [z_min, z_max] or (x, y) => [z_min(x,y), z_max(x,y)]
+ *
+ * This is used to verify the divergence theorem: the volume integral of
+ * ∇ · F over E should equal the surface flux ∬_S F · dS over ∂E.
+ */
+export function volumeIntegralDivergence(
+  divF: (x: number, y: number, z: number) => number,
+  bounds: {
+    xRange: [number, number];
+    yRange: [number, number] | ((x: number) => [number, number]);
+    zRange: [number, number] | ((x: number, y: number) => [number, number]);
+  },
+  nx: number = 30,
+  ny: number = 30,
+  nz: number = 30,
+): number {
+  const { xRange, yRange, zRange } = bounds;
+  const dx = (xRange[1] - xRange[0]) / nx;
+  let total = 0;
+
+  for (let i = 0; i < nx; i++) {
+    const x = xRange[0] + (i + 0.5) * dx;
+    const yBounds = typeof yRange === 'function' ? yRange(x) : yRange;
+    const dy = (yBounds[1] - yBounds[0]) / ny;
+
+    for (let j = 0; j < ny; j++) {
+      const y = yBounds[0] + (j + 0.5) * dy;
+      const zBounds = typeof zRange === 'function' ? zRange(x, y) : zRange;
+      const dz = (zBounds[1] - zBounds[0]) / nz;
+
+      for (let k = 0; k < nz; k++) {
+        const z = zBounds[0] + (k + 0.5) * dz;
+        total += divF(x, y, z) * dx * dy * dz;
+      }
+    }
+  }
+
+  return total;
+}

@@ -2210,3 +2210,218 @@ export function potentialFunction2D(
 
   return horizontalSum + verticalSum;
 }
+
+// ══════════════════════════════════════════════════════════════
+// 3D vector calculus — cross product, curl, divergence, surface integrals (Topic 16)
+// ══════════════════════════════════════════════════════════════
+
+/**
+ * Compute 3D cross product a × b.
+ *
+ * The result is orthogonal to both a and b, with magnitude equal to the
+ * area of the parallelogram spanned by a and b. The direction follows
+ * the right-hand rule: curl fingers from a toward b, thumb points
+ * in the direction of a × b.
+ *
+ * For surface integrals, r_u × r_v gives the normal vector whose
+ * magnitude is the surface area element dS.
+ */
+export function crossProduct3D(
+  a: [number, number, number],
+  b: [number, number, number],
+): [number, number, number] {
+  return [
+    a[1] * b[2] - a[2] * b[1],
+    a[2] * b[0] - a[0] * b[2],
+    a[0] * b[1] - a[1] * b[0],
+  ];
+}
+
+/**
+ * Compute 3D curl: ∇ × F = (∂R/∂y − ∂Q/∂z, ∂P/∂z − ∂R/∂x, ∂Q/∂x − ∂P/∂y).
+ *
+ * The curl measures infinitesimal circulation at a point. The result is
+ * a vector pointing along the axis of rotation, with magnitude equal to
+ * twice the angular velocity. The ẑ-component recovers curl2D when
+ * F = (P, Q, 0).
+ *
+ * Uses central finite differences, matching the pattern of curl2D.
+ */
+export function curl3D(
+  F: (x: number, y: number, z: number) => [number, number, number],
+  x: number,
+  y: number,
+  z: number,
+  h: number = 1e-7,
+): [number, number, number] {
+  // ∂R/∂y − ∂Q/∂z  (x-component)
+  const [, , RyPlus] = F(x, y + h, z);
+  const [, , RyMinus] = F(x, y - h, z);
+  const dRdy = (RyPlus - RyMinus) / (2 * h);
+
+  const [, QzPlus] = F(x, y, z + h);
+  const [, QzMinus] = F(x, y, z - h);
+  const dQdz = (QzPlus - QzMinus) / (2 * h);
+
+  // ∂P/∂z − ∂R/∂x  (y-component)
+  const [PzPlus] = F(x, y, z + h);
+  const [PzMinus] = F(x, y, z - h);
+  const dPdz = (PzPlus - PzMinus) / (2 * h);
+
+  const [, , RxPlus] = F(x + h, y, z);
+  const [, , RxMinus] = F(x - h, y, z);
+  const dRdx = (RxPlus - RxMinus) / (2 * h);
+
+  // ∂Q/∂x − ∂P/∂y  (z-component) — matches curl2D
+  const [, QxPlus] = F(x + h, y, z);
+  const [, QxMinus] = F(x - h, y, z);
+  const dQdx = (QxPlus - QxMinus) / (2 * h);
+
+  const [PyPlus] = F(x, y + h, z);
+  const [PyMinus] = F(x, y - h, z);
+  const dPdy = (PyPlus - PyMinus) / (2 * h);
+
+  return [dRdy - dQdz, dPdz - dRdx, dQdx - dPdy];
+}
+
+/**
+ * Compute 3D divergence: ∇ · F = ∂P/∂x + ∂Q/∂y + ∂R/∂z.
+ *
+ * Divergence measures the rate of volume expansion of the field at a point.
+ * Positive = source; negative = sink; zero = incompressible.
+ *
+ * Uses central finite differences, matching the pattern of divergence2D.
+ */
+export function divergence3D(
+  F: (x: number, y: number, z: number) => [number, number, number],
+  x: number,
+  y: number,
+  z: number,
+  h: number = 1e-7,
+): number {
+  // ∂P/∂x
+  const [PxPlus] = F(x + h, y, z);
+  const [PxMinus] = F(x - h, y, z);
+  const dPdx = (PxPlus - PxMinus) / (2 * h);
+
+  // ∂Q/∂y
+  const [, QyPlus] = F(x, y + h, z);
+  const [, QyMinus] = F(x, y - h, z);
+  const dQdy = (QyPlus - QyMinus) / (2 * h);
+
+  // ∂R/∂z
+  const [, , RzPlus] = F(x, y, z + h);
+  const [, , RzMinus] = F(x, y, z - h);
+  const dRdz = (RzPlus - RzMinus) / (2 * h);
+
+  return dPdx + dQdy + dRdz;
+}
+
+/**
+ * Compute the surface normal from tangent vectors r_u and r_v.
+ *
+ * Returns the cross product r_u × r_v (the unnormalized normal),
+ * its magnitude (the area scaling factor ‖r_u × r_v‖ = dS/du dv),
+ * and the unit normal n̂ = (r_u × r_v)/‖r_u × r_v‖.
+ *
+ * The direction of the normal follows the right-hand rule: if you
+ * curl fingers from r_u toward r_v, n̂ points in the thumb direction.
+ * For closed surfaces, the convention is outward-pointing.
+ */
+export function surfaceNormal(
+  r_u: [number, number, number],
+  r_v: [number, number, number],
+): { normal: [number, number, number]; magnitude: number; unitNormal: [number, number, number] } {
+  const normal = crossProduct3D(r_u, r_v);
+  const magnitude = Math.sqrt(
+    normal[0] * normal[0] + normal[1] * normal[1] + normal[2] * normal[2],
+  );
+  const unitNormal: [number, number, number] =
+    magnitude > 1e-12
+      ? [normal[0] / magnitude, normal[1] / magnitude, normal[2] / magnitude]
+      : [0, 0, 0];
+  return { normal, magnitude, unitNormal };
+}
+
+/**
+ * Compute scalar surface integral ∬_S f dS via parameterization.
+ *
+ * ∬_S f dS = ∬_{D*} f(r(u,v)) ‖r_u × r_v‖ du dv
+ *
+ * The parameter domain D* is [uRange[0], uRange[1]] × [vRange[0], vRange[1]]
+ * (or variable v-bounds via a callback). Uses the midpoint rule on a
+ * nu × nv grid.
+ */
+export function surfaceIntegralScalar(
+  f: (x: number, y: number, z: number) => number,
+  r: (u: number, v: number) => [number, number, number],
+  r_u: (u: number, v: number) => [number, number, number],
+  r_v: (u: number, v: number) => [number, number, number],
+  uRange: [number, number],
+  vRange: [number, number] | ((u: number) => [number, number]),
+  nu: number = 40,
+  nv: number = 40,
+): number {
+  const du = (uRange[1] - uRange[0]) / nu;
+  let total = 0;
+
+  for (let i = 0; i < nu; i++) {
+    const u = uRange[0] + (i + 0.5) * du;
+    const vBounds = typeof vRange === 'function' ? vRange(u) : vRange;
+    const dv = (vBounds[1] - vBounds[0]) / nv;
+
+    for (let j = 0; j < nv; j++) {
+      const v = vBounds[0] + (j + 0.5) * dv;
+      const pos = r(u, v);
+      const tangU = r_u(u, v);
+      const tangV = r_v(u, v);
+      const { magnitude } = surfaceNormal(tangU, tangV);
+      total += f(pos[0], pos[1], pos[2]) * magnitude * du * dv;
+    }
+  }
+
+  return total;
+}
+
+/**
+ * Compute flux integral ∬_S F · dS via parameterization.
+ *
+ * ∬_S F · dS = ∬_{D*} F(r(u,v)) · (r_u × r_v) du dv
+ *
+ * The orientation is determined by the cross product r_u × r_v.
+ * For closed surfaces with outward-pointing normals, ensure the
+ * parameterization is consistent with the outward convention.
+ * Uses the midpoint rule on a nu × nv grid.
+ */
+export function surfaceIntegralFlux(
+  F: (x: number, y: number, z: number) => [number, number, number],
+  r: (u: number, v: number) => [number, number, number],
+  r_u: (u: number, v: number) => [number, number, number],
+  r_v: (u: number, v: number) => [number, number, number],
+  uRange: [number, number],
+  vRange: [number, number] | ((u: number) => [number, number]),
+  nu: number = 40,
+  nv: number = 40,
+): number {
+  const du = (uRange[1] - uRange[0]) / nu;
+  let total = 0;
+
+  for (let i = 0; i < nu; i++) {
+    const u = uRange[0] + (i + 0.5) * du;
+    const vBounds = typeof vRange === 'function' ? vRange(u) : vRange;
+    const dv = (vBounds[1] - vBounds[0]) / nv;
+
+    for (let j = 0; j < nv; j++) {
+      const v = vBounds[0] + (j + 0.5) * dv;
+      const pos = r(u, v);
+      const tangU = r_u(u, v);
+      const tangV = r_v(u, v);
+      const n = crossProduct3D(tangU, tangV);
+      const fVec = F(pos[0], pos[1], pos[2]);
+      // F · (r_u × r_v) — the dot product with the unnormalized normal
+      total += (fVec[0] * n[0] + fVec[1] * n[1] + fVec[2] * n[2]) * du * dv;
+    }
+  }
+
+  return total;
+}
