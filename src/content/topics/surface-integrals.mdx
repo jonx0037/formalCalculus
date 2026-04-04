@@ -1,0 +1,976 @@
+---
+title: "Surface Integrals & the Divergence Theorem"
+subtitle: "Integrating functions and vector fields over surfaces in ℝ³ — flux through oriented surfaces, the 3D curl and divergence, Stokes' theorem generalizing Green's from 2D to 3D, and the divergence theorem relating boundary flux to interior divergence."
+status: "published"
+difficulty: "advanced"
+prerequisites:
+  - "multiple-integrals"
+  - "change-of-variables"
+  - "line-integrals"
+tags:
+  - "calculus"
+  - "surface-integral"
+  - "flux"
+  - "divergence-theorem"
+  - "stokes-theorem"
+  - "curl"
+  - "divergence"
+  - "oriented-surface"
+  - "differential-forms"
+  - "conservation-law"
+domain: "multivar-integral"
+videoId: null
+notebookPath: "notebooks/surface-integrals/16_surface_integrals.ipynb"
+githubUrl: "https://github.com/jonx0037/formalCalculus/blob/main/src/content/topics/surface-integrals.mdx"
+datePublished: 2026-05-01
+estimatedReadTime: 55
+abstract: "Surface integrals extend integration from curves to two-dimensional surfaces embedded in ℝ³. Given a parameterized surface S defined by r(u,v) for (u,v) in a parameter domain D*, the tangent vectors r_u and r_v span the tangent plane at each point, and their cross product r_u × r_v yields the normal vector whose magnitude is the surface area element dS = ‖r_u × r_v‖ du dv. For a scalar function f, the scalar surface integral ∬_S f dS = ∬_{D*} f(r(u,v)) ‖r_u × r_v‖ du dv sums f over S weighted by area. For a vector field F, the flux integral ∬_S F · dS = ∬_{D*} F(r(u,v)) · (r_u × r_v) du dv measures the net flow of F through the oriented surface. These constructions culminate in two fundamental theorems. Stokes' theorem ∮_C F · dr = ∬_S (∇ × F) · dS generalizes Green's theorem from 2D to 3D: the circulation of F around the boundary curve C of a surface S equals the flux of the curl ∇ × F through S. The divergence theorem (Gauss's theorem) ∬_S F · dS = ∭_E ∇ · F dV relates the net outward flux of F through a closed surface S to the total divergence of F in the enclosed volume E. Together, these theorems unify Green's theorem, the Gradient Theorem, and the Fundamental Theorem of Calculus under a single framework — the generalized Stokes' theorem ∫_M dω = ∫_{∂M} ω — connecting boundary integrals to interior derivatives at every dimension. In machine learning, the divergence theorem appears in conservation laws for gradient flow trajectories, in Stein's identity (the foundation of Stein variational gradient descent), in physics-informed neural networks enforcing PDE constraints, and in the flow-matching framework for generative models where the continuity equation ∂_t p + ∇ · (p v) = 0 governs density evolution under a learned velocity field."
+formalmlConnections:
+  - topic: "gradient-descent"
+    site: "formalml"
+    relationship: "The divergence theorem quantifies how gradient flow trajectories converge or diverge through surfaces in parameter space. The divergence ∇ · (−∇L) = −ΔL determines whether trajectories focus into or spread from a region — connecting the Laplacian of the loss to the convergence geometry of optimization."
+  - topic: "measure-theoretic-probability"
+    site: "formalml"
+    relationship: "The divergence theorem yields Stein's identity: E[∇ · F(X)] = −E[F(X) · ∇ log p(X)] for a smooth density p with suitable boundary conditions. This is the foundation of Stein variational gradient descent (SVGD) and kernel Stein discrepancy."
+  - topic: "smooth-manifolds"
+    site: "formalml"
+    relationship: "Stokes' theorem on manifolds ∫_M dω = ∫_{∂M} ω subsumes Green's theorem, the classical Stokes' theorem, and the divergence theorem as dimension-specific instances. Surface integrals are integrals of 2-forms, and the surface area element dS is the pullback of the area 2-form."
+  - topic: "information-geometry"
+    site: "formalml"
+    relationship: "The Fisher-Rao volume form on the statistical manifold induces surface integrals that measure 'statistical area.' The divergence theorem on the statistical manifold connects natural gradient flow conservation to boundary flux in parameter space."
+connections:
+  - topic: "multiple-integrals"
+    relationship: "Surface integrals reduce to double integrals over the parameter domain via Fubini. The divergence theorem converts surface integrals to triple integrals. The Type I/II decomposition strategy from Topic 13 extends to the divergence theorem proof."
+  - topic: "change-of-variables"
+    relationship: "The surface area element dS = ‖r_u × r_v‖ du dv is the area scaling factor of the parameterization map — the 2D analog of the Jacobian determinant |det J_φ| from Topic 14. Cylindrical and spherical coordinates from Topic 14 are used in divergence theorem volume integrals."
+  - topic: "line-integrals"
+    relationship: "Green's theorem (Topic 15, Theorem 5) is the 2D special case of Stokes' theorem. The 2D curl from Topic 15 generalizes to the full 3D curl. Stokes' theorem relates a line integral around the boundary of a surface to a surface integral of the curl — extending the boundary-interior relationship from curves to surfaces."
+  - topic: "gradient"
+    relationship: "The gradient ∇f is a 1-form (dual to a vector field). The curl ∇ × F and divergence ∇ · F are differential operators built from the same gradient machinery — curl is the 'gradient of a vector field' (via the cross product), divergence is the 'scalar product of ∇ with F.'"
+  - topic: "jacobian"
+    relationship: "The cross product r_u × r_v is the row-space normal of the Jacobian matrix J_r = [r_u | r_v] of the parameterization. The surface area element ‖r_u × r_v‖ equals √(det(J_r^T J_r)) — the Gram determinant, which is the natural 2D generalization of the Jacobian determinant."
+  - topic: "inverse-implicit"
+    relationship: "For surfaces defined implicitly by F(x,y,z) = 0, the normal vector is ∇F/‖∇F‖ (Topic 12, implicit function theorem). This provides an alternative to parameterization for computing surface integrals on level sets."
+  - topic: "riemann-integral"
+    relationship: "After parameterization, every surface integral reduces to a double Riemann integral over the parameter domain. The existence of the surface integral follows from the integrability theory in Topic 7 applied to the composite function."
+references:
+  - type: "book"
+    title: "Calculus on Manifolds"
+    authors: "Spivak"
+    year: 1965
+    note: "Chapter 5 — the generalized Stokes' theorem in the language of differential forms, unifying all classical integral theorems"
+  - type: "book"
+    title: "Vector Calculus, Linear Algebra, and Differential Forms"
+    authors: "Hubbard & Hubbard"
+    year: 2015
+    note: "Chapter 6 — surface integrals, flux, and the divergence theorem with geometric exposition and careful orientation treatment"
+  - type: "book"
+    title: "Div, Grad, Curl, and All That"
+    authors: "Schey"
+    year: 2005
+    note: "Chapters 3-4 — physical motivation for surface integrals via flux, the divergence theorem as a conservation law"
+  - type: "book"
+    title: "Analysis on Manifolds"
+    authors: "Munkres"
+    year: 1991
+    note: "Chapters 6-7 — rigorous treatment of surface integrals, the classical Stokes' and divergence theorems"
+  - type: "book"
+    title: "Principles of Mathematical Analysis"
+    authors: "Rudin"
+    year: 1976
+    note: "Chapter 10 — integration of differential forms, Stokes' theorem in ℝⁿ"
+  - type: "paper"
+    title: "A Kernelized Stein Discrepancy for Goodness-of-fit Tests"
+    authors: "Liu, Lee & Jordan"
+    year: 2016
+    url: "https://arxiv.org/abs/1602.03253"
+    note: "Stein's identity via the divergence theorem — the foundation of kernel Stein discrepancy and SVGD"
+  - type: "paper"
+    title: "Flow Matching for Generative Modeling"
+    authors: "Lipman, Chen, Ben-Hamu, Nickel"
+    year: 2023
+    url: "https://arxiv.org/abs/2210.02747"
+    note: "The continuity equation ∂_t p + ∇ · (pv) = 0 governs density evolution — a direct application of the divergence theorem"
+  - type: "paper"
+    title: "Physics-Informed Neural Networks"
+    authors: "Raissi, Perdikaris & Karniadakis"
+    year: 2019
+    url: "https://doi.org/10.1016/j.jcp.2018.10.045"
+    note: "PDE constraints enforced via the divergence theorem — conservation laws as loss terms"
+---
+
+import TheoremBlock from '../../components/ui/TheoremBlock.astro';
+
+import FluxExplorer from '../../components/viz/FluxExplorer.tsx';
+import StokesTheoremExplorer from '../../components/viz/StokesTheoremExplorer.tsx';
+import DivergenceTheoremExplorer from '../../components/viz/DivergenceTheoremExplorer.tsx';
+import SurfaceParameterizationExplorer from '../../components/viz/SurfaceParameterizationExplorer.tsx';
+
+## 1. Overview & Motivation
+
+You're building a flow-matching generative model. The core idea: learn a velocity field $\mathbf{v}(\mathbf{x}, t)$ that transforms a simple base distribution (say, a Gaussian) into your target data distribution over time $t \in [0, 1]$. The evolving probability density $p(\mathbf{x}, t)$ obeys the *continuity equation*:
+
+$$\frac{\partial p}{\partial t} + \nabla \cdot (p\,\mathbf{v}) = 0.$$
+
+This equation says that probability is neither created nor destroyed — it flows. But how do we verify that no probability mass leaks through the boundaries of a region? We integrate the continuity equation over a volume $E$ and apply the divergence theorem:
+
+$$\frac{d}{dt} \iiint_E p\,dV = -\oiint_{\partial E} p\,\mathbf{v} \cdot d\mathbf{S}.$$
+
+The left side is the rate of change of total probability inside $E$. The right side is the net flux of the probability current $p\,\mathbf{v}$ through the boundary surface $\partial E$. The divergence theorem converts the volume integral of $\nabla \cdot (p\,\mathbf{v})$ into this boundary flux — verifying mass conservation without tracking individual particles.
+
+This is why we need surface integrals. They measure *flow through surfaces* — the net amount of a vector quantity passing through a two-dimensional membrane embedded in $\mathbb{R}^3$. The divergence theorem then connects that surface measurement to what happens in the interior. Together with Stokes' theorem (which connects surface integrals to line integrals around the boundary), these results complete the hierarchy that started with the Fundamental Theorem of Calculus: interior derivatives determine boundary integrals, at every dimension.
+
+## 2. Parameterized Surfaces & the Area Element
+
+A surface in $\mathbb{R}^3$ is the two-dimensional analog of a curve. Where a curve is traced by one parameter $t$, a surface is swept out by two parameters $(u, v)$. At each point, the partial derivatives $\mathbf{r}_u$ and $\mathbf{r}_v$ are tangent vectors that span the tangent plane. Their cross product $\mathbf{r}_u \times \mathbf{r}_v$ is perpendicular to the surface — it is the normal vector — and its magnitude gives the area of the infinitesimal parallelogram spanned by $\mathbf{r}_u\,du$ and $\mathbf{r}_v\,dv$. This magnitude is the surface area element $dS$.
+
+The connection to the Jacobian ([Topic 14](/topics/change-of-variables)) is precise: the parameterization $\mathbf{r}: D^* \to \mathbb{R}^3$ is a map from a 2D parameter domain to 3D space. Its Jacobian matrix $J_{\mathbf{r}} = [\mathbf{r}_u \mid \mathbf{r}_v]$ is $3 \times 2$. In the change-of-variables theorem, the scaling factor was $|\det J_\phi|$, the absolute value of the determinant of a square Jacobian. Here the Jacobian is not square, so we use the Gram determinant $\sqrt{\det(J_{\mathbf{r}}^T J_{\mathbf{r}})}$ instead — and this turns out to equal $\|\mathbf{r}_u \times \mathbf{r}_v\|$.
+
+<TheoremBlock type="definition" number={1} title="Parameterized Surface">
+A *parameterized surface* in $\mathbb{R}^3$ is a $C^1$ function $\mathbf{r}: D^* \to \mathbb{R}^3$, where $D^* \subseteq \mathbb{R}^2$ is a bounded, closed region (the *parameter domain*). We write $\mathbf{r}(u, v) = (x(u,v),\; y(u,v),\; z(u,v))$.
+
+The surface is *regular* (or *smooth*) if the cross product $\mathbf{r}_u \times \mathbf{r}_v \neq \mathbf{0}$ for all $(u, v)$ in the interior of $D^*$. This ensures the tangent plane is well-defined at every point — the two tangent vectors are linearly independent, and the surface has no cusps or self-intersections locally.
+</TheoremBlock>
+
+<TheoremBlock type="definition" number={2} title="Cross Product">
+For vectors $\mathbf{a} = (a_1, a_2, a_3)$ and $\mathbf{b} = (b_1, b_2, b_3)$ in $\mathbb{R}^3$, the *cross product* is:
+
+$$\mathbf{a} \times \mathbf{b} = (a_2 b_3 - a_3 b_2,\; a_3 b_1 - a_1 b_3,\; a_1 b_2 - a_2 b_1).$$
+
+Equivalently, using the determinant mnemonic:
+
+$$\mathbf{a} \times \mathbf{b} = \begin{vmatrix} \hat{\mathbf{i}} & \hat{\mathbf{j}} & \hat{\mathbf{k}} \\ a_1 & a_2 & a_3 \\ b_1 & b_2 & b_3 \end{vmatrix}.$$
+
+Key properties:
+
+1. *Orthogonality:* $(\mathbf{a} \times \mathbf{b}) \cdot \mathbf{a} = 0$ and $(\mathbf{a} \times \mathbf{b}) \cdot \mathbf{b} = 0$ — the cross product is perpendicular to both factors.
+2. *Area:* $\|\mathbf{a} \times \mathbf{b}\| = \|\mathbf{a}\|\,\|\mathbf{b}\|\sin\theta$ — the magnitude equals the area of the parallelogram spanned by $\mathbf{a}$ and $\mathbf{b}$.
+3. *Anti-commutativity:* $\mathbf{b} \times \mathbf{a} = -(\mathbf{a} \times \mathbf{b})$ — swapping the factors reverses the direction.
+</TheoremBlock>
+
+<TheoremBlock type="definition" number={3} title="Surface Area Element">
+For a regular parameterized surface $\mathbf{r}: D^* \to \mathbb{R}^3$, the *surface area element* is:
+
+$$dS = \|\mathbf{r}_u \times \mathbf{r}_v\|\,du\,dv.$$
+
+The *surface area* of $S$ is:
+
+$$\text{Area}(S) = \iint_{D^*} \|\mathbf{r}_u \times \mathbf{r}_v\|\,du\,dv.$$
+
+The factor $\|\mathbf{r}_u \times \mathbf{r}_v\|$ is the area of the infinitesimal parallelogram spanned by the tangent vectors — it measures how much the parameterization stretches area at each point.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={1} title="Connection to the Jacobian">
+The Jacobian matrix of the parameterization is the $3 \times 2$ matrix $J_{\mathbf{r}} = [\mathbf{r}_u \mid \mathbf{r}_v]$, with columns $\mathbf{r}_u$ and $\mathbf{r}_v$. The *Gram matrix* is the $2 \times 2$ matrix:
+
+$$J_{\mathbf{r}}^T J_{\mathbf{r}} = \begin{pmatrix} \mathbf{r}_u \cdot \mathbf{r}_u & \mathbf{r}_u \cdot \mathbf{r}_v \\ \mathbf{r}_v \cdot \mathbf{r}_u & \mathbf{r}_v \cdot \mathbf{r}_v \end{pmatrix} = \begin{pmatrix} \|\mathbf{r}_u\|^2 & \mathbf{r}_u \cdot \mathbf{r}_v \\ \mathbf{r}_u \cdot \mathbf{r}_v & \|\mathbf{r}_v\|^2 \end{pmatrix}.$$
+
+By the *Lagrange identity*:
+
+$$\|\mathbf{r}_u \times \mathbf{r}_v\|^2 = \|\mathbf{r}_u\|^2 \|\mathbf{r}_v\|^2 - (\mathbf{r}_u \cdot \mathbf{r}_v)^2 = \det(J_{\mathbf{r}}^T J_{\mathbf{r}}).$$
+
+So $dS = \sqrt{\det(J_{\mathbf{r}}^T J_{\mathbf{r}})}\,du\,dv$. This is the natural generalization of the 1D Jacobian $|\det J_\phi|$ from [Topic 14](/topics/change-of-variables): when the map goes from $\mathbb{R}^k$ to $\mathbb{R}^n$ with $k \le n$, the area scaling factor is $\sqrt{\det(J^T J)}$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={1} title="Sphere of Radius R">
+Parameterize the sphere of radius $R$ using spherical coordinates $(\theta, \phi)$ with $\theta \in [0, 2\pi]$ (azimuthal) and $\phi \in [0, \pi]$ (polar):
+
+$$\mathbf{r}(\theta, \phi) = (R\sin\phi\cos\theta,\; R\sin\phi\sin\theta,\; R\cos\phi).$$
+
+The tangent vectors are:
+
+$$\mathbf{r}_\theta = (-R\sin\phi\sin\theta,\; R\sin\phi\cos\theta,\; 0),$$
+
+$$\mathbf{r}_\phi = (R\cos\phi\cos\theta,\; R\cos\phi\sin\theta,\; -R\sin\phi).$$
+
+We compute the cross product component by component:
+
+$$\mathbf{r}_\theta \times \mathbf{r}_\phi = \begin{vmatrix} \hat{\mathbf{i}} & \hat{\mathbf{j}} & \hat{\mathbf{k}} \\ -R\sin\phi\sin\theta & R\sin\phi\cos\theta & 0 \\ R\cos\phi\cos\theta & R\cos\phi\sin\theta & -R\sin\phi \end{vmatrix}.$$
+
+The $\hat{\mathbf{i}}$-component: $(R\sin\phi\cos\theta)(-R\sin\phi) - (0)(R\cos\phi\sin\theta) = -R^2\sin^2\phi\cos\theta$.
+
+The $\hat{\mathbf{j}}$-component: $(0)(R\cos\phi\cos\theta) - (-R\sin\phi\sin\theta)(-R\sin\phi) = -R^2\sin^2\phi\sin\theta$.
+
+The $\hat{\mathbf{k}}$-component: $(-R\sin\phi\sin\theta)(R\cos\phi\sin\theta) - (R\sin\phi\cos\theta)(R\cos\phi\cos\theta) = -R^2\sin\phi\cos\phi$.
+
+So $\mathbf{r}_\theta \times \mathbf{r}_\phi = -R^2\sin\phi\,(R\sin\phi\cos\theta,\; \sin\phi\sin\theta,\; \cos\phi)$. Wait — let us be more careful. Factoring:
+
+$$\mathbf{r}_\theta \times \mathbf{r}_\phi = (-R^2\sin^2\phi\cos\theta,\; -R^2\sin^2\phi\sin\theta,\; -R^2\sin\phi\cos\phi).$$
+
+$$= -R^2\sin\phi\,(\sin\phi\cos\theta,\; \sin\phi\sin\theta,\; \cos\phi).$$
+
+The vector $(\sin\phi\cos\theta,\; \sin\phi\sin\theta,\; \cos\phi)$ is the outward unit normal $\hat{\mathbf{n}}$ on the sphere, so $\mathbf{r}_\theta \times \mathbf{r}_\phi = -R^2\sin\phi\,\hat{\mathbf{n}}$. (The negative sign means this particular parameterization gives the *inward* normal; we can reverse it by swapping the order of the cross product.) The magnitude is:
+
+$$\|\mathbf{r}_\theta \times \mathbf{r}_\phi\| = R^2\sin\phi \quad (\text{since } \sin\phi \ge 0 \text{ for } \phi \in [0, \pi]).$$
+
+The surface area is:
+
+$$\text{Area}(S^2_R) = \int_0^{2\pi}\int_0^\pi R^2\sin\phi\,d\phi\,d\theta = R^2 \cdot 2\pi \cdot [-\cos\phi]_0^\pi = R^2 \cdot 2\pi \cdot 2 = 4\pi R^2.$$
+</TheoremBlock>
+
+<TheoremBlock type="example" number={2} title="Cylinder">
+The cylinder of radius $R$ and height $h$ is parameterized by:
+
+$$\mathbf{r}(\theta, z) = (R\cos\theta,\; R\sin\theta,\; z), \quad \theta \in [0, 2\pi],\; z \in [0, h].$$
+
+The tangent vectors are $\mathbf{r}_\theta = (-R\sin\theta,\; R\cos\theta,\; 0)$ and $\mathbf{r}_z = (0, 0, 1)$. The cross product is:
+
+$$\mathbf{r}_\theta \times \mathbf{r}_z = (R\cos\theta,\; R\sin\theta,\; 0),$$
+
+with magnitude $\|\mathbf{r}_\theta \times \mathbf{r}_z\| = R$. The lateral surface area is:
+
+$$\text{Area} = \int_0^{2\pi}\int_0^h R\,dz\,d\theta = 2\pi R h.$$
+</TheoremBlock>
+
+<TheoremBlock type="example" number={3} title="Graph Surface z = g(x,y)">
+A surface defined as the graph of a function $z = g(x, y)$ over a region $D \subseteq \mathbb{R}^2$ has the natural parameterization $\mathbf{r}(x, y) = (x, y, g(x,y))$. The tangent vectors are:
+
+$$\mathbf{r}_x = (1, 0, g_x), \quad \mathbf{r}_y = (0, 1, g_y).$$
+
+The cross product is:
+
+$$\mathbf{r}_x \times \mathbf{r}_y = (-g_x, -g_y, 1),$$
+
+with magnitude $\|\mathbf{r}_x \times \mathbf{r}_y\| = \sqrt{1 + g_x^2 + g_y^2}$. So the surface area element for a graph is:
+
+$$dS = \sqrt{1 + g_x^2 + g_y^2}\,dA,$$
+
+where $dA = dx\,dy$. This is a formula worth memorizing: for a graph surface, the area element is the Euclidean area $dA$ scaled by the factor $\sqrt{1 + \|\nabla g\|^2}$, which measures how much the surface tilts away from horizontal.
+</TheoremBlock>
+
+<TheoremBlock type="proposition" number={1} title="Parameterization Independence">
+The surface area $\text{Area}(S) = \iint_{D^*} \|\mathbf{r}_u \times \mathbf{r}_v\|\,du\,dv$ is independent of the parameterization. If $\tilde{\mathbf{r}} = \mathbf{r} \circ \phi$ is a reparameterization via a $C^1$ diffeomorphism $\phi: \tilde{D}^* \to D^*$, then $\text{Area}$ computed via $\tilde{\mathbf{r}}$ equals $\text{Area}$ computed via $\mathbf{r}$.
+</TheoremBlock>
+
+<TheoremBlock type="proof" title="Proof Sketch of Proposition 1">
+By the chain rule, the Jacobian of $\tilde{\mathbf{r}} = \mathbf{r} \circ \phi$ is $J_{\tilde{\mathbf{r}}} = J_{\mathbf{r}} \cdot J_\phi$, where $J_\phi$ is the $2 \times 2$ Jacobian of the reparameterization. The tangent vectors transform as:
+
+$$\tilde{\mathbf{r}}_s \times \tilde{\mathbf{r}}_t = (\mathbf{r}_u \times \mathbf{r}_v) \cdot \det J_\phi.$$
+
+Taking magnitudes and applying the change of variables theorem ([Topic 14](/topics/change-of-variables)):
+
+$$\iint_{\tilde{D}^*} \|\tilde{\mathbf{r}}_s \times \tilde{\mathbf{r}}_t\|\,ds\,dt = \iint_{\tilde{D}^*} \|\mathbf{r}_u \times \mathbf{r}_v\| \cdot |\det J_\phi|\,ds\,dt = \iint_{D^*} \|\mathbf{r}_u \times \mathbf{r}_v\|\,du\,dv.$$
+
+The $|\det J_\phi|$ from the cross product formula is absorbed by the $|\det J_\phi|^{-1}$ from the change-of-variables substitution, leaving the original integral. $\square$
+</TheoremBlock>
+
+![Parameterized surface with tangent vectors, normal vector, and infinitesimal area element](/images/topics/surface-integrals/parameterized-surfaces.png)
+
+<SurfaceParameterizationExplorer client:visible />
+
+## 3. Scalar Surface Integrals
+
+The scalar surface integral $\iint_S f\,dS$ sums the values of a function $f$ over a surface $S$, weighted by the surface area element. This is the 2D analog of the scalar line integral $\int_C f\,ds$ from [Topic 15](/topics/line-integrals) — where the wire becomes a thin shell.
+
+Imagine a thin hemispherical dome with a density that varies from point to point — thicker at the base, thinner at the top. The total mass is $\iint_S f\,dS$, where $f$ is the density (mass per unit area) at each point on the surface. We weight by $dS$ rather than $du\,dv$ because the physical mass depends on the geometry of the surface, not on the parameterization. Just as a wire's mass depended on arc length, a shell's mass depends on surface area.
+
+<TheoremBlock type="definition" number={4} title="Scalar Surface Integral">
+Let $S$ be a regular parameterized surface $\mathbf{r}: D^* \to \mathbb{R}^3$, and let $f: S \to \mathbb{R}$ be continuous. The *scalar surface integral* of $f$ over $S$ is:
+
+$$\iint_S f\,dS = \iint_{D^*} f(\mathbf{r}(u,v))\,\|\mathbf{r}_u \times \mathbf{r}_v\|\,du\,dv.$$
+
+This is a double Riemann integral ([Topic 13](/topics/multiple-integrals)) of the composite function $(u,v) \mapsto f(\mathbf{r}(u,v)) \cdot \|\mathbf{r}_u \times \mathbf{r}_v\|$ over the parameter domain $D^*$.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={2} title="Parameterization Independence">
+The scalar surface integral $\iint_S f\,dS$ is independent of the parameterization, including orientation. The proof is identical to Proposition 1: the $|\det J_\phi|$ from the area element cancels with the $|\det J_\phi|^{-1}$ from the change of variables in the double integral. The absolute value ensures the result holds regardless of whether the reparameterization preserves or reverses orientation.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={4} title="Mass of a Hemispherical Shell">
+Let $S$ be the upper hemisphere of radius $R$ (i.e., $x^2 + y^2 + z^2 = R^2$ with $z \ge 0$) and let $f(x,y,z) = z$ be the density. From Example 1, we use the spherical parameterization with $\phi \in [0, \pi/2]$ (upper hemisphere only) and $\|\mathbf{r}_\theta \times \mathbf{r}_\phi\| = R^2\sin\phi$. On the sphere, $z = R\cos\phi$, so:
+
+$$\iint_S z\,dS = \int_0^{2\pi}\int_0^{\pi/2} (R\cos\phi)(R^2\sin\phi)\,d\phi\,d\theta = R^3 \int_0^{2\pi} d\theta \int_0^{\pi/2} \sin\phi\cos\phi\,d\phi.$$
+
+The inner integral: $\int_0^{\pi/2} \sin\phi\cos\phi\,d\phi = \frac{1}{2}\int_0^{\pi/2}\sin(2\phi)\,d\phi = \frac{1}{2}\left[-\frac{\cos(2\phi)}{2}\right]_0^{\pi/2} = \frac{1}{2}\cdot\frac{1+1}{2} = \frac{1}{2}$.
+
+So $\iint_S z\,dS = R^3 \cdot 2\pi \cdot \frac{1}{2} = \pi R^3$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={5} title="Average Temperature on a Surface">
+The *average value* of $f$ over $S$ is:
+
+$$\bar{f} = \frac{1}{\text{Area}(S)}\iint_S f\,dS,$$
+
+directly analogous to $\bar{f} = \frac{1}{b-a}\int_a^b f(x)\,dx$ from single-variable calculus ([Topic 7](/topics/riemann-integral)) and $\bar{f} = \frac{1}{L(C)}\int_C f\,ds$ for curves ([Topic 15](/topics/line-integrals), Example 5). For the hemispherical shell with $f = z$, the average height is $\bar{z} = \frac{\pi R^3}{2\pi R^2} = \frac{R}{2}$ — the average height on the hemisphere is half the radius, which matches geometric intuition (the hemisphere is "top-heavy" in the $z$-direction but the area element weights the equatorial region more heavily).
+</TheoremBlock>
+
+![Scalar surface integral as mass of a thin shell with varying density](/images/topics/surface-integrals/scalar-surface-integral.png)
+
+## 4. Oriented Surfaces & Flux Integrals
+
+We now move from scalar functions to vector fields. The question changes from "how much density sits on the surface?" to "how much fluid flows *through* the surface?"
+
+Think of $\mathbf{F}$ as the velocity field of a fluid and $S$ as a fishing net stretched across the flow. At each point on the net, only the component of $\mathbf{F}$ normal to the surface passes through — the tangential component slides along the net without crossing it. The *flux* is the integral of $\mathbf{F} \cdot \hat{\mathbf{n}}$ over the surface: the total rate at which fluid passes through from one side to the other.
+
+To define flux, we need a consistent notion of "which side is which" — a choice of *orientation*, meaning a continuous choice of unit normal vector $\hat{\mathbf{n}}$ at each point.
+
+<TheoremBlock type="definition" number={5} title="Oriented Surface">
+A surface $S$ is *orientable* if it admits a continuous unit normal vector field $\hat{\mathbf{n}}: S \to \mathbb{R}^3$ with $\|\hat{\mathbf{n}}\| = 1$ and $\hat{\mathbf{n}}$ perpendicular to the tangent plane at every point. An *oriented surface* is an orientable surface together with a specific choice of $\hat{\mathbf{n}}$.
+
+For a parameterized surface, the two orientations correspond to $\hat{\mathbf{n}} = \frac{\mathbf{r}_u \times \mathbf{r}_v}{\|\mathbf{r}_u \times \mathbf{r}_v\|}$ and $\hat{\mathbf{n}} = -\frac{\mathbf{r}_u \times \mathbf{r}_v}{\|\mathbf{r}_u \times \mathbf{r}_v\|}$.
+
+Not every surface is orientable. The Mobius strip is the classic counterexample: if you start with a normal vector and slide it continuously around the strip, it returns pointing the opposite way. There is no globally consistent choice of "inside" and "outside."
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={3} title="Orientation Conventions">
+Two standard conventions govern orientation:
+
+1. *Closed surfaces* (surfaces that enclose a volume, like a sphere or cube): the outward-pointing normal is the positive orientation. Flux with the outward normal measures net outflow.
+
+2. *Surfaces with boundary* (for Stokes' theorem): the right-hand rule determines the orientation. If you curl the fingers of your right hand in the direction of traversal along the boundary curve $C$, your thumb points in the direction of $\hat{\mathbf{n}}$. Equivalently: walking along $C$ with $\hat{\mathbf{n}}$ pointing up from your head, the surface is on your left.
+</TheoremBlock>
+
+<TheoremBlock type="definition" number={6} title="Flux Integral">
+Let $S$ be an oriented surface parameterized by $\mathbf{r}: D^* \to \mathbb{R}^3$ (with the orientation given by $\mathbf{r}_u \times \mathbf{r}_v$), and let $\mathbf{F}: S \to \mathbb{R}^3$ be a continuous vector field. The *flux integral* (or *surface integral of a vector field*) is:
+
+$$\iint_S \mathbf{F} \cdot d\mathbf{S} = \iint_{D^*} \mathbf{F}(\mathbf{r}(u,v)) \cdot (\mathbf{r}_u \times \mathbf{r}_v)\,du\,dv.$$
+
+Equivalently, writing $d\mathbf{S} = \hat{\mathbf{n}}\,dS$:
+
+$$\iint_S \mathbf{F} \cdot d\mathbf{S} = \iint_S (\mathbf{F} \cdot \hat{\mathbf{n}})\,dS.$$
+
+The flux measures the net flow of $\mathbf{F}$ through $S$ in the direction of $\hat{\mathbf{n}}$. Positive flux means net flow in the $\hat{\mathbf{n}}$ direction; negative flux means net flow opposite to $\hat{\mathbf{n}}$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={6} title="Flux Through a Hemisphere">
+Let $\mathbf{F} = (0, 0, z)$ (a vertical field, stronger at greater heights) and let $S$ be the upper hemisphere of the unit sphere ($R = 1$) with the outward normal. From Example 1, $\mathbf{r}_\theta \times \mathbf{r}_\phi = -\sin\phi\,(\sin\phi\cos\theta,\; \sin\phi\sin\theta,\; \cos\phi)$.
+
+Since we want the *outward* normal, we use $\mathbf{r}_\phi \times \mathbf{r}_\theta = \sin\phi\,(\sin\phi\cos\theta,\; \sin\phi\sin\theta,\; \cos\phi)$. On the sphere, $z = \cos\phi$, so $\mathbf{F}(\mathbf{r}(\theta,\phi)) = (0, 0, \cos\phi)$.
+
+$$\mathbf{F} \cdot (\mathbf{r}_\phi \times \mathbf{r}_\theta) = (0, 0, \cos\phi) \cdot \sin\phi\,(\sin\phi\cos\theta,\; \sin\phi\sin\theta,\; \cos\phi) = \sin\phi\cos^2\phi.$$
+
+The flux is:
+
+$$\iint_S \mathbf{F} \cdot d\mathbf{S} = \int_0^{2\pi}\int_0^{\pi/2} \sin\phi\cos^2\phi\,d\phi\,d\theta = 2\pi \int_0^{\pi/2} \sin\phi\cos^2\phi\,d\phi.$$
+
+With the substitution $u = \cos\phi$, $du = -\sin\phi\,d\phi$:
+
+$$2\pi \int_1^0 u^2\,(-du) = 2\pi \int_0^1 u^2\,du = 2\pi \cdot \frac{1}{3} = \frac{2\pi}{3}.$$
+</TheoremBlock>
+
+<TheoremBlock type="example" number={7} title="Flux of the Position Field Through a Sphere">
+Let $\mathbf{F}(x,y,z) = (x, y, z)$ — the position (or radial) field — and let $S$ be the sphere of radius $R$ with the outward normal. On the sphere, $\hat{\mathbf{n}} = \frac{1}{R}(x, y, z)$, so:
+
+$$\mathbf{F} \cdot \hat{\mathbf{n}} = \frac{1}{R}(x^2 + y^2 + z^2) = \frac{R^2}{R} = R.$$
+
+The normal component of $\mathbf{F}$ is the constant $R$ on the entire sphere. The flux is:
+
+$$\iint_S \mathbf{F} \cdot d\mathbf{S} = \iint_S R\,dS = R \cdot \text{Area}(S) = R \cdot 4\pi R^2 = 4\pi R^3.$$
+
+We can verify this using the divergence theorem (Theorem 3, Section 7): $\nabla \cdot \mathbf{F} = \frac{\partial x}{\partial x} + \frac{\partial y}{\partial y} + \frac{\partial z}{\partial z} = 3$, so $\iiint_E 3\,dV = 3 \cdot \frac{4}{3}\pi R^3 = 4\pi R^3$. The two sides match — this is the divergence theorem at work.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={4} title="Orientation Reversal">
+Reversing the orientation of $S$ — replacing $\hat{\mathbf{n}}$ by $-\hat{\mathbf{n}}$ — negates the flux integral:
+
+$$\iint_{-S} \mathbf{F} \cdot d\mathbf{S} = -\iint_S \mathbf{F} \cdot d\mathbf{S}.$$
+
+This is the surface analog of the line integral identity $\int_{-C} \mathbf{F} \cdot d\mathbf{r} = -\int_C \mathbf{F} \cdot d\mathbf{r}$ from [Topic 15](/topics/line-integrals), Remark 2. The scalar surface integral $\iint_S f\,dS$ is orientation-independent (it uses $\|\mathbf{r}_u \times \mathbf{r}_v\|$, which is always positive), but the flux integral is orientation-sensitive (it uses $\mathbf{r}_u \times \mathbf{r}_v$ directly, including its sign).
+</TheoremBlock>
+
+![Flux integral: vector field arrows passing through an oriented surface, normal component highlighted](/images/topics/surface-integrals/flux-integral.png)
+
+<FluxExplorer client:visible />
+
+## 5. The 3D Curl and Divergence
+
+Before stating Stokes' theorem and the divergence theorem, we need the two differential operators that generalize the 2D curl from [Topic 15](/topics/line-integrals) to three dimensions.
+
+The geometric intuition is direct. The *curl* of a vector field $\mathbf{F}$ at a point measures the *rotation* — the axis and angular velocity of the infinitesimal "paddlewheel" that $\mathbf{F}$ would spin. The *divergence* measures the *source strength* — how much $\mathbf{F}$ is "spreading out" or "converging" at that point. If $\mathbf{F}$ is a fluid velocity field, $\nabla \times \mathbf{F}$ points along the local rotation axis, and $\nabla \cdot \mathbf{F}$ is the rate of volume expansion per unit volume.
+
+<TheoremBlock type="definition" number={7} title="3D Curl">
+For a $C^1$ vector field $\mathbf{F} = (P, Q, R): D \to \mathbb{R}^3$, the *curl* of $\mathbf{F}$ is:
+
+$$\nabla \times \mathbf{F} = \left(\frac{\partial R}{\partial y} - \frac{\partial Q}{\partial z}\right)\hat{\mathbf{i}} + \left(\frac{\partial P}{\partial z} - \frac{\partial R}{\partial x}\right)\hat{\mathbf{j}} + \left(\frac{\partial Q}{\partial x} - \frac{\partial P}{\partial y}\right)\hat{\mathbf{k}}.$$
+
+Using the determinant mnemonic:
+
+$$\nabla \times \mathbf{F} = \begin{vmatrix} \hat{\mathbf{i}} & \hat{\mathbf{j}} & \hat{\mathbf{k}} \\ \frac{\partial}{\partial x} & \frac{\partial}{\partial y} & \frac{\partial}{\partial z} \\ P & Q & R \end{vmatrix}.$$
+
+The $\hat{\mathbf{k}}$-component of $\nabla \times \mathbf{F}$ is $\frac{\partial Q}{\partial x} - \frac{\partial P}{\partial y}$ — exactly the 2D curl from [Topic 15](/topics/line-integrals), Definition 9. The 3D curl extends the 2D curl by adding components for rotation about the $x$- and $y$-axes.
+</TheoremBlock>
+
+<TheoremBlock type="definition" number={8} title="3D Divergence">
+For a $C^1$ vector field $\mathbf{F} = (P, Q, R): D \to \mathbb{R}^3$, the *divergence* of $\mathbf{F}$ is the scalar field:
+
+$$\nabla \cdot \mathbf{F} = \frac{\partial P}{\partial x} + \frac{\partial Q}{\partial y} + \frac{\partial R}{\partial z}.$$
+
+The divergence is the "scalar product" of the formal vector $\nabla = (\partial_x, \partial_y, \partial_z)$ with $\mathbf{F}$. It measures the net outflow per unit volume at each point.
+</TheoremBlock>
+
+<TheoremBlock type="proposition" number={2} title="Divergence as Infinitesimal Flux">
+Let $\mathbf{F}$ be $C^1$ at a point $\mathbf{p}$. Let $B_r(\mathbf{p})$ be the ball of radius $r$ centered at $\mathbf{p}$ and $S_r(\mathbf{p})$ its boundary sphere (with outward normal). Then:
+
+$$\nabla \cdot \mathbf{F}(\mathbf{p}) = \lim_{r \to 0} \frac{1}{\frac{4}{3}\pi r^3} \oiint_{S_r(\mathbf{p})} \mathbf{F} \cdot d\mathbf{S}.$$
+
+The divergence is the flux per unit volume in the limit of infinitesimally small enclosing surfaces.
+</TheoremBlock>
+
+<TheoremBlock type="proof" title="Proof Sketch of Proposition 2">
+By the divergence theorem (Theorem 3, which we will prove in Section 7), $\oiint_{S_r} \mathbf{F} \cdot d\mathbf{S} = \iiint_{B_r} \nabla \cdot \mathbf{F}\,dV$. By the Mean Value Theorem for triple integrals ([Topic 13](/topics/multiple-integrals)), there exists $\mathbf{p}_r \in B_r(\mathbf{p})$ such that:
+
+$$\iiint_{B_r} \nabla \cdot \mathbf{F}\,dV = (\nabla \cdot \mathbf{F})(\mathbf{p}_r) \cdot \frac{4}{3}\pi r^3.$$
+
+Dividing by the volume and taking $r \to 0$: as $r \to 0$, $\mathbf{p}_r \to \mathbf{p}$, and continuity of $\nabla \cdot \mathbf{F}$ gives $(\nabla \cdot \mathbf{F})(\mathbf{p}_r) \to (\nabla \cdot \mathbf{F})(\mathbf{p})$. $\square$
+</TheoremBlock>
+
+<TheoremBlock type="proposition" number={3} title="Curl as Infinitesimal Circulation (3D)">
+Let $\mathbf{F}$ be $C^1$ at a point $\mathbf{p}$, and let $\hat{\mathbf{n}}$ be a unit vector. Let $C_r$ be the circle of radius $r$ centered at $\mathbf{p}$ in the plane perpendicular to $\hat{\mathbf{n}}$, oriented by the right-hand rule. Then:
+
+$$(\nabla \times \mathbf{F})(\mathbf{p}) \cdot \hat{\mathbf{n}} = \lim_{r \to 0} \frac{1}{\pi r^2} \oint_{C_r} \mathbf{F} \cdot d\mathbf{r}.$$
+
+The component of the curl along $\hat{\mathbf{n}}$ is the circulation per unit area in the plane perpendicular to $\hat{\mathbf{n}}$, in the limit of infinitesimally small loops. This generalizes [Topic 15](/topics/line-integrals), Proposition 2 from 2D (where $\hat{\mathbf{n}} = \hat{\mathbf{k}}$ always) to arbitrary directions in 3D.
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={1} title="Key Vector Identities">
+Let $f$ be a $C^2$ scalar field and $\mathbf{F}$ a $C^2$ vector field on an open domain in $\mathbb{R}^3$. Then:
+
+1. $\nabla \times (\nabla f) = \mathbf{0}$ — the curl of a gradient is always zero.
+
+2. $\nabla \cdot (\nabla \times \mathbf{F}) = 0$ — the divergence of a curl is always zero.
+
+3. $\nabla \times (\nabla \times \mathbf{F}) = \nabla(\nabla \cdot \mathbf{F}) - \nabla^2 \mathbf{F}$ — the curl-curl identity, where $\nabla^2 \mathbf{F}$ is the vector Laplacian (Laplacian applied component-wise).
+
+Identity (1) says gradient fields are curl-free — this is the 3D version of the exactness condition $\partial P/\partial y = \partial Q/\partial x$ from [Topic 15](/topics/line-integrals). Identity (2) says curl fields are divergence-free. Together, they form an *exact sequence*:
+
+$$C^\infty(D) \xrightarrow{\nabla} \text{Vec}(D) \xrightarrow{\nabla \times} \text{Vec}(D) \xrightarrow{\nabla \cdot} C^\infty(D),$$
+
+where the composition of any two consecutive arrows is zero. In the language of differential forms, this is the de Rham complex $\Omega^0 \xrightarrow{d} \Omega^1 \xrightarrow{d} \Omega^2 \xrightarrow{d} \Omega^3$ with $d^2 = 0$ (→ [Smooth Manifolds](https://formalml.com/topics/smooth-manifolds) on formalML).
+</TheoremBlock>
+
+<TheoremBlock type="example" number={8} title="Computing Curl and Divergence">
+Let $\mathbf{F}(x, y, z) = (yz,\; xz,\; xy)$. We compute:
+
+$$\nabla \times \mathbf{F} = \left(\frac{\partial(xy)}{\partial y} - \frac{\partial(xz)}{\partial z}\right)\hat{\mathbf{i}} + \left(\frac{\partial(yz)}{\partial z} - \frac{\partial(xy)}{\partial x}\right)\hat{\mathbf{j}} + \left(\frac{\partial(xz)}{\partial x} - \frac{\partial(yz)}{\partial y}\right)\hat{\mathbf{k}}$$
+
+$$= (x - x)\hat{\mathbf{i}} + (y - y)\hat{\mathbf{j}} + (z - z)\hat{\mathbf{k}} = \mathbf{0}.$$
+
+The curl vanishes because $\mathbf{F} = \nabla(xyz)$ — it is a gradient field, and Identity (1) from Theorem 1 guarantees $\nabla \times (\nabla f) = \mathbf{0}$.
+
+The divergence is $\nabla \cdot \mathbf{F} = \frac{\partial(yz)}{\partial x} + \frac{\partial(xz)}{\partial y} + \frac{\partial(xy)}{\partial z} = 0 + 0 + 0 = 0$. This field is both curl-free and divergence-free — it has no rotation and no sources or sinks.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={9} title="Non-Trivial Curl">
+Let $\mathbf{F}(x, y, z) = (-y, x, 0)$ — the 3D extension of the rotation field from [Topic 15](/topics/line-integrals).
+
+$$\nabla \times \mathbf{F} = \left(\frac{\partial 0}{\partial y} - \frac{\partial x}{\partial z}\right)\hat{\mathbf{i}} + \left(\frac{\partial(-y)}{\partial z} - \frac{\partial 0}{\partial x}\right)\hat{\mathbf{j}} + \left(\frac{\partial x}{\partial x} - \frac{\partial(-y)}{\partial y}\right)\hat{\mathbf{k}} = (0, 0, 2).$$
+
+The curl is $(0, 0, 2)$, pointing in the $\hat{\mathbf{k}}$ direction with magnitude 2. The $\hat{\mathbf{k}}$-component is $\frac{\partial x}{\partial x} - \frac{\partial(-y)}{\partial y} = 1 + 1 = 2$, exactly the 2D curl from [Topic 15](/topics/line-integrals), Example 15. The 3D curl encodes the same rotation information, plus the fact that the rotation axis is vertical.
+
+The divergence is $\nabla \cdot \mathbf{F} = 0 + 0 + 0 = 0$ — rotation without expansion.
+</TheoremBlock>
+
+![3D curl as rotation axis with paddlewheel, divergence as source/sink strength](/images/topics/surface-integrals/curl-divergence-3d.png)
+
+## 6. Stokes' Theorem
+
+Green's theorem ([Topic 15](/topics/line-integrals), Theorem 5) says $\oint_C \mathbf{F} \cdot d\mathbf{r} = \iint_D \text{curl}\,\mathbf{F}\,dA$ — the circulation around a closed curve $C$ equals the integral of the curl over the enclosed region $D$. This worked in 2D because $C$ bounds a flat region $D$ in the plane.
+
+Stokes' theorem is the 3D generalization. The "enclosed region" is now a *surface* $S$ bounded by the curve $C$, and the "integral of the curl" becomes the *flux* of the curl through $S$. The flat 2D region becomes a potentially curved surface — the boundary is still a curve, but the "inside" can be any surface spanning that curve.
+
+<TheoremBlock type="theorem" number={2} title="Stokes' Theorem">
+Let $S$ be an oriented, piecewise-smooth surface in $\mathbb{R}^3$ bounded by a simple, closed, piecewise-smooth curve $C = \partial S$, with orientation induced by the right-hand rule. Let $\mathbf{F} = (P, Q, R)$ be a $C^1$ vector field on an open region containing $S$. Then:
+
+$$\oint_C \mathbf{F} \cdot d\mathbf{r} = \iint_S (\nabla \times \mathbf{F}) \cdot d\mathbf{S}.$$
+
+The circulation of $\mathbf{F}$ around the boundary $C$ equals the flux of the curl $\nabla \times \mathbf{F}$ through the surface $S$.
+</TheoremBlock>
+
+<TheoremBlock type="proof" title="Proof of Theorem 2">
+We prove Stokes' theorem for the case where $S$ is the graph of a $C^2$ function $z = g(x, y)$ over a region $D \subseteq \mathbb{R}^2$. The general case follows by decomposing an arbitrary surface into graph patches using a partition of unity.
+
+**Setup.** Parameterize $S$ as $\mathbf{r}(x, y) = (x, y, g(x,y))$ for $(x, y) \in D$. The boundary curve $C = \partial S$ lies above the boundary $\partial D$. If $\partial D$ is parameterized by $(x(t), y(t))$ for $t \in [a, b]$, then $C$ is parameterized by $(x(t), y(t), g(x(t), y(t)))$.
+
+**Left side (line integral).** We compute $\oint_C P\,dx + Q\,dy + R\,dz$. On $C$, $dz = g_x\,dx + g_y\,dy$ (by the chain rule), so:
+
+$$\oint_C P\,dx + Q\,dy + R\,dz = \oint_C (P + Rg_x)\,dx + (Q + Rg_y)\,dy,$$
+
+where all functions are evaluated at $(x, y, g(x,y))$. This is now a 2D line integral around $\partial D$.
+
+**Right side (surface integral).** We compute $\iint_S (\nabla \times \mathbf{F}) \cdot d\mathbf{S}$. From Example 3, $\mathbf{r}_x \times \mathbf{r}_y = (-g_x, -g_y, 1)$. Writing $\nabla \times \mathbf{F} = (R_y - Q_z,\; P_z - R_x,\; Q_x - P_y)$, the flux of the curl is:
+
+$$\iint_D [(R_y - Q_z)(-g_x) + (P_z - R_x)(-g_y) + (Q_x - P_y)]\,dA,$$
+
+where all partial derivatives of $P$, $Q$, $R$ are evaluated at $(x, y, g(x,y))$.
+
+**Showing equality via Green's theorem.** We apply Green's theorem ([Topic 15](/topics/line-integrals), Theorem 5) to the 2D line integral:
+
+$$\oint_{\partial D} (P + Rg_x)\,dx + (Q + Rg_y)\,dy = \iint_D \left[\frac{\partial(Q + Rg_y)}{\partial x} - \frac{\partial(P + Rg_x)}{\partial y}\right]\,dA.$$
+
+We now expand the integrand on the right. We must use the chain rule carefully, because $P$, $Q$, $R$ depend on $z = g(x,y)$.
+
+**Expanding $\frac{\partial}{\partial x}(Q + Rg_y)$:**
+
+$$\frac{\partial Q}{\partial x} = Q_x + Q_z g_x, \quad \frac{\partial(Rg_y)}{\partial x} = R_x g_y + R_z g_x g_y + R g_{yx},$$
+
+so $\frac{\partial}{\partial x}(Q + Rg_y) = Q_x + Q_z g_x + R_x g_y + R_z g_x g_y + R g_{yx}$.
+
+**Expanding $\frac{\partial}{\partial y}(P + Rg_x)$:**
+
+$$\frac{\partial P}{\partial y} = P_y + P_z g_y, \quad \frac{\partial(Rg_x)}{\partial y} = R_y g_x + R_z g_y g_x + R g_{xy},$$
+
+so $\frac{\partial}{\partial y}(P + Rg_x) = P_y + P_z g_y + R_y g_x + R_z g_y g_x + R g_{xy}$.
+
+**Subtracting.** Since $g_{xy} = g_{yx}$ (by $C^2$ regularity), the $Rg_{xy}$ and $Rg_{yx}$ terms cancel. The $R_z g_x g_y$ terms also cancel. We are left with:
+
+$$\frac{\partial(Q + Rg_y)}{\partial x} - \frac{\partial(P + Rg_x)}{\partial y} = (Q_x - P_y) + (Q_z g_x - P_z g_y) + (R_x g_y - R_y g_x).$$
+
+Rearranging:
+
+$$= (Q_x - P_y) + (-g_x)(R_y - Q_z) + (-g_y)(P_z - R_x).$$
+
+Wait — let us verify. We have $(Q_z g_x - P_z g_y) + (R_x g_y - R_y g_x)$. Grouping by the $g$ factors:
+
+$$= -g_x(R_y - Q_z) - g_y(P_z - R_x) + (Q_x - P_y).$$
+
+This is exactly $(\nabla \times \mathbf{F}) \cdot (-g_x, -g_y, 1) = (\nabla \times \mathbf{F}) \cdot (\mathbf{r}_x \times \mathbf{r}_y)$.
+
+So by Green's theorem:
+
+$$\oint_C \mathbf{F} \cdot d\mathbf{r} = \iint_D (\nabla \times \mathbf{F}) \cdot (\mathbf{r}_x \times \mathbf{r}_y)\,dA = \iint_S (\nabla \times \mathbf{F}) \cdot d\mathbf{S}.$$
+
+For a general oriented surface $S$ that is not a single graph, we decompose $S$ into graph patches $S_1, \ldots, S_k$ using a partition of unity. The interior boundary contributions from adjacent patches cancel (their normals point in opposite directions along the shared edge), leaving only the exterior boundary $C = \partial S$. $\square$
+</TheoremBlock>
+
+<TheoremBlock type="example" number={10} title="Verifying Stokes' on a Hemisphere">
+Let $\mathbf{F} = (-y, x, 0)$ and let $S$ be the upper hemisphere of the unit sphere, bounded by $C$: the unit circle in the $xy$-plane.
+
+**Line integral.** The unit circle is $\mathbf{r}(t) = (\cos t, \sin t, 0)$ for $t \in [0, 2\pi]$, traversed counterclockwise. Then $\mathbf{F}(\mathbf{r}(t)) = (-\sin t, \cos t, 0)$ and $\mathbf{r}'(t) = (-\sin t, \cos t, 0)$:
+
+$$\oint_C \mathbf{F} \cdot d\mathbf{r} = \int_0^{2\pi} [\sin^2 t + \cos^2 t]\,dt = 2\pi.$$
+
+**Surface integral.** From Example 9, $\nabla \times \mathbf{F} = (0, 0, 2)$. The flux of $(0, 0, 2)$ through the upper hemisphere with outward normal: using $d\mathbf{S} = \sin\phi\,(\sin\phi\cos\theta,\; \sin\phi\sin\theta,\; \cos\phi)\,d\phi\,d\theta$:
+
+$$\iint_S (0, 0, 2) \cdot d\mathbf{S} = \int_0^{2\pi}\int_0^{\pi/2} 2\sin\phi\cos\phi\,d\phi\,d\theta = 2 \cdot 2\pi \cdot \frac{1}{2} = 2\pi.$$
+
+Both sides equal $2\pi$. Stokes' theorem confirmed.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={11} title="Stokes' Theorem as a Computation Tool">
+Compute $\oint_C \mathbf{F} \cdot d\mathbf{r}$ where $\mathbf{F} = (y^2, z^2, x^2)$ and $C$ is the triangle with vertices $(1, 0, 0)$, $(0, 1, 0)$, $(0, 0, 1)$, oriented counterclockwise when viewed from the direction of the outward normal.
+
+**Strategy:** computing the line integral directly would require parameterizing three edges and adding three integrals. Instead, we use Stokes' theorem with the flat triangular surface $S$ spanning $C$.
+
+The triangle lies in the plane $x + y + z = 1$, which we can write as $z = 1 - x - y$. So $g_x = -1$ and $g_y = -1$, and $\mathbf{r}_x \times \mathbf{r}_y = (1, 1, 1)$ (pointing outward, since the components are all positive — this is the outward normal to the plane $x + y + z = 1$).
+
+The curl is:
+
+$$\nabla \times \mathbf{F} = (R_y - Q_z,\; P_z - R_x,\; Q_x - P_y) = (0 - 2z,\; 0 - 2x,\; 0 - 2y) = (-2z, -2x, -2y).$$
+
+The flux of the curl through the triangle:
+
+$$\iint_S (\nabla \times \mathbf{F}) \cdot d\mathbf{S} = \iint_D (-2z, -2x, -2y) \cdot (1, 1, 1)\,dA = \iint_D (-2z - 2x - 2y)\,dA.$$
+
+On the plane $z = 1 - x - y$: $-2z - 2x - 2y = -2(1 - x - y) - 2x - 2y = -2$. So:
+
+$$\iint_D (-2)\,dA = -2 \cdot \text{Area}(D),$$
+
+where $D$ is the projection of the triangle onto the $xy$-plane: the triangle with vertices $(1,0)$, $(0,1)$, $(0,0)$. Its area is $\frac{1}{2}$. Therefore:
+
+$$\oint_C \mathbf{F} \cdot d\mathbf{r} = -2 \cdot \frac{1}{2} = -1.$$
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={5} title="Surface Independence">
+Stokes' theorem implies that if two oriented surfaces $S_1$ and $S_2$ share the same boundary curve $C$ (with compatible orientations), then:
+
+$$\iint_{S_1} (\nabla \times \mathbf{F}) \cdot d\mathbf{S} = \oint_C \mathbf{F} \cdot d\mathbf{r} = \iint_{S_2} (\nabla \times \mathbf{F}) \cdot d\mathbf{S}.$$
+
+The flux of the curl depends only on the boundary, not on which surface spans it. In Example 10, we could replace the hemisphere with *any* surface bounded by the unit circle — a flat disk, a paraboloid, a cone — and the curl flux would still be $2\pi$.
+
+This is the surface analog of path independence for conservative fields: for a curl field (one of the form $\nabla \times \mathbf{G}$), the flux integral is "surface-independent" in the same way that a gradient field's line integral is "path-independent."
+</TheoremBlock>
+
+![Stokes' theorem: boundary curve C, spanning surface S, curl vectors through the surface](/images/topics/surface-integrals/stokes-theorem.png)
+
+<StokesTheoremExplorer client:visible />
+
+## 7. The Divergence Theorem
+
+The divergence theorem is the 3D analog of the 2D divergence form of Green's theorem. It relates the flux of a vector field through a *closed* surface to the integral of the divergence over the enclosed volume.
+
+The geometric intuition is the same telescoping argument that underlies the Fundamental Theorem of Calculus. Chop the volume $E$ into tiny cubes. Each tiny cube contributes its flux through its six faces. But adjacent cubes share faces, and the flux through a shared face is counted *out* of one cube and *in* to its neighbor — these contributions cancel. The only faces that survive are those on the outer boundary $\partial E$. So the total flux through $\partial E$ equals the sum of the divergences (the infinitesimal net outflows) over all the tiny cubes — which in the limit is $\iiint_E \nabla \cdot \mathbf{F}\,dV$.
+
+<TheoremBlock type="theorem" number={3} title="The Divergence Theorem (Gauss's Theorem)">
+Let $E \subseteq \mathbb{R}^3$ be a bounded region with piecewise-smooth boundary surface $S = \partial E$, oriented with the outward-pointing normal. Let $\mathbf{F} = (P, Q, R)$ be a $C^1$ vector field on an open region containing $\overline{E}$. Then:
+
+$$\oiint_S \mathbf{F} \cdot d\mathbf{S} = \iiint_E \nabla \cdot \mathbf{F}\,dV.$$
+
+The net outward flux of $\mathbf{F}$ through the closed surface $S$ equals the total divergence of $\mathbf{F}$ in the enclosed volume $E$.
+</TheoremBlock>
+
+<TheoremBlock type="proof" title="Proof of Theorem 3">
+We prove the divergence theorem for regions that are simultaneously Type I, Type II, and Type III — that is, regions that can be described as bounded above and below by graphs in each coordinate direction. It suffices to show:
+
+$$\oiint_S P\,dy\,dz = \iiint_E \frac{\partial P}{\partial x}\,dV, \quad \oiint_S Q\,dx\,dz = \iiint_E \frac{\partial Q}{\partial y}\,dV, \quad \oiint_S R\,dx\,dy = \iiint_E \frac{\partial R}{\partial z}\,dV,$$
+
+and then add all three. We prove the third identity; the first two are analogous.
+
+**Proof of $\oiint_S R\,dx\,dy = \iiint_E \frac{\partial R}{\partial z}\,dV$.** Let $E$ be a Type I region in the $z$-direction:
+
+$$E = \{(x, y, z) : (x, y) \in D,\; g_1(x, y) \le z \le g_2(x, y)\},$$
+
+where $D$ is the projection of $E$ onto the $xy$-plane, and $z = g_1(x,y)$ is the bottom surface, $z = g_2(x,y)$ is the top surface.
+
+**Right side (volume integral).** By Fubini's theorem ([Topic 13](/topics/multiple-integrals)):
+
+$$\iiint_E \frac{\partial R}{\partial z}\,dV = \iint_D \left[\int_{g_1(x,y)}^{g_2(x,y)} \frac{\partial R}{\partial z}\,dz\right]\,dA = \iint_D [R(x, y, g_2(x,y)) - R(x, y, g_1(x,y))]\,dA.$$
+
+The inner integral is evaluated by the Fundamental Theorem of Calculus.
+
+**Left side (surface integral).** The boundary $S = \partial E$ consists of three pieces:
+
+- *Top surface* $S_2$: $z = g_2(x, y)$ with upward (outward) normal. Parameterized as $\mathbf{r}(x,y) = (x, y, g_2(x,y))$, so $\mathbf{r}_x \times \mathbf{r}_y = (-(g_2)_x, -(g_2)_y, 1)$. The $R$-component of the flux uses only the $\hat{\mathbf{k}}$-component of $d\mathbf{S}$, which is $1\,dA$. So $\iint_{S_2} R\,dx\,dy = \iint_D R(x, y, g_2(x,y))\,dA$.
+
+- *Bottom surface* $S_1$: $z = g_1(x, y)$ with downward (outward) normal. The outward normal points downward, so $\mathbf{r}_x \times \mathbf{r}_y = ((g_1)_x, (g_1)_y, -1)$ (we reverse the cross product). The $\hat{\mathbf{k}}$-component is $-1\,dA$. So $\iint_{S_1} R\,dx\,dy = -\iint_D R(x, y, g_1(x,y))\,dA$.
+
+- *Lateral surface* $S_3$: the vertical sides. On vertical surfaces, the normal is horizontal — the $\hat{\mathbf{k}}$-component of $d\mathbf{S}$ is zero. So $\iint_{S_3} R\,dx\,dy = 0$.
+
+Adding all three pieces:
+
+$$\oiint_S R\,dx\,dy = \iint_D R(x, y, g_2) - \iint_D R(x, y, g_1) = \iint_D [R(x, y, g_2) - R(x, y, g_1)]\,dA.$$
+
+This matches the volume integral computed above.
+
+The proofs for the $P$ and $Q$ components are identical, using the Type II and Type III descriptions of $E$ respectively. Adding all three:
+
+$$\oiint_S \mathbf{F} \cdot d\mathbf{S} = \iiint_E \left(\frac{\partial P}{\partial x} + \frac{\partial Q}{\partial y} + \frac{\partial R}{\partial z}\right)\,dV = \iiint_E \nabla \cdot \mathbf{F}\,dV.$$
+
+For general regions that are not simultaneously Type I/II/III, we decompose $E$ into finitely many subregions $E_1, \ldots, E_k$, each of which is Type I/II/III. The divergence theorem holds on each piece. The flux contributions from shared interior faces cancel (they have opposite outward normals on adjacent subregions), leaving only the flux through the external boundary $\partial E$. $\square$
+</TheoremBlock>
+
+<TheoremBlock type="example" number={12} title="Verification on a Cube">
+Let $\mathbf{F} = (x^2, y^2, z^2)$ and let $E = [0, 1]^3$ be the unit cube.
+
+**Divergence:** $\nabla \cdot \mathbf{F} = 2x + 2y + 2z$.
+
+**Volume integral:**
+
+$$\iiint_E (2x + 2y + 2z)\,dV = \int_0^1\int_0^1\int_0^1 (2x + 2y + 2z)\,dz\,dy\,dx.$$
+
+By symmetry (each variable contributes equally), this is $3\int_0^1\int_0^1\int_0^1 2x\,dz\,dy\,dx = 3 \cdot 2 \cdot \frac{1}{2} \cdot 1 \cdot 1 = 3$.
+
+**Surface integral (direct computation).** The cube has six faces. On $x = 1$: $\hat{\mathbf{n}} = (1,0,0)$, $\mathbf{F} \cdot \hat{\mathbf{n}} = 1$, integral $= 1$. On $x = 0$: $\hat{\mathbf{n}} = (-1,0,0)$, $\mathbf{F} \cdot \hat{\mathbf{n}} = 0$, integral $= 0$. By symmetry, the $y$-faces contribute $1 + 0 = 1$ and the $z$-faces contribute $1 + 0 = 1$.
+
+Total flux: $1 + 0 + 1 + 0 + 1 + 0 = 3$.
+
+Both sides equal 3. Divergence theorem confirmed.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={13} title="The Inverse-Square Field">
+Let $\mathbf{F}(\mathbf{r}) = \frac{\mathbf{r}}{r^3} = \frac{(x, y, z)}{(x^2 + y^2 + z^2)^{3/2}}$ — the gravitational/electrostatic field of a point source at the origin.
+
+**Away from the origin,** $\nabla \cdot \mathbf{F} = 0$. We can verify this by direct computation:
+
+$$\frac{\partial}{\partial x}\frac{x}{(x^2+y^2+z^2)^{3/2}} = \frac{(x^2+y^2+z^2)^{3/2} - x \cdot \frac{3}{2}(x^2+y^2+z^2)^{1/2} \cdot 2x}{(x^2+y^2+z^2)^3} = \frac{r^2 - 3x^2}{r^5}.$$
+
+Summing the three components: $\frac{3r^2 - 3(x^2+y^2+z^2)}{r^5} = 0$.
+
+**On a sphere of radius $R$ centered at the origin,** $\hat{\mathbf{n}} = \frac{\mathbf{r}}{R}$ and $\mathbf{F} \cdot \hat{\mathbf{n}} = \frac{R}{R^3} = \frac{1}{R^2}$. The flux is:
+
+$$\oiint_{S_R} \mathbf{F} \cdot d\mathbf{S} = \frac{1}{R^2} \cdot 4\pi R^2 = 4\pi.$$
+
+The flux is $4\pi$ regardless of $R$. If the divergence theorem applied to the ball containing the origin, we would get $\iiint \nabla \cdot \mathbf{F}\,dV = 0$, contradicting the nonzero flux. The resolution: $\mathbf{F}$ is not $C^1$ at the origin. The divergence theorem does not apply to regions containing the singularity. In the distributional sense, $\nabla \cdot \mathbf{F} = 4\pi\delta(\mathbf{r})$, where $\delta$ is the Dirac delta — the "divergence" is zero everywhere except at the origin, where it is infinite in a precise measure-theoretic sense.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={6} title="Conservation Laws">
+The divergence theorem is the mathematical engine behind conservation laws. Consider a quantity with density $\rho(\mathbf{x}, t)$ that flows with flux density $\mathbf{J}(\mathbf{x}, t)$. If the quantity is conserved (neither created nor destroyed), the amount in any region $E$ changes only by flow through the boundary:
+
+$$\frac{d}{dt}\iiint_E \rho\,dV = -\oiint_{\partial E} \mathbf{J} \cdot d\mathbf{S}.$$
+
+Applying the divergence theorem to the right side and moving the time derivative inside the integral (assuming sufficient smoothness):
+
+$$\iiint_E \frac{\partial \rho}{\partial t}\,dV = -\iiint_E \nabla \cdot \mathbf{J}\,dV.$$
+
+Since this holds for every region $E$, the integrands must be equal pointwise:
+
+$$\frac{\partial \rho}{\partial t} + \nabla \cdot \mathbf{J} = 0.$$
+
+This is the *continuity equation* — the local form of conservation. For a fluid with density $\rho$ and velocity $\mathbf{v}$, $\mathbf{J} = \rho\mathbf{v}$, giving $\frac{\partial \rho}{\partial t} + \nabla \cdot (\rho\mathbf{v}) = 0$, which is exactly the equation we started with in Section 1.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={7} title="The Generalized Stokes' Theorem">
+The Fundamental Theorem of Calculus, the Gradient Theorem, Green's theorem, Stokes' theorem, and the divergence theorem are all instances of a single result — the *generalized Stokes' theorem*:
+
+$$\int_M d\omega = \int_{\partial M} \omega,$$
+
+where $M$ is an oriented manifold with boundary $\partial M$, $\omega$ is a differential form, and $d$ is the exterior derivative.
+
+| Dimension of $M$ | $M$ | $\partial M$ | $\omega$ | Theorem |
+|---|---|---|---|---|
+| 1 (interval) | $[a, b]$ | $\{a, b\}$ | $f$ (0-form) | FTC: $\int_a^b f'\,dx = f(b) - f(a)$ |
+| 1 (curve) | Curve $C$ | Endpoints | $f$ (0-form) | Gradient Theorem: $\int_C \nabla f \cdot d\mathbf{r} = f(\mathbf{b}) - f(\mathbf{a})$ |
+| 2 (region) | Region $D \subseteq \mathbb{R}^2$ | Curve $\partial D$ | 1-form $P\,dx + Q\,dy$ | Green's theorem |
+| 2 (surface) | Surface $S \subseteq \mathbb{R}^3$ | Curve $\partial S$ | 1-form $\mathbf{F} \cdot d\mathbf{r}$ | Stokes' theorem |
+| 3 (volume) | Volume $E \subseteq \mathbb{R}^3$ | Surface $\partial E$ | 2-form $\mathbf{F} \cdot d\mathbf{S}$ | Divergence theorem |
+
+In every case: integrating a derivative ($d\omega$) over the interior equals integrating the original ($\omega$) over the boundary. The exterior derivative $d$ unifies the gradient, curl, and divergence as the same operation on forms of different degrees.
+
+This unification is the starting point for differential geometry and the theory of integration on manifolds — see [Smooth Manifolds](https://formalml.com/topics/smooth-manifolds) on formalML for the full treatment.
+</TheoremBlock>
+
+![Divergence theorem: volume E, boundary surface S, divergence as net outflow per unit volume](/images/topics/surface-integrals/divergence-theorem.png)
+
+<DivergenceTheoremExplorer client:visible />
+
+## 8. Graphs, Applications & Computation
+
+For surfaces defined as graphs $z = g(x, y)$, the formulas simplify considerably. These are the most common surfaces in applications, and the simplified formulas are worth isolating.
+
+<TheoremBlock type="proposition" number={4} title="Surface Integrals over a Graph">
+Let $S$ be the graph of $z = g(x, y)$ for $(x, y) \in D$, and let $\mathbf{F} = (P, Q, R)$. Then:
+
+**Scalar integral:**
+
+$$\iint_S f\,dS = \iint_D f(x, y, g(x,y))\,\sqrt{1 + g_x^2 + g_y^2}\,dA.$$
+
+**Flux integral** (with upward-pointing normal):
+
+$$\iint_S \mathbf{F} \cdot d\mathbf{S} = \iint_D \left[-P\,g_x - Q\,g_y + R\right]\,dA,$$
+
+where all functions are evaluated at $(x, y, g(x,y))$. This follows from $\mathbf{r}_x \times \mathbf{r}_y = (-g_x, -g_y, 1)$ (Example 3).
+</TheoremBlock>
+
+<TheoremBlock type="example" number={14} title="Area of a Saddle Surface">
+Compute the surface area of $z = x^2 - y^2$ over the unit disk $D: x^2 + y^2 \le 1$.
+
+We have $g_x = 2x$, $g_y = -2y$, so $\sqrt{1 + g_x^2 + g_y^2} = \sqrt{1 + 4x^2 + 4y^2} = \sqrt{1 + 4r^2}$ in polar coordinates.
+
+$$\text{Area} = \iint_D \sqrt{1 + 4r^2}\,dA = \int_0^{2\pi}\int_0^1 \sqrt{1 + 4r^2}\;r\,dr\,d\theta.$$
+
+The inner integral: let $u = 1 + 4r^2$, $du = 8r\,dr$, so $r\,dr = du/8$:
+
+$$\int_0^1 r\sqrt{1 + 4r^2}\,dr = \frac{1}{8}\int_1^5 \sqrt{u}\,du = \frac{1}{8}\cdot\frac{2}{3}[u^{3/2}]_1^5 = \frac{1}{12}(5\sqrt{5} - 1).$$
+
+So $\text{Area} = 2\pi \cdot \frac{1}{12}(5\sqrt{5} - 1) = \frac{\pi}{6}(5\sqrt{5} - 1) \approx 5.33$.
+
+(Note: the saddle surface warps significantly over the unit disk — its area is nearly 70% larger than the flat disk's area of $\pi \approx 3.14$.)
+</TheoremBlock>
+
+<TheoremBlock type="example" number={15} title="Flux via the Divergence Theorem">
+Compute the flux of $\mathbf{F} = (x^3, y^3, z^3)$ through the unit sphere $S$.
+
+**Direct computation** would require parameterizing the sphere and evaluating a complicated surface integral. Instead, we use the divergence theorem:
+
+$$\nabla \cdot \mathbf{F} = 3x^2 + 3y^2 + 3z^2 = 3r^2.$$
+
+Converting to spherical coordinates ($r$, $\theta$, $\phi$) with $dV = r^2\sin\phi\,dr\,d\phi\,d\theta$:
+
+$$\iiint_E 3r^2\,dV = \int_0^{2\pi}\int_0^\pi\int_0^1 3r^2 \cdot r^2\sin\phi\,dr\,d\phi\,d\theta = 3\int_0^{2\pi}d\theta\int_0^\pi\sin\phi\,d\phi\int_0^1 r^4\,dr.$$
+
+Evaluating each factor: $\int_0^{2\pi}d\theta = 2\pi$, $\int_0^\pi\sin\phi\,d\phi = 2$, $\int_0^1 r^4\,dr = \frac{1}{5}$.
+
+$$\oiint_S \mathbf{F} \cdot d\mathbf{S} = 3 \cdot 2\pi \cdot 2 \cdot \frac{1}{5} = \frac{12\pi}{5}.$$
+</TheoremBlock>
+
+![Graph surface z = g(x,y) with area element and normal vector](/images/topics/surface-integrals/graph-surfaces.png)
+
+## 9. Computational Notes
+
+In practice, surface integrals are computed by reducing to double integrals over the parameter domain, then applying numerical quadrature. Here are the key patterns.
+
+**Scalar surface integral:**
+
+```python
+import numpy as np
+from scipy.integrate import dblquad
+
+def scalar_surface_integral(f, r, r_u, r_v, u_bounds, v_bounds):
+    """Compute ∬_S f dS via parameterization."""
+    def integrand(v, u):
+        point = r(u, v)
+        cross = np.cross(r_u(u, v), r_v(u, v))
+        return f(*point) * np.linalg.norm(cross)
+    result, _ = dblquad(integrand, *u_bounds,
+                        lambda u: v_bounds[0], lambda u: v_bounds[1])
+    return result
+```
+
+**Flux integral:**
+
+```python
+def flux_integral(F, r, r_u, r_v, u_bounds, v_bounds):
+    """Compute ∬_S F · dS via parameterization."""
+    def integrand(v, u):
+        point = r(u, v)
+        F_val = np.array(F(*point))
+        cross = np.cross(r_u(u, v), r_v(u, v))
+        return np.dot(F_val, cross)
+    result, _ = dblquad(integrand, *u_bounds,
+                        lambda u: v_bounds[0], lambda u: v_bounds[1])
+    return result
+```
+
+**Numerical curl and divergence:**
+
+```python
+def curl_3d(F, x, y, z, h=1e-7):
+    """Compute ∇ × F at (x, y, z) via central differences."""
+    Px, Qx, Rx = F(x + h, y, z)
+    Pmx, Qmx, Rmx = F(x - h, y, z)
+    Py, Qy, Ry = F(x, y + h, z)
+    Pmy, Qmy, Rmy = F(x, y - h, z)
+    Pz, Qz, Rz = F(x, y, z + h)
+    Pmz, Qmz, Rmz = F(x, y, z - h)
+    dRdy = (Ry - Rmy) / (2 * h)
+    dQdz = (Qz - Qmz) / (2 * h)
+    dPdz = (Pz - Pmz) / (2 * h)
+    dRdx = (Rx - Rmx) / (2 * h)
+    dQdx = (Qx - Qmx) / (2 * h)
+    dPdy = (Py - Pmy) / (2 * h)
+    return (dRdy - dQdz, dPdz - dRdx, dQdx - dPdy)
+
+def divergence_3d(F, x, y, z, h=1e-7):
+    """Compute ∇ · F at (x, y, z) via central differences."""
+    dPdx = (F(x + h, y, z)[0] - F(x - h, y, z)[0]) / (2 * h)
+    dQdy = (F(x, y + h, z)[1] - F(x, y - h, z)[1]) / (2 * h)
+    dRdz = (F(x, y, z + h)[2] - F(x, y, z - h)[2]) / (2 * h)
+    return dPdx + dQdy + dRdz
+```
+
+**Verifying Stokes' theorem numerically:**
+
+```python
+from scipy.integrate import quad
+
+# F = (-y, x, 0), hemisphere bounded by unit circle
+# Line integral around unit circle
+def stokes_line(t):
+    F = (-np.sin(t), np.cos(t), 0)
+    dr = (-np.sin(t), np.cos(t), 0)
+    return sum(f * d for f, d in zip(F, dr))
+
+circulation, _ = quad(stokes_line, 0, 2 * np.pi)  # → 2π
+
+# Surface integral of curl through hemisphere
+def stokes_surface(phi, theta):
+    # curl F = (0, 0, 2), outward normal on hemisphere
+    sin_phi = np.sin(phi)
+    cos_phi = np.cos(phi)
+    curl_dot_n = 2 * sin_phi * cos_phi  # (0,0,2) · n̂ * |r_θ × r_φ|
+    return curl_dot_n
+
+curl_flux, _ = dblquad(stokes_surface, 0, 2 * np.pi,
+                        0, np.pi / 2)  # → 2π
+```
+
+**Verifying the divergence theorem numerically:**
+
+```python
+# F = (x², y², z²) on unit cube [0,1]³
+from scipy.integrate import tplquad
+
+# Volume integral of divergence
+div_vol, _ = tplquad(
+    lambda z, y, x: 2*x + 2*y + 2*z,
+    0, 1, 0, 1, 0, 1
+)  # → 3.0
+
+# Flux through each face (computed analytically: 3.0)
+# Face x=1: ∫∫ 1 dy dz = 1, face x=0: 0
+# Face y=1: ∫∫ 1 dx dz = 1, face y=0: 0
+# Face z=1: ∫∫ 1 dx dy = 1, face z=0: 0
+# Total flux = 3.0
+```
+
+## 10. Connections to ML
+
+Surface integrals and the divergence theorem are not abstract curiosities — they are the mathematical backbone of several active areas in modern machine learning.
+
+### 10.1 Stein's Identity and SVGD
+
+The divergence theorem yields one of the most powerful tools in computational statistics: *Stein's identity*. Let $p(\mathbf{x})$ be a smooth probability density on $\mathbb{R}^n$ with $p(\mathbf{x}) \to 0$ as $\|\mathbf{x}\| \to \infty$, and let $\mathbf{F}: \mathbb{R}^n \to \mathbb{R}^n$ be a smooth test function. Applying the divergence theorem to $p\mathbf{F}$ over a large ball $B_R$ and taking $R \to \infty$:
+
+$$\iiint_{\mathbb{R}^n} \nabla \cdot (p\mathbf{F})\,dV = \lim_{R \to \infty} \oiint_{S_R} p\mathbf{F} \cdot d\mathbf{S} = 0,$$
+
+since $p \to 0$ on the boundary. Expanding $\nabla \cdot (p\mathbf{F}) = p\,\nabla \cdot \mathbf{F} + \mathbf{F} \cdot \nabla p = p\,\nabla \cdot \mathbf{F} + p\,\mathbf{F} \cdot \nabla \log p$:
+
+$$\mathbb{E}_p[\nabla \cdot \mathbf{F}(\mathbf{X}) + \mathbf{F}(\mathbf{X}) \cdot \nabla \log p(\mathbf{X})] = 0.$$
+
+This is *Stein's identity*. It is the foundation of the *kernel Stein discrepancy* — a measure of how far a distribution $q$ is from $p$ — and of *Stein variational gradient descent* (SVGD), which transports particles to approximate a target distribution by following the steepest descent direction in the Stein discrepancy.
+
+The entire machinery rests on the divergence theorem: the boundary flux vanishes, converting a volume integral of a divergence into a useful identity involving expectations.
+
+-> [Measure-Theoretic Probability](https://formalml.com/topics/measure-theoretic-probability) on formalML
+
+### 10.2 Physics-Informed Neural Networks (PINNs)
+
+Physics-informed neural networks enforce PDE constraints as loss terms. Many of these PDEs are conservation laws, and the divergence theorem is the link between the differential (pointwise) and integral (global) forms.
+
+For example, consider training a neural network to satisfy the heat equation $\frac{\partial u}{\partial t} = \kappa\nabla^2 u$ on a domain $\Omega$. The integral form, obtained via the divergence theorem, is:
+
+$$\frac{d}{dt}\iiint_\Omega u\,dV = \kappa\oiint_{\partial\Omega} \nabla u \cdot d\mathbf{S}.$$
+
+The PINN loss enforces both the pointwise PDE (at interior collocation points) and the boundary conditions (at boundary points). The divergence theorem guarantees that satisfying the pointwise PDE implies the integral conservation law — and in practice, adding integral conservation constraints (derived via the divergence theorem) as additional loss terms improves training stability and physical fidelity.
+
+### 10.3 Flow-Matching Generative Models
+
+As introduced in Section 1, flow-matching models learn a time-dependent velocity field $\mathbf{v}(\mathbf{x}, t)$ that transports a base distribution $p_0$ to a target distribution $p_1$. The continuity equation:
+
+$$\frac{\partial p}{\partial t} + \nabla \cdot (p\mathbf{v}) = 0$$
+
+governs the evolution of $p(\mathbf{x}, t)$. The divergence theorem ensures probability conservation: for any region $E$:
+
+$$\frac{d}{dt}\iiint_E p\,dV = -\oiint_{\partial E} p\mathbf{v} \cdot d\mathbf{S}.$$
+
+Probability only enters or leaves $E$ through boundary flux — it is never created or destroyed. This conservation property is what makes flow-matching models well-defined as generative models: the learned flow preserves total probability mass exactly, so the output is a valid probability distribution.
+
+-> [Gradient Descent](https://formalml.com/topics/gradient-descent) on formalML
+
+### 10.4 Gradient Flow Conservation
+
+For the gradient flow $\dot{\theta} = -\nabla L(\theta)$, the divergence of the velocity field is:
+
+$$\nabla \cdot (-\nabla L) = -\Delta L = -\text{tr}(H_L),$$
+
+where $\Delta L = \sum_i \frac{\partial^2 L}{\partial \theta_i^2}$ is the Laplacian of the loss and $H_L$ is the Hessian ([Topic 11](/topics/hessian)). The divergence theorem gives:
+
+$$\oiint_S (-\nabla L) \cdot d\mathbf{S} = \iiint_E (-\Delta L)\,dV.$$
+
+In regions where $\Delta L > 0$ (the Hessian has positive trace — the loss is "subharmonic"), the right side is negative, meaning there is net *inflow* of gradient trajectories: trajectories converge. In regions where $\Delta L < 0$, trajectories diverge. The Laplacian of the loss — the trace of the Hessian — controls the focusing and defocusing of optimization trajectories, and the divergence theorem makes this connection precise.
+
+-> [Gradient Descent](https://formalml.com/topics/gradient-descent) on formalML
+
+![ML connections: Stein's identity, PINNs conservation, flow-matching continuity, gradient flow divergence](/images/topics/surface-integrals/ml-connections.png)
+
+## 11. Connections & Further Reading
+
+### Prerequisites Used
+
+- [**Multiple Integrals & Fubini's Theorem**](/topics/multiple-integrals) — Surface integrals reduce to double integrals over the parameter domain. The divergence theorem converts surface integrals to triple integrals. The Fubini evaluation strategy is used in every computation.
+- [**Change of Variables & the Jacobian Determinant**](/topics/change-of-variables) — The surface area element $dS = \|\mathbf{r}_u \times \mathbf{r}_v\|\,du\,dv$ is the Gram determinant, the 2D generalization of the Jacobian determinant. Spherical and cylindrical coordinates from Topic 14 evaluate the volume integrals.
+- [**Line Integrals & Conservative Fields**](/topics/line-integrals) — Green's theorem is the 2D case of Stokes' theorem. The 2D curl generalizes to the full 3D curl. Stokes' theorem relates a line integral to a surface integral of the curl, extending the boundary-interior principle.
+- [**The Gradient & Directional Derivatives**](/topics/gradient) — The gradient, curl, and divergence are all built from the same differential operator $\nabla$. The exact sequence $\nabla \to \nabla\times \to \nabla\cdot$ with $d^2 = 0$ unifies the theory.
+- [**The Jacobian & Multivariate Chain Rule**](/topics/jacobian) — The Jacobian matrix $J_{\mathbf{r}}$ of the parameterization determines the surface normal and area element via the Gram determinant $\sqrt{\det(J_{\mathbf{r}}^T J_{\mathbf{r}})}$.
+- [**The Inverse & Implicit Function Theorems**](/topics/inverse-implicit) — Implicit surfaces $F(x,y,z) = 0$ have normal $\nabla F / \|\nabla F\|$, providing an alternative to parameterization for surface integrals on level sets.
+- [**The Riemann Integral**](/topics/riemann-integral) — After parameterization, every surface integral reduces to a double Riemann integral. Existence follows from the integrability theory of Topic 7.
+
+### What Comes Next
+
+- **Series Convergence & Uniform Convergence** *(coming soon)* — Fourier coefficients are computed via inner products that involve surface integrals in higher dimensions. The divergence theorem appears in the theory of Fourier series on domains.
+- **Stability & Dynamical Systems** *(coming soon)* — Lyapunov stability analysis uses the divergence theorem to establish energy conservation and dissipation: the flux of energy through a surface bounds the rate of change of energy in the interior.
+- **Sigma-Algebras & Measures** *(coming soon)* — Surface measures and the co-area formula generalize the surface integral to the measure-theoretic setting.
+- **Hilbert Spaces** *(coming soon)* — Integration by parts on domains in $\mathbb{R}^n$ uses the divergence theorem: $\int_\Omega u\,\nabla \cdot \mathbf{F}\,dV = -\int_\Omega \nabla u \cdot \mathbf{F}\,dV + \int_{\partial\Omega} u\,\mathbf{F} \cdot \hat{\mathbf{n}}\,dS$. This is the foundation of weak derivatives and Sobolev spaces.
+- **Calculus of Variations** *(coming soon)* — The Euler-Lagrange equation on domains in $\mathbb{R}^n$ uses the divergence theorem to move derivatives off the test function.
+
+### Forward Links to formalML
+
+- -> [Gradient Descent](https://formalml.com/topics/gradient-descent) — The divergence theorem connects the Laplacian of the loss to the convergence geometry of gradient flow.
+- -> [Measure-Theoretic Probability](https://formalml.com/topics/measure-theoretic-probability) — Stein's identity via the divergence theorem; kernel Stein discrepancy and SVGD.
+- -> [Smooth Manifolds](https://formalml.com/topics/smooth-manifolds) — The generalized Stokes' theorem $\int_M d\omega = \int_{\partial M}\omega$ unifies all classical integral theorems.
+- -> [Information Geometry](https://formalml.com/topics/information-geometry) — Fisher-Rao volume form, surface integrals on the statistical manifold, natural gradient flow conservation.
+
+### Prerequisite DAG
+
+This topic has three inbound prerequisite edges — it is the only topic in the curriculum with this property:
+
+```
+multiple-integrals ──┐
+                     │
+change-of-variables ─┼──→ surface-integrals
+                     │
+line-integrals ──────┘
+```
+
+Each predecessor contributes specific machinery: double/triple integrals and Fubini (Topic 13), Jacobian area scaling and coordinate changes (Topic 14), and Green's theorem as the 2D prototype of Stokes' (Topic 15). Surface integrals synthesize all three into the capstone results of multivariable calculus.
+
+**This topic completes the Multivariable Integral Calculus track (4/4).**
