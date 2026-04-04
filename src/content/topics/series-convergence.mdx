@@ -1,0 +1,538 @@
+---
+title: "Series Convergence & Tests"
+subtitle: "When do infinite sums make sense? The convergence tests that determine whether a series converges absolutely, conditionally, or not at all — and the learning rate conditions that make SGD work."
+status: "published"
+difficulty: "foundational"
+prerequisites:
+  - "sequences-limits"
+  - "uniform-convergence"
+tags:
+  - "calculus"
+  - "series"
+  - "convergence"
+  - "convergence-tests"
+  - "absolute-convergence"
+  - "conditional-convergence"
+  - "ratio-test"
+  - "root-test"
+  - "comparison-test"
+  - "integral-test"
+  - "alternating-series"
+  - "rearrangement"
+domain: "series-approximation"
+videoId: null
+notebookPath: "notebooks/series-convergence/17_series_convergence.ipynb"
+githubUrl: "https://github.com/jonx0037/formalCalculus/blob/main/src/content/topics/series-convergence.mdx"
+datePublished: 2026-05-15
+estimatedReadTime: 45
+abstract: "An infinite series ∑ aₙ is defined as the limit of its partial sums Sₙ = a₁ + a₂ + ⋯ + aₙ — so series convergence is sequence convergence in disguise. The nth-term test provides a necessary condition (aₙ → 0), but the harmonic series ∑ 1/n shows it is not sufficient. The comparison test and limit comparison test relate unknown series to known benchmarks; the ratio test |aₙ₊₁/aₙ| → L and root test |aₙ|^(1/n) → L determine convergence when L < 1 and divergence when L > 1; the integral test connects ∑ f(n) to ∫ f(x)dx, bridging discrete sums and continuous integrals. For alternating series, the Leibniz test guarantees convergence when the terms decrease monotonically to zero. A series converges absolutely if ∑ |aₙ| converges, and absolute convergence implies convergence — but the converse fails: the alternating harmonic series ∑ (-1)ⁿ⁺¹/n converges conditionally but not absolutely. The Riemann rearrangement theorem reveals the fragility of conditional convergence: any conditionally convergent series can be rearranged to converge to any prescribed real number, or to diverge to ±∞. In machine learning, the Robbins-Monro conditions for SGD learning rates — ∑ αₜ = ∞ (the divergent series ensures the algorithm explores enough) and ∑ αₜ² < ∞ (the convergent series ensures the noise averages out) — are direct applications of series convergence theory. The p-series classification determines which polynomial-decay schedules αₜ = 1/tᵖ satisfy both conditions simultaneously: exactly those with p ∈ (1/2, 1]. The geometric series ∑ rⁿ = 1/(1-r) appears in discount factors for reinforcement learning, in the convergence analysis of momentum methods, and in the radius of convergence for power series that will be developed in the next topic."
+formalmlConnections:
+  - topic: "gradient-descent"
+    site: "formalml"
+    relationship: "The Robbins-Monro conditions for SGD learning rates — ∑αₜ = ∞ and ∑αₜ² < ∞ — are series convergence conditions. The p-series classification ∑1/tᵖ determines which polynomial-decay schedules satisfy both constraints: exactly p ∈ (1/2, 1]."
+  - topic: "pac-learning"
+    site: "formalml"
+    relationship: "The union bound converts uniform convergence over a hypothesis class into a series ∑P(bad event for h). Finite VC dimension ensures this series is controlled, yielding generalization bounds."
+  - topic: "concentration-inequalities"
+    site: "formalml"
+    relationship: "Chernoff bounds produce geometric series in tail probabilities. The ratio test applied to moment-generating function expansions determines the strength of exponential concentration."
+  - topic: "measure-theoretic-probability"
+    site: "formalml"
+    relationship: "The Borel-Cantelli lemma — if ∑P(Aₙ) < ∞ then P(limsup Aₙ) = 0 — is a direct application of series convergence to probability theory. Countable additivity of measures is defined via convergent series of set measures."
+connections:
+  - topic: "sequences-limits"
+    relationship: "Series convergence is sequence convergence. The partial sums Sₙ = ∑ₖ₌₁ⁿ aₖ form a sequence, and the series converges iff this sequence converges. Every convergence test reduces to applying the sequence theorems from Topic 1 — Monotone Convergence, Cauchy criterion, comparison — to the partial-sum sequence."
+  - topic: "uniform-convergence"
+    relationship: "The Weierstrass M-test (Topic 4, Theorem 4) is a series convergence test for function series: if |gₖ(x)| ≤ Mₖ and ∑Mₖ converges, then ∑gₖ converges uniformly. This topic provides the numerical convergence tests (comparison, ratio, root) used to verify ∑Mₖ < ∞."
+  - topic: "improper-integrals"
+    relationship: "The integral test connects ∑f(n) to ∫₁^∞ f(x)dx: both converge, or both diverge when f is positive, continuous, and decreasing. This bridges the discrete (series) and continuous (improper integral) worlds, and the p-series/p-integral parallel is the central example."
+  - topic: "completeness-compactness"
+    relationship: "Absolute convergence implies convergence because ℝ is complete: the partial sums of |aₙ| form a bounded monotone sequence (hence Cauchy), and the partial sums of aₙ are then Cauchy because |Sₘ - Sₙ| ≤ ∑|aₖ|. Without completeness, this argument fails."
+  - topic: "riemann-integral"
+    relationship: "Riemann sums ∑f(xₖ*)Δxₖ are finite series that converge to the integral as the partition refines. The integral test reverses this relationship: it uses the integral to determine whether the related series converges."
+references:
+  - type: "book"
+    title: "Principles of Mathematical Analysis"
+    authors: "Rudin"
+    year: 1976
+    note: "Chapter 3 — the definitive treatment of numerical series, convergence tests, and absolute vs. conditional convergence"
+  - type: "book"
+    title: "Understanding Analysis"
+    authors: "Abbott"
+    year: 2015
+    note: "Chapter 2 — an accessible treatment emphasizing the sequence-to-series reduction and the role of completeness"
+  - type: "book"
+    title: "Real Analysis: Modern Techniques and Their Applications"
+    authors: "Folland"
+    year: 1999
+    note: "Section 0.5 — series convergence in the context of measure theory prerequisites"
+  - type: "book"
+    title: "Calculus"
+    authors: "Spivak"
+    year: 2008
+    note: "Chapter 22 — series of real numbers with historically motivated exposition and complete proofs of all standard tests"
+  - type: "book"
+    title: "Introduction to Real Analysis"
+    authors: "Bartle & Sherbert"
+    year: 2011
+    note: "Chapter 3.7 and Chapter 9 — series convergence tests with careful comparison to improper integrals"
+  - type: "paper"
+    title: "A Stochastic Approximation Method"
+    authors: "Robbins & Monro"
+    year: 1951
+    url: "https://doi.org/10.1214/aoms/1177729586"
+    note: "The original conditions ∑αₙ = ∞, ∑αₙ² < ∞ for stochastic approximation convergence — the foundational ML application of series convergence"
+  - type: "paper"
+    title: "Adam: A Method for Stochastic Optimization"
+    authors: "Kingma & Ba"
+    year: 2015
+    url: "https://arxiv.org/abs/1412.6980"
+    note: "Bias correction in Adam uses geometric series ∑βᵗ = 1/(1-β). Learning rate scheduling analysis requires the series tools from this topic."
+---
+
+import TheoremBlock from '../../components/ui/TheoremBlock.astro';
+
+import PartialSumExplorer from '../../components/viz/PartialSumExplorer.tsx';
+import ConvergenceTestDashboard from '../../components/viz/ConvergenceTestDashboard.tsx';
+import AbsoluteConditionalExplorer from '../../components/viz/AbsoluteConditionalExplorer.tsx';
+import LearningRateSeriesExplorer from '../../components/viz/LearningRateSeriesExplorer.tsx';
+
+## 1. Overview & Motivation
+
+You're training a neural network with stochastic gradient descent. The learning rate schedule $\alpha_t = 1/t^p$ controls how aggressively the model updates at step $t$. The schedule must satisfy two competing demands: $\sum_{t=1}^\infty \alpha_t = \infty$ (the total step size must be infinite so the algorithm can reach any point in parameter space) and $\sum_{t=1}^\infty \alpha_t^2 < \infty$ (the total squared step size must be finite so the noise averages out). These are the Robbins-Monro conditions, introduced as forward references in [Sequences, Limits & Convergence](/topics/sequences-limits). The question is: which values of $p$ satisfy both conditions simultaneously? The answer — $p \in (1/2, 1]$ — requires knowing when the $p$-series $\sum 1/n^p$ converges and when it diverges. That is what this topic is about.
+
+But learning rate schedules are just one instance of the fundamental question: *when does an infinite sum $\sum_{n=1}^\infty a_n$ converge to a finite value?* The answer occupies a central position in analysis and in machine learning. Loss series, gradient accumulation bounds, discount factors in reinforcement learning, tail probabilities in concentration inequalities, and Fourier coefficients — all are governed by the convergence theory we develop here.
+
+The key insight: an infinite series is not a new concept. It is a *sequence* — the sequence of partial sums $S_n = a_1 + a_2 + \cdots + a_n$. Every tool from [Sequences, Limits & Convergence](/topics/sequences-limits) applies directly. We are not learning new machinery. We are applying existing machinery to a new and important class of sequences.
+
+## 2. From Sequences to Series
+
+An infinite series is a sequence in disguise. Every question about the convergence of $\sum a_n$ is really a question about the convergence of the sequence $(S_n)$ where $S_n = \sum_{k=1}^n a_k$. This is not a metaphor — it is the *definition*.
+
+<TheoremBlock type="definition" number={1} title="Infinite Series">
+Given a sequence $(a_n)_{n=1}^\infty$ in $\mathbb{R}$, the *infinite series* $\sum_{n=1}^\infty a_n$ is the sequence of *partial sums* $(S_n)_{n=1}^\infty$ defined by
+
+$$S_n = \sum_{k=1}^n a_k = a_1 + a_2 + \cdots + a_n.$$
+
+The terms $a_n$ are the *terms* of the series and $S_n$ is the *$n$th partial sum*.
+</TheoremBlock>
+
+<TheoremBlock type="definition" number={2} title="Convergence of a Series">
+The series $\sum_{n=1}^\infty a_n$ *converges* if the sequence of partial sums $(S_n)$ converges — that is, if $\lim_{n \to \infty} S_n = S$ exists as a finite real number. We write $\sum_{n=1}^\infty a_n = S$ and call $S$ the *sum* of the series. If $(S_n)$ does not converge, the series *diverges*.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={1} title="The reduction principle">
+Definitions 1 and 2 convert every series problem into a sequence problem. The Monotone Convergence Theorem, the Cauchy criterion, and the Algebra of Limits — all from [Sequences, Limits & Convergence](/topics/sequences-limits) — now apply to partial sums. In particular:
+
+**(a)** If all $a_n \geq 0$, then $(S_n)$ is increasing, so $\sum a_n$ converges iff $(S_n)$ is bounded (Monotone Convergence).
+
+**(b)** $\sum a_n$ converges iff for every $\varepsilon > 0$ there exists $N$ such that $|S_m - S_n| = \left|\sum_{k=n+1}^m a_k\right| < \varepsilon$ for all $m > n \geq N$ (Cauchy criterion for series).
+</TheoremBlock>
+
+The first convergence test is an immediate consequence:
+
+<TheoremBlock type="theorem" number={1} title="The Divergence Test (nth-Term Test)">
+If $\sum_{n=1}^\infty a_n$ converges, then $\lim_{n \to \infty} a_n = 0$.
+
+Equivalently (contrapositive): if $a_n \not\to 0$, then $\sum a_n$ diverges.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+If the series converges with sum $S$, then $S_n \to S$ and $S_{n-1} \to S$. Since $a_n = S_n - S_{n-1}$, the Algebra of Limits gives $a_n \to S - S = 0$.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={2} title="The divergence test is necessary but not sufficient">
+The harmonic series $\sum 1/n$ has $a_n = 1/n \to 0$, but it diverges (we prove this in the next section). Having $a_n \to 0$ is necessary for convergence, but far from sufficient. The convergence tests in the following sections provide stronger criteria.
+</TheoremBlock>
+
+The interactive explorer below makes the "series = sequence of partial sums" reduction tangible. Select a series preset and watch the partial sums $(S_n)$ converge (or not) as $n$ increases. For convergent series, drag the $\varepsilon$ slider to see the $\varepsilon$-$N$ definition in action — the same definition from [Sequences, Limits & Convergence](/topics/sequences-limits), now applied to the partial-sum sequence.
+
+<PartialSumExplorer client:visible />
+
+## 3. Fundamental Series — Geometric & $p$-Series
+
+Every convergence test works by comparing an unknown series to one of two benchmark families. These benchmarks are the reference points of series theory.
+
+<TheoremBlock type="theorem" number={2} title="The Geometric Series">
+For $r \in \mathbb{R}$:
+
+$$\sum_{n=0}^\infty r^n = \frac{1}{1-r} \quad \text{if } |r| < 1, \qquad \text{diverges if } |r| \geq 1.$$
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+The partial sum has the closed form $S_n = \sum_{k=0}^{n} r^k = \frac{1 - r^{n+1}}{1 - r}$ (verified by multiplying both sides by $1 - r$ and telescoping). If $|r| < 1$, then $r^{n+1} \to 0$ (from [Sequences, Limits & Convergence](/topics/sequences-limits), the sequence $|r|^n \to 0$ for $|r| < 1$), so $S_n \to \frac{1}{1-r}$. If $|r| \geq 1$, then $r^n \not\to 0$, so $S_n$ does not converge.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={3} title="Why the geometric series matters">
+The geometric series is the most important series in mathematics and in ML. In reinforcement learning, the discounted return $G_t = \sum_{k=0}^\infty \gamma^k R_{t+k+1}$ is a geometric series weighted by rewards — convergence requires $|\gamma| < 1$, which is why discount factors satisfy $\gamma \in [0, 1)$. In momentum-based optimization (e.g., Adam), the bias correction factor $1/(1 - \beta^t) \to 1/(1 - \beta) = \sum_{k=0}^\infty \beta^k$ is the geometric series sum. In the ratio test (Theorem 6), convergence is established by showing the terms eventually decay *faster* than a geometric series.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={1} title="Geometric series computations">
+**(a)** $\sum_{n=0}^\infty (1/2)^n = 1/(1-1/2) = 2$.
+
+**(b)** $\sum_{n=0}^\infty (-1/3)^n = 1/(1+1/3) = 3/4$.
+
+**(c)** $\sum_{n=1}^\infty 3 \cdot (0.9)^n = 3 \cdot \frac{0.9}{1-0.9} = 27$.
+</TheoremBlock>
+
+<TheoremBlock type="definition" number={3} title="The p-Series">
+For $p > 0$, the *$p$-series* is $\sum_{n=1}^\infty \frac{1}{n^p}$.
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={3} title="p-Series Convergence">
+$\sum_{n=1}^\infty \frac{1}{n^p}$ converges if and only if $p > 1$.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+We use the Cauchy condensation test. Consider the "condensed" series $\sum_{k=0}^\infty 2^k \cdot a_{2^k} = \sum_{k=0}^\infty 2^k \cdot \frac{1}{2^{kp}} = \sum_{k=0}^\infty 2^{k(1-p)}$. This is a geometric series with ratio $2^{1-p}$, which converges iff $2^{1-p} < 1$, i.e., $1 - p < 0$, i.e., $p > 1$.
+
+The Cauchy condensation theorem states: for a positive decreasing sequence $(a_n)$, $\sum a_n$ converges iff $\sum 2^k a_{2^k}$ converges. The key idea is that the block of terms $a_{2^k+1}, a_{2^k+2}, \ldots, a_{2^{k+1}}$ contains $2^k$ terms, each between $a_{2^{k+1}}$ and $a_{2^k}$ (since the sequence is decreasing). So the block sum is bounded between $2^k a_{2^{k+1}}$ and $2^k a_{2^k}$, and the condensed series captures the growth rate exactly.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={2} title="The harmonic series diverges">
+Setting $p = 1$: $\sum 1/n = \infty$.
+
+*Alternative proof (Oresme's grouping):*
+
+$$1 + \frac{1}{2} + \left(\frac{1}{3} + \frac{1}{4}\right) + \left(\frac{1}{5} + \frac{1}{6} + \frac{1}{7} + \frac{1}{8}\right) + \cdots \geq 1 + \frac{1}{2} + \frac{1}{2} + \frac{1}{2} + \cdots = \infty.$$
+
+Each group of $2^k$ terms sums to at least $1/2$, so the partial sums grow without bound. This is perhaps the most important divergence result in analysis — it says that even though $1/n \to 0$, the terms don't shrink fast enough to produce a finite sum.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={3} title="p-series classification">
+- $\sum 1/n^2 = \pi^2/6$ (Basel problem, converges — $p = 2 > 1$).
+- $\sum 1/n^{3/2}$ converges ($p = 3/2 > 1$).
+- $\sum 1/\sqrt{n}$ diverges ($p = 1/2 \leq 1$).
+</TheoremBlock>
+
+![Geometric and p-series convergence boundaries](/images/topics/series-convergence/geometric-p-series.png)
+
+## 4. Comparison Tests
+
+The comparison tests let us determine convergence by bounding an unknown series against a known benchmark.
+
+<TheoremBlock type="theorem" number={4} title="The Comparison Test (Direct)">
+Let $0 \leq a_n \leq b_n$ for all $n \geq N_0$. Then:
+
+1. If $\sum b_n$ converges, then $\sum a_n$ converges.
+2. If $\sum a_n$ diverges, then $\sum b_n$ diverges.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+**(1)** The partial sums $S_n^{(a)} = \sum_{k=1}^n a_k$ are increasing (since $a_k \geq 0$) and bounded above by $S_{N_0}^{(a)} + \sum_{k=N_0+1}^\infty b_k < \infty$. By the Monotone Convergence Theorem ([Sequences, Limits & Convergence](/topics/sequences-limits), Theorem 1), $S_n^{(a)}$ converges.
+
+**(2)** Contrapositive of (1).
+</TheoremBlock>
+
+<TheoremBlock type="example" number={4} title="Using the comparison test">
+**(a)** $\sum \frac{1}{n^2 + n}$ converges: $\frac{1}{n^2+n} < \frac{1}{n^2}$ and $\sum 1/n^2$ converges.
+
+**(b)** $\sum \frac{\ln n}{n}$ diverges: $\frac{\ln n}{n} \geq \frac{1}{n}$ for $n \geq 3$ and $\sum 1/n$ diverges.
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={5} title="The Limit Comparison Test">
+Let $a_n > 0$ and $b_n > 0$ for all $n$. If $\lim_{n \to \infty} \frac{a_n}{b_n} = L$ where $0 < L < \infty$, then $\sum a_n$ and $\sum b_n$ either both converge or both diverge.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+Since $a_n/b_n \to L > 0$, for $\varepsilon = L/2$ there exists $N$ such that $n \geq N \Rightarrow L/2 < a_n/b_n < 3L/2$. Thus $(L/2)b_n < a_n < (3L/2)b_n$ for all $n \geq N$. If $\sum b_n$ converges, the direct comparison gives $\sum_{n \geq N} a_n \leq (3L/2)\sum_{n \geq N} b_n < \infty$, so $\sum a_n$ converges. If $\sum b_n$ diverges, then $\sum_{n \geq N} a_n \geq (L/2)\sum_{n \geq N} b_n = \infty$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={5} title="Limit comparison">
+$\sum \frac{n}{n^3 + 1}$ converges: compare with $b_n = 1/n^2$, since $\frac{n/(n^3+1)}{1/n^2} = \frac{n^3}{n^3+1} \to 1$, and $\sum 1/n^2$ converges.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={4} title="The comparison hierarchy">
+The direct comparison test requires an explicit inequality $a_n \leq b_n$ or $a_n \geq b_n$, which can be algebraically demanding. The limit comparison test requires only that $a_n \sim L \cdot b_n$ asymptotically, which is usually easier to verify. In practice, the limit comparison test with $p$-series benchmarks handles most polynomial-type series.
+</TheoremBlock>
+
+![Comparison test visualizations](/images/topics/series-convergence/comparison-tests.png)
+
+## 5. Ratio & Root Tests
+
+The comparison tests require an external benchmark series. The ratio and root tests are *self-contained*: they use the series's own terms to determine convergence by detecting whether the terms eventually decay faster than a geometric series.
+
+<TheoremBlock type="theorem" number={6} title="The Ratio Test (d'Alembert)">
+Let $(a_n)$ be a sequence with $a_n \neq 0$ for all $n$. Define $L = \lim_{n \to \infty} \left|\frac{a_{n+1}}{a_n}\right|$ (if the limit exists, or use $\limsup$).
+
+1. If $L < 1$, the series $\sum a_n$ converges absolutely.
+2. If $L > 1$ (or $L = \infty$), the series diverges.
+3. If $L = 1$, the test is inconclusive.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+**(1)** If $L < 1$, choose $r$ with $L < r < 1$. By definition of the limit, there exists $N$ such that $|a_{n+1}/a_n| < r$ for all $n \geq N$. Then $|a_n| < |a_N| \cdot r^{n-N}$ for $n > N$ (by induction). Since $\sum r^{n-N}$ is a convergent geometric series ($r < 1$), the comparison test gives $\sum |a_n| < \infty$.
+
+**(2)** If $L > 1$, eventually $|a_{n+1}| > |a_n|$, so $|a_n|$ is eventually increasing and $a_n \not\to 0$. The series diverges by the divergence test.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={6} title="Ratio test applications">
+**(a)** $\sum \frac{n!}{n^n}$: $\frac{a_{n+1}}{a_n} = \frac{(n+1)!/(n+1)^{n+1}}{n!/n^n} = \frac{n^n}{(n+1)^n} = \left(\frac{n}{n+1}\right)^n \to 1/e < 1$. Converges.
+
+**(b)** $\sum \frac{2^n}{n!}$: $\frac{a_{n+1}}{a_n} = \frac{2}{n+1} \to 0 < 1$. Converges.
+
+**(c)** $\sum \frac{1}{n}$: $\frac{a_{n+1}}{a_n} = \frac{n}{n+1} \to 1$. Inconclusive (we know it diverges by other means).
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={7} title="The Root Test (Cauchy)">
+Let $L = \limsup_{n \to \infty} |a_n|^{1/n}$.
+
+1. If $L < 1$, the series $\sum a_n$ converges absolutely.
+2. If $L > 1$, the series diverges.
+3. If $L = 1$, the test is inconclusive.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+**(1)** If $L < 1$, choose $r$ with $L < r < 1$. By definition of $\limsup$, there exists $N$ such that $|a_n|^{1/n} < r$ for all $n \geq N$ (this is where $\limsup$ is needed rather than $\lim$ — there may be finitely many exceptions). Then $|a_n| < r^n$ for all $n \geq N$, and $\sum r^n < \infty$ (convergent geometric series).
+
+**(2)** If $L > 1$, then $|a_n|^{1/n} > 1$ for infinitely many $n$, so $|a_n| > 1$ for infinitely many $n$, hence $a_n \not\to 0$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={7} title="Root test applications">
+**(a)** $\sum \left(\frac{n}{2n+1}\right)^n$: $|a_n|^{1/n} = \frac{n}{2n+1} \to 1/2 < 1$. Converges.
+
+**(b)** $\sum \left(\frac{1}{1 + 1/n}\right)^{n^2}$: $|a_n|^{1/n} = \left(\frac{n}{n+1}\right)^n \to 1/e < 1$. Converges.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={5} title="Ratio vs. root — root is strictly stronger">
+The root test is *strictly stronger* than the ratio test: whenever the ratio test gives a verdict, the root test gives the same verdict, but there exist series where the root test succeeds and the ratio test is inconclusive. This is because $\liminf |a_{n+1}/a_n| \leq \liminf |a_n|^{1/n} \leq \limsup |a_n|^{1/n} \leq \limsup |a_{n+1}/a_n|$. In practice, the ratio test is more convenient for factorials and exponentials, while the root test is better for $n$th powers.
+</TheoremBlock>
+
+The convergence test dashboard below applies multiple tests to the same series simultaneously, showing which tests are conclusive and which are not. This makes the relative power of the tests visible — the root test never fails when the ratio test succeeds, but sometimes succeeds when the ratio test gives up.
+
+<ConvergenceTestDashboard client:visible />
+
+![Ratio and root test diagnostics](/images/topics/series-convergence/ratio-root-tests.png)
+
+## 6. The Integral Test
+
+The integral test connects series convergence to improper integral convergence — linking the discrete world of $\sum f(n)$ to the continuous world of $\int f(x)\,dx$ from [Improper Integrals & Special Functions](/topics/improper-integrals).
+
+The geometric idea is clean. If $f$ is positive, continuous, and decreasing on $[1, \infty)$, the rectangles of height $f(n)$ and width 1 overestimate or underestimate the area under $f$. Specifically:
+
+$$\int_1^{n+1} f(x)\,dx \leq \sum_{k=1}^n f(k) \leq f(1) + \int_1^n f(x)\,dx.$$
+
+So the partial sums and the integrals are bounded by each other — they converge or diverge together.
+
+<TheoremBlock type="theorem" number={8} title="The Integral Test">
+Let $f: [1, \infty) \to \mathbb{R}$ be positive, continuous, and decreasing. Then $\sum_{n=1}^\infty f(n)$ converges if and only if $\int_1^\infty f(x)\,dx$ converges.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+Since $f$ is decreasing, for all $k \geq 1$: $f(k+1) \leq \int_k^{k+1} f(x)\,dx \leq f(k)$. Summing from $k = 1$ to $n$:
+
+$$\sum_{k=2}^{n+1} f(k) \leq \int_1^{n+1} f(x)\,dx \leq \sum_{k=1}^n f(k).$$
+
+If $\int_1^\infty f(x)\,dx$ converges, the right inequality gives $S_n \leq f(1) + \int_1^\infty f(x)\,dx < \infty$, so $(S_n)$ is bounded and increasing, hence convergent by the Monotone Convergence Theorem. If $\int_1^\infty f(x)\,dx = \infty$, the left inequality gives $S_{n+1} - f(1) \geq \int_1^{n+1} f(x)\,dx \to \infty$, so the partial sums diverge.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={8} title="The integral test recovers p-series">
+For $f(x) = 1/x^p$: $\int_1^\infty x^{-p}\,dx = \frac{x^{1-p}}{1-p}\big|_1^\infty$, which converges iff $1-p < 0$, i.e., $p > 1$. This recovers Theorem 3 via the integral test.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={9} title="Series not amenable to other tests">
+$\sum \frac{1}{n(\ln n)^2}$ for $n \geq 2$: the ratio and root tests both give $L = 1$ (inconclusive). The integral test with $f(x) = 1/(x(\ln x)^2)$: substituting $u = \ln x$,
+
+$$\int_2^\infty \frac{dx}{x(\ln x)^2} = \int_{\ln 2}^\infty u^{-2}\,du = \frac{1}{\ln 2} < \infty.$$
+
+Converges. This is a series that *only* the integral test can handle among our toolkit.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={6} title="Integral test remainder bounds">
+The integral test also provides error bounds: if $R_n = \sum_{k=n+1}^\infty f(k)$ is the remainder after $n$ terms, then
+
+$$\int_{n+1}^\infty f(x)\,dx \leq R_n \leq \int_n^\infty f(x)\,dx.$$
+
+This tells you how many terms you need for a given accuracy — exactly the kind of bound used in numerical analysis and in bounding truncation error in series approximations for ML (e.g., truncating a Taylor expansion or a Fourier series).
+</TheoremBlock>
+
+![Integral test visualization](/images/topics/series-convergence/integral-test.png)
+
+## 7. Alternating Series & the Leibniz Test
+
+In all the tests so far, we have mostly dealt with series of positive terms. Alternating series — where the signs alternate — introduce a fundamentally new phenomenon: cancellation between positive and negative terms can produce convergence even when the series of absolute values diverges.
+
+<TheoremBlock type="definition" number={4} title="Alternating Series">
+A series $\sum_{n=1}^\infty (-1)^{n+1} b_n$ where $b_n > 0$ for all $n$ is an *alternating series*.
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={9} title="The Alternating Series Test (Leibniz Test)">
+If $(b_n)$ is decreasing ($b_{n+1} \leq b_n$) and $\lim_{n \to \infty} b_n = 0$, then the alternating series $\sum_{n=1}^\infty (-1)^{n+1} b_n$ converges.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+Consider the even partial sums:
+
+$$S_{2n} = (b_1 - b_2) + (b_3 - b_4) + \cdots + (b_{2n-1} - b_{2n}).$$
+
+Each parenthesized pair is $\geq 0$ (since $b_k$ is decreasing), so $(S_{2n})$ is increasing. Also,
+
+$$S_{2n} = b_1 - (b_2 - b_3) - \cdots - (b_{2n-2} - b_{2n-1}) - b_{2n} \leq b_1,$$
+
+so $(S_{2n})$ is bounded above by $b_1$.
+
+By the Monotone Convergence Theorem, $S_{2n} \to S$ for some $S \leq b_1$. Now $S_{2n+1} = S_{2n} + b_{2n+1} \to S + 0 = S$. Since both the even and odd subsequences converge to $S$, the full sequence $S_n \to S$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={10} title="The alternating harmonic series">
+$\sum_{n=1}^\infty \frac{(-1)^{n+1}}{n} = 1 - \frac{1}{2} + \frac{1}{3} - \frac{1}{4} + \cdots = \ln 2$. The terms $b_n = 1/n$ are decreasing and tend to $0$, so the Leibniz test applies. The sum is $\ln 2$ (provable via the Taylor series of $\ln(1+x)$ at $x=1$, which we will establish in **Power Series & Taylor Series** *(coming soon)*).
+
+Note: $\sum 1/n = \infty$ diverges, so this series converges *conditionally* but not absolutely. We formalize this distinction in the next section.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={7} title="Alternating series remainder">
+If the alternating series converges to $S$, the error after $n$ terms satisfies $|S - S_n| \leq b_{n+1}$ — the error is bounded by the first omitted term. This is a remarkably tight bound, much better than what most convergence tests provide.
+</TheoremBlock>
+
+![Alternating series behavior](/images/topics/series-convergence/alternating-series.png)
+
+## 8. Absolute vs. Conditional Convergence
+
+Absolute convergence is the "safe" mode of convergence — it is robust under rearrangement and implies all forms of convergence. Conditional convergence is fragile: rearranging the terms can change the sum or destroy convergence entirely.
+
+<TheoremBlock type="definition" number={5} title="Absolute Convergence">
+A series $\sum a_n$ *converges absolutely* if $\sum |a_n|$ converges.
+</TheoremBlock>
+
+<TheoremBlock type="definition" number={6} title="Conditional Convergence">
+A series $\sum a_n$ *converges conditionally* if it converges but does not converge absolutely — that is, $\sum a_n$ converges but $\sum |a_n| = \infty$.
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={10} title="Absolute Convergence Implies Convergence">
+If $\sum |a_n|$ converges, then $\sum a_n$ converges, and $\left|\sum a_n\right| \leq \sum |a_n|$.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+We use the Cauchy criterion. Since $\sum |a_n|$ converges, for any $\varepsilon > 0$ there exists $N$ such that $\sum_{k=n+1}^m |a_k| < \varepsilon$ for all $m > n \geq N$. By the triangle inequality:
+
+$$\left|\sum_{k=n+1}^m a_k\right| \leq \sum_{k=n+1}^m |a_k| < \varepsilon.$$
+
+This is the Cauchy criterion for $\sum a_n$, so $\sum a_n$ converges.
+
+The inequality $|\sum a_n| \leq \sum |a_n|$ follows by taking limits of $|S_n| \leq T_n$ where $T_n = \sum_{k=1}^n |a_k|$.
+
+**Note:** This proof uses the completeness of $\mathbb{R}$ — the Cauchy criterion requires completeness. In an incomplete space (like $\mathbb{Q}$), absolute convergence need not imply convergence. See [Completeness & Compactness](/topics/completeness-compactness) for why completeness matters.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={11} title="Classification">
+**(a)** $\sum (-1)^{n+1}/n^2$ converges absolutely ($\sum 1/n^2 < \infty$).
+
+**(b)** $\sum (-1)^{n+1}/n$ converges conditionally ($\sum 1/n = \infty$, but the Leibniz test gives convergence).
+
+**(c)** $\sum (-1)^n$ diverges (not even conditional convergence — the $n$th-term test kills it).
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={11} title="The Riemann Rearrangement Theorem">
+Let $\sum a_n$ be a conditionally convergent series. Then for any $S \in \mathbb{R} \cup \{-\infty, +\infty\}$, there exists a rearrangement $\sum a_{\sigma(n)}$ (where $\sigma: \mathbb{N} \to \mathbb{N}$ is a bijection) that converges to $S$.
+</TheoremBlock>
+
+<TheoremBlock type="proof" title="Proof sketch">
+Let $p_k$ be the positive terms (in their original order) and $q_k$ the negative terms. Since $\sum a_n$ is conditionally convergent, both $\sum p_k = +\infty$ and $\sum |q_k| = +\infty$ — if either were finite, the series would converge absolutely.
+
+To reach a target $S$: add positive terms $p_1, p_2, \ldots$ until the partial sum first exceeds $S$; then add negative terms $q_1, q_2, \ldots$ until it drops below $S$; then add more positive terms until it exceeds $S$ again; continue alternating.
+
+The key insight: because $p_k \to 0$ and $q_k \to 0$ (since $a_n \to 0$ by the divergence test applied to the original convergent series), each overshoot/undershoot gets smaller. The partial sums oscillate around $S$ with decreasing amplitude, converging to $S$ by the squeeze theorem.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={8} title="Rearrangement and absolute convergence">
+If $\sum a_n$ converges *absolutely*, then every rearrangement converges to the same sum. This is why absolute convergence is the "safe" mode: it is invariant under permutation. Conditional convergence is inherently order-dependent.
+
+In computational settings, finite-precision arithmetic implicitly rearranges series (due to rounding and the order of evaluation), so absolute convergence guarantees reproducibility, whereas conditional convergence does not.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={12} title="A rearrangement of the alternating harmonic series">
+The standard ordering gives $\sum (-1)^{n+1}/n = \ln 2 \approx 0.693$.
+
+The rearrangement $1 + \frac{1}{3} - \frac{1}{2} + \frac{1}{5} + \frac{1}{7} - \frac{1}{4} + \cdots$ (two positive terms, then one negative term) converges to $\frac{3}{2}\ln 2 \approx 1.040$.
+</TheoremBlock>
+
+The explorer below shows absolute vs. conditional convergence side by side, and lets you construct Riemann rearrangements that converge to different target values — demonstrating the theorem in real time.
+
+<AbsoluteConditionalExplorer client:visible />
+
+![Riemann rearrangement](/images/topics/series-convergence/rearrangement.png)
+
+## 9. A Test Selection Guide
+
+With seven convergence tests in hand, we need a decision framework.
+
+<TheoremBlock type="remark" number={9} title="Test selection strategy">
+1. **Always check the divergence test first.** If $a_n \not\to 0$, the series diverges — done.
+2. **Recognize geometric series** ($a_n = cr^n$) **and $p$-series** ($a_n = 1/n^p$) **immediately.** These are the benchmarks.
+3. **Factorials or $n$th powers of constants:** ratio test.
+4. **$n$th powers of $n$-dependent expressions:** root test.
+5. **Series resembling $1/n^p$ asymptotically:** limit comparison with the $p$-series.
+6. **$f(n)$ where $f$ has an elementary antiderivative:** integral test.
+7. **Alternating series:** Leibniz test.
+8. **If you need absolute convergence:** apply tests 3–6 to $\sum |a_n|$.
+</TheoremBlock>
+
+![Test selection flowchart](/images/topics/series-convergence/test-selection-flowchart.png)
+
+## 10. Computational Notes
+
+In practice, we compute partial sums with NumPy and verify convergence tests numerically. The following patterns appear constantly in ML and scientific computing.
+
+**Computing partial sums.** Given a term function `a(n)`, the partial sums are `np.cumsum([a(n) for n in range(1, N+1)])`. For the geometric series with $r = 0.5$ and $N = 100$, this gives a value within $10^{-30}$ of the exact sum $2$.
+
+**Numerical ratio test.** Compute `|a(n+1)/a(n)|` for $n$ up to $1000$ and plot the sequence. If it stabilizes below $1$, the series converges; above $1$, it diverges; near $1$, look elsewhere.
+
+**Numerical root test.** Compute `|a(n)|^(1/n)` and plot. This is more numerically stable for series with $n$th powers, since taking the $n$th root normalizes the growth rate.
+
+**Integral test with `scipy.integrate.quad`.** For $f(x) = 1/(x \ln^2 x)$, `quad(f, 2, np.inf)` returns $(1/\ln 2, \text{error})$, confirming convergence.
+
+**Riemann rearrangement.** Alternating between positive and negative terms of the harmonic series, targeting a value $S$: the algorithm described in Theorem 11's proof is directly implementable and converges to any target $S$ within $1/n$ after using $n$ terms.
+
+## 11. Connections to ML
+
+Series convergence appears in ML through four distinct paths.
+
+### 11.1 Learning Rate Schedules & the Robbins-Monro Conditions
+
+The Robbins-Monro conditions for SGD: $\sum_{t=1}^\infty \alpha_t = \infty$ and $\sum_{t=1}^\infty \alpha_t^2 < \infty$. The first condition ensures the algorithm can reach any point (the total step size is unbounded). The second ensures that the noise variance $\sum \alpha_t^2 \sigma^2$ remains finite (the iterates don't oscillate forever).
+
+For polynomial schedules $\alpha_t = c/t^p$: $\sum 1/t^p$ converges iff $p > 1$ (Theorem 3), and $\sum 1/t^{2p}$ converges iff $2p > 1$, i.e., $p > 1/2$. Both conditions are satisfied iff $p \in (1/2, 1]$. The canonical choice $\alpha_t = c/t$ ($p = 1$) satisfies both conditions exactly at the boundary.
+
+For exponential schedules $\alpha_t = \alpha_0 \gamma^t$ with $\gamma < 1$: $\sum \gamma^t = 1/(1-\gamma) < \infty$ (geometric series), so condition 1 fails — the algorithm stops exploring too soon. This is why exponential decay schedules require warmup or restarts in practice.
+
+-> [Gradient Descent](https://formalml.com/topics/gradient-descent) -> formalML
+
+### 11.2 Gradient Accumulation & Momentum
+
+In momentum-based optimizers (SGD with momentum, Adam), the update at step $t$ is a weighted sum of all past gradients: $v_t = \sum_{k=0}^{t-1} \beta^k g_{t-k}$. The total weight is the partial sum of a geometric series: $\sum_{k=0}^{t-1} \beta^k = \frac{1 - \beta^t}{1 - \beta}$. As $t \to \infty$, this approaches $1/(1 - \beta)$. Adam's bias correction divides by $1 - \beta^t$ precisely to account for the finite partial sum being less than the infinite series sum.
+
+### 11.3 Discount Factors in Reinforcement Learning
+
+The discounted return $G_t = \sum_{k=0}^\infty \gamma^k R_{t+k+1}$ is a geometric series in the discount factor $\gamma \in [0, 1)$. The series converges because $\gamma < 1$, and the total weight is $1/(1 - \gamma)$. If rewards are bounded by $R_{\max}$, then $|G_t| \leq R_{\max}/(1-\gamma)$.
+
+### 11.4 The Borel-Cantelli Lemma in Online Learning
+
+The first Borel-Cantelli lemma: if $\sum_{n=1}^\infty P(A_n) < \infty$, then $P(\limsup A_n) = 0$ — only finitely many of the events $A_n$ occur almost surely. In online learning, if $A_n$ is the event "the algorithm makes an error at step $n$," and the error probabilities $P(A_n)$ decrease fast enough that their series converges, then the total number of errors is finite almost surely. The convergence test used to verify $\sum P(A_n) < \infty$ is typically comparison with a $p$-series.
+
+-> [Measure-Theoretic Probability](https://formalml.com/topics/measure-theoretic-probability) -> formalML
+
+-> [PAC Learning](https://formalml.com/topics/pac-learning) -> formalML
+
+<LearningRateSeriesExplorer client:visible />
+
+![ML connections](/images/topics/series-convergence/ml-connections.png)
+
+## 12. Connections & Further Reading
+
+**Prerequisites (live links):**
+
+- [Sequences, Limits & Convergence](/topics/sequences-limits) — partial sums are sequences; every convergence test reduces to sequence convergence.
+- [Uniform Convergence](/topics/uniform-convergence) — the Weierstrass M-test is a series-convergence test; this topic provides the numerical tools to verify that $\sum M_k < \infty$.
+
+**Cross-track connections (live links):**
+
+- [Improper Integrals & Special Functions](/topics/improper-integrals) — the integral test bridges series and improper integrals.
+- [Completeness & Compactness](/topics/completeness-compactness) — absolute convergence implies convergence *because* $\mathbb{R}$ is complete.
+- [The Riemann Integral & FTC](/topics/riemann-integral) — Riemann sums are finite series converging to the integral.
+
+**Forward references (planned topics):**
+
+- **Power Series & Taylor Series** *(coming soon)* — the ratio and root tests determine the radius of convergence; absolute convergence on the interior of the interval.
+- **Fourier Series & Orthogonal Expansions** *(coming soon)* — convergence of Fourier coefficients requires summability methods that generalize the convergence tests here.
+- **Approximation Theory** *(coming soon)* — Stone-Weierstrass and uniform convergence of approximating series.
+- **Sigma-Algebras & Measures** *(coming soon)* — countable additivity of measures is defined via convergent series; the Borel-Cantelli lemma is a series convergence test for probability.
