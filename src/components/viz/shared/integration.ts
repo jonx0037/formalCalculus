@@ -1509,7 +1509,10 @@ export function volumeIntegralDivergence(
 
       for (let k = 0; k < nz; k++) {
         const z = zBounds[0] + (k + 0.5) * dz;
-        total += divF(x, y, z) * dx * dy * dz;
+        const val = divF(x, y, z) * dx * dy * dz;
+        if (Number.isFinite(val)) {
+          total += val;
+        }
       }
     }
   }

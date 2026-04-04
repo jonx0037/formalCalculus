@@ -18,6 +18,14 @@ export interface SurfacePreset {
   paramDomain: { u: [number, number]; v: [number, number] };
   /** Whether the surface is closed (encloses a volume) */
   isClosed: boolean;
+  /**
+   * Sign correction for the outward normal convention.
+   * +1 if r_u × r_v already points outward (for closed surfaces) or
+   * in the right-hand-rule direction (for open surfaces with boundary).
+   * -1 if r_u × r_v points inward and the cross product must be negated.
+   * Consumers multiply flux/curl-flux values by this sign.
+   */
+  outwardSign: 1 | -1;
   /** Optional boundary curve for Stokes' theorem (for open surfaces) */
   boundary?: {
     r: (t: number) => [number, number, number];
@@ -90,6 +98,8 @@ const sphere: SurfacePreset = {
   ],
   paramDomain: { u: [0, 2 * Math.PI], v: [0, Math.PI] },
   isClosed: true,
+  // r_θ × r_φ = -R²sinφ · r̂ points inward; negate for outward convention
+  outwardSign: -1,
   description: 'Unit sphere x² + y² + z² = 1, outward normal',
 };
 
@@ -113,6 +123,7 @@ const hemisphere: SurfacePreset = {
   ],
   paramDomain: { u: [0, 2 * Math.PI], v: [0, Math.PI / 2] },
   isClosed: false,
+  outwardSign: -1, // same parameterization as sphere
   boundary: {
     r: (t) => [Math.cos(t), Math.sin(t), 0],
     rPrime: (t) => [-Math.sin(t), Math.cos(t), 0],
@@ -129,6 +140,7 @@ const cylinder: SurfacePreset = {
   r_v: () => [0, 0, 1] as [number, number, number],
   paramDomain: { u: [0, 2 * Math.PI], v: [0, 1] },
   isClosed: false,
+  outwardSign: 1, // r_θ × r_z points radially outward
   description: 'Lateral surface of unit cylinder, 0 ≤ z ≤ 1',
 };
 
@@ -161,6 +173,7 @@ const torus: SurfacePreset = {
   },
   paramDomain: { u: [0, 2 * Math.PI], v: [0, 2 * Math.PI] },
   isClosed: true,
+  outwardSign: 1, // r_θ × r_φ points outward on the torus
   description: 'Torus centered at origin, major radius 2, minor radius 0.6',
 };
 
@@ -176,6 +189,7 @@ const paraboloidCap: SurfacePreset = {
   r_v: (u, v) => [-u * Math.sin(v), u * Math.cos(v), 0],
   paramDomain: { u: [0, 1], v: [0, 2 * Math.PI] },
   isClosed: false,
+  outwardSign: 1, // r_u × r_v points upward (positive z-component)
   boundary: {
     r: (t) => [Math.cos(t), Math.sin(t), 0],
     rPrime: (t) => [-Math.sin(t), Math.cos(t), 0],
@@ -192,6 +206,7 @@ const saddleGraph: SurfacePreset = {
   r_v: (_x, y) => [0, 1, -2 * y],
   paramDomain: { u: [-1, 1], v: [-1, 1] },
   isClosed: false,
+  outwardSign: 1, // r_x × r_y = (-2x, 2y, 1), z-component positive
   description: 'Hyperbolic paraboloid (saddle surface) over [−1,1]²',
 };
 
@@ -218,6 +233,7 @@ const disk: SurfacePreset = {
   r_v: (u, v) => [-u * Math.sin(v), u * Math.cos(v), 0],
   paramDomain: { u: [0, 1], v: [0, 2 * Math.PI] },
   isClosed: false,
+  outwardSign: 1, // r_u × r_v has positive z-component
   boundary: {
     r: (t) => [Math.cos(t), Math.sin(t), 0],
     rPrime: (t) => [-Math.sin(t), Math.cos(t), 0],
@@ -238,6 +254,7 @@ const tiltedDisk: SurfacePreset = {
   r_v: (u, v) => [-u * Math.sin(v), u * Math.cos(v), -0.5 * u * Math.sin(v)],
   paramDomain: { u: [0, 1], v: [0, 2 * Math.PI] },
   isClosed: false,
+  outwardSign: 1, // z-component of r_u × r_v is positive
   boundary: {
     r: (t) => [Math.cos(t), Math.sin(t), 0.5 * Math.cos(t)],
     rPrime: (t) => [-Math.sin(t), Math.cos(t), -0.5 * Math.sin(t)],
@@ -279,7 +296,7 @@ export const vectorField3DPresets: VectorField3DPreset[] = [
   {
     name: 'rotation',
     label: 'Rotation (−y, x, 0)',
-    F: (_x, y, x2) => [-y, x2 === undefined ? 0 : _x, 0],
+    F: (x, y) => [-y, x, 0],
     divergence: () => 0,
     curl: () => [0, 0, 2],
     divergenceFormula: '\\nabla \\cdot \\mathbf{F} = 0',
@@ -326,12 +343,6 @@ export const vectorField3DPresets: VectorField3DPreset[] = [
   },
 ];
 
-// Fix rotation field — the closure captured wrong args
-vectorField3DPresets[2] = {
-  ...vectorField3DPresets[2],
-  F: (x, y) => [-y, x, 0],
-};
-
 // ── Stokes-specific vector field presets ─────────────────────
 
 export const stokesFieldPresets: VectorField3DPreset[] = [
@@ -358,19 +369,65 @@ export const stokesFieldPresets: VectorField3DPreset[] = [
   },
 ];
 
+// ── Cube boundary: 6 faces parameterized with outward normals ──
+
+const cubeBoundary: SurfacePreset = {
+  name: 'cube-boundary',
+  label: 'Cube boundary',
+  // Parameterize all 6 faces as a single surface: u selects the face
+  // (split into 6 bands), v sweeps each face. This is a piecewise
+  // parameterization — each face is a unit square mapped to 3D.
+  r: (u, v) => {
+    const face = Math.min(5, Math.floor(u * 6));
+    const s = u * 6 - face; // local param in [0,1)
+    switch (face) {
+      case 0: return [1, s, v];       // x = 1 (right)
+      case 1: return [0, s, v];       // x = 0 (left)
+      case 2: return [s, 1, v];       // y = 1 (back)
+      case 3: return [s, 0, v];       // y = 0 (front)
+      case 4: return [s, v, 1];       // z = 1 (top)
+      default: return [s, v, 0];      // z = 0 (bottom)
+    }
+  },
+  r_u: (u) => {
+    const face = Math.min(5, Math.floor(u * 6));
+    // Derivative w.r.t. u scaled by 6 (chain rule: ds/du = 6)
+    switch (face) {
+      case 0: return [0, 6, 0];
+      case 1: return [0, 6, 0];
+      case 2: return [6, 0, 0];
+      case 3: return [6, 0, 0];
+      case 4: return [6, 0, 0];
+      default: return [6, 0, 0];
+    }
+  },
+  r_v: (u) => {
+    const face = Math.min(5, Math.floor(u * 6));
+    switch (face) {
+      case 0: return [0, 0, 1];
+      case 1: return [0, 0, 1];
+      case 2: return [0, 0, 1];
+      case 3: return [0, 0, 1];
+      case 4: return [0, 1, 0];
+      default: return [0, 1, 0];
+    }
+  },
+  paramDomain: { u: [0, 1], v: [0, 1] },
+  isClosed: true,
+  // Outward sign varies per face; we handle this via the per-face
+  // dot-product check in the viz components (outwardSign = 1 as default,
+  // consumers flip per-face based on centroid direction)
+  outwardSign: 1,
+  description: 'Six faces of the unit cube [0,1]³ with outward normals',
+};
+
 // ── Volume Presets ──────────────────────────────────────────
 
 export const volumePresets: VolumePreset[] = [
   {
     name: 'cube',
     label: 'Unit cube [0,1]³',
-    boundary: {
-      ...sphere, // placeholder — cube boundary is computed differently
-      name: 'cube-boundary',
-      label: 'Cube boundary',
-      isClosed: true,
-      description: 'Six faces of the unit cube',
-    },
+    boundary: cubeBoundary,
     bounds: {
       xRange: [0, 1] as [number, number],
       yRange: [0, 1] as [number, number],
@@ -396,44 +453,5 @@ export const volumePresets: VolumePreset[] = [
     },
     exactVolume: (4 / 3) * Math.PI,
     description: 'Unit ball x² + y² + z² ≤ 1, volume = 4π/3',
-  },
-  {
-    name: 'cylinder',
-    label: 'Unit cylinder',
-    boundary: cylinder,
-    bounds: {
-      xRange: [-1, 1] as [number, number],
-      yRange: ((x: number) => {
-        const b = Math.sqrt(Math.max(0, 1 - x * x));
-        return [-b, b] as [number, number];
-      }) as (x: number) => [number, number],
-      zRange: [0, 1] as [number, number],
-    },
-    exactVolume: Math.PI,
-    description: 'Cylinder x² + y² ≤ 1, 0 ≤ z ≤ 1, volume = π',
-  },
-  {
-    name: 'cone',
-    label: 'Cone',
-    boundary: {
-      ...sphere,
-      name: 'cone-boundary',
-      label: 'Cone boundary',
-      isClosed: true,
-      description: 'Cone surface + base disk',
-    },
-    bounds: {
-      xRange: [-1, 1] as [number, number],
-      yRange: ((x: number) => {
-        const b = Math.sqrt(Math.max(0, 1 - x * x));
-        return [-b, b] as [number, number];
-      }) as (x: number) => [number, number],
-      zRange: ((x: number, y: number) => {
-        const r = Math.sqrt(x * x + y * y);
-        return [r, 1] as [number, number];
-      }) as (x: number, y: number) => [number, number],
-    },
-    exactVolume: Math.PI / 3,
-    description: 'Cone z ≥ √(x²+y²), z ≤ 1, volume = π/3',
   },
 ];

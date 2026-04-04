@@ -41,12 +41,8 @@ export default function DivergenceTheoremExplorer() {
       40,
       40,
     );
-    // For closed surfaces with outward convention: sphere parameterization
-    // has inward-pointing r_u × r_v, so negate
-    if (surf.isClosed && (volume.name === 'sphere' || volume.name === 'cone')) {
-      return Math.abs(flux);
-    }
-    return flux;
+    // Apply the preset's orientation sign for outward-normal convention
+    return flux * surf.outwardSign;
   }, [field, volume]);
 
   // Volume divergence integral (right side)

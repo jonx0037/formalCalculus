@@ -52,20 +52,9 @@ export default function StokesTheoremExplorer() {
     return () => cancelAnimationFrame(animRef.current);
   }, [playing]);
 
-  // Determine if we need to flip the normal for Stokes' orientation.
-  // For Stokes' theorem with CCW boundary, the normal should point "upward"
-  // (right-hand rule). Check by sampling the normal at the center of the domain.
-  const orientationSign = useMemo(() => {
-    const { u: uDom, v: vDom } = surface.paramDomain;
-    const uMid = (uDom[0] + uDom[1]) / 2;
-    const vMid = (vDom[0] + vDom[1]) / 2;
-    const ru = surface.r_u(uMid, vMid);
-    const rv = surface.r_v(uMid, vMid);
-    const { unitNormal } = surfaceNormal(ru, rv);
-    // For surfaces with boundary in the xy-plane, the right-hand rule
-    // with CCW boundary means n̂ should have positive z-component
-    return unitNormal[2] >= 0 ? 1 : -1;
-  }, [surface]);
+  // Use the preset's outwardSign to correct the normal orientation for
+  // Stokes' theorem (right-hand rule: CCW boundary → upward-pointing normal)
+  const orientationSign = surface.outwardSign;
 
   // Compute curl flux through surface (right side of Stokes')
   const curlFlux = useMemo(() => {

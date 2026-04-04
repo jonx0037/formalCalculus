@@ -169,9 +169,8 @@ export default function FluxExplorer() {
     return { faces, arrows, normalArrows, vertices };
   }, [surface, field, azimuth, elevation, nGrid]);
 
-  // Compute total flux
+  // Compute total flux, corrected for outward-normal convention
   const totalFlux = useMemo(() => {
-    // For the outward-normal convention on closed surfaces, we may need to negate
     const rawFlux = surfaceIntegralFlux(
       field.F,
       surface.r,
@@ -180,11 +179,7 @@ export default function FluxExplorer() {
       surface.paramDomain.u,
       surface.paramDomain.v,
     );
-    // Check orientation: for sphere with radial field, flux should be positive
-    if (surface.isClosed && surface.name === 'sphere') {
-      return Math.abs(rawFlux);
-    }
-    return rawFlux;
+    return rawFlux * surface.outwardSign;
   }, [field, surface]);
 
   // Color scale for flux heatmap
