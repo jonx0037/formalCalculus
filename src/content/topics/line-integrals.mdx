@@ -1,0 +1,598 @@
+---
+title: "Line Integrals & Conservative Fields"
+subtitle: "Integrating functions and vector fields along curves — the Gradient Theorem as the FTC for paths, conservative fields and potential functions, path independence, Green's theorem connecting circulation to double integrals, and gradient flow as continuous-time optimization."
+status: "published"
+difficulty: "intermediate"
+prerequisites:
+  - "multiple-integrals"
+  - "gradient"
+tags:
+  - "calculus"
+  - "line-integral"
+  - "vector-field"
+  - "conservative-field"
+  - "potential-function"
+  - "gradient-theorem"
+  - "path-independence"
+  - "greens-theorem"
+  - "circulation"
+  - "curl"
+  - "exact-form"
+  - "gradient-flow"
+domain: "multivar-integral"
+videoId: null
+notebookPath: "notebooks/line-integrals/15_line_integrals.ipynb"
+githubUrl: "https://github.com/jonx0037/formalCalculus/blob/main/src/content/topics/line-integrals.mdx"
+datePublished: 2026-04-25
+estimatedReadTime: 50
+abstract: "Line integrals extend integration from intervals and regions to curves. Given a parameterized curve C in ℝⁿ and a scalar function f, the scalar line integral ∫_C f ds = ∫_a^b f(r(t)) ‖r'(t)‖ dt sums f along C weighted by arc length. Given a vector field F, the vector line integral (work integral) ∫_C F · dr = ∫_a^b F(r(t)) · r'(t) dt measures the total work done by F along C. A vector field F is conservative if F = ∇f for some potential function f. The Gradient Theorem — the Fundamental Theorem of Calculus for line integrals — states that ∫_C ∇f · dr = f(r(b)) − f(r(a)): the integral depends only on the endpoints, not the path. This is equivalent to path independence: the integral of a conservative field between two points is the same regardless of which curve connects them. In ℝ², the exactness criterion ∂P/∂y = ∂Q/∂x characterizes conservative fields on simply connected domains. On domains with holes, closed fields need not be exact — the topology of the domain matters, as demonstrated by the vortex field. Green's theorem provides the bridge between line integrals and double integrals: the circulation ∮_C F · dr around a closed curve equals the double integral ∬_D (∂Q/∂x − ∂P/∂y) dA over the enclosed region. The integrand is the 2D curl of F, measuring infinitesimal rotation. Green's theorem also yields the area formula A = ½ ∮_C (x dy − y dx). In machine learning, gradient flow dθ/dt = −∇L(θ) traces a curve in parameter space along which the loss decreases monotonically — the Gradient Theorem guarantees L(θ(T)) − L(θ(0)) = −∫₀ᵀ ‖∇L(θ(t))‖² dt ≤ 0. Energy-based models define a scalar potential whose gradient field governs the model's dynamics. The natural gradient follows geodesics on the statistical manifold rather than straight lines in parameter space."
+formalmlConnections:
+  - topic: "gradient-descent"
+    site: "formalml"
+    relationship: "Gradient flow dθ/dt = −∇L(θ) traces a curve in parameter space. The Gradient Theorem gives L(θ(T)) − L(θ(0)) = −∫₀ᵀ ‖∇L‖² dt ≤ 0, proving the loss decreases monotonically along the flow. Discrete gradient descent approximates this continuous path, and the integral quantifies convergence."
+  - topic: "smooth-manifolds"
+    site: "formalml"
+    relationship: "Line integrals are integrals of differential 1-forms ω = P dx + Q dy along curves. Conservative fields are exact forms (ω = df). The gap between closed and exact forms — measured by de Rham cohomology H¹ — is the topological obstruction to conservativeness. Green's theorem is the 2D Stokes' theorem."
+  - topic: "information-geometry"
+    site: "formalml"
+    relationship: "Geodesics on the statistical manifold minimize the Fisher-Rao length functional — a line integral of the metric tensor. The natural gradient follows these geodesics, and path length in the Fisher-Rao metric measures statistical distinguishability."
+connections:
+  - topic: "multiple-integrals"
+    relationship: "Green's theorem converts a line integral around a closed curve into a double integral over the enclosed region. The double integral machinery from Topic 13 — Fubini, Type I/II regions, iterated integration — is applied directly."
+  - topic: "gradient"
+    relationship: "The gradient ∇f is the engine of conservative fields. The Gradient Theorem is the direct connection: ∫_C ∇f · dr = f(b) − f(a). The gradient's orthogonality to level sets (Topic 9) explains why work integrals along level curves vanish."
+  - topic: "derivative"
+    relationship: "The Fundamental Theorem of Calculus (Topic 7, via Topic 5) has a direct analog: the Gradient Theorem is the FTC for line integrals. The chain rule d/dt f(r(t)) = ∇f(r(t)) · r'(t) is the key step in its proof."
+  - topic: "jacobian"
+    relationship: "The multivariate chain rule J_{f∘g} = J_f · J_g (Topic 10) generalizes the chain rule step in the Gradient Theorem proof to vector-valued functions. The Jacobian framework clarifies why ∫_C F · dr is parameterization-independent."
+  - topic: "epsilon-delta"
+    relationship: "Continuity of F along the curve and continuity of r'(t) are the hypotheses that make the Riemann sum definition of the line integral well-defined. The limit of the approximating sums exists by the same uniform continuity argument as Topic 7."
+  - topic: "completeness-compactness"
+    relationship: "Compactness of the curve image r([a,b]) ensures that continuous vector fields are bounded on C and that the line integral is well-defined as a finite number."
+  - topic: "riemann-integral"
+    relationship: "After parameterization, every line integral reduces to a single-variable Riemann integral ∫_a^b g(t) dt. The existence and properties of line integrals follow from the 1D theory in Topic 7."
+references:
+  - type: "book"
+    title: "Calculus on Manifolds"
+    authors: "Spivak"
+    year: 1965
+    note: "Chapter 4 — integration on chains, Stokes' theorem in the language of differential forms"
+  - type: "book"
+    title: "Vector Calculus, Linear Algebra, and Differential Forms"
+    authors: "Hubbard & Hubbard"
+    year: 2015
+    note: "Chapter 6 — line integrals, conservative fields, Green's theorem with geometric exposition"
+  - type: "book"
+    title: "Analysis on Manifolds"
+    authors: "Munkres"
+    year: 1991
+    note: "Chapter 5 — line integrals and Green's theorem with rigorous measurability conditions"
+  - type: "book"
+    title: "Div, Grad, Curl, and All That"
+    authors: "Schey"
+    year: 2005
+    note: "Chapters 2-3 — physical motivation for line integrals via work, circulation, and flux"
+  - type: "book"
+    title: "Principles of Mathematical Analysis"
+    authors: "Rudin"
+    year: 1976
+    note: "Chapter 10 — differential forms and Stokes' theorem in Rⁿ"
+  - type: "paper"
+    title: "A Tutorial on Energy-Based Learning"
+    authors: "LeCun, Chopra, Hadsell, Ranzato & Huang"
+    year: 2006
+    note: "Energy functions as potential functions whose gradient fields govern model dynamics"
+  - type: "paper"
+    title: "Natural Gradient Works Efficiently in Learning"
+    authors: "Amari"
+    year: 1998
+    note: "The natural gradient as a geodesic direction on the statistical manifold — line integral of the Fisher information metric"
+---
+
+import TheoremBlock from '../../components/ui/TheoremBlock.astro';
+
+import LineIntegralExplorer from '../../components/viz/LineIntegralExplorer.tsx';
+import ConservativeFieldExplorer from '../../components/viz/ConservativeFieldExplorer.tsx';
+import GreenTheoremExplorer from '../../components/viz/GreenTheoremExplorer.tsx';
+import PotentialFunctionExplorer from '../../components/viz/PotentialFunctionExplorer.tsx';
+import CurlExplorer from '../../components/viz/CurlExplorer.tsx';
+
+## 1. Overview & Motivation
+
+You're training a neural network. At each step, gradient descent moves the parameter vector $\theta$ a small distance in the direction $-\nabla L(\theta)$. Over many steps, the parameters trace a *curve* through parameter space — a winding path from initialization to (hopefully) a minimum. How much does the loss decrease along that entire path?
+
+The answer is a line integral: $\Delta L = \int_C \nabla L \cdot d\mathbf{r}$. The **Gradient Theorem** — the subject of this topic — says this integral equals $L(\theta_{\text{final}}) - L(\theta_{\text{init}})$, regardless of the path's shape. This is the Fundamental Theorem of Calculus, generalized from intervals to curves in $\mathbb{R}^n$.
+
+But not every vector field is a gradient. When a field *is* a gradient — when it is *conservative* — integration becomes dramatically simpler: the integral depends only on the endpoints, not the path. When a field is *not* conservative, the path matters, and the distinction between "conservative" and "not conservative" becomes a topological question about the domain. That question — *when does the shape of the path matter?* — is the central thread of this topic.
+
+## 2. Parameterized Curves
+
+Before we can integrate along curves, we need to say precisely what a "curve" is and how to measure length along it.
+
+A curve in $\mathbb{R}^n$ is a path traced out by a moving point. We describe it by giving the position at each "time" $t$: the parameterization $\mathbf{r}(t) = (x_1(t), \ldots, x_n(t))$ for $t \in [a, b]$. The velocity vector $\mathbf{r}'(t)$ points along the curve, and its magnitude $\|\mathbf{r}'(t)\|$ is the speed. Arc length — the total distance traveled — is the integral of speed.
+
+<TheoremBlock type="definition" number={1} title="Parameterized Curve">
+A *parameterized curve* in $\mathbb{R}^n$ is a continuous function $\mathbf{r}: [a, b] \to \mathbb{R}^n$. The curve is *smooth* if $\mathbf{r}$ is $C^1$ and $\mathbf{r}'(t) \neq \mathbf{0}$ for all $t \in (a, b)$ — the velocity never vanishes, so the particle never stops. The curve is *piecewise smooth* if $[a, b]$ can be partitioned into finitely many subintervals on each of which $\mathbf{r}$ is smooth.
+</TheoremBlock>
+
+<TheoremBlock type="definition" number={2} title="Arc Length">
+The *arc length* of a smooth curve $\mathbf{r}: [a, b] \to \mathbb{R}^n$ is
+
+$$L(C) = \int_a^b \|\mathbf{r}'(t)\|\,dt.$$
+
+The *arc length element* is $ds = \|\mathbf{r}'(t)\|\,dt$, representing the infinitesimal distance traveled in an infinitesimal time $dt$.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={1} title="Reparameterization Invariance">
+If $\phi: [\alpha, \beta] \to [a, b]$ is a $C^1$ bijection with $\phi'(\tau) > 0$ (orientation-preserving), then $\tilde{\mathbf{r}}(\tau) = \mathbf{r}(\phi(\tau))$ traces the same curve in the same direction. By the substitution rule ([Topic 14](/topics/change-of-variables), Theorem 1):
+
+$$\int_\alpha^\beta \|\tilde{\mathbf{r}}'(\tau)\|\,d\tau = \int_a^b \|\mathbf{r}'(t)\|\,dt.$$
+
+Arc length does not depend on how fast we traverse the curve — it is a geometric property of the curve itself.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={1} title="Circle of Radius R">
+Let $\mathbf{r}(t) = (R\cos t,\; R\sin t)$ for $t \in [0, 2\pi]$. Then $\mathbf{r}'(t) = (-R\sin t,\; R\cos t)$ and $\|\mathbf{r}'(t)\| = R$. The arc length is
+
+$$L = \int_0^{2\pi} R\,dt = 2\pi R.$$
+
+The constant speed $R$ means the particle moves uniformly — the arc length is simply speed times time.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={2} title="Helix">
+A helix $\mathbf{r}(t) = (\cos t, \sin t, t)$ for $t \in [0, 2\pi]$ climbs one full turn. We have $\|\mathbf{r}'(t)\| = \sqrt{\sin^2 t + \cos^2 t + 1} = \sqrt{2}$, giving $L = 2\pi\sqrt{2}$. The vertical climb adds length to the horizontal circle.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={3} title="Parabolic Arc">
+The parabola $\mathbf{r}(t) = (t, t^2)$ for $t \in [0, 1]$ has $\|\mathbf{r}'(t)\| = \sqrt{1 + 4t^2}$. The arc length integral $\int_0^1 \sqrt{1 + 4t^2}\,dt$ requires the $\sinh^{-1}$ formula or numerical quadrature — not every arc length computation is elementary.
+</TheoremBlock>
+
+![Parameterized curves: circle, helix (3D projection), and parabolic arc with velocity vectors](/images/topics/line-integrals/parameterized-curves.png)
+
+## 3. Scalar Line Integrals
+
+The scalar line integral $\int_C f\,ds$ sums the values of a function $f$ along a curve $C$, weighted by arc length. If $f = 1$, we recover the arc length itself. If $f$ represents density (mass per unit length), the integral gives total mass.
+
+Imagine a wire bent into the shape of $C$, with density $f(x, y)$ at each point. The total mass is $\int_C f\,ds$. The wire analogy makes clear why we weight by $ds$ rather than $dt$: the physical mass depends on the curve's geometry, not on how fast we parameterize it.
+
+<TheoremBlock type="definition" number={3} title="Scalar Line Integral">
+Let $C$ be a smooth curve parameterized by $\mathbf{r}: [a, b] \to \mathbb{R}^n$, and let $f: C \to \mathbb{R}$ be continuous. The *scalar line integral* of $f$ over $C$ is:
+
+$$\int_C f\,ds = \int_a^b f(\mathbf{r}(t))\,\|\mathbf{r}'(t)\|\,dt.$$
+
+This is a Riemann integral ([Topic 7](/topics/riemann-integral)) of the composite function $t \mapsto f(\mathbf{r}(t)) \cdot \|\mathbf{r}'(t)\|$ over $[a, b]$.
+</TheoremBlock>
+
+<TheoremBlock type="proposition" number={1} title="Parameterization Independence">
+The scalar line integral $\int_C f\,ds$ is independent of the parameterization of $C$ (including orientation). Any two smooth parameterizations of the same curve give the same value.
+</TheoremBlock>
+
+<TheoremBlock type="proof" title="Proof of Proposition 1">
+Let $\mathbf{r}: [a, b] \to \mathbb{R}^n$ and $\tilde{\mathbf{r}} = \mathbf{r} \circ \phi: [\alpha, \beta] \to \mathbb{R}^n$ with $\phi$ a $C^1$ bijection. By the chain rule, $\tilde{\mathbf{r}}'(\tau) = \mathbf{r}'(\phi(\tau)) \cdot \phi'(\tau)$, so $\|\tilde{\mathbf{r}}'(\tau)\| = \|\mathbf{r}'(\phi(\tau))\| \cdot |\phi'(\tau)|$. Then:
+
+$$\int_\alpha^\beta f(\tilde{\mathbf{r}}(\tau))\,\|\tilde{\mathbf{r}}'(\tau)\|\,d\tau = \int_\alpha^\beta f(\mathbf{r}(\phi(\tau)))\,\|\mathbf{r}'(\phi(\tau))\|\,|\phi'(\tau)|\,d\tau.$$
+
+By the substitution rule ([Topic 14](/topics/change-of-variables), Theorem 1) with $t = \phi(\tau)$, this equals $\int_a^b f(\mathbf{r}(t))\,\|\mathbf{r}'(t)\|\,dt$. The absolute value $|\phi'(\tau)|$ ensures the result holds regardless of whether $\phi$ preserves or reverses orientation.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={4} title="Mass of a Semicircular Wire">
+A wire follows $C: \mathbf{r}(t) = (\cos t, \sin t)$ for $t \in [0, \pi]$ with density $f(x, y) = y$. Then:
+
+$$\int_C f\,ds = \int_0^\pi \sin t \cdot 1\,dt = [-\cos t]_0^\pi = 2.$$
+
+The wire is heaviest at the top ($y = 1$) and weightless at the endpoints ($y = 0$). The total mass is 2.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={5} title="Average Value Along a Curve">
+The average value of $f$ over $C$ is $\bar{f} = \frac{1}{L(C)} \int_C f\,ds$, directly analogous to $\bar{f} = \frac{1}{b-a} \int_a^b f(x)\,dx$ from single-variable calculus ([Topic 7](/topics/riemann-integral)).
+</TheoremBlock>
+
+![Scalar line integral: wire density f(x,y) = y along semicircle, with ds elements shown](/images/topics/line-integrals/scalar-line-integral.png)
+
+## 4. Vector Line Integrals — The Work Integral
+
+The vector line integral $\int_C \mathbf{F} \cdot d\mathbf{r}$ measures the *work* done by a force field $\mathbf{F}$ on a particle moving along $C$. Unlike the scalar line integral, this integral is *orientation-sensitive* — reversing the direction of traversal negates the result.
+
+At each point on $C$, the vector field $\mathbf{F}$ has a component tangent to the curve and a component perpendicular to it. Only the tangent component contributes to work. The dot product $\mathbf{F} \cdot \mathbf{r}'(t)$ extracts exactly this tangent component (times the speed). Integrating over $t$ sums up the infinitesimal contributions $\mathbf{F} \cdot d\mathbf{r}$ along the entire path.
+
+<TheoremBlock type="definition" number={4} title="Vector Line Integral">
+Let $C$ be a smooth curve parameterized by $\mathbf{r}: [a, b] \to \mathbb{R}^n$ and $\mathbf{F}: \mathbb{R}^n \to \mathbb{R}^n$ a continuous vector field. The *vector line integral* (or *work integral*) of $\mathbf{F}$ along $C$ is:
+
+$$\int_C \mathbf{F} \cdot d\mathbf{r} = \int_a^b \mathbf{F}(\mathbf{r}(t)) \cdot \mathbf{r}'(t)\,dt.$$
+
+In $\mathbb{R}^2$, writing $\mathbf{F} = (P, Q)$ and $d\mathbf{r} = (dx, dy)$, this becomes $\int_C P\,dx + Q\,dy = \int_a^b [P(\mathbf{r}(t))\,x'(t) + Q(\mathbf{r}(t))\,y'(t)]\,dt$.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={2} title="Orientation Matters">
+Reversing the curve $C$ — traversing from $\mathbf{r}(b)$ to $\mathbf{r}(a)$ — negates the integral: $\int_{-C} \mathbf{F} \cdot d\mathbf{r} = -\int_C \mathbf{F} \cdot d\mathbf{r}$. This is because $\mathbf{r}'(t)$ reverses sign under orientation reversal, and the dot product is linear. By contrast, the scalar line integral $\int_C f\,ds$ is orientation-independent because $\|\mathbf{r}'(t)\|$ is always positive.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={3} title="Parameterization Independence">
+The vector line integral is independent of the *orientation-preserving* parameterization. Any two parameterizations that traverse $C$ in the same direction yield the same value. The proof is the same substitution argument as Proposition 1, but without the absolute value — the sign of $\phi'(\tau)$ cancels the reversed limits, preserving the integral's value.
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={1} title="Properties of Line Integrals">
+Let $C$, $C_1$, $C_2$ be piecewise-smooth curves, $\mathbf{F}$, $\mathbf{G}$ continuous vector fields, and $\alpha, \beta \in \mathbb{R}$.
+
+1. *Linearity:* $\int_C (\alpha\mathbf{F} + \beta\mathbf{G}) \cdot d\mathbf{r} = \alpha\int_C \mathbf{F} \cdot d\mathbf{r} + \beta\int_C \mathbf{G} \cdot d\mathbf{r}$.
+
+2. *Additivity over path concatenation:* If $C = C_1 + C_2$ (the endpoint of $C_1$ is the start of $C_2$), then $\int_C \mathbf{F} \cdot d\mathbf{r} = \int_{C_1} \mathbf{F} \cdot d\mathbf{r} + \int_{C_2} \mathbf{F} \cdot d\mathbf{r}$.
+
+3. *Orientation reversal:* $\int_{-C} \mathbf{F} \cdot d\mathbf{r} = -\int_C \mathbf{F} \cdot d\mathbf{r}$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={6} title="Work by a Constant Force">
+Let $\mathbf{F} = (3, 4)$ and $C$ be the line segment from $(0, 0)$ to $(2, 1)$: $\mathbf{r}(t) = (2t, t)$ for $t \in [0, 1]$. Then $\mathbf{r}'(t) = (2, 1)$ and:
+
+$$\int_C \mathbf{F} \cdot d\mathbf{r} = \int_0^1 (3 \cdot 2 + 4 \cdot 1)\,dt = 10.$$
+
+For a constant field, the work equals $\mathbf{F} \cdot \Delta\mathbf{r} = (3, 4) \cdot (2, 1) = 10$ — the integral is just a dot product.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={7} title="Work by a Radial Field">
+Let $\mathbf{F}(x, y) = (x, y)$ and $C$ be the upper semicircle from $(1, 0)$ to $(-1, 0)$: $\mathbf{r}(t) = (\cos t, \sin t)$ for $t \in [0, \pi]$. Then $\mathbf{r}'(t) = (-\sin t, \cos t)$:
+
+$$\int_C \mathbf{F} \cdot d\mathbf{r} = \int_0^\pi [(\cos t)(-\sin t) + (\sin t)(\cos t)]\,dt = \int_0^\pi 0\,dt = 0.$$
+
+The radial field is everywhere perpendicular to the circle — it does zero work along any circular arc.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={8} title="Work by a Non-Conservative Field">
+Let $\mathbf{F}(x, y) = (-y, x)$. Compute the work along two different paths from $(1, 0)$ to $(0, 1)$:
+
+**Path $C_1$:** Line segment $\mathbf{r}(t) = (1 - t, t)$ for $t \in [0, 1]$. Then $\mathbf{r}'(t) = (-1, 1)$ and $\mathbf{F}(\mathbf{r}(t)) = (-t, 1 - t)$:
+
+$$\int_{C_1} \mathbf{F} \cdot d\mathbf{r} = \int_0^1 [(-t)(-1) + (1-t)(1)]\,dt = \int_0^1 1\,dt = 1.$$
+
+**Path $C_2$:** Quarter-circle $\mathbf{r}(t) = (\cos t, \sin t)$ for $t \in [0, \pi/2]$. Then $\mathbf{F}(\mathbf{r}(t)) = (-\sin t, \cos t) = \mathbf{r}'(t)$:
+
+$$\int_{C_2} \mathbf{F} \cdot d\mathbf{r} = \int_0^{\pi/2} (\sin^2 t + \cos^2 t)\,dt = \frac{\pi}{2}.$$
+
+Different paths, different integrals ($1 \neq \pi/2$). This field is *not* conservative.
+</TheoremBlock>
+
+![Vector field with curve, tangent component projection at sample points](/images/topics/line-integrals/vector-line-integral.png)
+
+<LineIntegralExplorer client:visible />
+
+## 5. Conservative Fields & the Gradient Theorem
+
+This section contains the most important result in the topic — the Fundamental Theorem of Calculus for line integrals. It explains why "gradient" and "conservative" are the same concept.
+
+If $\mathbf{F} = \nabla f$, then the work integral $\int_C \mathbf{F} \cdot d\mathbf{r}$ is just the total change in $f$ along the curve — the difference between the "heights" at the endpoints. Think of $f$ as elevation: a hiker following a trail gains elevation $f(\text{end}) - f(\text{start})$ regardless of the trail's shape. The gradient field $\nabla f$ always points uphill, so walking along a contour (level curve of $f$) does zero work — the gradient is perpendicular to level sets ([Topic 9](/topics/gradient)).
+
+<TheoremBlock type="definition" number={5} title="Conservative Vector Field">
+A vector field $\mathbf{F}: D \to \mathbb{R}^n$ (where $D \subseteq \mathbb{R}^n$ is open and connected) is *conservative* if there exists a $C^1$ function $f: D \to \mathbb{R}$ such that $\mathbf{F} = \nabla f$ on $D$. The function $f$ is called a *potential function* (or *scalar potential*) for $\mathbf{F}$.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={4} title="Potential Functions Are Unique Up to a Constant">
+If $f$ and $g$ are both potential functions for $\mathbf{F}$ on a connected domain $D$, then $\nabla(f - g) = \mathbf{0}$ on $D$, so $f - g$ is constant. This follows from the fact that a function with zero gradient on a connected domain must be constant — a consequence of the Mean Value Theorem ([Topic 6](/topics/mean-value-taylor)).
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={2} title="The Gradient Theorem (FTC for Line Integrals)">
+Let $f: D \to \mathbb{R}$ be a $C^1$ function on an open set $D \subseteq \mathbb{R}^n$, and let $C$ be a piecewise-smooth curve in $D$ from $\mathbf{a}$ to $\mathbf{b}$. Then:
+
+$$\int_C \nabla f \cdot d\mathbf{r} = f(\mathbf{b}) - f(\mathbf{a}).$$
+</TheoremBlock>
+
+<TheoremBlock type="proof" title="Proof of the Gradient Theorem">
+Define $g(t) = f(\mathbf{r}(t))$ for $t \in [a, b]$. By the chain rule ([Topic 5](/topics/derivative) for scalar functions, [Topic 10](/topics/jacobian) for the multivariable version):
+
+$$g'(t) = \nabla f(\mathbf{r}(t)) \cdot \mathbf{r}'(t).$$
+
+This is the key identity: the integrand of the line integral is exactly $g'(t)$. By the Fundamental Theorem of Calculus ([Topic 7](/topics/riemann-integral), Theorem 2):
+
+$$\int_C \nabla f \cdot d\mathbf{r} = \int_a^b g'(t)\,dt = g(b) - g(a) = f(\mathbf{r}(b)) - f(\mathbf{r}(a)). \qquad \square$$
+</TheoremBlock>
+
+The proof is strikingly short — it's the chain rule plus the FTC. The chain rule converts the multivariable line integral into a single-variable integral, and the FTC evaluates it. This is why the Gradient Theorem is the "FTC for line integrals."
+
+<TheoremBlock type="example" number={9} title="Gravitational Potential">
+Let $\mathbf{F}(x, y) = (2x, 2y)$ with potential $f(x, y) = x^2 + y^2$. For *any* curve $C$ from $(1, 0)$ to $(0, 3)$:
+
+$$\int_C \mathbf{F} \cdot d\mathbf{r} = f(0, 3) - f(1, 0) = 9 - 1 = 8.$$
+
+No parameterization needed — just endpoint evaluation.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={10} title="Verifying Example 7 via the Gradient Theorem">
+The radial field $\mathbf{F}(x, y) = (x, y) = \nabla\!\left(\frac{x^2 + y^2}{2}\right)$. The curve from $(1, 0)$ to $(-1, 0)$ gives:
+
+$$f(-1, 0) - f(1, 0) = \frac{1}{2} - \frac{1}{2} = 0.$$
+
+The Gradient Theorem reproduces Example 7's result — zero work — without any integration.
+</TheoremBlock>
+
+![Potential surface z = f(x,y) with two paths between same endpoints, height difference labeled](/images/topics/line-integrals/gradient-theorem.png)
+
+<PotentialFunctionExplorer client:visible />
+
+## 6. Path Independence & the Exactness Criterion
+
+When is a vector field conservative? The Gradient Theorem shows that conservative fields have path-independent integrals. The converse is also true: path independence implies conservativeness. And there is a practical, computable test.
+
+<TheoremBlock type="definition" number={6} title="Path Independence">
+A vector field $\mathbf{F}: D \to \mathbb{R}^n$ has *path-independent* line integrals if $\int_{C_1} \mathbf{F} \cdot d\mathbf{r} = \int_{C_2} \mathbf{F} \cdot d\mathbf{r}$ for every pair of piecewise-smooth curves $C_1, C_2$ in $D$ that share the same endpoints.
+</TheoremBlock>
+
+<TheoremBlock type="definition" number={7} title="Closed Curve">
+A curve $C$ parameterized by $\mathbf{r}: [a, b] \to \mathbb{R}^n$ is *closed* if $\mathbf{r}(a) = \mathbf{r}(b)$. We write $\oint_C$ for integrals over closed curves.
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={3} title="Equivalence of Conservative, Path-Independent, and Zero-Circulation">
+Let $\mathbf{F}: D \to \mathbb{R}^n$ be a continuous vector field on an open connected domain $D$. The following are equivalent:
+
+1. $\mathbf{F}$ is conservative ($\mathbf{F} = \nabla f$ for some $C^1$ function $f$).
+2. $\int_C \mathbf{F} \cdot d\mathbf{r}$ is path-independent in $D$.
+3. $\oint_C \mathbf{F} \cdot d\mathbf{r} = 0$ for every piecewise-smooth closed curve $C$ in $D$.
+</TheoremBlock>
+
+<TheoremBlock type="proof" title="Proof of Theorem 3">
+**(1) $\Rightarrow$ (2):** Immediate from the Gradient Theorem — the integral equals $f(\mathbf{b}) - f(\mathbf{a})$, which depends only on the endpoints.
+
+**(2) $\Rightarrow$ (3):** If $C$ is closed, its start and end points coincide: $\mathbf{a} = \mathbf{b}$. Split $C$ at any interior point $\mathbf{p}$ into two curves $C_1$ (from $\mathbf{a}$ to $\mathbf{p}$) and $C_2$ (from $\mathbf{p}$ to $\mathbf{a}$). By path independence, $\int_{C_1} \mathbf{F} \cdot d\mathbf{r} = \int_{-C_2} \mathbf{F} \cdot d\mathbf{r} = -\int_{C_2} \mathbf{F} \cdot d\mathbf{r}$, so $\oint_C = \int_{C_1} + \int_{C_2} = 0$.
+
+**(3) $\Rightarrow$ (1):** Fix a base point $\mathbf{a} \in D$ and define $f(\mathbf{x}) = \int_C \mathbf{F} \cdot d\mathbf{r}$ where $C$ is any path from $\mathbf{a}$ to $\mathbf{x}$. The zero-circulation condition ensures this is well-defined (different paths give the same value).
+
+To show $\nabla f = \mathbf{F}$: compute $\frac{\partial f}{\partial x_i}(\mathbf{x})$ by choosing the path to $\mathbf{x} + h\mathbf{e}_i$ as any path from $\mathbf{a}$ to $\mathbf{x}$, then a straight segment from $\mathbf{x}$ to $\mathbf{x} + h\mathbf{e}_i$. The difference $f(\mathbf{x} + h\mathbf{e}_i) - f(\mathbf{x}) = \int_0^h F_i(\mathbf{x} + s\mathbf{e}_i)\,ds$. By the FTC ([Topic 7](/topics/riemann-integral)), dividing by $h$ and taking $h \to 0$ gives $\frac{\partial f}{\partial x_i}(\mathbf{x}) = F_i(\mathbf{x})$. $\square$
+</TheoremBlock>
+
+<TheoremBlock type="definition" number={8} title="Simply Connected Domain">
+An open connected domain $D \subseteq \mathbb{R}^2$ is *simply connected* if every closed curve in $D$ can be continuously shrunk to a point without leaving $D$. Informally: $D$ has no holes. The full plane $\mathbb{R}^2$ is simply connected; the punctured plane $\mathbb{R}^2 \setminus \{(0,0)\}$ is not.
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={4} title="Exactness Criterion">
+Let $\mathbf{F} = (P, Q): D \to \mathbb{R}^2$ be a $C^1$ vector field on an open, simply connected domain $D \subseteq \mathbb{R}^2$. Then $\mathbf{F}$ is conservative if and only if:
+
+$$\frac{\partial P}{\partial y} = \frac{\partial Q}{\partial x} \quad \text{on } D.$$
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={5} title="Why 'Simply Connected'?">
+The condition $\partial P / \partial y = \partial Q / \partial x$ says $\mathbf{F}$ is *closed* — its 1-form $P\,dx + Q\,dy$ is closed. On simply connected domains, closed = exact (= conservative). On domains with holes, closed $\neq$ exact. The gap is topological, not analytical — it is measured by de Rham cohomology $H^1_{\text{dR}}$ (→ [Smooth Manifolds](https://formalml.com/topics/smooth-manifolds) on formalML).
+</TheoremBlock>
+
+<TheoremBlock type="example" number={11} title="Testing Conservativeness">
+Let $\mathbf{F}(x, y) = (2xy + y^2,\; x^2 + 2xy)$. Check: $\frac{\partial P}{\partial y} = 2x + 2y = \frac{\partial Q}{\partial x}$. Conservative.
+
+Find $f$: from $f_x = 2xy + y^2$ we get $f(x, y) = x^2 y + xy^2 + g(y)$. Then $f_y = x^2 + 2xy + g'(y) = x^2 + 2xy$ forces $g'(y) = 0$, so $f(x, y) = x^2 y + xy^2 + C$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={12} title="The Vortex Field — Topology Matters">
+The vortex field $\mathbf{F}(x, y) = \left(\frac{-y}{x^2+y^2},\; \frac{x}{x^2+y^2}\right)$ on $D = \mathbb{R}^2 \setminus \{(0,0)\}$.
+
+Check the exactness condition: $\frac{\partial P}{\partial y} = \frac{y^2 - x^2}{(x^2+y^2)^2} = \frac{\partial Q}{\partial x}$. The condition *holds*, yet the circulation around the unit circle is:
+
+$$\oint_C \mathbf{F} \cdot d\mathbf{r} = 2\pi \neq 0.$$
+
+The catch: $D$ is not simply connected — it has a hole at the origin. The "potential function" $f(x,y) = \arctan(y/x)$ is multi-valued; it gains $2\pi$ each time we circle the origin. The vortex field is the canonical example showing that topology matters.
+</TheoremBlock>
+
+![Four-panel: conservative field with three paths (same integral), non-conservative field with three paths (different integrals)](/images/topics/line-integrals/path-independence.png)
+
+![Vortex field with circulation 2π around origin, highlighting the hole](/images/topics/line-integrals/vortex-field.png)
+
+<ConservativeFieldExplorer client:visible />
+
+## 7. Green's Theorem
+
+Green's theorem converts a line integral around a closed curve into a double integral over the enclosed region. This is the 2D special case of the generalized Stokes' theorem — the single most powerful identity in vector calculus.
+
+Walk around the boundary of a region $D$. At each point, the vector field $\mathbf{F}$ pushes you along (or against) your direction of travel. The total work around the loop — the *circulation* — equals the integral of the "rotation" of $\mathbf{F}$ over the interior. That "rotation" is $\frac{\partial Q}{\partial x} - \frac{\partial P}{\partial y}$, the 2D curl.
+
+<TheoremBlock type="theorem" number={5} title="Green's Theorem">
+Let $D \subseteq \mathbb{R}^2$ be a bounded region with piecewise-smooth boundary $\partial D$ oriented counterclockwise. Let $\mathbf{F} = (P, Q): \bar{D} \to \mathbb{R}^2$ be a $C^1$ vector field. Then:
+
+$$\oint_{\partial D} P\,dx + Q\,dy = \iint_D \left(\frac{\partial Q}{\partial x} - \frac{\partial P}{\partial y}\right)\,dA.$$
+</TheoremBlock>
+
+<TheoremBlock type="proof" title="Proof of Green's Theorem (Type I/II Regions)">
+We show $\oint_{\partial D} P\,dx = -\iint_D \frac{\partial P}{\partial y}\,dA$ and $\oint_{\partial D} Q\,dy = \iint_D \frac{\partial Q}{\partial x}\,dA$ separately, then add.
+
+**Proof that $\oint P\,dx = -\iint \frac{\partial P}{\partial y}\,dA$:** Let $D$ be a Type I region: $a \le x \le b$, $g_1(x) \le y \le g_2(x)$. The right side is:
+
+$$-\iint_D \frac{\partial P}{\partial y}\,dA = -\int_a^b \int_{g_1(x)}^{g_2(x)} \frac{\partial P}{\partial y}(x, y)\,dy\,dx = -\int_a^b \bigl[P(x, g_2(x)) - P(x, g_1(x))\bigr]\,dx.$$
+
+The boundary $\partial D$ traversed counterclockwise consists of: the bottom curve $C_1: y = g_1(x)$ from $x = a$ to $x = b$, the right side, the top curve $C_3: y = g_2(x)$ from $x = b$ to $x = a$, and the left side. On $C_1$: $\int_{C_1} P\,dx = \int_a^b P(x, g_1(x))\,dx$. On $C_3$ (reversed): $\int_{C_3} P\,dx = -\int_a^b P(x, g_2(x))\,dx$. On the vertical sides, $dx = 0$, so their contributions vanish. Adding:
+
+$$\oint_{\partial D} P\,dx = \int_a^b P(x, g_1(x))\,dx - \int_a^b P(x, g_2(x))\,dx = -\int_a^b [P(x, g_2(x)) - P(x, g_1(x))]\,dx.$$
+
+The proof for $Q\,dy$ is analogous using a Type II description of $D$. For general regions, decompose into Type I and Type II pieces; interior boundary contributions cancel in pairs. $\square$
+</TheoremBlock>
+
+<TheoremBlock type="example" number={13} title="Circulation of F = (−y, x) Around the Unit Circle">
+**Direct computation:** $\oint_C (-y\,dx + x\,dy)$ with $\mathbf{r}(t) = (\cos t, \sin t)$ gives:
+
+$$\int_0^{2\pi} [\sin^2 t + \cos^2 t]\,dt = 2\pi.$$
+
+**Via Green's theorem:** $\frac{\partial Q}{\partial x} - \frac{\partial P}{\partial y} = 1 - (-1) = 2$, so:
+
+$$\iint_D 2\,dA = 2 \cdot \pi = 2\pi.$$
+
+Both give $2\pi$. The rotation field $(-y, x)$ has constant curl 2 — every point in the disk contributes equally to the circulation.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={14} title="Area via Green's Theorem">
+Setting $P = -y/2$, $Q = x/2$ gives $\frac{\partial Q}{\partial x} - \frac{\partial P}{\partial y} = \frac{1}{2} + \frac{1}{2} = 1$, so:
+
+$$A(D) = \iint_D dA = \frac{1}{2}\oint_{\partial D} (x\,dy - y\,dx).$$
+
+This is the *Shoelace formula* for polygonal areas (a special case when $\partial D$ is a polygon) and the formula used by mechanical planimeters.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={6} title="Green's Theorem as a Conservation Law">
+Green's theorem says that the "total rotation inside $D$" equals the "total circulation around $\partial D$." The interior quantity (curl) and the boundary quantity (circulation) are related by an exact balance. This is the prototype of all conservation laws in physics — and the 2D instance of Stokes' theorem, which will be generalized to surfaces and volumes in Surface Integrals & the Divergence Theorem *(coming soon)*.
+</TheoremBlock>
+
+![Region D with boundary traversal and interior curl heatmap, both sides computed](/images/topics/line-integrals/greens-theorem.png)
+
+<GreenTheoremExplorer client:visible />
+
+## 8. Curl & Circulation
+
+The integrand in Green's theorem — $\frac{\partial Q}{\partial x} - \frac{\partial P}{\partial y}$ — is the 2D curl. It measures how much the vector field "rotates" around each point. We can formalize this by taking a limit of circulations over shrinking loops.
+
+<TheoremBlock type="definition" number={9} title="2D Curl (Scalar Curl)">
+For $\mathbf{F} = (P, Q): D \to \mathbb{R}^2$ of class $C^1$, the *2D curl* (or *scalar curl*) is:
+
+$$\operatorname{curl}\mathbf{F}(x, y) = \frac{\partial Q}{\partial x} - \frac{\partial P}{\partial y}.$$
+
+This is the $\hat{\mathbf{k}}$-component of the 3D curl $\nabla \times \mathbf{F}$, with $\mathbf{F}$ viewed as the 3D field $(P, Q, 0)$.
+</TheoremBlock>
+
+<TheoremBlock type="proposition" number={2} title="Curl as Infinitesimal Circulation">
+Let $\mathbf{F}$ be $C^1$ at $\mathbf{p}$, and let $C_r$ be the circle of radius $r$ centered at $\mathbf{p}$, oriented counterclockwise. Then:
+
+$$\operatorname{curl}\mathbf{F}(\mathbf{p}) = \lim_{r \to 0} \frac{1}{\pi r^2} \oint_{C_r} \mathbf{F} \cdot d\mathbf{r}.$$
+
+The curl is the circulation per unit area in the limit of infinitesimally small loops.
+</TheoremBlock>
+
+<TheoremBlock type="proof" title="Proof Sketch of Proposition 2">
+By Green's theorem, $\oint_{C_r} \mathbf{F} \cdot d\mathbf{r} = \iint_{D_r} \operatorname{curl}\mathbf{F}\,dA$. By the Mean Value Theorem for double integrals ([Topic 13](/topics/multiple-integrals)), $\iint_{D_r} \operatorname{curl}\mathbf{F}\,dA = \operatorname{curl}\mathbf{F}(\mathbf{p}_r) \cdot \pi r^2$ for some $\mathbf{p}_r \in D_r$. As $r \to 0$, $\mathbf{p}_r \to \mathbf{p}$ and continuity of $\operatorname{curl}\mathbf{F}$ gives the limit. $\square$
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={7} title="Conservative ⟺ Curl-Free (on Simply Connected Domains)">
+Theorem 4 restated: on a simply connected domain, $\mathbf{F}$ is conservative if and only if $\operatorname{curl}\mathbf{F} = 0$ everywhere. Green's theorem explains why: if $\operatorname{curl}\mathbf{F} = 0$ on $D$, then $\oint_C \mathbf{F} \cdot d\mathbf{r} = \iint_D \operatorname{curl}\mathbf{F}\,dA = 0$ for every closed curve $C$ bounding a region in $D$. On simply connected domains, every closed curve bounds a region in $D$, so the zero-circulation condition (Theorem 3) is satisfied.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={15} title="Identifying Rotation">
+Three vector fields, three curl values:
+
+- **Rotation field** $\mathbf{F} = (-y, x)$: $\operatorname{curl}\mathbf{F} = 1 - (-1) = 2$. Constant positive curl — rigid counterclockwise rotation.
+- **Shear field** $\mathbf{F} = (y, 0)$: $\operatorname{curl}\mathbf{F} = 0 - 1 = -1$. Constant negative curl — clockwise shearing.
+- **Expansion field** $\mathbf{F} = (x, y)$: $\operatorname{curl}\mathbf{F} = 0 - 0 = 0$. Curl-free — pure expansion, no rotation. This field is conservative (it's a gradient field).
+</TheoremBlock>
+
+![Three-panel: positive curl (rotation), negative curl (shear), zero curl (expansion) with paddlewheels](/images/topics/line-integrals/curl-circulation.png)
+
+<CurlExplorer client:visible />
+
+## 9. Computational Notes
+
+In practice, line integrals are computed by reducing to single-variable integrals via parameterization, then applying numerical quadrature. Here are the key patterns:
+
+**Computing $\int_C \mathbf{F} \cdot d\mathbf{r}$ given $\mathbf{F}$ and $\mathbf{r}(t)$:**
+
+```python
+import numpy as np
+from scipy.integrate import quad
+
+def line_integral_vector(F, r, r_prime, a, b):
+    """Compute ∫_C F · dr via parameterization."""
+    def integrand(t):
+        x, y = r(t)
+        Fx, Fy = F(x, y)
+        dx, dy = r_prime(t)
+        return Fx * dx + Fy * dy
+    result, _ = quad(integrand, a, b)
+    return result
+```
+
+**Testing conservativeness via finite differences:**
+
+```python
+def is_conservative(F, domain, grid_size=50, tol=1e-6):
+    """Check ∂P/∂y ≈ ∂Q/∂x on a grid."""
+    h = 1e-7
+    xs = np.linspace(*domain[0], grid_size)
+    ys = np.linspace(*domain[1], grid_size)
+    max_dev = 0
+    for x in xs:
+        for y in ys:
+            dP_dy = (F(x, y + h)[0] - F(x, y - h)[0]) / (2 * h)
+            dQ_dx = (F(x + h, y)[1] - F(x - h, y)[1]) / (2 * h)
+            max_dev = max(max_dev, abs(dQ_dx - dP_dy))
+    return max_dev < tol
+```
+
+**Recovering a potential function:**
+
+```python
+def find_potential(F, x, y):
+    """Recover φ(x,y) by integrating along L-shaped path from (0,0)."""
+    # Horizontal: ∫₀ˣ P(s, 0) ds
+    phi_x, _ = quad(lambda s: F(s, 0)[0], 0, x)
+    # Vertical: ∫₀ʸ Q(x, s) ds
+    phi_y, _ = quad(lambda s: F(x, s)[1], 0, y)
+    return phi_x + phi_y
+```
+
+**Verifying Green's theorem numerically:**
+
+```python
+# Line integral around unit circle
+circulation = line_integral_vector(
+    F=lambda x, y: (-y, x),
+    r=lambda t: (np.cos(t), np.sin(t)),
+    r_prime=lambda t: (-np.sin(t), np.cos(t)),
+    a=0, b=2 * np.pi
+)  # → 2π
+
+# Double integral of curl over unit disk
+from scipy.integrate import dblquad
+curl_integral, _ = dblquad(
+    lambda y, x: 2,  # curl = 2 everywhere
+    -1, 1,
+    lambda x: -np.sqrt(1 - x**2),
+    lambda x: np.sqrt(1 - x**2)
+)  # → 2π
+```
+
+## 10. Connections to ML
+
+Line integrals appear in machine learning in three distinct ways. These are not afterthoughts — they are the mathematical backbone of how optimization, energy models, and natural gradients work.
+
+### 10.1 Gradient Flow as Continuous-Time Gradient Descent
+
+The ODE $\dot{\theta}(t) = -\nabla L(\theta(t))$ defines a curve $\theta(t)$ in parameter space. The total loss change along this curve is:
+
+$$L(\theta(T)) - L(\theta(0)) = \int_0^T \nabla L(\theta(t)) \cdot \dot{\theta}(t)\,dt = -\int_0^T \|\nabla L(\theta(t))\|^2\,dt \le 0.$$
+
+The first equality is the chain rule; the second substitutes $\dot{\theta} = -\nabla L$. The integral $\int_0^T \|\nabla L\|^2\,dt$ is the "total gradient magnitude" along the path — it quantifies how much the loss decreases. This is the Gradient Theorem (Theorem 2) applied to $f = L$, giving the loss difference as a line integral of $\nabla L$.
+
+Discrete gradient descent $\theta_{t+1} = \theta_t - \eta\nabla L(\theta_t)$ approximates this flow. The step size $\eta$ controls how closely the discrete path follows the continuous one. When $\eta$ is small, the discrete path stays near the continuous flow, and convergence analysis borrows from the continuous theory.
+
+→ [Gradient Descent](https://formalml.com/topics/gradient-descent) on formalML
+
+### 10.2 Energy-Based Models
+
+An energy-based model defines a scalar potential $E(\mathbf{x}; \theta)$ over input space. The negative gradient $-\nabla_{\mathbf{x}} E$ pushes inputs toward low-energy configurations. The dynamics $\dot{\mathbf{x}} = -\nabla_{\mathbf{x}} E$ are a gradient flow in input space — a conservative system where the "work done" on $\mathbf{x}$ equals the energy change $E(\mathbf{x}_{\text{final}}) - E(\mathbf{x}_{\text{init}})$, independent of path. Hopfield networks, Boltzmann machines, and score-based diffusion models all define energy landscapes whose gradient fields govern inference and generation.
+
+### 10.3 Natural Gradient & Geodesic Paths
+
+Standard gradient descent follows the direction $-\nabla L$ in Euclidean parameter space. The *natural gradient* follows $-I(\theta)^{-1}\nabla L$, where $I(\theta)$ is the Fisher information matrix. This corresponds to steepest descent in the Fisher-Rao metric on the statistical manifold — the direction that maximally decreases the loss per unit of *statistical distance*.
+
+The length of a curve $\theta(t)$ in the Fisher-Rao metric is:
+
+$$\int_a^b \sqrt{\dot{\theta}(t)^T I(\theta(t))\, \dot{\theta}(t)}\,dt$$
+
+This is a scalar line integral (Definition 3) with the arc length element of the Fisher-Rao metric replacing the Euclidean one. Geodesics are curves that minimize this length integral — the calculus of variations *(coming soon)* provides the Euler-Lagrange equation for finding them.
+
+→ [Information Geometry](https://formalml.com/topics/information-geometry) on formalML
+
+![Four-panel: gradient flow path, energy-based model landscape, natural gradient vs. Euclidean gradient, discrete vs. continuous paths](/images/topics/line-integrals/ml-connections.png)
+
+## 11. Connections & Further Reading
+
+### Prerequisites Used
+
+- [**Multiple Integrals & Fubini's Theorem**](/topics/multiple-integrals) — Green's theorem converts line integrals to double integrals using the Fubini machinery.
+- [**The Gradient & Directional Derivatives**](/topics/gradient) — The Gradient Theorem is $\int_C \nabla f \cdot d\mathbf{r} = f(\mathbf{b}) - f(\mathbf{a})$. Conservative fields are gradient fields.
+- [**The Derivative & the Chain Rule**](/topics/derivative) — The chain rule $\frac{d}{dt}f(\mathbf{r}(t)) = \nabla f \cdot \mathbf{r}'(t)$ is the key step in the Gradient Theorem proof.
+- [**The Jacobian & Multivariate Chain Rule**](/topics/jacobian) — Parameterization independence of line integrals follows from the substitution rule, which is the 1D Jacobian.
+- [**The Riemann Integral**](/topics/riemann-integral) — After parameterization, every line integral is a 1D Riemann integral.
+- [**Epsilon-Delta Continuity**](/topics/epsilon-delta) — Continuity of $\mathbf{F}$ along the curve is the hypothesis that makes the integral well-defined.
+- [**Completeness & Compactness**](/topics/completeness-compactness) — Compactness of the curve image $\mathbf{r}([a,b])$ ensures $\mathbf{F}$ is bounded on $C$.
+
+### What Comes Next
+
+- **Surface Integrals & the Divergence Theorem** *(coming soon)* — Stokes' theorem generalizes Green's theorem from 2D to 3D: $\oint_C \mathbf{F} \cdot d\mathbf{r} = \iint_S (\nabla \times \mathbf{F}) \cdot d\mathbf{S}$. The divergence theorem relates surface integrals to volume integrals.
+- **First-Order ODEs & Existence Theorems** *(coming soon)* — Exact differential equations $M\,dx + N\,dy = 0$ are exact when $M_y = N_x$, the same criterion as conservative fields. The integrating factor technique corresponds to finding a potential function.
+- **Metric Spaces & Topology** *(coming soon)* — Simply connected vs. non-simply-connected domains are formalized via fundamental groups and homotopy. Path length defines the intrinsic metric on a Riemannian manifold.
+- **Calculus of Variations** *(coming soon)* — Functionals $J[\gamma] = \int_a^b L(\gamma, \gamma', t)\,dt$ are line integrals over path space. Extremal paths satisfy the Euler-Lagrange equation.
+
+### Forward Links to formalML
+
+- → [Gradient Descent](https://formalml.com/topics/gradient-descent) — Gradient flow as continuous-time optimization.
+- → [Smooth Manifolds](https://formalml.com/topics/smooth-manifolds) — Differential 1-forms, closed vs. exact, de Rham cohomology.
+- → [Information Geometry](https://formalml.com/topics/information-geometry) — Fisher-Rao metric, natural gradient, geodesics on the statistical manifold.

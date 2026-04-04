@@ -2067,3 +2067,132 @@ export function normalizingFlowStep(
   if (pZ <= 0) return 0;
   return pZ * Math.exp(-logDetJ(z));
 }
+
+// ══════════════════════════════════════════════════════════════
+// Vector field analysis — curl, divergence, conservative tests (Topic 15)
+// ══════════════════════════════════════════════════════════════
+
+/**
+ * Compute 2D scalar curl: ∂Q/∂x − ∂P/∂y.
+ *
+ * For F = (P, Q), the 2D curl measures infinitesimal rotation.
+ * Positive curl = counterclockwise rotation; negative = clockwise.
+ * This is the ẑ-component of the 3D curl ∇ × F when F is viewed
+ * as (P, Q, 0).
+ */
+export function curl2D(
+  F: (x: number, y: number) => [number, number],
+  x: number,
+  y: number,
+  h: number = 1e-7,
+): number {
+  // ∂Q/∂x via central difference
+  const [, QxPlus] = F(x + h, y);
+  const [, QxMinus] = F(x - h, y);
+  const dQdx = (QxPlus - QxMinus) / (2 * h);
+
+  // ∂P/∂y via central difference
+  const [PyPlus] = F(x, y + h);
+  const [PyMinus] = F(x, y - h);
+  const dPdy = (PyPlus - PyMinus) / (2 * h);
+
+  return dQdx - dPdy;
+}
+
+/**
+ * Compute 2D divergence: ∂P/∂x + ∂Q/∂y.
+ *
+ * Divergence measures the rate of "expansion" of the vector field
+ * at a point. Positive divergence = source; negative = sink.
+ */
+export function divergence2D(
+  F: (x: number, y: number) => [number, number],
+  x: number,
+  y: number,
+  h: number = 1e-7,
+): number {
+  // ∂P/∂x via central difference
+  const [PxPlus] = F(x + h, y);
+  const [PxMinus] = F(x - h, y);
+  const dPdx = (PxPlus - PxMinus) / (2 * h);
+
+  // ∂Q/∂y via central difference
+  const [, QyPlus] = F(x, y + h);
+  const [, QyMinus] = F(x, y - h);
+  const dQdy = (QyPlus - QyMinus) / (2 * h);
+
+  return dPdx + dQdy;
+}
+
+/**
+ * Test whether a 2D vector field is conservative by checking curl ≈ 0
+ * on a grid of sample points.
+ *
+ * On simply connected domains, F is conservative ⟺ curl F = 0 everywhere.
+ * This test samples the curl on a grid and checks that the maximum
+ * absolute curl is below the tolerance.
+ */
+export function isConservative2D(
+  F: (x: number, y: number) => [number, number],
+  domain: { xRange: [number, number]; yRange: [number, number] },
+  gridSize: number = 20,
+  tolerance: number = 1e-5,
+): { conservative: boolean; maxDeviation: number } {
+  const { xRange, yRange } = domain;
+  const dx = (xRange[1] - xRange[0]) / gridSize;
+  const dy = (yRange[1] - yRange[0]) / gridSize;
+  let maxDeviation = 0;
+
+  for (let i = 0; i <= gridSize; i++) {
+    const x = xRange[0] + i * dx;
+    for (let j = 0; j <= gridSize; j++) {
+      const y = yRange[0] + j * dy;
+      const curlVal = Math.abs(curl2D(F, x, y));
+      if (curlVal > maxDeviation) {
+        maxDeviation = curlVal;
+      }
+    }
+  }
+
+  return { conservative: maxDeviation < tolerance, maxDeviation };
+}
+
+/**
+ * Recover potential function value at (x, y) by integrating F along an
+ * L-shaped path from the origin: horizontal (0,0)→(x,0), then vertical (x,0)→(x,y).
+ *
+ * φ(x, y) = ∫₀ˣ P(s, 0) ds + ∫₀ʸ Q(x, s) ds
+ *
+ * Only valid if F is conservative. The result is φ(x,y) − φ(0,0), so
+ * the potential is determined up to the constant φ(0,0).
+ */
+export function potentialFunction2D(
+  F: (x: number, y: number) => [number, number],
+  x: number,
+  y: number,
+  nPoints: number = 100,
+): number {
+  // Horizontal leg: integrate P(s, 0) ds from 0 to x
+  let horizontalSum = 0;
+  const hx = x / nPoints;
+  for (let i = 0; i < nPoints; i++) {
+    const s0 = i * hx;
+    const s1 = (i + 1) * hx;
+    const [P0] = F(s0, 0);
+    const [P1] = F(s1, 0);
+    horizontalSum += 0.5 * (P0 + P1) * hx;
+  }
+
+  // Vertical leg: integrate Q(x, s) ds from 0 to y
+  let verticalSum = 0;
+  const hy = y / nPoints;
+  for (let j = 0; j < nPoints; j++) {
+    const s0 = j * hy;
+    const s1 = (j + 1) * hy;
+    const [, Q0] = F(x, s0);
+    const [, Q1] = F(x, s1);
+    verticalSum += 0.5 * (Q0 + Q1) * hy;
+  }
+
+  return horizontalSum + verticalSum;
+}
