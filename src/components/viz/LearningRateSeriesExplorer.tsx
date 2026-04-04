@@ -4,7 +4,6 @@ import { useResizeObserver } from './shared/useResizeObserver';
 import { useD3 } from './shared/useD3';
 import { computePartialSums } from './shared/series';
 import { getLearningRateSchedules } from '../../data/series-convergence-data';
-import { functionColors } from './shared/colorScales';
 
 const schedules = getLearningRateSchedules();
 const margin = { top: 20, right: 20, bottom: 35, left: 55 };

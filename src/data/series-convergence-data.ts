@@ -37,10 +37,15 @@ export interface LearningRateSchedule {
 
 // ── Helpers ─────────────────────────────────────────────────
 
-/** Factorial with memoization for small values */
+/** Factorial with memoization and overflow guard.
+ * 171! exceeds Number.MAX_VALUE, so we clamp to avoid Infinity/NaN cascades
+ * in partial-sum accumulation and D3 scales when users slide maxN above ~170.
+ */
+const MAX_FINITE_FACTORIAL_N = 170;
 const factorialCache: number[] = [1, 1];
 function factorial(n: number): number {
   if (n < 0) return NaN;
+  if (n > MAX_FINITE_FACTORIAL_N) return Infinity;
   if (n < factorialCache.length) return factorialCache[n];
   for (let i = factorialCache.length; i <= n; i++) {
     factorialCache[i] = factorialCache[i - 1] * i;
@@ -54,7 +59,7 @@ const geometricHalf: SeriesPreset = {
   name: 'geometric-half',
   label: 'Geometric (r = 1/2)',
   term: (n: number) => Math.pow(0.5, n),
-  partialSum: (n: number) => (1 - Math.pow(0.5, n + 1)) / 0.5,
+  partialSum: (n: number) => 1 - Math.pow(0.5, n),  // Σ_{k=1}^{n} (1/2)^k = 1 - (1/2)^n
   exactSum: 1,  // Σ_{n=1}^∞ (1/2)^n = (1/2)/(1-1/2) = 1 (starts from n=1)
   converges: true,
   convergesAbsolutely: true,

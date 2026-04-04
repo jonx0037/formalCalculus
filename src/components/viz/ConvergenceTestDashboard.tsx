@@ -1,10 +1,9 @@
-import { useState, useMemo, useCallback, type ChangeEvent } from 'react';
+import { useState, useMemo } from 'react';
 import * as d3 from 'd3';
 import { useResizeObserver } from './shared/useResizeObserver';
 import { useD3 } from './shared/useD3';
 import { ratioTest, rootTest, divergenceTest } from './shared/series';
 import { getSeriesPresets, getTestResults } from '../../data/series-convergence-data';
-import type { ConvergenceTestResult } from '../../data/series-convergence-data';
 import { functionColors } from './shared/colorScales';
 
 const presets = getSeriesPresets();

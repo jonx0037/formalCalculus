@@ -420,7 +420,7 @@ For stochastic gradient descent, a fixed learning rate doesn't work — the nois
 
 $$\sum_{t=1}^{\infty} \eta_t = \infty \quad \text{and} \quad \sum_{t=1}^{\infty} \eta_t^2 < \infty.$$
 
-The first condition ($\sum \eta_t = \infty$) ensures the steps are large enough to reach the optimum from any starting point. The second ($\sum \eta_t^2 < \infty$) ensures the accumulated noise variance is finite, so the iterates settle down. Common schedules satisfying both: $\eta_t = c/t$ and $\eta_t = c/\sqrt{t}$.
+The first condition ($\sum \eta_t = \infty$) ensures the steps are large enough to reach the optimum from any starting point. The second ($\sum \eta_t^2 < \infty$) ensures the accumulated noise variance is finite, so the iterates settle down. Common schedules satisfying both include $\eta_t = c/t$ and, more generally, polynomial schedules $\eta_t = c/t^p$ with $1/2 < p \le 1$ (for example, $\eta_t = c/t^{3/4}$).
 
 These are *series convergence* conditions — statements about infinite sums. We formalize series in [Series Convergence & Tests](/topics/series-convergence), but the key point is that learning rate theory rests on the sequence and series machinery we've built here.
 

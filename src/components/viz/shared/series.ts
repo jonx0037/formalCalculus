@@ -9,8 +9,6 @@
  * All functions are pure and deterministic — no Math.random().
  */
 
-import { generateSequence, computeEpsilonN } from './limits';
-
 // ── Interfaces ──────────────────────────────────────────────
 
 export interface PartialSumResult {
