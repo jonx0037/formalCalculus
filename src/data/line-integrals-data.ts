@@ -133,7 +133,7 @@ export const VECTOR_FIELD_PRESETS: VectorField2DPreset[] = [
   },
   {
     name: 'quadratic',
-    label: 'Quadratic (2xy, x² + 2xy)',
+    label: 'Quadratic (2xy + y², x² + 2xy)',
     P: (x, y) => 2 * x * y + y * y,
     Q: (x, y) => x * x + 2 * x * y,
     isConservative: true,
@@ -282,20 +282,20 @@ export const REGION_PRESETS: RegionPreset[] = [
     description: 'Right triangle with vertices (0,0), (1,0), (0,1). Area = 1/2.',
   },
   {
-    name: 'annulus',
-    label: 'Annulus (r=0.5 to r=1.5)',
+    name: 'large-disk',
+    label: 'Disk (r=1.5)',
     boundary: {
-      name: 'annulus-outer',
-      label: 'Outer circle (r=1.5)',
+      name: 'disk-r1.5-boundary',
+      label: 'Circle (r=1.5)',
       r: (t) => [1.5 * Math.cos(t), 1.5 * Math.sin(t)],
       rPrime: (t) => [-1.5 * Math.sin(t), 1.5 * Math.cos(t)],
       domain: [0, 2 * Math.PI],
       isClosed: true,
-      description: 'Outer boundary of annulus, CCW.',
+      description: 'Boundary circle of the disk r ≤ 1.5, CCW.',
     },
-    isSimplyConnected: false,
+    isSimplyConnected: true,
     description:
-      'Annulus between r = 0.5 and r = 1.5. NOT simply connected — demonstrates topological obstructions to conservativeness.',
+      'Disk of radius 1.5 centered at the origin. Area = 2.25π. Useful for demonstrating Green\'s theorem on a larger region (e.g., with the vortex field, note that the vortex singularity at the origin lies inside this disk).',
   },
 ];
 

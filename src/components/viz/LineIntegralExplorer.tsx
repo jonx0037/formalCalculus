@@ -20,6 +20,7 @@ import { functionColors } from './shared/colorScales';
 
 const margin = { top: 20, right: 16, bottom: 36, left: 42 };
 const ARROW_GRID = 12;
+const N_STEPS = 200;
 
 export default function LineIntegralExplorer() {
   const { ref: containerRef, width } = useResizeObserver<HTMLDivElement>();
@@ -41,7 +42,7 @@ export default function LineIntegralExplorer() {
 
   // Compute work data for animation
   const workData = useMemo(
-    () => computeWorkIntegral(F, curve.r, curve.rPrime, curve.domain, 200),
+    () => computeWorkIntegral(F, curve.r, curve.rPrime, curve.domain, N_STEPS),
     [F, curve],
   );
 
@@ -51,7 +52,7 @@ export default function LineIntegralExplorer() {
   );
 
   // Current step index from progress
-  const stepIdx = Math.min(Math.floor(progress * 200), 200);
+  const stepIdx = Math.min(Math.floor(progress * N_STEPS), N_STEPS);
   const currentStep = workData[stepIdx] || workData[workData.length - 1];
 
   // Animation loop

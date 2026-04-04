@@ -2131,6 +2131,12 @@ export function divergence2D(
  * On simply connected domains, F is conservative ⟺ curl F = 0 everywhere.
  * This test samples the curl on a grid and checks that the maximum
  * absolute curl is below the tolerance.
+ *
+ * **Limitation:** This only tests the "closed" condition (∂P/∂y = ∂Q/∂x),
+ * which is necessary but not sufficient on non-simply connected domains.
+ * A field like the vortex field (−y, x)/(x²+y²) on ℝ² \ {0} will pass
+ * this test (curl = 0 away from the origin) despite not being conservative.
+ * See Example 12 in the Line Integrals topic for details.
  */
 export function isConservative2D(
   F: (x: number, y: number) => [number, number],
@@ -2159,36 +2165,44 @@ export function isConservative2D(
 
 /**
  * Recover potential function value at (x, y) by integrating F along an
- * L-shaped path from the origin: horizontal (0,0)→(x,0), then vertical (x,0)→(x,y).
+ * L-shaped path from a base point: horizontal (x0,y0)→(x,y0), then vertical (x,y0)→(x,y).
  *
- * φ(x, y) = ∫₀ˣ P(s, 0) ds + ∫₀ʸ Q(x, s) ds
+ * φ(x, y) = ∫_{x0}^{x} P(s, y0) ds + ∫_{y0}^{y} Q(x, s) ds
  *
- * Only valid if F is conservative. The result is φ(x,y) − φ(0,0), so
- * the potential is determined up to the constant φ(0,0).
+ * Only valid if F is conservative on a simply connected domain containing the path.
+ * The result is φ(x,y) − φ(x0,y0), so the potential is determined up to the
+ * constant φ(basePoint).
+ *
+ * @param basePoint — Starting point for the integration path. Defaults to (0,0).
+ *   Choose a base point that avoids singularities of F. For example, if F has a
+ *   singularity at the origin (like the vortex field), use a base point like (1,0).
  */
 export function potentialFunction2D(
   F: (x: number, y: number) => [number, number],
   x: number,
   y: number,
   nPoints: number = 100,
+  basePoint: [number, number] = [0, 0],
 ): number {
-  // Horizontal leg: integrate P(s, 0) ds from 0 to x
+  const [x0, y0] = basePoint;
+
+  // Horizontal leg: integrate P(s, y0) ds from x0 to x
   let horizontalSum = 0;
-  const hx = x / nPoints;
+  const hx = (x - x0) / nPoints;
   for (let i = 0; i < nPoints; i++) {
-    const s0 = i * hx;
-    const s1 = (i + 1) * hx;
-    const [P0] = F(s0, 0);
-    const [P1] = F(s1, 0);
+    const s0 = x0 + i * hx;
+    const s1 = x0 + (i + 1) * hx;
+    const [P0] = F(s0, y0);
+    const [P1] = F(s1, y0);
     horizontalSum += 0.5 * (P0 + P1) * hx;
   }
 
-  // Vertical leg: integrate Q(x, s) ds from 0 to y
+  // Vertical leg: integrate Q(x, s) ds from y0 to y
   let verticalSum = 0;
-  const hy = y / nPoints;
+  const hy = (y - y0) / nPoints;
   for (let j = 0; j < nPoints; j++) {
-    const s0 = j * hy;
-    const s1 = (j + 1) * hy;
+    const s0 = y0 + j * hy;
+    const s1 = y0 + (j + 1) * hy;
     const [, Q0] = F(x, s0);
     const [, Q1] = F(x, s1);
     verticalSum += 0.5 * (Q0 + Q1) * hy;

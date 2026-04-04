@@ -42,7 +42,7 @@ export default function GreenTheoremExplorer() {
     [F, boundary],
   );
 
-  // Double integral of curl: ∬_D curl(F) dA (via Monte Carlo on sampled grid)
+  // Double integral of curl: ∬_D curl(F) dA (via deterministic midpoint sampling on a grid)
   const { curlIntegral, curlData } = useMemo(() => {
     const xRange: [number, number] = [-2, 2];
     const yRange: [number, number] = [-2, 2];

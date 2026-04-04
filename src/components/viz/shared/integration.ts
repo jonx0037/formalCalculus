@@ -1418,6 +1418,7 @@ export function computeWorkIntegral(
   const result: { t: number; position: [number, number]; contribution: number; cumulative: number }[] = [];
   let cumulative = 0;
 
+  let prevIntegrand = 0;
   for (let i = 0; i <= nSteps; i++) {
     const t = a + i * dt;
     const pos = r(t);
@@ -1425,22 +1426,22 @@ export function computeWorkIntegral(
     const [dx, dy] = rPrime(t);
     const integrandValue = Fx * dx + Fy * dy;
 
-    // Trapezoidal accumulation (skip first point — no interval behind it)
+    // Trapezoidal accumulation — contribution equals the trapezoidal increment
+    // so that sum(contribution) === final cumulative value.
+    let contribution = 0;
     if (i > 0) {
-      const tPrev = a + (i - 1) * dt;
-      const posPrev = r(tPrev);
-      const [FxP, FyP] = F(posPrev[0], posPrev[1]);
-      const [dxP, dyP] = rPrime(tPrev);
-      const prevIntegrand = FxP * dxP + FyP * dyP;
-      cumulative += 0.5 * (prevIntegrand + integrandValue) * dt;
+      contribution = 0.5 * (prevIntegrand + integrandValue) * dt;
+      cumulative += contribution;
     }
 
     result.push({
       t,
       position: pos,
-      contribution: integrandValue * dt,
+      contribution,
       cumulative,
     });
+
+    prevIntegrand = integrandValue;
   }
 
   return result;
