@@ -375,48 +375,45 @@ const cubeBoundary: SurfacePreset = {
   name: 'cube-boundary',
   label: 'Cube boundary',
   // Parameterize all 6 faces as a single surface: u selects the face
-  // (split into 6 bands), v sweeps each face. This is a piecewise
-  // parameterization — each face is a unit square mapped to 3D.
+  // (split into 6 bands), v sweeps each face. The parameter sweep
+  // direction on each face is chosen so that r_u × r_v points outward.
   r: (u, v) => {
     const face = Math.min(5, Math.floor(u * 6));
     const s = u * 6 - face; // local param in [0,1)
     switch (face) {
-      case 0: return [1, s, v];       // x = 1 (right)
-      case 1: return [0, s, v];       // x = 0 (left)
-      case 2: return [s, 1, v];       // y = 1 (back)
-      case 3: return [s, 0, v];       // y = 0 (front)
-      case 4: return [s, v, 1];       // z = 1 (top)
-      default: return [s, v, 0];      // z = 0 (bottom)
+      case 0: return [1, s, v];       // x = 1: outward normal +x
+      case 1: return [0, v, s];       // x = 0: outward normal -x
+      case 2: return [v, 1, s];       // y = 1: outward normal +y
+      case 3: return [s, 0, v];       // y = 0: outward normal -y
+      case 4: return [s, v, 1];       // z = 1: outward normal +z
+      default: return [v, s, 0];      // z = 0: outward normal -z
     }
   },
   r_u: (u) => {
     const face = Math.min(5, Math.floor(u * 6));
     // Derivative w.r.t. u scaled by 6 (chain rule: ds/du = 6)
     switch (face) {
-      case 0: return [0, 6, 0];
-      case 1: return [0, 6, 0];
-      case 2: return [6, 0, 0];
-      case 3: return [6, 0, 0];
-      case 4: return [6, 0, 0];
-      default: return [6, 0, 0];
+      case 0: return [0, 6, 0];       // ∂/∂s of (1, s, v)
+      case 1: return [0, 0, 6];       // ∂/∂s of (0, v, s)
+      case 2: return [0, 0, 6];       // ∂/∂s of (v, 1, s)
+      case 3: return [6, 0, 0];       // ∂/∂s of (s, 0, v)
+      case 4: return [6, 0, 0];       // ∂/∂s of (s, v, 1)
+      default: return [0, 6, 0];      // ∂/∂s of (v, s, 0)
     }
   },
   r_v: (u) => {
     const face = Math.min(5, Math.floor(u * 6));
     switch (face) {
-      case 0: return [0, 0, 1];
-      case 1: return [0, 0, 1];
-      case 2: return [0, 0, 1];
-      case 3: return [0, 0, 1];
-      case 4: return [0, 1, 0];
-      default: return [0, 1, 0];
+      case 0: return [0, 0, 1];       // ∂/∂v of (1, s, v)
+      case 1: return [0, 1, 0];       // ∂/∂v of (0, v, s)
+      case 2: return [1, 0, 0];       // ∂/∂v of (v, 1, s)
+      case 3: return [0, 0, 1];       // ∂/∂v of (s, 0, v)
+      case 4: return [0, 1, 0];       // ∂/∂v of (s, v, 1)
+      default: return [1, 0, 0];      // ∂/∂v of (v, s, 0)
     }
   },
   paramDomain: { u: [0, 1], v: [0, 1] },
   isClosed: true,
-  // Outward sign varies per face; we handle this via the per-face
-  // dot-product check in the viz components (outwardSign = 1 as default,
-  // consumers flip per-face based on centroid direction)
   outwardSign: 1,
   description: 'Six faces of the unit cube [0,1]³ with outward normals',
 };
