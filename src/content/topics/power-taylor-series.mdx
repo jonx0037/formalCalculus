@@ -1,0 +1,499 @@
+---
+title: "Power Series & Taylor Series"
+subtitle: "When do infinite polynomial expansions converge — and when can you differentiate and integrate them term by term? The bridge from finite Taylor approximations to infinite series representations, with the radius of convergence as the gatekeeper."
+status: "published"
+difficulty: "intermediate"
+prerequisites:
+  - "series-convergence"
+  - "mean-value-taylor"
+  - "uniform-convergence"
+tags:
+  - "calculus"
+  - "series"
+  - "power-series"
+  - "taylor-series"
+  - "radius-of-convergence"
+  - "cauchy-hadamard"
+  - "term-by-term"
+  - "analytic-functions"
+  - "uniform-convergence"
+  - "maclaurin-series"
+domain: "series-approximation"
+videoId: null
+notebookPath: "notebooks/power-taylor-series/18_power_taylor_series.ipynb"
+githubUrl: "https://github.com/jonx0037/formalCalculus/blob/main/src/content/topics/power-taylor-series.mdx"
+datePublished: 2026-05-22
+estimatedReadTime: 50
+abstract: "A power series ∑ aₙ(x−c)ⁿ is an infinite polynomial — a series whose terms are functions of x rather than fixed numbers. The Cauchy-Hadamard theorem determines a radius of convergence R = 1/limsup|aₙ|^(1/n): the series converges absolutely for |x−c| < R and diverges for |x−c| > R. At the endpoints x = c ± R, convergence must be tested case by case using the convergence tests from Series Convergence & Tests. Inside the radius of convergence, a power series converges uniformly on every compact subset, which — via the interchange theorems from Uniform Convergence — justifies term-by-term differentiation and integration: the derivative of a power series is the series of derivatives, and the integral of a power series is the series of integrals, both with the same radius R. This makes power series infinitely differentiable inside their radius of convergence. A Taylor series ∑ f⁽ⁿ⁾(c)/n! · (x−c)ⁿ is a power series whose coefficients are determined by the derivatives of f at the center c. For analytic functions — those whose Taylor series converges to f in a neighborhood of c — the Taylor series provides a complete representation. But smooth does not imply analytic: the function e^(−1/x²) is C^∞ at the origin with all derivatives zero, yet is not identically zero, so its Taylor series converges to the wrong function. The Taylor series catalog (eˣ, sin x, cos x, ln(1+x), 1/(1−x), the binomial series (1+x)^α) forms the backbone of local approximation in both pure mathematics and applied ML. In machine learning, Taylor expansions appear in the descent lemma for gradient descent convergence, the Laplace approximation of posterior distributions, GELU activation function computation, and the matrix exponential for continuous-time dynamical models."
+formalmlConnections:
+  - topic: "gradient-descent"
+    site: "formalml"
+    relationship: "The descent lemma f(y) ≤ f(x) + ∇f(x)ᵀ(y−x) + L/2·‖y−x‖² is a second-order Taylor expansion with L-Lipschitz gradient remainder bound. Newton's method replaces gradient descent's linear Taylor model with the full quadratic Taylor model T₂(x), achieving quadratic convergence near optima."
+  - topic: "convex-analysis"
+    site: "formalml"
+    relationship: "A twice-differentiable function is convex iff its first-order Taylor expansion is a global lower bound: f(y) ≥ f(x) + ∇f(x)ᵀ(y−x). This characterization follows directly from Taylor's theorem with non-negative second derivative."
+  - topic: "information-geometry"
+    site: "formalml"
+    relationship: "The Fisher information matrix I(θ) is the Hessian of the KL divergence at θ = θ₀, computed via second-order Taylor expansion. The resulting Riemannian metric on parameter space is the foundation of natural gradient methods."
+  - topic: "smooth-manifolds"
+    site: "formalml"
+    relationship: "The smooth-vs-analytic distinction developed here is foundational: analytic functions are locally representable by convergent power series in coordinate charts, while smooth functions form the more general C^∞ category used in differential geometry."
+connections:
+  - topic: "series-convergence"
+    relationship: "Power series are series whose terms are functions aₙ(x−c)ⁿ rather than fixed numbers. The ratio test gives R = lim|aₙ/aₙ₊₁|, the root test gives R = 1/limsup|aₙ|^(1/n) (Cauchy-Hadamard), and endpoint analysis uses comparison and alternating series tests — all from Topic 17."
+  - topic: "mean-value-taylor"
+    relationship: "Topic 6 built Taylor polynomials Tₙ(x) and proved remainder bounds Rₙ(x), but left the question: when does Rₙ(x) → 0 as n → ∞? Topic 18 answers this by characterizing analytic functions — those for which the Taylor series converges to f — and providing the radius-of-convergence framework."
+  - topic: "uniform-convergence"
+    relationship: "The Weierstrass M-test (Topic 4) proves that power series converge uniformly on compact subsets of their interval of convergence. The interchange theorems for integration and differentiation (Topic 4) then justify term-by-term calculus — the most powerful computational tool for power series."
+  - topic: "riemann-integral"
+    relationship: "Term-by-term integration of power series produces antiderivatives expressed as power series. The integral ∫₀ˣ 1/(1+t²)dt = arctan(x) can be computed by integrating the geometric series 1/(1+t²) = ∑(-1)ⁿt²ⁿ term by term, yielding the Leibniz formula arctan(x) = ∑(-1)ⁿx^(2n+1)/(2n+1)."
+  - topic: "improper-integrals"
+    relationship: "Power series with infinite radius of convergence (eˣ, sin x, cos x) define entire functions whose improper integrals are computed via term-by-term integration. The Gaussian integral ∫e^(−x²)dx is evaluated by expanding e^(−x²) as a power series and integrating term by term."
+references:
+  - type: "book"
+    title: "Principles of Mathematical Analysis"
+    authors: "Rudin"
+    year: 1976
+    note: "Chapter 8 — the definitive treatment of power series, uniform convergence on compact subsets, and the algebra of power series"
+  - type: "book"
+    title: "Understanding Analysis"
+    authors: "Abbott"
+    year: 2015
+    note: "Chapter 6 — power series and Taylor series with an emphasis on the role of uniform convergence in justifying interchange"
+  - type: "book"
+    title: "Calculus"
+    authors: "Spivak"
+    year: 2008
+    note: "Chapter 23 — Taylor series with complete proofs of term-by-term theorems and the analytic vs. smooth distinction"
+  - type: "book"
+    title: "Real Analysis: Modern Techniques and Their Applications"
+    authors: "Folland"
+    year: 1999
+    note: "Section 0.6 — power series in the context of analysis prerequisites for measure theory"
+  - type: "book"
+    title: "Introduction to Real Analysis"
+    authors: "Bartle & Sherbert"
+    year: 2011
+    note: "Chapter 9 — power series convergence with careful attention to endpoint behavior and applications"
+  - type: "paper"
+    title: "Gaussian Error Linear Units (GELUs)"
+    authors: "Hendrycks & Gimpel"
+    year: 2016
+    url: "https://arxiv.org/abs/1606.08415"
+    note: "GELU(x) = x·Φ(x) is approximated via its Taylor expansion 0.5x(1 + tanh(√(2/π)(x + 0.044715x³))) — a direct application of power series truncation in neural network activation design."
+  - type: "paper"
+    title: "A Practical Bayesian Framework for Backpropagation Networks"
+    authors: "MacKay"
+    year: 1992
+    url: "https://doi.org/10.1162/neco.1992.4.3.448"
+    note: "The Laplace approximation replaces the posterior with a Gaussian centered at the MAP estimate using a second-order Taylor expansion of the log-posterior — a foundational Bayesian ML technique."
+---
+
+import TheoremBlock from '../../components/ui/TheoremBlock.astro';
+
+import PowerSeriesExplorer from '../../components/viz/PowerSeriesExplorer.tsx';
+import RadiusOfConvergenceExplorer from '../../components/viz/RadiusOfConvergenceExplorer.tsx';
+import TermByTermExplorer from '../../components/viz/TermByTermExplorer.tsx';
+import TaylorVsPowerSeriesExplorer from '../../components/viz/TaylorVsPowerSeriesExplorer.tsx';
+
+## 1. Overview & Motivation — From Finite to Infinite
+
+[Mean Value Theorem & Taylor Expansion](/topics/mean-value-taylor) gave us Taylor polynomials — finite sums $T_n(x) = \sum_{k=0}^{n} \frac{f^{(k)}(a)}{k!}(x-a)^k$ that approximate $f$ near $a$. [Series Convergence & Tests](/topics/series-convergence) gave us convergence tests for infinite sums of numbers. What happens when we let $n \to \infty$ in the Taylor polynomial — when does the infinite sum converge, and does it converge *to $f$*?
+
+More generally: what happens when the terms of a series depend on $x$? The geometric series $\sum_{n=0}^{\infty} x^n = \frac{1}{1-x}$ already demonstrated this in [Series Convergence & Tests](/topics/series-convergence) — it converges for $|x| < 1$ and diverges for $|x| \geq 1$. Power series generalize this pattern.
+
+**Why this matters in ML.** Neural network activation functions are often approximated by truncated Taylor series. The GELU activation $\text{GELU}(x) = x \cdot \Phi(x)$ is implemented in practice as $0.5x(1 + \tanh(\sqrt{2/\pi}(x + 0.044715x^3)))$, which is a polynomial approximation derived from a Taylor expansion. Understanding *when* and *where* such truncations are valid requires the theory of power series convergence.
+
+This topic sits at the intersection of three prerequisites. [Series Convergence & Tests](/topics/series-convergence) provides the convergence tests (ratio, root) that determine the *radius* of convergence. [Uniform Convergence](/topics/uniform-convergence) provides the uniform convergence theory that justifies *term-by-term calculus*. [Mean Value Theorem & Taylor Expansion](/topics/mean-value-taylor) provides the Taylor polynomial machinery whose infinite extension we now analyze.
+
+![Power series overview — three behaviors: convergence inside R, divergence outside R, and the entire-function case R = ∞](/images/topics/power-taylor-series/power-series-overview.png)
+
+## 2. Power Series — Definition and First Examples
+
+<TheoremBlock type="definition" number={1} title="Power Series">
+A **power series centered at $c$** is an expression of the form
+
+$$\sum_{n=0}^{\infty} a_n (x - c)^n = a_0 + a_1(x-c) + a_2(x-c)^2 + \cdots$$
+
+where $a_0, a_1, a_2, \ldots$ are real constants called the **coefficients** and $c$ is the **center**. The special case $c = 0$ gives $\sum a_n x^n$.
+</TheoremBlock>
+
+A power series is not a single number — it is a *function of $x$*. For each value of $x$, we get a numerical series $\sum a_n (x-c)^n$ that may converge or diverge. The central question of this topic is: *for which values of $x$ does the series converge?*
+
+<TheoremBlock type="example" number={1} title="The geometric series as a power series">
+$\sum_{n=0}^{\infty} x^n$ has $a_n = 1$ for all $n$ and center $c = 0$. From [Series Convergence & Tests](/topics/series-convergence), this converges to $\frac{1}{1-x}$ for $|x| < 1$ and diverges for $|x| \geq 1$. This is the prototype: convergence on an open interval, divergence outside it.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={2} title="The exponential series (R = ∞)">
+$\sum_{n=0}^{\infty} \frac{x^n}{n!}$ has $a_n = 1/n!$ and converges for all $x \in \mathbb{R}$. From [Mean Value Theorem & Taylor Expansion](/topics/mean-value-taylor), we know this equals $e^x$. The ratio of consecutive terms is $|x|/(n+1) \to 0$ for every fixed $x$, so the ratio test gives convergence everywhere.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={3} title="A series that converges only at its center (R = 0)">
+$\sum_{n=0}^{\infty} n! \, x^n$ diverges for every $x \neq 0$. The ratio $|a_{n+1} x^{n+1}/(a_n x^n)| = (n+1)|x| \to \infty$ for any fixed $x \neq 0$. The "radius of convergence" is $0$ — this series is useless as a function of $x$.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={1} title="Power series generalize polynomials">
+A polynomial of degree $N$ is a power series with $a_n = 0$ for $n > N$. It converges everywhere ($R = \infty$). Power series extend this to "infinite-degree polynomials," but the trade-off is that convergence is no longer automatic.
+</TheoremBlock>
+
+## 3. Radius of Convergence
+
+The three examples above illustrate a remarkable structural fact: a power series always converges on an interval centered at $c$. The half-width of this interval is the radius of convergence — and it is determined entirely by the coefficients.
+
+<TheoremBlock type="theorem" number={1} title="Existence of the Radius of Convergence">
+For any power series $\sum a_n (x - c)^n$, exactly one of the following holds:
+
+**(i)** The series converges only at $x = c$ ($R = 0$).
+
+**(ii)** The series converges for all $x \in \mathbb{R}$ ($R = \infty$).
+
+**(iii)** There exists $R > 0$ such that the series converges absolutely for $|x - c| < R$ and diverges for $|x - c| > R$.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+Suppose $\sum a_n (x_0 - c)^n$ converges at some $x_0 \neq c$. Then $a_n(x_0 - c)^n \to 0$ (by the divergence test from [Series Convergence & Tests](/topics/series-convergence)), so $|a_n(x_0 - c)^n| \leq M$ for some bound $M$. For any $x$ with $|x - c| < |x_0 - c|$, set $r = |x - c|/|x_0 - c| < 1$. Then
+
+$$|a_n(x-c)^n| = |a_n(x_0-c)^n| \cdot r^n \leq M r^n.$$
+
+Since $\sum M r^n$ converges (geometric series with $r < 1$), the comparison test gives absolute convergence at $x$.
+
+Now define $R = \sup\{|x_0 - c| : \sum a_n(x_0-c)^n \text{ converges}\}$. If the series converges only at $c$, then $R = 0$ (case i). If the supremum is infinite, then $R = \infty$ (case ii). Otherwise, $R$ is a positive real number (case iii): the argument above shows convergence for $|x - c| < R$, and divergence for $|x - c| > R$ follows because if the series converged at some $x_1$ with $|x_1 - c| > R$, it would also converge at all $x$ with $|x - c| < |x_1 - c|$, contradicting $R = \sup$.
+</TheoremBlock>
+
+<TheoremBlock type="definition" number={2} title="Radius of Convergence">
+The number $R$ from Theorem 1 is the **radius of convergence** of $\sum a_n(x-c)^n$. We allow $R = 0$ and $R = \infty$. The open interval $(c-R, c+R)$ is the **open interval of convergence**.
+</TheoremBlock>
+
+How do we *compute* $R$? The root and ratio tests from [Series Convergence & Tests](/topics/series-convergence), applied to the coefficient sequence, give explicit formulas.
+
+<TheoremBlock type="theorem" number={2} title="The Cauchy-Hadamard Formula">
+$$\frac{1}{R} = \limsup_{n \to \infty} |a_n|^{1/n}$$
+
+with the convention $1/0 = \infty$ and $1/\infty = 0$.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+Apply the root test from [Series Convergence & Tests](/topics/series-convergence) to $\sum |a_n(x-c)^n|$:
+
+$$\limsup_{n \to \infty} |a_n(x-c)^n|^{1/n} = |x-c| \cdot \limsup_{n \to \infty} |a_n|^{1/n}.$$
+
+The root test gives convergence when this is $< 1$, i.e., $|x-c| < 1/\limsup |a_n|^{1/n} = R$, and divergence when $> 1$, i.e., $|x-c| > R$.
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={3} title="Ratio Test for Radius">
+If $\lim_{n \to \infty} |a_{n+1}/a_n|$ exists (possibly $= 0$ or $= \infty$), then
+
+$$R = \lim_{n \to \infty} \left|\frac{a_n}{a_{n+1}}\right|.$$
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={2} title="Root test vs. ratio test">
+The Cauchy-Hadamard formula always works (it uses limsup). The ratio test requires the limit to exist. When both apply, they give the same $R$. From [Series Convergence & Tests](/topics/series-convergence), the root test is strictly stronger — there exist series where the ratio test is inconclusive but the root test determines $R$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={4} title="Computing R for standard series">
+**(a)** $\sum x^n/n!$: ratio gives $R = \lim_{n \to \infty} (n+1) = \infty$.
+
+**(b)** $\sum n! \, x^n$: ratio gives $R = \lim_{n \to \infty} 1/(n+1) = 0$.
+
+**(c)** $\sum x^n/n$: ratio gives $R = \lim_{n \to \infty} n/(n+1) = 1$.
+
+**(d)** $\sum x^n/n^2$: ratio gives $R = \lim_{n \to \infty} n^2/(n+1)^2 = 1$.
+
+**(e)** $\sum n^n x^n$: Cauchy-Hadamard gives $1/R = \limsup n = \infty$, so $R = 0$.
+</TheoremBlock>
+
+The explorer below lets you see the diagnostic sequences $|a_n|^{1/n}$ and $|a_{n+1}/a_n|$ converging to $1/R$, and probe what happens when you evaluate the series at points inside and outside the radius.
+
+<RadiusOfConvergenceExplorer client:visible />
+
+![Radius of convergence — Cauchy-Hadamard and ratio test diagnostics converging to 1/R](/images/topics/power-taylor-series/radius-of-convergence.png)
+
+## 4. Endpoint Behavior — Where the Tests from Topic 17 Come to Work
+
+The radius $R$ determines convergence on the *open* interval $(c-R, c+R)$ and divergence *outside* $[c-R, c+R]$. But at the endpoints $x = c \pm R$ themselves, the power series becomes a numerical series — and you must test it directly using the convergence toolkit from [Series Convergence & Tests](/topics/series-convergence).
+
+<TheoremBlock type="definition" number={3} title="Interval of Convergence">
+The **interval of convergence** of $\sum a_n(x-c)^n$ is the set of all $x$ where the series converges. It always includes the open interval $(c-R, c+R)$ and may or may not include either endpoint.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={5} title="Three endpoint behaviors">
+All three of the following have $R = 1$ centered at $c = 0$:
+
+**(a)** $\sum x^n$: diverges at both endpoints. At $x = 1$: $\sum 1$ diverges. At $x = -1$: $\sum (-1)^n$ diverges. Interval: $(-1, 1)$.
+
+**(b)** $\sum x^n/n^2$: converges at both endpoints. At $x = 1$: $\sum 1/n^2$ converges ($p$-series, $p = 2$). At $x = -1$: $\sum (-1)^n/n^2$ converges absolutely. Interval: $[-1, 1]$.
+
+**(c)** $\sum x^n/n$: mixed. At $x = -1$: $\sum (-1)^n/n$ converges by the alternating series (Leibniz) test. At $x = 1$: $\sum 1/n$ diverges (harmonic). Interval: $[-1, 1)$.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={3} title="The four endpoint possibilities">
+With two endpoints and two possible verdicts (converge/diverge) at each, there are four combinations: $(c-R, c+R)$, $[c-R, c+R]$, $[c-R, c+R)$, $(c-R, c+R]$. All four occur in practice. The algorithm is always the same: (1) compute $R$ via ratio or Cauchy-Hadamard; (2) substitute $x = c \pm R$ and apply a convergence test from [Series Convergence & Tests](/topics/series-convergence).
+</TheoremBlock>
+
+<TheoremBlock type="example" number={6} title="Endpoint analysis with comparison and alternating series tests">
+For $\sum \frac{(-1)^n x^n}{\sqrt{n+1}}$, the ratio test gives $R = 1$. At $x = 1$: $\sum (-1)^n/\sqrt{n+1}$ converges by the Leibniz test (alternating, terms decrease to $0$). At $x = -1$: $\sum 1/\sqrt{n+1}$ diverges by comparison with $\sum 1/\sqrt{n}$ ($p$-series with $p = 1/2 < 1$). Interval: $(-1, 1]$.
+</TheoremBlock>
+
+![Endpoint behavior — the four possible interval types demonstrated by three standard series](/images/topics/power-taylor-series/endpoint-behavior.png)
+
+## 5. Uniform Convergence on Compact Subsets
+
+This is the section where the threads come together. We connect power series to the uniform convergence theory from [Uniform Convergence](/topics/uniform-convergence), establishing the key property that makes everything in the next section work.
+
+<TheoremBlock type="theorem" number={4} title="Uniform Convergence on Compact Subsets">
+If $\sum a_n(x-c)^n$ has radius of convergence $R > 0$, then the series converges uniformly on every closed interval $[c-r, c+r]$ for $0 < r < R$.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+Fix $r$ with $0 < r < R$ and let $M_n = |a_n| r^n$. For $|x - c| \leq r$, we have
+
+$$|a_n(x-c)^n| \leq |a_n| r^n = M_n.$$
+
+Since $r < R$, the series $\sum M_n = \sum |a_n| r^n$ converges (by the definition of $R$ — the power series converges absolutely for $|x - c| < R$, and $r < R$). By the Weierstrass M-test from [Uniform Convergence](/topics/uniform-convergence), the series $\sum a_n(x-c)^n$ converges uniformly on $[c-r, c+r]$.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={4} title="Why compact subsets, not the full interval">
+The power series $\sum x^n = 1/(1-x)$ converges pointwise on $(-1, 1)$ but does *not* converge uniformly on all of $(-1, 1)$. The partial sums $S_n(x) = (1-x^{n+1})/(1-x)$ satisfy
+
+$$\sup_{x \in (-1,1)} |S_n(x) - 1/(1-x)| = \sup_{x \in (-1,1)} \frac{|x|^{n+1}}{|1-x|} = \infty$$
+
+for every $n$ (the supremum blows up as $x \to 1^-$). The uniform convergence theorem only guarantees uniformity on $[-r, r]$ for $r < 1$ — compact subsets strictly inside the interval of convergence. This is the same pointwise-vs-uniform distinction from [Uniform Convergence](/topics/uniform-convergence), now appearing in a concrete power-series context.
+</TheoremBlock>
+
+![Uniform convergence on compact subsets — sup-norm error decreasing on [-r,r] for r < R](/images/topics/power-taylor-series/uniform-convergence-compact.png)
+
+## 6. Term-by-Term Differentiation & Integration
+
+Because power series converge uniformly on compact subsets, the interchange theorems from [Uniform Convergence](/topics/uniform-convergence) apply. We can differentiate and integrate a power series term by term — and the resulting series has the *same* radius of convergence. This is the computational payoff of the theory.
+
+<TheoremBlock type="theorem" number={5} title="Term-by-Term Differentiation">
+If $f(x) = \sum_{n=0}^{\infty} a_n (x-c)^n$ has radius of convergence $R > 0$, then $f$ is differentiable on $(c-R, c+R)$ and
+
+$$f'(x) = \sum_{n=1}^{\infty} n a_n (x-c)^{n-1}.$$
+
+The differentiated series has the same radius of convergence $R$.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+Fix $x_0 \in (c-R, c+R)$ and choose $r$ with $|x_0 - c| < r < R$. On $[c-r, c+r]$, the series converges uniformly (Theorem 4). The partial sums $S_N(x) = \sum_{n=0}^{N} a_n(x-c)^n$ are polynomials, hence differentiable. Each $S_N'(x) = \sum_{n=1}^{N} n a_n(x-c)^{n-1}$.
+
+The differentiated series $\sum n a_n(x-c)^{n-1}$ has
+
+$$\limsup_{n \to \infty} |n a_n|^{1/n} = \limsup_{n \to \infty} \bigl(n^{1/n} |a_n|^{1/n}\bigr) = 1 \cdot \limsup_{n \to \infty} |a_n|^{1/n} = \frac{1}{R}$$
+
+since $n^{1/n} \to 1$. So the differentiated series has the same radius $R$ and converges uniformly on $[c-r, c+r]$.
+
+By the interchange theorem for differentiation from [Uniform Convergence](/topics/uniform-convergence), $f'(x_0) = \lim_{N \to \infty} S_N'(x_0) = \sum_{n=1}^{\infty} n a_n(x_0-c)^{n-1}$.
+</TheoremBlock>
+
+<TheoremBlock type="corollary" number={1} title="Power series are C^∞">
+Applying Theorem 5 repeatedly, $f^{(k)}(x) = \sum_{n=k}^{\infty} \frac{n!}{(n-k)!} a_n (x-c)^{n-k}$ for all $k \geq 0$, each with radius $R$. A power series is infinitely differentiable inside its radius of convergence.
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={6} title="Term-by-Term Integration">
+If $f(x) = \sum_{n=0}^{\infty} a_n (x-c)^n$ has radius $R > 0$, then
+
+$$\int_c^x f(t)\,dt = \sum_{n=0}^{\infty} \frac{a_n}{n+1}(x-c)^{n+1}$$
+
+for $|x - c| < R$. The integrated series has radius of convergence $R$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={7} title="Deriving 1/(1−x)² by differentiation">
+Differentiating $\frac{1}{1-x} = \sum_{n=0}^{\infty} x^n$ term by term gives
+
+$$\frac{1}{(1-x)^2} = \sum_{n=1}^{\infty} n x^{n-1} = \sum_{n=0}^{\infty} (n+1) x^n \quad \text{for } |x| < 1.$$
+</TheoremBlock>
+
+<TheoremBlock type="example" number={8} title="Deriving ln(1+x) by integration">
+Integrate $\frac{1}{1+x} = \sum_{n=0}^{\infty} (-x)^n = \sum_{n=0}^{\infty} (-1)^n x^n$ term by term from $0$ to $x$:
+
+$$\ln(1+x) = \int_0^x \frac{dt}{1+t} = \sum_{n=0}^{\infty} \frac{(-1)^n}{n+1} x^{n+1} = \sum_{n=1}^{\infty} \frac{(-1)^{n+1}}{n} x^n \quad \text{for } |x| < 1.$$
+
+The series also converges at $x = 1$ by the alternating series test (Leibniz) from [Series Convergence & Tests](/topics/series-convergence), giving $\ln 2 = 1 - 1/2 + 1/3 - 1/4 + \cdots$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={9} title="The arctangent series">
+Integrate $\frac{1}{1+t^2} = \sum_{n=0}^{\infty} (-1)^n t^{2n}$ to get
+
+$$\arctan(x) = \sum_{n=0}^{\infty} \frac{(-1)^n}{2n+1} x^{2n+1} \quad \text{for } |x| \leq 1.$$
+
+Setting $x = 1$ gives the Leibniz formula $\frac{\pi}{4} = 1 - \frac{1}{3} + \frac{1}{5} - \frac{1}{7} + \cdots$.
+</TheoremBlock>
+
+The explorer below lets you see term-by-term differentiation and integration in action. Toggle between the two modes and watch how the partial sums of the derived/integrated series track the true derivative/integral.
+
+<TermByTermExplorer client:visible />
+
+![Term-by-term calculus — differentiation of 1/(1−x) and integration of 1/(1+x)](/images/topics/power-taylor-series/term-by-term.png)
+
+## 7. Taylor Series as Power Series — The Infinite Extension
+
+A Taylor series is a power series whose coefficients are determined by the derivatives of a function. The question is: when does this particular power series converge to the function?
+
+<TheoremBlock type="theorem" number={7} title="Coefficient Extraction (Uniqueness)">
+If $f(x) = \sum_{n=0}^{\infty} a_n (x-c)^n$ on some interval $(c-R, c+R)$ with $R > 0$, then
+
+$$a_n = \frac{f^{(n)}(c)}{n!}$$
+
+for all $n \geq 0$. A power series representation of a function is necessarily its Taylor series.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+By Corollary 1, $f^{(k)}(x) = \sum_{n=k}^{\infty} \frac{n!}{(n-k)!} a_n (x-c)^{n-k}$. Setting $x = c$, all terms with $n > k$ vanish (they contain a factor $(c-c)^{n-k} = 0$), leaving $f^{(k)}(c) = k! \, a_k$. Solving gives $a_k = f^{(k)}(c)/k!$.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={5} title="Uniqueness has teeth">
+If two power series $\sum a_n x^n$ and $\sum b_n x^n$ are equal on any interval containing $0$, then $a_n = b_n$ for all $n$. You cannot have two different power series representations of the same function centered at the same point. This makes power series representations canonical.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={10} title="The Taylor series catalog">
+The six essential Taylor series at $c = 0$ (Maclaurin series):
+
+**1.** $e^x = \sum_{n=0}^{\infty} \frac{x^n}{n!}$, $R = \infty$
+
+**2.** $\sin x = \sum_{n=0}^{\infty} \frac{(-1)^n}{(2n+1)!} x^{2n+1}$, $R = \infty$
+
+**3.** $\cos x = \sum_{n=0}^{\infty} \frac{(-1)^n}{(2n)!} x^{2n}$, $R = \infty$
+
+**4.** $\ln(1+x) = \sum_{n=1}^{\infty} \frac{(-1)^{n+1}}{n} x^n$, $R = 1$, also converges at $x = 1$
+
+**5.** $\frac{1}{1-x} = \sum_{n=0}^{\infty} x^n$, $R = 1$
+
+**6.** $(1+x)^\alpha = \sum_{n=0}^{\infty} \binom{\alpha}{n} x^n$ (binomial series), $R = 1$ for non-integer $\alpha$
+</TheoremBlock>
+
+The flagship explorer below shows partial sums of these Taylor series converging to their target functions. Select a function, drag the $n$ slider, and watch $S_n(x)$ approach $f(x)$ inside the radius of convergence — and diverge wildly outside it.
+
+<PowerSeriesExplorer client:visible />
+
+![Taylor series catalog — six essential series with partial sums overlaid on target functions](/images/topics/power-taylor-series/taylor-series-catalog.png)
+
+## 8. Analytic vs. Smooth — When Taylor Series Succeed and Fail
+
+Every power series with $R > 0$ defines a $C^\infty$ function (Corollary 1). But does every $C^\infty$ function have a convergent Taylor series? The answer is no — and understanding *why* is the deepest insight of this topic.
+
+<TheoremBlock type="definition" number={4} title="Analytic Function">
+A function $f$ is **real analytic** at $c$ if its Taylor series at $c$ converges to $f(x)$ in some neighborhood of $c$:
+
+$$f(x) = \sum_{n=0}^{\infty} \frac{f^{(n)}(c)}{n!}(x-c)^n \quad \text{for } |x - c| < R, \; R > 0.$$
+
+A function is analytic on an interval if it is analytic at every point of that interval. The class of analytic functions is denoted $C^\omega$.
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={8} title="Sufficient Condition for Analyticity">
+If $f$ is $C^\infty$ on an interval $I$ containing $c$ and there exist constants $M > 0$ and $K > 0$ such that
+
+$$|f^{(n)}(x)| \leq M \cdot K^n \cdot n! \quad \text{for all } n \text{ and all } x \in I,$$
+
+then $f$ is analytic at $c$ with $R \geq 1/K$.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+The Lagrange remainder from [Mean Value Theorem & Taylor Expansion](/topics/mean-value-taylor) satisfies
+
+$$|R_n(x)| \leq \frac{|f^{(n+1)}(\xi)|}{(n+1)!} |x-c|^{n+1} \leq \frac{M K^{n+1} (n+1)!}{(n+1)!} |x-c|^{n+1} = M (K|x-c|)^{n+1}.$$
+
+For $|x-c| < 1/K$, this is a geometric sequence converging to $0$, so $R_n(x) \to 0$ and the Taylor series converges to $f$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={11} title="e^x, sin x, cos x are entire (analytic everywhere)">
+For $e^x$: on any interval $[-B, B]$, $|f^{(n)}(x)| = e^x \leq e^B$. Setting $M = e^B$ and $K = 1$ gives the bound $|f^{(n)}(x)| \leq e^B \cdot 1^n \cdot n!$ — but we need $M K^n n!$, and the actual derivatives satisfy the much tighter bound $|f^{(n)}(x)| \leq e^B$ (without the $n!$ factor). This means $R_n(x) \leq e^B |x|^{n+1}/(n+1)! \to 0$ for every $x$, so $R = \infty$.
+
+The same argument applies to $\sin x$ and $\cos x$, where all derivatives are bounded by $1$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={12} title="Smooth but not analytic — e^{−1/x²} revisited">
+This extends the discussion from [Mean Value Theorem & Taylor Expansion](/topics/mean-value-taylor), Example 8. Define
+
+$$f(x) = \begin{cases} e^{-1/x^2} & x \neq 0 \\ 0 & x = 0. \end{cases}$$
+
+All derivatives at $0$ are $0$ (the proof by induction uses L'Hôpital's Rule repeatedly: each $f^{(n)}(x)$ is a polynomial in $1/x$ times $e^{-1/x^2}$, and $e^{-1/x^2}$ decays faster than any polynomial as $x \to 0$). So the Taylor series at $0$ is $T(x) = 0$. But $f(x) > 0$ for $x \neq 0$. The Taylor series converges — but to the *wrong function*.
+
+The derivative bound $|f^{(n)}(0)| \leq M K^n n!$ fails for any finite $K$: the derivatives at points near $0$ (but not at $0$) grow faster than any geometric rate.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={6} title="Analytic functions are rare but ubiquitous">
+In a precise sense (Baire category), "most" smooth functions are not analytic. Yet in practice — in calculus, physics, and ML — almost every function we encounter is analytic (or piecewise analytic). The standard function zoo ($e^x$, $\sin$, $\cos$, $\ln$, polynomials, rational functions, compositions thereof) is closed under the operations that preserve analyticity. The smooth-but-not-analytic examples are *constructed* to violate the derivative growth condition.
+</TheoremBlock>
+
+<TaylorVsPowerSeriesExplorer client:visible />
+
+![Analytic vs. smooth — Taylor series converging to f (left) vs. converging to the wrong function (right)](/images/topics/power-taylor-series/analytic-vs-smooth.png)
+
+## 9. Connections to ML — Taylor Expansions in Optimization and Inference
+
+### 9.1 The descent lemma and gradient descent
+
+If $\nabla f$ is $L$-Lipschitz continuous, the second-order Taylor expansion with Lagrange remainder gives the **descent lemma**:
+
+$$f(y) \leq f(x) + \nabla f(x)^T(y - x) + \frac{L}{2}\|y - x\|^2.$$
+
+Setting $y = x - \eta \nabla f(x)$ with step size $\eta = 1/L$ yields
+
+$$f(x_{k+1}) \leq f(x_k) - \frac{1}{2L}\|\nabla f(x_k)\|^2$$
+
+— the fundamental inequality guaranteeing that gradient descent makes progress at every step. Newton's method goes further: it uses the full quadratic Taylor model $T_2(x)$ as its step direction, achieving quadratic convergence near optima. (→ formalML: [Gradient Descent](https://formalml.com/topics/gradient-descent))
+
+### 9.2 The Laplace approximation
+
+Given a posterior $p(\theta \,|\, \text{data}) \propto e^{\ell(\theta)}$ where $\ell(\theta) = \log p(\text{data} \,|\, \theta) + \log p(\theta)$, the second-order Taylor expansion of $\ell$ at the MAP estimate $\hat{\theta}$ gives
+
+$$\ell(\theta) \approx \ell(\hat{\theta}) - \frac{1}{2}(\theta - \hat{\theta})^T H (\theta - \hat{\theta})$$
+
+where $H = -\nabla^2 \ell(\hat{\theta})$. This yields the Gaussian approximation $p(\theta \,|\, \text{data}) \approx \mathcal{N}(\hat{\theta}, H^{-1})$ — replacing a complex posterior with a Gaussian centered at the mode. The quality of this approximation depends on how well the second-order Taylor expansion captures the log-posterior, which is exactly the analyticity question this topic addresses. (→ formalML: [Information Geometry](https://formalml.com/topics/information-geometry))
+
+### 9.3 GELU and activation function approximation
+
+The Gaussian Error Linear Unit $\text{GELU}(x) = x \Phi(x)$, where $\Phi$ is the standard normal CDF, is one of the most widely used activation functions in modern transformers. Its practical implementation uses a polynomial approximation:
+
+$$\text{GELU}(x) \approx 0.5x\bigl(1 + \tanh(\sqrt{2/\pi}(x + 0.044715 x^3))\bigr)$$
+
+which is derived from the Taylor expansion of the error function. The coefficient $0.044715$ comes from matching Taylor series terms — a direct application of power series truncation in production neural network code.
+
+### 9.4 Matrix exponential in continuous-time models
+
+For neural ODEs, state-space models (S4, Mamba), and continuous-time dynamical systems, the matrix exponential
+
+$$e^{At} = I + At + \frac{(At)^2}{2!} + \frac{(At)^3}{3!} + \cdots = \sum_{n=0}^{\infty} \frac{A^n t^n}{n!}$$
+
+is a power series in $t$ with matrix coefficients. It converges for all $t$ (since $R = \infty$ for the scalar exponential, and the norm bound $\|A^n t^n/n!\| \leq \|A\|^n |t|^n/n!$ gives a convergent comparison series). Term-by-term differentiation gives $\frac{d}{dt} e^{At} = A e^{At}$, which is the fundamental solution to the linear ODE $\dot{x} = Ax$.
+
+![ML connections — descent lemma, Laplace approximation, GELU, and matrix exponential](/images/topics/power-taylor-series/ml-connections.png)
+
+## 10. Computational Notes
+
+- **Power series evaluation: Horner's method.** Evaluating $\sum_{k=0}^{n} a_k x^k$ naively requires $O(n^2)$ multiplications. Horner's method rewrites $a_0 + a_1 x + a_2 x^2 + \cdots + a_n x^n = a_0 + x(a_1 + x(a_2 + \cdots + x \cdot a_n))$ and evaluates from the inside out in $O(n)$ with minimal round-off. Use `numpy.polynomial.polynomial.polyval` for numerical stability.
+- **Radius of convergence estimation.** For tabulated coefficients, compute $|a_n|^{1/n}$ for large $n$ and look for convergence to $1/R$. The tail average of this sequence gives a reliable numerical estimate.
+- **Endpoint testing is algorithmic.** Compute $R$ via ratio or Cauchy-Hadamard, then substitute $x = c \pm R$ into the series and apply the convergence-test flowchart from [Series Convergence & Tests](/topics/series-convergence).
+
+![Computational verification — Horner's method and radius estimation from finite coefficients](/images/topics/power-taylor-series/computational-verification.png)
+
+## 11. Connections & Further Reading
+
+**Prerequisites used in this topic:**
+
+| Topic | What we used |
+|-------|-------------|
+| [Series Convergence & Tests](/topics/series-convergence) | Ratio test, root test, comparison test, alternating series test for endpoint analysis and Cauchy-Hadamard formula |
+| [Mean Value Theorem & Taylor Expansion](/topics/mean-value-taylor) | Taylor polynomials, Lagrange remainder, smooth-but-not-analytic example |
+| [Uniform Convergence](/topics/uniform-convergence) | Weierstrass M-test, interchange theorems for differentiation and integration |
+
+**Also connected:**
+
+| Topic | Connection |
+|-------|-----------|
+| [Riemann Integral](/topics/riemann-integral) | Term-by-term integration produces antiderivatives as power series |
+| [Improper Integrals](/topics/improper-integrals) | Entire functions ($R = \infty$) and term-by-term integration of improper integrals |
+
+**Downstream within formalCalculus:**
+
+- **Fourier Series & Orthogonal Expansions** *(coming soon)* — trigonometric series as a generalization of power series using $\sin$ and $\cos$ instead of monomials
+- **Approximation Theory** *(coming soon)* — Weierstrass approximation theorem and non-Taylor polynomial approximations
+- **Stability & Dynamical Systems** *(coming soon)* — matrix exponential as a power series solution to $\dot{x} = Ax$
+
+**Forward links to formalML:**
+
+- [Gradient Descent](https://formalml.com/topics/gradient-descent) — descent lemma via second-order Taylor, Newton's method via quadratic Taylor model
+- [Convex Analysis](https://formalml.com/topics/convex-analysis) — convexity characterized by Taylor remainder sign
+- [Information Geometry](https://formalml.com/topics/information-geometry) — Fisher information via Taylor expansion of KL divergence
+- [Smooth Manifolds](https://formalml.com/topics/smooth-manifolds) — smooth ($C^\infty$) vs. analytic ($C^\omega$) on manifolds

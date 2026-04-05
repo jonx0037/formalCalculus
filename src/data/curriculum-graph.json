@@ -21,7 +21,7 @@
     { "id": "surface-integrals", "label": "Surface Integrals & the Divergence Theorem", "domain": "multivar-integral", "status": "published", "url": "/topics/surface-integrals" },
 
     { "id": "series-convergence", "label": "Series Convergence & Tests", "domain": "series-approximation", "status": "published", "url": "/topics/series-convergence" },
-    { "id": "power-taylor-series", "label": "Power Series & Taylor Series", "domain": "series-approximation", "status": "planned", "url": "/topics/power-taylor-series" },
+    { "id": "power-taylor-series", "label": "Power Series & Taylor Series", "domain": "series-approximation", "status": "published", "url": "/topics/power-taylor-series" },
     { "id": "fourier-series", "label": "Fourier Series & Orthogonal Expansions", "domain": "series-approximation", "status": "planned", "url": "/topics/fourier-series" },
     { "id": "approximation-theory", "label": "Approximation Theory", "domain": "series-approximation", "status": "planned", "url": "/topics/approximation-theory" },
 
