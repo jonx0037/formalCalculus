@@ -72,10 +72,12 @@ function getRelevantDecayRefs(preset: FourierPreset): {
         dash: '6,3',
       });
       if (specific) {
+        const specificReferenceLabel = specific.referenceLabel.split(' \u2014 ')[1] || specific.referenceLabel;
+        const isExponentialReference = /exp|e\u207B|e\^|r\u207F/i.test(specificReferenceLabel);
         refs.push({
-          label: specific.referenceLabel.split(' \u2014 ')[1] || specific.referenceLabel,
+          label: specificReferenceLabel,
           fn: specific.referenceDecay,
-          color: REF_EXP,
+          color: isExponentialReference ? REF_EXP : '#6B7280',
           dash: '6,3',
         });
       }

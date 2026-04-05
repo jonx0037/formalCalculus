@@ -16,8 +16,8 @@
 
 /**
  * The Gibbs overshoot ratio: (2/π) ∫₀^π (sin t / t) dt ≈ 1.17898.
- * Computed once via composite trapezoidal rule (exponentially accurate
- * for smooth integrands on a finite interval).
+ * Computed once via a fine composite trapezoidal-rule approximation
+ * on [0, π].
  */
 const GIBBS_OVERSHOOT_RATIO = (() => {
   const N = 10000;
@@ -146,8 +146,10 @@ const triangleWave: FourierPreset = {
 };
 
 /**
- * Step + ramp: piecewise function with a jump and a slope change.
- * f(x) = 0 for x < 0, f(x) = x for x ≥ 0.
+ * Step + ramp: piecewise function with a kink and periodic jumps.
+ * f(x) = 0 for x < 0, f(x) = x for x ≥ 0 on (-π, π).
+ * Continuous at x = 0 (both sides → 0), but the 2π-periodic extension
+ * has jump discontinuities at x = ±π (ramp value π meets flat value 0).
  * Has both aₙ and bₙ nonzero. Discontinuous ⇒ O(1/n).
  */
 const stepRamp: FourierPreset = {
@@ -164,15 +166,14 @@ const stepRamp: FourierPreset = {
   },
   bn: (n: number) => {
     if (n <= 0) return 0;
-    // (1/π)∫₀^π x sin(nx) dx = (1/n) - cos(nπ)/(n) = (1 - (-1)^n)/n ... plus integral term
-    // Full computation: b_n = (−1)^{n+1}/n + (1 − (−1)^n)/(n²π)... using integration by parts
-    // Simplification: b_n = (-1)^{n+1}/n
+    // (1/π)∫₀^π x sin(nx) dx via integration by parts
+    // b_n = (-1)^{n+1}/n
     return Math.pow(-1, n + 1) / n;
   },
   smoothnessClass: 'discontinuous',
   decayRate: 'O(1/n)',
   hasJumpDiscontinuity: true,
-  jumpLocations: [0, Math.PI, -Math.PI],
+  jumpLocations: [Math.PI, -Math.PI],
   tags: ['mixed', 'discontinuous', 'piecewise'],
 };
 
@@ -218,20 +219,18 @@ const c2Bump: FourierPreset = {
       // a₀ = (1/π)∫_{-π}^{π} (π²−x²)²/π⁴ dx = 16/15
       return 16 / 15;
     }
-    // Integration by parts 4 times gives:
-    // aₙ = (−1)ⁿ · 48 / (n⁴ π⁴) · (1 − 2/(n²π²)·...) — leading term
-    // Simplified closed form via repeated IBP:
-    // aₙ = (-1)^n · 48 / (n^4 · π^2) ... after careful integration
-    // Actually: (1/π)∫_{-π}^{π} (π²-x²)² cos(nx)/π⁴ dx
-    // = (2/π⁵)∫₀^π (π²-x²)² cos(nx) dx
-    // Let u = π²-x², compute via IBP:
+    // Exact for n ≥ 1:
+    // aₙ = (1/π)∫_{-π}^{π} ((π²-x²)²/π⁴) cos(nx) dx
+    //    = (2/π⁵)∫₀^π (π⁴ - 2π²x² + x⁴) cos(nx) dx
+    // Using
+    //   ∫₀^π x² cos(nx) dx = 2π(-1)ⁿ / n²
+    //   ∫₀^π x⁴ cos(nx) dx = 4π³(-1)ⁿ / n² - 24π(-1)ⁿ / n⁴
+    // the 1/n² terms cancel exactly (because f and f' vanish at ±π), leaving
+    //   aₙ = 48(-1)^{n+1} / (π⁴ n⁴),
+    // so the coefficients decay like O(1/n⁴), consistent with f and f'
+    // vanishing at x = ±π.
     const n2 = n * n;
-    // Exact: aₙ = (-1)^{n+1} · 48 / (π² · n⁴)  (for n ≥ 1 via repeated IBP)
-    // Correction: includes lower-order terms
-    // Via direct integration: aₙ = (−1)^n · [−8/(n²) + 48/(n⁴π²)] · (2/π)
-    // Simplest correct form by numerical verification:
-    return Math.pow(-1, n) * (-16 / (n2 * Math.PI * Math.PI)) *
-           (1 - 6 / (n2));
+    return 48 * Math.pow(-1, n + 1) / (Math.PI * Math.PI * Math.PI * Math.PI * n2 * n2);
   },
   bn: (_n: number) => 0,
   smoothnessClass: 'C2',
@@ -291,9 +290,8 @@ export function getGibbsAnalyses(): GibbsAnalysis[] {
     },
     {
       presetName: 'step-ramp',
-      jumpLocation: 0,
-      jumpHeight: 0,           // max(0⁺,0) - max(0⁻,0) = 0 - 0 = 0 (at origin)
-      // Gibbs occurs at the periodic extension discontinuity at ±π
+      jumpLocation: Math.PI,
+      jumpHeight: Math.PI,     // f(π⁻) = π (ramp), f(π⁺) = 0 (wraps to flat region)
       overshootRatio: GIBBS_OVERSHOOT_RATIO,
       maxOvershootAtN: (n: number) => {
         // Evaluate partial sum near x = π⁻

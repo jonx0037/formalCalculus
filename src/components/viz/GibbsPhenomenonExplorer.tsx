@@ -125,13 +125,31 @@ export default function GibbsPhenomenonExplorer() {
 
   const preset = jumpPresets[presetIdx];
 
-  // Pick the first jump location for focus
-  const jumpLoc = preset.jumpLocations[0];
+  // Select the jump with the largest |f(x⁺) - f(x⁻)| for the most dramatic Gibbs demo
+  const { jumpLoc, targetAfter, targetBefore } = useMemo(() => {
+    let bestLoc = preset.jumpLocations[0];
+    let bestA = getTargetValueAfterJump(preset, bestLoc);
+    let bestB = getTargetValueBeforeJump(preset, bestLoc);
+    let bestJump = Math.abs(bestA - bestB);
 
-  // Target values on either side of the jump
-  const targetAfter = useMemo(() => getTargetValueAfterJump(preset, jumpLoc), [preset, jumpLoc]);
-  const targetBefore = useMemo(() => getTargetValueBeforeJump(preset, jumpLoc), [preset, jumpLoc]);
+    for (let i = 1; i < preset.jumpLocations.length; i++) {
+      const loc = preset.jumpLocations[i];
+      const a = getTargetValueAfterJump(preset, loc);
+      const b = getTargetValueBeforeJump(preset, loc);
+      const jump = Math.abs(a - b);
+      if (jump > bestJump) {
+        bestLoc = loc;
+        bestA = a;
+        bestB = b;
+        bestJump = jump;
+      }
+    }
+    return { jumpLoc: bestLoc, targetAfter: bestA, targetBefore: bestB };
+  }, [preset]);
+
   const jumpGoesUp = targetAfter > targetBefore;
+  const jumpSize = Math.abs(targetAfter - targetBefore);
+  const midpoint = (targetAfter + targetBefore) / 2;
 
   // ── LEFT PANEL DATA: Partial sum near the jump ──────────
 
@@ -178,20 +196,20 @@ export default function GibbsPhenomenonExplorer() {
 
   const overshootData = useMemo(() => {
     const pts: OvershootPoint[] = [];
+    const halfJump = jumpSize / 2;
 
     for (let m = MIN_N; m <= n; m++) {
       let ratio: number;
 
       if (jumpGoesUp) {
         const { maxVal } = findOvershootMax(preset, jumpLoc, m, 200);
-        // Ratio: how much the partial sum overshoots relative to the target value
-        // We measure as max(S_m) / targetAfter
-        ratio = targetAfter !== 0 ? maxVal / targetAfter : maxVal;
+        // Universal normalization: (extremum - midpoint) / halfJump
+        // This converges to GIBBS_CONSTANT ≈ 1.179 for ANY jump size/offset
+        ratio = halfJump > 1e-10 ? (maxVal - midpoint) / halfJump : 1;
       } else {
         const { minVal } = findUndershootMin(preset, jumpLoc, m, 200);
-        // For downward jumps, we look at the ratio of the undershoot
-        // relative to the target (measuring overshoot magnitude)
-        ratio = targetAfter !== 0 ? minVal / targetAfter : minVal;
+        // For downward jumps: the undershoot goes below midpoint
+        ratio = halfJump > 1e-10 ? (midpoint - minVal) / halfJump : 1;
       }
 
       if (isFinite(ratio) && Math.abs(ratio) < 10) {
@@ -200,7 +218,7 @@ export default function GibbsPhenomenonExplorer() {
     }
 
     return pts;
-  }, [preset, n, jumpLoc, jumpGoesUp, targetAfter]);
+  }, [preset, n, jumpLoc, jumpGoesUp, jumpSize, midpoint]);
 
   // Current overshoot readout
   const currentOvershoot = useMemo(() => {
