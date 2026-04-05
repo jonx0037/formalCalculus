@@ -424,6 +424,109 @@ export function integrateCoefficients(
   };
 }
 
+// ── Fourier series utilities (Topic 19) ──────────────────────
+
+export interface FourierCoefficientArrays {
+  a: number[];
+  b: number[];
+}
+
+/**
+ * Compute the Fourier coefficients aₙ and bₙ of a function f
+ * on [-π, π] using the composite trapezoidal rule.
+ *
+ * The trapezoidal rule is exponentially accurate for smooth periodic
+ * functions — a fact that is itself a consequence of Fourier analysis
+ * (the error depends on the Fourier coefficient decay of the integrand).
+ *
+ * @param f - The function to decompose
+ * @param maxN - Maximum harmonic number (default: 50)
+ * @param numQuadPoints - Quadrature points (default: 512)
+ * @returns { a: number[], b: number[] } where a[n] = aₙ and b[n] = bₙ
+ */
+export function fourierCoefficients(
+  f: (x: number) => number,
+  maxN: number = 50,
+  numQuadPoints: number = 512,
+): FourierCoefficientArrays {
+  const M = numQuadPoints;
+  const h = (2 * Math.PI) / M;
+
+  // Precompute function values at quadrature nodes
+  const fVals: number[] = [];
+  for (let j = 0; j < M; j++) {
+    fVals.push(f(-Math.PI + j * h));
+  }
+
+  const a: number[] = [];
+  const b: number[] = [];
+
+  for (let n = 0; n <= maxN; n++) {
+    let aSum = 0;
+    let bSum = 0;
+    for (let j = 0; j < M; j++) {
+      const x = -Math.PI + j * h;
+      aSum += fVals[j] * Math.cos(n * x);
+      bSum += fVals[j] * Math.sin(n * x);
+    }
+    // Trapezoidal rule: (h/π) Σ f(xⱼ) cos(nxⱼ) = (2/M) Σ ...
+    // Factor of 1/π comes from the inner product normalization
+    a.push((aSum * h) / Math.PI);
+    b.push((bSum * h) / Math.PI);
+  }
+
+  return { a, b };
+}
+
+/**
+ * Evaluate the Fourier partial sum Sₙ(x) given coefficient arrays.
+ *
+ * Sₙ(x) = a₀/2 + Σ_{k=1}^{n} (aₖ cos(kx) + bₖ sin(kx))
+ *
+ * @param a - Cosine coefficients (a[0] = a₀, a[1] = a₁, ...)
+ * @param b - Sine coefficients (b[0] unused, b[1] = b₁, ...)
+ * @param x - Point at which to evaluate
+ * @param n - Number of harmonics to include
+ * @returns Sₙ(x)
+ */
+export function fourierPartialSum(
+  a: number[],
+  b: number[],
+  x: number,
+  n: number,
+): number {
+  let sum = (a[0] ?? 0) / 2;
+  const limit = Math.min(n, a.length - 1, b.length - 1);
+
+  for (let k = 1; k <= limit; k++) {
+    sum += (a[k] ?? 0) * Math.cos(k * x) + (b[k] ?? 0) * Math.sin(k * x);
+  }
+
+  return sum;
+}
+
+/**
+ * Compute the Dirichlet kernel Dₙ(t) = sin((n + 1/2)t) / (2 sin(t/2)).
+ *
+ * At t = 0 (and multiples of 2π), L'Hôpital gives Dₙ(0) = (2n + 1)/2.
+ * This kernel appears in the convolution representation of Fourier
+ * partial sums: Sₙ(x) = (1/π) ∫ f(t) Dₙ(x − t) dt.
+ *
+ * @param n - Kernel order
+ * @param t - Evaluation point
+ * @returns Dₙ(t)
+ */
+export function dirichletKernel(n: number, t: number): number {
+  const halfT = t / 2;
+
+  // Guard: near t = 0 or t = 2kπ, use L'Hôpital limiting value
+  if (Math.abs(Math.sin(halfT)) < 1e-12) {
+    return (2 * n + 1) / 2;
+  }
+
+  return Math.sin((n + 0.5) * t) / (2 * Math.sin(halfT));
+}
+
 // ── Re-exports for convenience ──────────────────────────────
 
 export { generateSequence, computeEpsilonN } from './limits';
