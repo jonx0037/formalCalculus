@@ -533,13 +533,12 @@ export function dirichletKernel(n: number, t: number): number {
  * Evaluate the nth Bernstein polynomial of f at x.
  * B_n(f; x) = Σ_{k=0}^{n} f(k/n) · C(n,k) · x^k · (1−x)^{n−k}
  *
- * For n ≤ 60, uses direct computation with log-space binomial
- * coefficients to avoid overflow. For larger n, the same approach
- * remains stable because we compute each basis term in log space
- * and only exponentiate at the end.
+ * Uses a log-space formulation for each Bernstein basis term to improve
+ * numerical stability and reduce overflow/underflow risk across all n,
+ * exponentiating only after combining the logarithmic factors.
  *
  * @param f - The function to approximate (defined on [0, 1])
- * @param n - Bernstein polynomial degree (n ≥ 1)
+ * @param n - Bernstein polynomial degree (n ≥ 0)
  * @param x - Evaluation point in [0, 1]
  * @returns B_n(f; x)
  */
@@ -548,7 +547,8 @@ export function bernsteinPolynomial(
   n: number,
   x: number,
 ): number {
-  if (n < 1) return f(x);
+  if (n === 0) return f(0);
+  if (n < 0) throw new RangeError(`Bernstein degree must be non-negative, got ${n}`);
 
   // Boundary cases: avoid 0^0 issues
   if (x <= 0) return f(0);
@@ -649,6 +649,84 @@ export function chebyshevPolynomial(n: number, x: number): number {
   }
 
   return prev1;
+}
+
+// ── Interpolation utilities (Topic 20) ────────────────────────
+
+/**
+ * Compute barycentric weights for a set of interpolation nodes.
+ * w_j = 1 / Π_{k≠j} (x_j − x_k)
+ *
+ * Precomputing these once per node set turns interpolation from
+ * O(n²) to O(n) per evaluation point.
+ *
+ * @param nodes - Interpolation nodes
+ * @returns Array of barycentric weights
+ */
+export function barycentricWeights(nodes: number[]): number[] {
+  const n = nodes.length;
+  const weights = new Array(n);
+  for (let j = 0; j < n; j++) {
+    let w = 1;
+    for (let k = 0; k < n; k++) {
+      if (k !== j) w *= nodes[j] - nodes[k];
+    }
+    weights[j] = 1 / w;
+  }
+  return weights;
+}
+
+/**
+ * Evaluate the Lagrange interpolating polynomial at x using
+ * precomputed barycentric weights.
+ *
+ * p(x) = [Σ_j w_j f_j / (x − x_j)] / [Σ_j w_j / (x − x_j)]
+ *
+ * @param nodes - Interpolation nodes
+ * @param weights - Barycentric weights (from barycentricWeights)
+ * @param fvals - Function values at nodes
+ * @param x - Evaluation point
+ * @returns p(x)
+ */
+export function barycentricInterpolate(
+  nodes: number[],
+  weights: number[],
+  fvals: number[],
+  x: number,
+): number {
+  const n = nodes.length;
+
+  // Check if x coincides with a node
+  for (let j = 0; j < n; j++) {
+    if (Math.abs(x - nodes[j]) < 1e-14) return fvals[j];
+  }
+
+  let numerator = 0;
+  let denominator = 0;
+  for (let j = 0; j < n; j++) {
+    const t = weights[j] / (x - nodes[j]);
+    numerator += t * fvals[j];
+    denominator += t;
+  }
+
+  return numerator / denominator;
+}
+
+/**
+ * Generate n equispaced nodes on [a, b].
+ *
+ * @param n - Number of nodes (n ≥ 1)
+ * @param a - Left endpoint
+ * @param b - Right endpoint
+ * @returns Array of n equispaced points
+ */
+export function equispacedNodes(n: number, a: number, b: number): number[] {
+  if (n < 2) return [(a + b) / 2];
+  const nodes: number[] = [];
+  for (let i = 0; i < n; i++) {
+    nodes.push(a + (i * (b - a)) / (n - 1));
+  }
+  return nodes;
 }
 
 // ── Re-exports for convenience ──────────────────────────────

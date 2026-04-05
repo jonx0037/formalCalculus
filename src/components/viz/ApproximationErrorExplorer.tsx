@@ -32,20 +32,34 @@ interface ComparisonPreset {
   taylorDomain: [number, number];
 }
 
+// Precompute Taylor coefficients iteratively to avoid factorial overflow.
+// sin(x): a_k = -a_{k-2} / (k(k-1)) for odd k, 0 for even k
+const SIN_TAYLOR = (() => {
+  const c = new Array(51).fill(0);
+  c[1] = 1; // x term
+  for (let k = 3; k <= 50; k += 2) {
+    c[k] = -c[k - 2] / (k * (k - 1));
+  }
+  return (k: number) => (k < c.length ? c[k] : 0);
+})();
+
+// e^x: a_k = a_{k-1} / k
+const EXP_TAYLOR = (() => {
+  const c = new Array(51);
+  c[0] = 1;
+  for (let k = 1; k <= 50; k++) {
+    c[k] = c[k - 1] / k;
+  }
+  return (k: number) => (k < c.length ? c[k] : 0);
+})();
+
 const PRESETS: ComparisonPreset[] = [
   {
     name: 'sin-pi-x',
     label: 'sin(πx) — analytic',
     f01: (x) => Math.sin(Math.PI * x),
     fPeriodic: (x) => Math.sin(x),
-    taylorCoeffs: (k) => {
-      // Taylor of sin(x) at 0: x - x³/3! + x⁵/5! - ...
-      if (k % 2 === 0) return 0;
-      const sign = ((k - 1) / 2) % 2 === 0 ? 1 : -1;
-      let fact = 1;
-      for (let i = 2; i <= k; i++) fact *= i;
-      return sign / fact;
-    },
+    taylorCoeffs: SIN_TAYLOR,
     taylorCenter: 0,
     taylorDomain: [-Math.PI, Math.PI],
   },
@@ -54,11 +68,10 @@ const PRESETS: ComparisonPreset[] = [
     label: '|x| — Lipschitz, not C¹',
     f01: (x) => Math.abs(2 * x - 1),
     fPeriodic: (x) => {
-      // |x| on [-π, π] extended periodically
       const xMod = ((x % (2 * Math.PI)) + 3 * Math.PI) % (2 * Math.PI) - Math.PI;
       return Math.abs(xMod);
     },
-    taylorCoeffs: (_k) => 0, // |x| has no Taylor series at 0
+    taylorCoeffs: (_k) => 0,
     taylorCenter: 0,
     taylorDomain: [-1, 1],
   },
@@ -66,13 +79,8 @@ const PRESETS: ComparisonPreset[] = [
     name: 'exp-x',
     label: 'eˣ — entire function',
     f01: (x) => Math.exp(x),
-    fPeriodic: (x) => Math.exp(Math.cos(x)), // a smooth periodic function
-    taylorCoeffs: (k) => {
-      // Taylor of e^x at 0: Σ x^k / k!
-      let fact = 1;
-      for (let i = 2; i <= k; i++) fact *= i;
-      return 1 / fact;
-    },
+    fPeriodic: (x) => Math.exp(Math.cos(x)),
+    taylorCoeffs: EXP_TAYLOR,
     taylorCenter: 0,
     taylorDomain: [-2, 2],
   },
@@ -104,6 +112,8 @@ export default function ApproximationErrorExplorer() {
   const functionCurves = useMemo(() => {
     const [xMin, xMax] = preset.taylorDomain;
     const step = (xMax - xMin) / GRID_PTS;
+    // Hoist Bernstein mapping function outside the loop
+    const gFunc = (s: number) => preset.fPeriodic(xMin + s * (xMax - xMin));
 
     const targetPts: { x: number; y: number }[] = [];
     const taylorPts: { x: number; y: number }[] = [];
@@ -134,7 +144,6 @@ export default function ApproximationErrorExplorer() {
       // Bernstein (mapped to [0,1] from the domain)
       if (showBernstein) {
         const t = (x - xMin) / (xMax - xMin);
-        const gFunc = (s: number) => preset.fPeriodic(xMin + s * (xMax - xMin));
         const bVal = bernsteinPolynomial(gFunc, n, t);
         bernsteinPts.push({ x, y: bVal });
       }
@@ -148,12 +157,13 @@ export default function ApproximationErrorExplorer() {
   const errorCurves = useMemo(() => {
     const maxN = Math.max(n, 30);
     const [xMin, xMax] = preset.taylorDomain;
+    // Hoist Bernstein mapping function outside all loops
+    const gFunc = (s: number) => preset.fPeriodic(xMin + s * (xMax - xMin));
     const taylorErrors: MethodErrorPoint[] = [];
     const fourierErrors: MethodErrorPoint[] = [];
     const bernsteinErrors: MethodErrorPoint[] = [];
 
     for (let deg = 1; deg <= maxN; deg++) {
-      // Taylor max error
       let tErr = 0;
       let fErr = 0;
       let bErr = 0;
@@ -176,7 +186,6 @@ export default function ApproximationErrorExplorer() {
 
         // Bernstein
         const t = (x - xMin) / (xMax - xMin);
-        const gFunc = (s: number) => preset.fPeriodic(xMin + s * (xMax - xMin));
         const bVal = bernsteinPolynomial(gFunc, deg, t);
         bErr = Math.max(bErr, Math.abs(fVal - bVal));
       }

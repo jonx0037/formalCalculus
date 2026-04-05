@@ -12,7 +12,14 @@
  * the continuity, the faster E_n(f) → 0.
  */
 
-import { bernsteinPolynomial, chebyshevNodes } from '../components/viz/shared/series';
+import {
+  bernsteinPolynomial,
+  chebyshevNodes,
+  chebyshevPolynomial,
+  barycentricWeights,
+  barycentricInterpolate,
+  equispacedNodes,
+} from '../components/viz/shared/series';
 
 // ── Interfaces ─────────────────────────────────────────────
 
@@ -31,88 +38,56 @@ export interface ApproximationPreset {
 
 export interface BernsteinAnalysis {
   presetName: string;
-  /** Evaluate B_n(f; x) for a preset mapped to [0, 1] */
   bernsteinEval: (n: number, x: number) => number;
-  /** Numerically compute ‖B_n(f) − f‖_∞ over a fine grid */
   maxError: (n: number) => number;
   convergenceRate: string;
 }
 
 export interface ChebyshevInterpolation {
   presetName: string;
-  /** Lagrange interpolation at given nodes */
-  interpolate: (nodes: number[], fvals: number[], x: number) => number;
-  /** Numerically compute max interpolation error with Chebyshev nodes */
   maxErrorChebyshev: (n: number) => number;
-  /** Numerically compute max interpolation error with equispaced nodes */
   maxErrorEquispaced: (n: number) => number;
 }
 
 export interface BestApproximation {
   presetName: string;
-  /** Legendre expansion coefficients for L² best approximation */
   l2BestCoeffs: (n: number) => number[];
-  /** Evaluate the L² best polynomial at x */
   l2BestEval: (n: number, x: number) => number;
-  /** ‖f − p_n^{L²}‖₂ (numerical) */
+  /** Chebyshev-based near-minimax approximation */
+  uniformBestEval: (n: number, x: number) => number;
   l2Error: (n: number) => number;
-  /** ‖f − p_n^*‖_∞ (numerical, Remez-like for standard presets) */
   uniformError: (n: number) => number;
 }
 
-// ── Helper: Lagrange interpolation (barycentric form) ──────
+// ── Gauss-Legendre quadrature (32-point) ───────────────────
 
 /**
- * Evaluate the Lagrange interpolating polynomial at x using
- * the barycentric form for numerical stability.
- *
- * Given nodes x_0, …, x_n and values f_0, …, f_n, the barycentric
- * form avoids recomputing the Lagrange basis from scratch:
- *   p(x) = [Σ_j w_j f_j / (x − x_j)] / [Σ_j w_j / (x − x_j)]
- * where w_j = 1 / Π_{k≠j} (x_j − x_k) are the barycentric weights.
+ * 32-point Gauss-Legendre nodes and weights on [−1, 1].
+ * Exact for polynomials of degree ≤ 63, which gives ~15 digits
+ * of accuracy for smooth integrands — far better than the
+ * trapezoidal rule with 2000 points.
  */
-function barycentricInterpolate(
-  nodes: number[],
-  fvals: number[],
-  x: number,
-): number {
-  const n = nodes.length;
+const GL_NODES_32 = [
+  -0.9972638618494816, -0.9856115115452684, -0.9647622555875064, -0.9349060759377397,
+  -0.8963211557660521, -0.8493676137325700, -0.7944837959679424, -0.7321821187402897,
+  -0.6630442669302152, -0.5877157572407623, -0.5068999089322294, -0.4213512761306353,
+  -0.3318686022821276, -0.2392873622521371, -0.1444719615827965, -0.0483076656877383,
+  0.0483076656877383, 0.1444719615827965, 0.2392873622521371, 0.3318686022821276,
+  0.4213512761306353, 0.5068999089322294, 0.5877157572407623, 0.6630442669302152,
+  0.7321821187402897, 0.7944837959679424, 0.8493676137325700, 0.8963211557660521,
+  0.9349060759377397, 0.9647622555875064, 0.9856115115452684, 0.9972638618494816,
+];
 
-  // Check if x coincides with a node
-  for (let j = 0; j < n; j++) {
-    if (Math.abs(x - nodes[j]) < 1e-14) return fvals[j];
-  }
-
-  // Compute barycentric weights
-  const weights = new Array(n);
-  for (let j = 0; j < n; j++) {
-    let w = 1;
-    for (let k = 0; k < n; k++) {
-      if (k !== j) w *= nodes[j] - nodes[k];
-    }
-    weights[j] = 1 / w;
-  }
-
-  let numerator = 0;
-  let denominator = 0;
-  for (let j = 0; j < n; j++) {
-    const t = weights[j] / (x - nodes[j]);
-    numerator += t * fvals[j];
-    denominator += t;
-  }
-
-  return numerator / denominator;
-}
-
-// ── Helper: equispaced nodes on [a, b] ─────────────────────
-
-function equispacedNodes(n: number, a: number, b: number): number[] {
-  const nodes: number[] = [];
-  for (let i = 0; i < n; i++) {
-    nodes.push(a + (i * (b - a)) / (n - 1));
-  }
-  return nodes;
-}
+const GL_WEIGHTS_32 = [
+  0.0070186100094701, 0.0162743947309057, 0.0253920653092621, 0.0342738629130214,
+  0.0428358980222267, 0.0509980592623762, 0.0586840934785355, 0.0658222227763618,
+  0.0723457941088485, 0.0781938957870703, 0.0833119242269467, 0.0876520930044038,
+  0.0911738786957639, 0.0938443990808046, 0.0956387200792749, 0.0965400885147278,
+  0.0965400885147278, 0.0956387200792749, 0.0938443990808046, 0.0911738786957639,
+  0.0876520930044038, 0.0833119242269467, 0.0781938957870703, 0.0723457941088485,
+  0.0658222227763618, 0.0586840934785355, 0.0509980592623762, 0.0428358980222267,
+  0.0342738629130214, 0.0253920653092621, 0.0162743947309057, 0.0070186100094701,
+];
 
 // ── Helper: Legendre polynomials on [−1, 1] ────────────────
 
@@ -130,19 +105,99 @@ function legendreP(n: number, x: number): number {
   return prev1;
 }
 
-/** Compute ⟨f, P_k⟩ / ‖P_k‖² for f on [−1, 1] via composite trapezoidal rule */
+/**
+ * Compute the Legendre coefficient ⟨f, P_k⟩ / ‖P_k‖² on [−1, 1]
+ * using 32-point Gauss-Legendre quadrature.
+ */
 function legendreCoefficient(f: (x: number) => number, k: number): number {
-  const N = 2000;
-  const h = 2 / N;
   let integral = 0;
-  for (let i = 0; i <= N; i++) {
-    const x = -1 + i * h;
-    const w = i === 0 || i === N ? 0.5 : 1;
-    integral += w * f(x) * legendreP(k, x);
+  for (let i = 0; i < 32; i++) {
+    integral += GL_WEIGHTS_32[i] * f(GL_NODES_32[i]) * legendreP(k, GL_NODES_32[i]);
   }
-  integral *= h;
   // ‖P_k‖² = 2/(2k+1)
   return integral * (2 * k + 1) / 2;
+}
+
+// ── Coefficient cache ──────────────────────────────────────
+
+/**
+ * Cache Legendre coefficients per (function, maxDegree) to avoid
+ * recomputing the expensive quadrature on every evaluation.
+ */
+const coefficientCache = new Map<(x: number) => number, Map<number, number>>();
+
+function getCachedCoefficients(f: (x: number) => number, n: number): number[] {
+  let cache = coefficientCache.get(f);
+  if (!cache) {
+    cache = new Map();
+    coefficientCache.set(f, cache);
+  }
+  const coeffs: number[] = [];
+  for (let k = 0; k <= n; k++) {
+    let c = cache.get(k);
+    if (c === undefined) {
+      c = legendreCoefficient(f, k);
+      cache.set(k, c);
+    }
+    coeffs.push(c);
+  }
+  return coeffs;
+}
+
+/** Evaluate the L² best polynomial at x using cached coefficients */
+function evaluateL2Best(f: (x: number) => number, n: number, x: number): number {
+  const coeffs = getCachedCoefficients(f, n);
+  let result = 0;
+  for (let k = 0; k <= n; k++) {
+    result += coeffs[k] * legendreP(k, x);
+  }
+  return result;
+}
+
+// ── Chebyshev near-minimax approximation ───────────────────
+
+/**
+ * Compute Chebyshev interpolation coefficients for f on [−1, 1].
+ * Uses Chebyshev nodes of the first kind and the discrete
+ * orthogonality relation to compute coefficients in O(n²).
+ *
+ * The Chebyshev interpolant is within O(log n) of the true
+ * minimax polynomial — much closer than the L² best, and it
+ * exhibits near-equioscillation behavior.
+ */
+function chebyshevCoefficients(f: (x: number) => number, n: number): number[] {
+  const nodes = chebyshevNodes(n + 1); // n+1 nodes for degree n
+  const fvals = nodes.map(f);
+  const coeffs: number[] = [];
+
+  for (let j = 0; j <= n; j++) {
+    let sum = 0;
+    for (let k = 0; k < n + 1; k++) {
+      const theta = ((2 * (k + 1) - 1) * Math.PI) / (2 * (n + 1));
+      sum += fvals[k] * Math.cos(j * theta);
+    }
+    coeffs.push((j === 0 ? 1 : 2) * sum / (n + 1));
+  }
+
+  return coeffs;
+}
+
+/** Evaluate a Chebyshev expansion Σ c_k T_k(x) using Clenshaw's algorithm */
+function evaluateChebyshevExpansion(coeffs: number[], x: number): number {
+  const n = coeffs.length - 1;
+  if (n < 0) return 0;
+  if (n === 0) return coeffs[0];
+
+  // Clenshaw recurrence: b_{k} = 2x b_{k+1} − b_{k+2} + c_k
+  let bk1 = 0; // b_{n+1}
+  let bk2 = 0; // b_{n+2}
+  for (let k = n; k >= 1; k--) {
+    const bk = 2 * x * bk1 - bk2 + coeffs[k];
+    bk2 = bk1;
+    bk1 = bk;
+  }
+  // Final step: f(x) = x · b_1 − b_2 + c_0
+  return x * bk1 - bk2 + coeffs[0];
 }
 
 // ── Helper: max error over a fine grid ─────────────────────
@@ -195,7 +250,7 @@ const smoothParabola: ApproximationPreset = {
   f: (x: number) => x * (1 - x),
   domain: [0, 1],
   smoothnessClass: 'Cinfty',
-  modulusOfContinuity: (delta: number) => delta, // Lipschitz with constant 1
+  modulusOfContinuity: (delta: number) => delta,
   expectedBernsteinRate: 'O(1/n)',
   expectedJacksonRate: 'O(1/n²)',
   tags: ['smooth', 'polynomial', 'quadratic'],
@@ -214,7 +269,7 @@ const smoothPeriodic: ApproximationPreset = {
   f: (x: number) => Math.sin(Math.PI * x),
   domain: [0, 1],
   smoothnessClass: 'analytic',
-  modulusOfContinuity: (delta: number) => Math.PI * delta, // Lipschitz with constant π
+  modulusOfContinuity: (delta: number) => Math.PI * delta,
   expectedBernsteinRate: 'O(1/√n)',
   expectedJacksonRate: 'O(e^{−cn})',
   tags: ['analytic', 'smooth', 'periodic', 'trigonometric'],
@@ -232,7 +287,7 @@ const stepFunction: ApproximationPreset = {
   f: (x: number) => (x >= 0.5 ? 1 : 0),
   domain: [0, 1],
   smoothnessClass: 'discontinuous',
-  modulusOfContinuity: (delta: number) => (delta > 0 ? 1 : 0), // ω(f; δ) = 1 for all δ > 0
+  modulusOfContinuity: (delta: number) => (delta > 0 ? 1 : 0),
   expectedBernsteinRate: 'O(1/√n)',
   expectedJacksonRate: 'O(1) — no decay',
   tags: ['discontinuous', 'step', 'indicator'],
@@ -251,7 +306,7 @@ const rungeLike: ApproximationPreset = {
   f: (x: number) => 1 / (1 + 16 * (x - 0.5) ** 2),
   domain: [0, 1],
   smoothnessClass: 'analytic',
-  modulusOfContinuity: (delta: number) => 8 * delta, // Lipschitz (bounded derivative on [0,1])
+  modulusOfContinuity: (delta: number) => 8 * delta,
   expectedBernsteinRate: 'O(1/√n)',
   expectedJacksonRate: 'O(e^{−cn})',
   tags: ['analytic', 'runge', 'rational', 'bell-curve'],
@@ -268,31 +323,21 @@ export function getApproximationPresets(): ApproximationPreset[] {
 
 // ── Bernstein analyses ─────────────────────────────────────
 
-/**
- * Build Bernstein analysis data for each preset.
- * Maps each preset's domain to [0, 1] for Bernstein evaluation,
- * then computes max error over a fine grid.
- */
 export function getBernsteinAnalyses(): BernsteinAnalysis[] {
   return allPresets.map((preset) => {
     const [a, b] = preset.domain;
-    // Map f from [a, b] to [0, 1]: g(t) = f(a + t(b − a))
     const g = (t: number) => preset.f(a + t * (b - a));
 
     return {
       presetName: preset.name,
       bernsteinEval: (n: number, x: number) => {
-        // Map x from [a, b] to [0, 1]
         const t = (x - a) / (b - a);
         return bernsteinPolynomial(g, n, t);
       },
       maxError: (n: number) => {
         return computeMaxError(
           preset.f,
-          (x) => {
-            const t = (x - a) / (b - a);
-            return bernsteinPolynomial(g, n, t);
-          },
+          (x) => bernsteinPolynomial(g, (x - a) / (b - a), n),
           a,
           b,
         );
@@ -304,11 +349,6 @@ export function getBernsteinAnalyses(): BernsteinAnalysis[] {
 
 // ── Chebyshev interpolation analyses ───────────────────────
 
-/**
- * Build Chebyshev vs. equispaced interpolation data.
- * Uses the Runge function on [−1, 1] as the primary example,
- * plus |x| and a smooth function for comparison.
- */
 export function getChebyshevInterpolations(): ChebyshevInterpolation[] {
   const chebyshevPresets: { name: string; f: (x: number) => number }[] = [
     { name: 'runge', f: (x) => 1 / (1 + 25 * x * x) },
@@ -318,13 +358,13 @@ export function getChebyshevInterpolations(): ChebyshevInterpolation[] {
 
   return chebyshevPresets.map((preset) => ({
     presetName: preset.name,
-    interpolate: barycentricInterpolate,
     maxErrorChebyshev: (n: number) => {
       const nodes = chebyshevNodes(n);
+      const weights = barycentricWeights(nodes);
       const fvals = nodes.map(preset.f);
       return computeMaxError(
         preset.f,
-        (x) => barycentricInterpolate(nodes, fvals, x),
+        (x) => barycentricInterpolate(nodes, weights, fvals, x),
         -1,
         1,
         2000,
@@ -332,10 +372,11 @@ export function getChebyshevInterpolations(): ChebyshevInterpolation[] {
     },
     maxErrorEquispaced: (n: number) => {
       const nodes = equispacedNodes(n, -1, 1);
+      const weights = barycentricWeights(nodes);
       const fvals = nodes.map(preset.f);
       return computeMaxError(
         preset.f,
-        (x) => barycentricInterpolate(nodes, fvals, x),
+        (x) => barycentricInterpolate(nodes, weights, fvals, x),
         -1,
         1,
         2000,
@@ -347,112 +388,46 @@ export function getChebyshevInterpolations(): ChebyshevInterpolation[] {
 // ── Best approximation analyses ────────────────────────────
 
 /**
- * Build L² and uniform best approximation data for |x| on [−1, 1].
- * |x| is the canonical example: its Legendre expansion is computable
- * in closed form, and the uniform best approximant is well-studied.
+ * Build L² and Chebyshev (near-minimax) best approximation data.
+ *
+ * L² best: orthogonal projection onto Legendre polynomials.
+ * Uniform best: Chebyshev interpolation at Chebyshev nodes, which
+ * is within O(log n) of the true minimax polynomial and produces
+ * visibly different curves from the L² projection.
  */
 export function getBestApproximations(): BestApproximation[] {
-  const f = (x: number) => Math.abs(x);
-
-  return [
-    {
-      presetName: 'abs-x',
-      l2BestCoeffs: (n: number) => {
-        const coeffs: number[] = [];
-        for (let k = 0; k <= n; k++) {
-          coeffs.push(legendreCoefficient(f, k));
-        }
-        return coeffs;
-      },
-      l2BestEval: (n: number, x: number) => {
-        let result = 0;
-        for (let k = 0; k <= n; k++) {
-          result += legendreCoefficient(f, k) * legendreP(k, x);
-        }
-        return result;
-      },
-      l2Error: (n: number) => {
-        const approx = (x: number) => {
-          let result = 0;
-          for (let k = 0; k <= n; k++) {
-            result += legendreCoefficient(f, k) * legendreP(k, x);
-          }
-          return result;
-        };
-        // Compute L² error via trapezoidal rule
-        const N = 2000;
-        const h = 2 / N;
-        let integral = 0;
-        for (let i = 0; i <= N; i++) {
-          const x = -1 + i * h;
-          const w = i === 0 || i === N ? 0.5 : 1;
-          integral += w * (f(x) - approx(x)) ** 2;
-        }
-        return Math.sqrt(integral * h);
-      },
-      uniformError: (n: number) => {
-        // For |x|, best uniform polynomial approximation errors
-        // are well-known: E_n(|x|) ~ 1/(2n) for even n.
-        // We compute numerically using the L² approximant as a baseline
-        // (the uniform best is slightly different but close for moderate n).
-        const approx = (x: number) => {
-          let result = 0;
-          for (let k = 0; k <= n; k++) {
-            result += legendreCoefficient(f, k) * legendreP(k, x);
-          }
-          return result;
-        };
-        return computeMaxError(f, approx, -1, 1, 2000);
-      },
-    },
-    {
-      presetName: 'exp-x',
-      l2BestCoeffs: (n: number) => {
-        const g = (x: number) => Math.exp(x);
-        const coeffs: number[] = [];
-        for (let k = 0; k <= n; k++) {
-          coeffs.push(legendreCoefficient(g, k));
-        }
-        return coeffs;
-      },
-      l2BestEval: (n: number, x: number) => {
-        const g = (xv: number) => Math.exp(xv);
-        let result = 0;
-        for (let k = 0; k <= n; k++) {
-          result += legendreCoefficient(g, k) * legendreP(k, x);
-        }
-        return result;
-      },
-      l2Error: (n: number) => {
-        const g = (xv: number) => Math.exp(xv);
-        const approx = (x: number) => {
-          let result = 0;
-          for (let k = 0; k <= n; k++) {
-            result += legendreCoefficient(g, k) * legendreP(k, x);
-          }
-          return result;
-        };
-        const N = 2000;
-        const h = 2 / N;
-        let integral = 0;
-        for (let i = 0; i <= N; i++) {
-          const x = -1 + i * h;
-          const w = i === 0 || i === N ? 0.5 : 1;
-          integral += w * (g(x) - approx(x)) ** 2;
-        }
-        return Math.sqrt(integral * h);
-      },
-      uniformError: (n: number) => {
-        const g = (xv: number) => Math.exp(xv);
-        const approx = (x: number) => {
-          let result = 0;
-          for (let k = 0; k <= n; k++) {
-            result += legendreCoefficient(g, k) * legendreP(k, x);
-          }
-          return result;
-        };
-        return computeMaxError(g, approx, -1, 1, 2000);
-      },
-    },
+  const presets: { name: string; f: (x: number) => number }[] = [
+    { name: 'abs-x', f: (x) => Math.abs(x) },
+    { name: 'exp-x', f: (x) => Math.exp(x) },
   ];
+
+  return presets.map(({ name, f }) => ({
+    presetName: name,
+    l2BestCoeffs: (n: number) => getCachedCoefficients(f, n),
+    l2BestEval: (n: number, x: number) => evaluateL2Best(f, n, x),
+    uniformBestEval: (n: number, x: number) => {
+      const coeffs = chebyshevCoefficients(f, n);
+      return evaluateChebyshevExpansion(coeffs, x);
+    },
+    l2Error: (n: number) => {
+      // L² error via Gauss-Legendre quadrature
+      let integral = 0;
+      for (let i = 0; i < 32; i++) {
+        const x = GL_NODES_32[i];
+        const diff = f(x) - evaluateL2Best(f, n, x);
+        integral += GL_WEIGHTS_32[i] * diff * diff;
+      }
+      return Math.sqrt(integral);
+    },
+    uniformError: (n: number) => {
+      const coeffs = chebyshevCoefficients(f, n);
+      return computeMaxError(
+        f,
+        (x) => evaluateChebyshevExpansion(coeffs, x),
+        -1,
+        1,
+        2000,
+      );
+    },
+  }));
 }

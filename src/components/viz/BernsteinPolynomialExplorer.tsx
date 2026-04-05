@@ -26,7 +26,7 @@ export default function BernsteinPolynomialExplorer() {
   const [playing, setPlaying] = useState(false);
   const [showBasis, setShowBasis] = useState(false);
   const [probeX, setProbeX] = useState<number | null>(null);
-  const animRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const animRef = useRef<number | null>(null);
 
   const preset = PRESETS[selectedIdx];
   const [a, b] = preset.domain;
@@ -107,20 +107,26 @@ export default function BernsteinPolynomialExplorer() {
 
   useEffect(() => {
     if (!playing) {
-      if (animRef.current) clearInterval(animRef.current);
+      if (animRef.current) cancelAnimationFrame(animRef.current);
       return;
     }
-    animRef.current = setInterval(() => {
-      setN((prev) => {
-        if (prev >= 100) {
-          setPlaying(false);
-          return prev;
-        }
-        return prev + 1;
-      });
-    }, 150);
+    let lastStep = performance.now();
+    const step = (now: number) => {
+      if (now - lastStep >= 150) {
+        lastStep = now;
+        setN((prev) => {
+          if (prev >= 100) {
+            setPlaying(false);
+            return prev;
+          }
+          return prev + 1;
+        });
+      }
+      animRef.current = requestAnimationFrame(step);
+    };
+    animRef.current = requestAnimationFrame(step);
     return () => {
-      if (animRef.current) clearInterval(animRef.current);
+      if (animRef.current) cancelAnimationFrame(animRef.current);
     };
   }, [playing]);
 

@@ -78,9 +78,8 @@ export default function BestApproximationExplorer() {
       l2Pts.push({ x, y: l2Val });
       l2ErrPts.push({ x, y: fVal - l2Val });
 
-      // Use L2 approximation as a stand-in for uniform best
-      // (for the standard presets, these are close but not identical)
-      const uVal = analysis.l2BestEval(n, x);
+      // Chebyshev interpolation as near-minimax uniform approximation
+      const uVal = analysis.uniformBestEval(n, x);
       uniformPts.push({ x, y: uVal });
       uniformErrPts.push({ x, y: fVal - uVal });
     }

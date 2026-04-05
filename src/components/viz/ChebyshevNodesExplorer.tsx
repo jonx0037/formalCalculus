@@ -2,7 +2,12 @@ import { useState, useMemo, type ChangeEvent } from 'react';
 import * as d3 from 'd3';
 import { useResizeObserver } from './shared/useResizeObserver';
 import { useD3 } from './shared/useD3';
-import { chebyshevNodes } from './shared/series';
+import {
+  chebyshevNodes,
+  barycentricWeights,
+  barycentricInterpolate,
+  equispacedNodes,
+} from './shared/series';
 
 // ── Constants ─────────────────────────────────────────────────
 
@@ -37,45 +42,6 @@ const PRESETS: InterpolationPreset[] = [
   },
 ];
 
-// ── Barycentric interpolation ─────────────────────────────────
-
-function barycentricInterpolate(
-  nodes: number[],
-  fvals: number[],
-  x: number,
-): number {
-  const len = nodes.length;
-  for (let j = 0; j < len; j++) {
-    if (Math.abs(x - nodes[j]) < 1e-14) return fvals[j];
-  }
-
-  const weights = new Array(len);
-  for (let j = 0; j < len; j++) {
-    let w = 1;
-    for (let k = 0; k < len; k++) {
-      if (k !== j) w *= nodes[j] - nodes[k];
-    }
-    weights[j] = 1 / w;
-  }
-
-  let num = 0;
-  let den = 0;
-  for (let j = 0; j < len; j++) {
-    const t = weights[j] / (x - nodes[j]);
-    num += t * fvals[j];
-    den += t;
-  }
-  return num / den;
-}
-
-function equispacedNodes(n: number): number[] {
-  const nodes: number[] = [];
-  for (let i = 0; i < n; i++) {
-    nodes.push(-1 + (2 * i) / (n - 1));
-  }
-  return nodes;
-}
-
 // ── Component ─────────────────────────────────────────────────
 
 export default function ChebyshevNodesExplorer() {
@@ -91,10 +57,14 @@ export default function ChebyshevNodesExplorer() {
   // ── Compute interpolants ──────────────────────────────────
 
   const data = useMemo(() => {
-    const eqNodes = equispacedNodes(n);
+    const eqNodes = equispacedNodes(n, -1, 1);
     const chNodes = chebyshevNodes(n);
     const eqVals = eqNodes.map(preset.f);
     const chVals = chNodes.map(preset.f);
+
+    // Precompute barycentric weights once per node set
+    const eqWeights = barycentricWeights(eqNodes);
+    const chWeights = barycentricWeights(chNodes);
 
     const step = 2 / GRID_PTS;
     const targetPts: { x: number; y: number }[] = [];
@@ -111,8 +81,8 @@ export default function ChebyshevNodesExplorer() {
       const fVal = preset.f(x);
       targetPts.push({ x, y: fVal });
 
-      const eqVal = barycentricInterpolate(eqNodes, eqVals, x);
-      const chVal = barycentricInterpolate(chNodes, chVals, x);
+      const eqVal = barycentricInterpolate(eqNodes, eqWeights, eqVals, x);
+      const chVal = barycentricInterpolate(chNodes, chWeights, chVals, x);
 
       const clamp = (v: number) => (isFinite(v) && Math.abs(v) < 100 ? v : NaN);
 
