@@ -527,6 +527,208 @@ export function dirichletKernel(n: number, t: number): number {
   return Math.sin((n + 0.5) * t) / (2 * Math.sin(halfT));
 }
 
+// ── Approximation theory utilities (Topic 20) ─────────────────
+
+/**
+ * Evaluate the nth Bernstein polynomial of f at x.
+ * B_n(f; x) = Σ_{k=0}^{n} f(k/n) · C(n,k) · x^k · (1−x)^{n−k}
+ *
+ * Uses a log-space formulation for each Bernstein basis term to improve
+ * numerical stability and reduce overflow/underflow risk across all n,
+ * exponentiating only after combining the logarithmic factors.
+ *
+ * @param f - The function to approximate (defined on [0, 1])
+ * @param n - Bernstein polynomial degree (n ≥ 0)
+ * @param x - Evaluation point in [0, 1]
+ * @returns B_n(f; x)
+ */
+export function bernsteinPolynomial(
+  f: (x: number) => number,
+  n: number,
+  x: number,
+): number {
+  if (n === 0) return f(0);
+  if (n < 0) throw new RangeError(`Bernstein degree must be non-negative, got ${n}`);
+
+  // Boundary cases: avoid 0^0 issues
+  if (x <= 0) return f(0);
+  if (x >= 1) return f(1);
+
+  let result = 0;
+
+  // Compute each term using log-space to avoid overflow of C(n,k)
+  // log(b_{k,n}(x)) = logC(n,k) + k·log(x) + (n−k)·log(1−x)
+  const logX = Math.log(x);
+  const log1mX = Math.log(1 - x);
+
+  // Build log(C(n,k)) incrementally: logC(n,0) = 0, logC(n,k) = logC(n,k-1) + log(n-k+1) - log(k)
+  let logBinom = 0;
+
+  for (let k = 0; k <= n; k++) {
+    if (k > 0) {
+      logBinom += Math.log(n - k + 1) - Math.log(k);
+    }
+    const logBasis = logBinom + k * logX + (n - k) * log1mX;
+    result += f(k / n) * Math.exp(logBasis);
+  }
+
+  return result;
+}
+
+/**
+ * Evaluate the kth Bernstein basis polynomial of degree n at x.
+ * b_{k,n}(x) = C(n,k) · x^k · (1−x)^{n−k}
+ *
+ * These basis polynomials form a partition of unity on [0, 1]:
+ * Σ_{k=0}^{n} b_{k,n}(x) = 1 for all x ∈ [0, 1].
+ *
+ * @param k - Basis index (0 ≤ k ≤ n)
+ * @param n - Polynomial degree
+ * @param x - Evaluation point in [0, 1]
+ * @returns b_{k,n}(x)
+ */
+export function bernsteinBasis(
+  k: number,
+  n: number,
+  x: number,
+): number {
+  if (k < 0 || k > n) return 0;
+  if (x <= 0) return k === 0 ? 1 : 0;
+  if (x >= 1) return k === n ? 1 : 0;
+
+  // Log-space computation for stability
+  let logBinom = 0;
+  for (let i = 1; i <= k; i++) {
+    logBinom += Math.log(n - k + i) - Math.log(i);
+  }
+
+  const logBasis = logBinom + k * Math.log(x) + (n - k) * Math.log(1 - x);
+  return Math.exp(logBasis);
+}
+
+/**
+ * Compute the Chebyshev nodes of the first kind on [−1, 1].
+ * x_k = cos((2k − 1)π / (2n)) for k = 1, …, n.
+ *
+ * These are the zeros of T_n(x) and the optimal interpolation nodes
+ * that minimize the Lebesgue constant.
+ *
+ * @param n - Number of nodes (n ≥ 1)
+ * @returns Array of n Chebyshev nodes in decreasing order
+ */
+export function chebyshevNodes(n: number): number[] {
+  const nodes: number[] = [];
+  for (let k = 1; k <= n; k++) {
+    nodes.push(Math.cos(((2 * k - 1) * Math.PI) / (2 * n)));
+  }
+  return nodes;
+}
+
+/**
+ * Evaluate the Chebyshev polynomial T_n(x) = cos(n · arccos(x)).
+ *
+ * Uses the three-term recurrence T_{n+1}(x) = 2x·T_n(x) − T_{n−1}(x)
+ * with T_0(x) = 1, T_1(x) = x, which is numerically stable and
+ * avoids computing arccos.
+ *
+ * @param n - Polynomial degree (n ≥ 0)
+ * @param x - Evaluation point in [−1, 1]
+ * @returns T_n(x)
+ */
+export function chebyshevPolynomial(n: number, x: number): number {
+  if (n === 0) return 1;
+  if (n === 1) return x;
+
+  let prev2 = 1;   // T_0
+  let prev1 = x;   // T_1
+
+  for (let k = 2; k <= n; k++) {
+    const curr = 2 * x * prev1 - prev2;
+    prev2 = prev1;
+    prev1 = curr;
+  }
+
+  return prev1;
+}
+
+// ── Interpolation utilities (Topic 20) ────────────────────────
+
+/**
+ * Compute barycentric weights for a set of interpolation nodes.
+ * w_j = 1 / Π_{k≠j} (x_j − x_k)
+ *
+ * Precomputing these once per node set turns interpolation from
+ * O(n²) to O(n) per evaluation point.
+ *
+ * @param nodes - Interpolation nodes
+ * @returns Array of barycentric weights
+ */
+export function barycentricWeights(nodes: number[]): number[] {
+  const n = nodes.length;
+  const weights = new Array(n);
+  for (let j = 0; j < n; j++) {
+    let w = 1;
+    for (let k = 0; k < n; k++) {
+      if (k !== j) w *= nodes[j] - nodes[k];
+    }
+    weights[j] = 1 / w;
+  }
+  return weights;
+}
+
+/**
+ * Evaluate the Lagrange interpolating polynomial at x using
+ * precomputed barycentric weights.
+ *
+ * p(x) = [Σ_j w_j f_j / (x − x_j)] / [Σ_j w_j / (x − x_j)]
+ *
+ * @param nodes - Interpolation nodes
+ * @param weights - Barycentric weights (from barycentricWeights)
+ * @param fvals - Function values at nodes
+ * @param x - Evaluation point
+ * @returns p(x)
+ */
+export function barycentricInterpolate(
+  nodes: number[],
+  weights: number[],
+  fvals: number[],
+  x: number,
+): number {
+  const n = nodes.length;
+
+  // Check if x coincides with a node
+  for (let j = 0; j < n; j++) {
+    if (Math.abs(x - nodes[j]) < 1e-14) return fvals[j];
+  }
+
+  let numerator = 0;
+  let denominator = 0;
+  for (let j = 0; j < n; j++) {
+    const t = weights[j] / (x - nodes[j]);
+    numerator += t * fvals[j];
+    denominator += t;
+  }
+
+  return numerator / denominator;
+}
+
+/**
+ * Generate n equispaced nodes on [a, b].
+ *
+ * @param n - Number of nodes (n ≥ 1)
+ * @param a - Left endpoint
+ * @param b - Right endpoint
+ * @returns Array of n equispaced points
+ */
+export function equispacedNodes(n: number, a: number, b: number): number[] {
+  if (n < 2) return [(a + b) / 2];
+  const nodes: number[] = [];
+  for (let i = 0; i < n; i++) {
+    nodes.push(a + (i * (b - a)) / (n - 1));
+  }
+  return nodes;
+}
+
 // ── Re-exports for convenience ──────────────────────────────
 
 export { generateSequence, computeEpsilonN } from './limits';
