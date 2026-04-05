@@ -45,9 +45,8 @@ export const tracks: Track[] = [
     title: 'Sequences, Series & Approximation',
     description: 'Convergence tests, power series, Fourier analysis, and approximation theory.',
     domain: 'series-approximation',
-    published: ['Series Convergence & Tests'],
+    published: ['Series Convergence & Tests', 'Power Series & Taylor Series'],
     planned: [
-      'Power Series & Taylor Series',
       'Fourier Series & Orthogonal Expansions',
       'Approximation Theory',
     ],

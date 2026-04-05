@@ -295,6 +295,133 @@ export function pSeriesConverges(p: number): boolean {
   return p > 1;
 }
 
+// ── Power series utilities (Topic 18) ──────────────────────
+
+/**
+ * Compute the radius of convergence of a power series
+ * given its coefficient function aₙ.
+ * Uses the Cauchy-Hadamard formula: 1/R = limsup |aₙ|^{1/n}.
+ * Falls back to ratio test if root test is inconclusive.
+ */
+export function radiusOfConvergence(
+  coefficients: (n: number) => number,
+  maxTerms: number = 200,
+): { radius: number; method: 'root' | 'ratio'; diagnostics: number[] } {
+  // Cauchy-Hadamard via root test on coefficients
+  const rootDiags: number[] = [];
+  for (let n = 1; n <= maxTerms; n++) {
+    const absAn = Math.abs(coefficients(n));
+    if (absAn > 0 && isFinite(absAn)) {
+      rootDiags.push(Math.pow(absAn, 1 / n));
+    } else if (absAn === 0) {
+      rootDiags.push(0);
+    } else {
+      // Infinity coefficient → R = 0
+      return { radius: 0, method: 'root', diagnostics: rootDiags };
+    }
+  }
+
+  // Estimate limsup from the tail
+  const tailCount = Math.max(10, Math.floor(rootDiags.length * 0.2));
+  const tail = rootDiags.slice(-tailCount);
+
+  if (tail.length === 0) {
+    return { radius: Infinity, method: 'root', diagnostics: rootDiags };
+  }
+
+  // limsup: take the max of the tail as an approximation
+  const limsup = Math.max(...tail);
+
+  if (limsup < 1e-12) {
+    return { radius: Infinity, method: 'root', diagnostics: rootDiags };
+  }
+
+  if (!isFinite(limsup) || limsup > 1e12) {
+    return { radius: 0, method: 'root', diagnostics: rootDiags };
+  }
+
+  const rootRadius = 1 / limsup;
+
+  // Check if root test gave a clear answer (not ≈ inconclusive)
+  const spread = Math.max(...tail) - Math.min(...tail);
+  if (spread < 0.1 * limsup) {
+    return { radius: rootRadius, method: 'root', diagnostics: rootDiags };
+  }
+
+  // Fallback: ratio test on coefficients
+  const ratioDiags: number[] = [];
+  for (let n = 1; n < maxTerms; n++) {
+    const absAn = Math.abs(coefficients(n));
+    const absAn1 = Math.abs(coefficients(n + 1));
+    if (absAn > 1e-15 && isFinite(absAn) && isFinite(absAn1)) {
+      ratioDiags.push(absAn / absAn1);  // R = lim |aₙ/aₙ₊₁|
+    }
+  }
+
+  if (ratioDiags.length < 10) {
+    return { radius: rootRadius, method: 'root', diagnostics: rootDiags };
+  }
+
+  const ratioTail = ratioDiags.slice(-tailCount);
+  const ratioAvg = ratioTail.reduce((s, v) => s + v, 0) / ratioTail.length;
+
+  if (!isFinite(ratioAvg) || ratioAvg > 1e12) {
+    return { radius: Infinity, method: 'ratio', diagnostics: ratioDiags };
+  }
+  if (ratioAvg < 1e-12) {
+    return { radius: 0, method: 'ratio', diagnostics: ratioDiags };
+  }
+
+  return { radius: ratioAvg, method: 'ratio', diagnostics: ratioDiags };
+}
+
+/**
+ * Evaluate a power series partial sum Sₙ(x) = Σ_{k=0}^{n} aₖ (x - c)^k.
+ */
+export function powerSeriesEvaluate(
+  coefficients: (k: number) => number,
+  center: number,
+  x: number,
+  n: number,
+): number {
+  const dx = x - center;
+  let sum = 0;
+  let power = 1; // (x-c)^0 = 1
+
+  for (let k = 0; k <= n; k++) {
+    const ak = coefficients(k);
+    if (isFinite(ak) && isFinite(power)) {
+      sum += ak * power;
+    }
+    power *= dx;
+  }
+
+  return sum;
+}
+
+/**
+ * Compute the differentiated power series coefficients.
+ * If aₙ are the original coefficients, returns bₙ = (n+1) aₙ₊₁.
+ */
+export function differentiateCoefficients(
+  coefficients: (n: number) => number,
+): (n: number) => number {
+  return (n: number) => (n + 1) * coefficients(n + 1);
+}
+
+/**
+ * Compute the integrated power series coefficients.
+ * If aₙ are the original coefficients, returns bₙ = aₙ₋₁/n for n ≥ 1, b₀ = 0.
+ */
+export function integrateCoefficients(
+  coefficients: (n: number) => number,
+): (n: number) => number {
+  return (n: number) => {
+    if (n === 0) return 0;
+    return coefficients(n - 1) / n;
+  };
+}
+
 // ── Re-exports for convenience ──────────────────────────────
 
 export { generateSequence, computeEpsilonN } from './limits';
