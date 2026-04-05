@@ -22,7 +22,7 @@
 
     { "id": "series-convergence", "label": "Series Convergence & Tests", "domain": "series-approximation", "status": "published", "url": "/topics/series-convergence" },
     { "id": "power-taylor-series", "label": "Power Series & Taylor Series", "domain": "series-approximation", "status": "published", "url": "/topics/power-taylor-series" },
-    { "id": "fourier-series", "label": "Fourier Series & Orthogonal Expansions", "domain": "series-approximation", "status": "planned", "url": "/topics/fourier-series" },
+    { "id": "fourier-series", "label": "Fourier Series & Orthogonal Expansions", "domain": "series-approximation", "status": "published", "url": "/topics/fourier-series" },
     { "id": "approximation-theory", "label": "Approximation Theory", "domain": "series-approximation", "status": "planned", "url": "/topics/approximation-theory" },
 
     { "id": "first-order-odes", "label": "First-Order ODEs & Existence Theorems", "domain": "odes", "status": "planned", "url": "/topics/first-order-odes" },
@@ -81,6 +81,9 @@
     { "source": "series-convergence", "target": "power-taylor-series" },
     { "source": "mean-value-taylor", "target": "power-taylor-series" },
     { "source": "power-taylor-series", "target": "fourier-series" },
+    { "source": "riemann-integral", "target": "fourier-series" },
+    { "source": "uniform-convergence", "target": "fourier-series" },
+    { "source": "series-convergence", "target": "fourier-series" },
     { "source": "fourier-series", "target": "approximation-theory" },
     { "source": "uniform-convergence", "target": "approximation-theory" },
 

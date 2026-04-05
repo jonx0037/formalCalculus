@@ -1,0 +1,492 @@
+---
+title: "Fourier Series & Orthogonal Expansions"
+subtitle: "From local Taylor approximation to global periodic decomposition. The trigonometric basis {1, cos nx, sin nx} is orthogonal — making Fourier coefficients computable by inner products and Fourier partial sums the best L² approximation. But convergence at discontinuities reveals the Gibbs phenomenon: a 9% overshoot that never goes away."
+status: "published"
+difficulty: "intermediate"
+prerequisites:
+  - "power-taylor-series"
+  - "riemann-integral"
+  - "uniform-convergence"
+  - "series-convergence"
+tags:
+  - "calculus"
+  - "series"
+  - "fourier-series"
+  - "orthogonal-expansions"
+  - "trigonometric-series"
+  - "inner-product"
+  - "gibbs-phenomenon"
+  - "parseval"
+domain: "series-approximation"
+videoId: null
+notebookPath: "notebooks/fourier-series/19_fourier_series.ipynb"
+githubUrl: "https://github.com/jonx0037/formalCalculus/blob/main/src/content/topics/fourier-series.mdx"
+datePublished: 2026-05-29
+estimatedReadTime: 55
+abstract: "A Fourier series represents a periodic function f as a trigonometric sum f(x) ~ a₀/2 + Σ(aₙcos(nx) + bₙsin(nx)), where the coefficients aₙ = (1/π)∫f(x)cos(nx)dx and bₙ = (1/π)∫f(x)sin(nx)dx are computed by integrating f against the basis functions. The trigonometric system {1, cos(nx), sin(nx)} is orthogonal under the L²[-π,π] inner product ⟨f,g⟩ = (1/π)∫f(x)g(x)dx — this orthogonality is what makes the coefficients computable as inner products and the Fourier partial sum Sₙ(x) the best L² approximation among all trigonometric polynomials of degree ≤ n. Bessel's inequality bounds the total energy of the coefficients by the energy of f; Parseval's identity holds with equality when the trigonometric system is complete. The Riemann-Lebesgue lemma guarantees aₙ,bₙ → 0, and the rate of decay is governed by the smoothness of f: C^k functions have coefficients decaying as O(1/n^k), while discontinuous functions decay only as O(1/n). Dirichlet's theorem establishes pointwise convergence to (f(x⁺) + f(x⁻))/2 for piecewise-smooth functions. At discontinuities, the Gibbs phenomenon produces an overshoot of approximately 9% that persists at every finite partial sum — a fundamental limitation of trigonometric approximation at jumps. Term-by-term integration of a Fourier series is always valid, but differentiation requires stronger regularity. In machine learning, Fourier analysis underlies positional encodings in transformers (sinusoidal basis functions for encoding sequence position), random Fourier features for kernel approximation, spectral normalization for training stability, and signal processing in convolutional architectures."
+formalmlConnections:
+  - topic: "gradient-descent"
+    site: "formalml"
+    relationship: "Random Fourier Features approximate shift-invariant kernels k(x−y) using random trigonometric functions z(x) = √(2/D)cos(ωᵀx + b). The kernel equals the Fourier transform of its spectral measure — random features are Monte Carlo estimates of Fourier coefficients."
+  - topic: "spectral-theorem"
+    site: "formalml"
+    relationship: "The Fourier decomposition f = Σ⟨f,eₙ⟩eₙ is the prototype for the spectral theorem for compact self-adjoint operators. The trigonometric system is the eigenbasis of the differentiation operator on the circle, and Fourier coefficients are eigencoordinates."
+  - topic: "information-geometry"
+    site: "formalml"
+    relationship: "Score functions in exponential families decompose into orthogonal components via the Fisher information inner product. The orthogonal projection structure of Fourier analysis carries over to the geometry of statistical manifolds."
+  - topic: "pac-learning"
+    site: "formalml"
+    relationship: "Fourier analysis on Boolean functions {−1,1}ⁿ uses Fourier coefficients f̂(S) = E[f(x)χ_S(x)] — the discrete analog of the continuous Fourier coefficients developed here. The KKL inequality and noise sensitivity bounds are proved via Fourier-analytic methods."
+connections:
+  - topic: "power-taylor-series"
+    relationship: "Power series use the monomial basis {xⁿ} for local approximation around a center c with radius of convergence R. Fourier series use the trigonometric basis {1, cos(nx), sin(nx)} for global periodic approximation on [−π, π]. The conceptual shift from local to global is the central theme of Topic 19."
+  - topic: "riemann-integral"
+    relationship: "Fourier coefficients aₙ and bₙ are computed by Riemann integrals of f against cos(nx) and sin(nx). The inner product ⟨f,g⟩ = (1/π)∫f(x)g(x)dx is defined via the Riemann integral. Every Fourier coefficient computation is an integral computation."
+  - topic: "uniform-convergence"
+    relationship: "The Weierstrass M-test (Topic 4) establishes uniform convergence of Fourier series when coefficient decay is fast enough: if |aₙ|, |bₙ| ≤ Mₙ and Σ Mₙ < ∞, the Fourier series converges uniformly. The interchange theorems justify term-by-term integration."
+  - topic: "series-convergence"
+    relationship: "Bessel's inequality says Σ(aₙ² + bₙ²) converges — a series convergence statement about the coefficient sequence. The comparison test bounds the decay rates of coefficient sequences. The Riemann-Lebesgue lemma (aₙ → 0) is the Fourier analog of the divergence test's necessary condition."
+  - topic: "improper-integrals"
+    relationship: "The Riemann-Lebesgue lemma connects to improper integrals: ∫₋∞^∞ f(x)cos(ωx)dx → 0 as ω → ∞ for absolutely integrable f. Fourier coefficients on [−π,π] are the periodic version of this principle."
+references:
+  - type: "book"
+    title: "Principles of Mathematical Analysis"
+    authors: "Rudin"
+    year: 1976
+    note: "Chapter 8 — Fourier series, orthogonality, Parseval's theorem, and the Dirichlet kernel"
+  - type: "book"
+    title: "Fourier Analysis: An Introduction"
+    authors: "Stein & Shakarchi"
+    year: 2003
+    note: "Chapters 2-3 — the definitive modern treatment of Fourier series convergence, Gibbs phenomenon, and applications"
+  - type: "book"
+    title: "Understanding Analysis"
+    authors: "Abbott"
+    year: 2015
+    note: "Chapter 8 — Fourier series with emphasis on pointwise vs. uniform convergence and the role of the inner product"
+  - type: "book"
+    title: "Real Analysis: Modern Techniques and Their Applications"
+    authors: "Folland"
+    year: 1999
+    note: "Section 8.2 — Fourier series in the L² framework, Parseval's identity, and completeness of the trigonometric system"
+  - type: "book"
+    title: "Calculus"
+    authors: "Spivak"
+    year: 2008
+    note: "Chapter 15 — trigonometric functions and their orthogonality, with careful treatment of Fourier coefficient computation"
+  - type: "paper"
+    title: "Attention Is All You Need"
+    authors: "Vaswani, Shazeer, Parmar, Uszkoreit, Jones, Gomez, Kaiser & Polosukhin"
+    year: 2017
+    url: "https://arxiv.org/abs/1706.03762"
+    note: "Sinusoidal positional encodings PE(pos, 2i) = sin(pos/10000^(2i/d)) use the Fourier basis to encode sequence position — a direct application of the orthogonal trigonometric system to representation learning."
+  - type: "paper"
+    title: "Random Features for Large-Scale Kernel Machines"
+    authors: "Rahimi & Recht"
+    year: 2007
+    url: "https://papers.nips.cc/paper/2007/hash/013a006f03dbc5392effeb8f18fda755-Abstract.html"
+    note: "Random Fourier Features approximate shift-invariant kernels via Monte Carlo sampling of Fourier coefficients: z(x) = √(2/D)cos(ωᵀx + b) with ω drawn from the spectral distribution."
+---
+
+import TheoremBlock from '../../components/ui/TheoremBlock.astro';
+import FourierSeriesExplorer from '../../components/viz/FourierSeriesExplorer.tsx';
+import GibbsPhenomenonExplorer from '../../components/viz/GibbsPhenomenonExplorer.tsx';
+import CoefficientDecayExplorer from '../../components/viz/CoefficientDecayExplorer.tsx';
+import FourierInnerProductExplorer from '../../components/viz/FourierInnerProductExplorer.tsx';
+
+## 1. Overview & Motivation — From Local to Global Approximation
+
+[Power Series & Taylor Series](/topics/power-taylor-series) showed that Taylor series $\sum f^{(n)}(c)/n! \cdot (x-c)^n$ approximate a function near a center $c$ using the monomial basis $\{1, x, x^2, \ldots\}$. But Taylor series are intrinsically *local* — the radius of convergence $R$ limits how far from $c$ the approximation reaches. And if $f$ has a discontinuity, the Taylor series at any interior point has $R = 0$ at the jump — Taylor theory cannot even see the discontinuity.
+
+What if we want to approximate a function on an *entire interval*? And what if the function has discontinuities — which automatically destroy Taylor convergence?
+
+Fourier series replace the monomial basis with the trigonometric basis $\{1, \cos x, \sin x, \cos 2x, \sin 2x, \ldots\}$. Instead of matching derivatives at a single point (Taylor), a Fourier series matches the function *globally* by decomposing it into periodic components at different frequencies. The coefficients are computed not from derivatives at a center, but from integrals over the entire period — an inherently global operation.
+
+**Why this matters in ML.** Transformer architectures encode sequence position using sinusoidal functions: $\text{PE}(\text{pos}, 2i) = \sin(\text{pos}/10000^{2i/d_{\text{model}}})$. This is a Fourier basis — each dimension of the positional encoding is a trigonometric function at a different frequency. The orthogonality of the Fourier basis means each frequency carries independent information, and the smooth structure allows the model to generalize to sequence lengths unseen during training.
+
+This topic sits at the intersection of four prerequisites. [The Riemann Integral & FTC](/topics/riemann-integral) provides the integration machinery for computing Fourier coefficients. [Uniform Convergence](/topics/uniform-convergence) provides the framework for analyzing when Fourier series converge uniformly. [Series Convergence & Tests](/topics/series-convergence) provides the convergence tests for bounding coefficient decay rates. [Power Series & Taylor Series](/topics/power-taylor-series) provides the comparison — local Taylor vs. global Fourier — that motivates the entire discussion.
+
+![Fourier coefficients for three standard waveforms — square wave (odd harmonics at O(1/n)), sawtooth (all harmonics at O(1/n)), and triangle wave (odd harmonics at O(1/n²))](/images/topics/fourier-series/fourier-coefficients.png)
+
+## 2. Trigonometric Polynomials & Fourier Coefficients
+
+<TheoremBlock type="definition" number={1} title="Trigonometric Polynomial">
+A **trigonometric polynomial of degree $n$** is a function of the form
+
+$$T_n(x) = \frac{a_0}{2} + \sum_{k=1}^{n}(a_k \cos kx + b_k \sin kx)$$
+
+where $a_0, a_1, \ldots, a_n, b_1, \ldots, b_n$ are real constants. The factor $\frac{1}{2}$ on $a_0$ is a normalization convention that simplifies the coefficient formulas below.
+</TheoremBlock>
+
+<TheoremBlock type="definition" number={2} title="Fourier Coefficients">
+For a function $f$ integrable on $[-\pi, \pi]$, the **Fourier coefficients** of $f$ are
+
+$$a_n = \frac{1}{\pi}\int_{-\pi}^{\pi} f(x)\cos(nx)\,dx \quad \text{for } n \geq 0$$
+
+$$b_n = \frac{1}{\pi}\int_{-\pi}^{\pi} f(x)\sin(nx)\,dx \quad \text{for } n \geq 1$$
+</TheoremBlock>
+
+<TheoremBlock type="definition" number={3} title="Fourier Series">
+The **Fourier series** of $f$ is the formal trigonometric series
+
+$$f(x) \sim \frac{a_0}{2} + \sum_{n=1}^{\infty}(a_n \cos nx + b_n \sin nx)$$
+
+The symbol $\sim$ (rather than $=$) indicates that convergence has not yet been established — the series may or may not converge, and if it converges, it may or may not converge to $f$.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={1} title="From local to global">
+Taylor coefficients $f^{(n)}(c)/n!$ are computed from derivatives at a single point — a local operation. Fourier coefficients $a_n, b_n$ are computed by integrating over the entire period $[-\pi, \pi]$ — a global operation. This is why the Fourier series can represent discontinuous functions that the Taylor series cannot: the coefficients "see" the whole function, not just the behavior at one point.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={1} title="The square wave">
+Let $f(x) = \text{sgn}(x)$ for $x \in (-\pi, \pi)$ — the square wave that takes value $+1$ for $x > 0$ and $-1$ for $x < 0$. Since $f$ is odd, $a_n = 0$ for all $n$. Computing $b_n$:
+
+$$b_n = \frac{1}{\pi}\int_{-\pi}^{\pi} \text{sgn}(x)\sin(nx)\,dx = \frac{2}{\pi}\int_0^{\pi}\sin(nx)\,dx = \frac{2}{n\pi}(1-\cos n\pi) = \frac{2}{n\pi}(1-(-1)^n)$$
+
+So $b_n = \frac{4}{n\pi}$ for $n$ odd and $0$ for $n$ even. The Fourier series is
+
+$$\text{sgn}(x) \sim \frac{4}{\pi}\sum_{k=0}^{\infty}\frac{\sin((2k+1)x)}{2k+1} = \frac{4}{\pi}\left(\sin x + \frac{\sin 3x}{3} + \frac{\sin 5x}{5} + \cdots\right)$$
+</TheoremBlock>
+
+<TheoremBlock type="example" number={2} title="The sawtooth wave">
+Let $f(x) = x$ for $x \in (-\pi, \pi)$. Again $f$ is odd, so $a_n = 0$. Integration by parts gives
+
+$$b_n = \frac{2}{\pi}\int_0^{\pi} x\sin(nx)\,dx = \frac{2(-1)^{n+1}}{n}$$
+
+The Fourier series is $x \sim 2\sum_{n=1}^{\infty}\frac{(-1)^{n+1}}{n}\sin(nx) = 2\left(\sin x - \frac{\sin 2x}{2} + \frac{\sin 3x}{3} - \cdots\right)$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={3} title="The triangle wave">
+Let $f(x) = |x|$ for $x \in (-\pi, \pi)$. This is even, so $b_n = 0$. We get $a_0 = \pi$ and for $n \geq 1$:
+
+$$a_n = \frac{2}{\pi}\int_0^{\pi} x\cos(nx)\,dx = \frac{2}{n^2\pi}((-1)^n - 1)$$
+
+So $a_n = -\frac{4}{n^2\pi}$ for $n$ odd and $0$ for $n$ even. The series is
+
+$$|x| \sim \frac{\pi}{2} - \frac{4}{\pi}\sum_{k=0}^{\infty}\frac{\cos((2k+1)x)}{(2k+1)^2}$$
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={2} title="Why trigonometric functions?">
+The trigonometric basis $\{\cos nx, \sin nx\}$ is natural for periodic functions because: (i) they are the only bounded solutions of $y'' + n^2 y = 0$ — eigenfunctions of $-d^2/dx^2$ with eigenvalue $n^2$; (ii) they are periodic with period $2\pi/n$, so sums of such functions are $2\pi$-periodic; and (iii) they are orthogonal under the natural inner product — as the next section demonstrates.
+</TheoremBlock>
+
+## 3. The Inner Product & Orthogonality
+
+The reason Fourier coefficients take the simple form $a_n = \langle f, \cos nx \rangle$ is that the trigonometric system is *orthogonal*. This section introduces the inner product that makes this work — a genuinely new piece of mathematical machinery that does not appear in power series theory.
+
+<TheoremBlock type="definition" number={4} title="Inner Product on L²[-π, π]">
+For functions $f, g$ integrable on $[-\pi, \pi]$, define the **inner product**
+
+$$\langle f, g \rangle = \frac{1}{\pi}\int_{-\pi}^{\pi} f(x)\, g(x)\,dx$$
+
+and the corresponding **norm** $\|f\| = \sqrt{\langle f, f \rangle} = \sqrt{\frac{1}{\pi}\int_{-\pi}^{\pi} f(x)^2\,dx}$.
+
+The factor $1/\pi$ is a normalization that makes $\|\cos nx\| = 1$ and $\|\sin nx\| = 1$ for $n \geq 1$, while $\|1/\sqrt{2}\| = 1$.
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={1} title="Orthogonality of the Trigonometric System">
+The functions $\{1/\sqrt{2}, \cos x, \cos 2x, \ldots, \sin x, \sin 2x, \ldots\}$ form an **orthonormal system** under $\langle \cdot, \cdot \rangle$:
+
+$$\langle \cos mx, \cos nx \rangle = \delta_{mn}, \quad \langle \sin mx, \sin nx \rangle = \delta_{mn}, \quad \langle \cos mx, \sin nx \rangle = 0$$
+
+for all $m, n \geq 1$, and $\langle 1, \cos nx \rangle = 0$, $\langle 1, \sin nx \rangle = 0$ for $n \geq 1$, where $\delta_{mn}$ is the Kronecker delta.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+By direct computation using product-to-sum formulas. For $\langle \cos mx, \cos nx \rangle$ with $m \neq n$:
+
+$$\frac{1}{\pi}\int_{-\pi}^{\pi}\cos(mx)\cos(nx)\,dx = \frac{1}{2\pi}\int_{-\pi}^{\pi}[\cos((m-n)x) + \cos((m+n)x)]\,dx = 0$$
+
+since both $\cos((m-n)x)$ and $\cos((m+n)x)$ integrate to zero over a full period (as $m \pm n \neq 0$). For $m = n$:
+
+$$\frac{1}{\pi}\int_{-\pi}^{\pi}\cos^2(nx)\,dx = \frac{1}{2\pi}\int_{-\pi}^{\pi}[1 + \cos(2nx)]\,dx = 1$$
+
+The $\langle \sin mx, \sin nx \rangle$ and $\langle \cos mx, \sin nx \rangle$ cases follow similarly using the product-to-sum identities $\sin\alpha\sin\beta = \frac{1}{2}[\cos(\alpha-\beta) - \cos(\alpha+\beta)]$ and $\cos\alpha\sin\beta = \frac{1}{2}[\sin(\alpha+\beta) - \sin(\alpha-\beta)]$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={5} title="Orthogonality by direct computation">
+Verify: $\langle \cos 2x, \sin 3x \rangle = \frac{1}{\pi}\int_{-\pi}^{\pi}\cos(2x)\sin(3x)\,dx = \frac{1}{2\pi}\int_{-\pi}^{\pi}[\sin(5x) + \sin(x)]\,dx = 0$. This is a specific instance of the general orthogonality: cosines and sines of different (or same) frequencies are always orthogonal.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={3} title="Fourier coefficients as projections">
+Orthogonality gives a coordinate formula. If $f = \frac{a_0}{2} + \sum(a_n \cos nx + b_n \sin nx)$, then taking the inner product with $\cos mx$ and using orthogonality:
+
+$$\langle f, \cos mx \rangle = a_m$$
+
+Similarly $\langle f, \sin mx \rangle = b_m$. The Fourier coefficients are the **orthogonal projections** of $f$ onto each basis function — exactly as vector components are dot products with unit vectors in $\mathbb{R}^n$. The coefficient formulas in Definition 2 are not ad hoc; they are *forced* by orthogonality.
+</TheoremBlock>
+
+Try the explorer below — select two basis functions and watch how their pointwise product integrates to exactly 0 when the frequencies differ (the positive and negative areas cancel), and to exactly 1 when the frequencies match (the product is always non-negative).
+
+<FourierInnerProductExplorer client:visible />
+
+![Six-panel orthogonality visualization — three orthogonal pairs showing cancellation of positive and negative areas, three diagonal pairs showing all-positive area](/images/topics/fourier-series/orthogonality.png)
+
+## 4. Fourier Partial Sums & Pointwise Convergence
+
+<TheoremBlock type="definition" number={5} title="Fourier Partial Sum">
+The **$n$th Fourier partial sum** of $f$ is
+
+$$S_n(x) = \frac{a_0}{2} + \sum_{k=1}^{n}(a_k \cos kx + b_k \sin kx)$$
+
+This can be written as a convolution: $S_n(x) = \frac{1}{\pi}\int_{-\pi}^{\pi} f(t)\, D_n(x - t)\,dt$ where
+
+$$D_n(t) = \frac{1}{2} + \sum_{k=1}^{n}\cos(kt) = \frac{\sin\left((n+\tfrac{1}{2})t\right)}{2\sin(t/2)}$$
+
+is the **Dirichlet kernel**.
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={3} title="The Riemann-Lebesgue Lemma">
+If $f$ is integrable on $[-\pi, \pi]$, then $a_n \to 0$ and $b_n \to 0$ as $n \to \infty$.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+For a step function $g = c \cdot \mathbf{1}_{[a,b]}$, direct computation gives $\int_a^b c\cos(nx)\,dx = c[\sin(nb) - \sin(na)]/n \to 0$. Every integrable function can be approximated in the $L^1$ norm by step functions (from the definition of the [Riemann integral](/topics/riemann-integral)). For general $f$: given $\varepsilon > 0$, choose a step function $g$ with $\int|f - g| < \varepsilon$. Then
+
+$$|a_n(f)| \leq |a_n(f - g)| + |a_n(g)| \leq \frac{1}{\pi}\int|f - g| + |a_n(g)| < \frac{\varepsilon}{\pi} + |a_n(g)|$$
+
+Since $a_n(g) \to 0$, we get $\limsup|a_n(f)| \leq \varepsilon/\pi$. Since $\varepsilon$ is arbitrary, $a_n(f) \to 0$. The argument for $b_n$ is identical.
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={4} title="Dirichlet's Convergence Theorem">
+If $f$ is **piecewise smooth** on $[-\pi, \pi]$ (meaning $f$ and $f'$ are piecewise continuous), then the Fourier series converges pointwise:
+
+$$S_n(x) \to \frac{1}{2}[f(x^+) + f(x^-)] \quad \text{for every } x$$
+
+At points of continuity, this gives $S_n(x) \to f(x)$. At jump discontinuities, the partial sums converge to the average of the left and right limits.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={4} title="Square wave convergence">
+At $x = 0$ (discontinuity of $\text{sgn}(x)$), Dirichlet's theorem gives $S_n(0) \to \frac{1}{2}[f(0^+) + f(0^-)] = \frac{1}{2}[1 + (-1)] = 0$. At $x = \pi/2$ (point of continuity), $S_n(\pi/2) \to f(\pi/2) = 1$.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={4} title="The Dirichlet kernel and summation">
+The Dirichlet kernel $D_n(t) = \sin((n+\frac{1}{2})t)/(2\sin(t/2))$ is the analog of the "evaluation functional" for Fourier series. As $n \to \infty$, $D_n$ concentrates near $t = 0$ while oscillating rapidly elsewhere — a nascent delta function. The increasingly wild oscillations of $D_n$ are what cause convergence difficulties (including the Gibbs phenomenon in the next section). Compare with power series, where no such kernel appears because the monomial basis is not orthogonal under an integral inner product.
+</TheoremBlock>
+
+Drag the $n$ slider to watch the Fourier partial sums converge to each target function. Notice how convergence is fast for the smooth periodic function but painfully slow near the square wave's discontinuities.
+
+<FourierSeriesExplorer client:visible />
+
+![Fourier partial sums converging for three functions at n = 1, 5, 20](/images/topics/fourier-series/partial-sum-convergence.png)
+
+## 5. The Gibbs Phenomenon
+
+This is the most visually striking result in Fourier theory. Near a jump discontinuity, Fourier partial sums exhibit an overshoot that *does not vanish* as $n \to \infty$. The partial sums converge pointwise (Dirichlet's theorem), but the maximum value near the jump overshoots by approximately 9%.
+
+<TheoremBlock type="proposition" number={2} title="The Gibbs Phenomenon">
+Let $f$ have a jump discontinuity at $x_0$ with jump height $[f] = f(x_0^+) - f(x_0^-)$. Then the maximum of $S_n(x)$ near $x_0$ overshoots the target value $f(x_0^+)$ by approximately
+
+$$\frac{[f]}{2}\left(\frac{2}{\pi}\int_0^{\pi}\frac{\sin t}{t}\,dt - 1\right) \approx 0.0895 \cdot [f]$$
+
+The overshoot ratio $\frac{2}{\pi}\int_0^{\pi}\frac{\sin t}{t}\,dt \approx 1.1790$ is independent of $n$ — increasing $n$ compresses the overshoot into a narrower region near $x_0$ but does not reduce its height.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={9} title="Gibbs overshoot for the square wave">
+The square wave $f(x) = \text{sgn}(x)$ has jump $[f] = 2$ at $x = 0$. The maximum of $S_n(x)$ near $x = 0^+$ approaches approximately $1 + 2 \times 0.0895 = 1.179$ as $n \to \infty$, not $1$. The location of the maximum moves toward $x = 0$ as $n$ increases (at approximately $x = \pi/n$), but its height remains $\approx 1.179$.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={5} title="Gibbs vs. uniform convergence">
+The Gibbs phenomenon means that $S_n \to f$ is *not* uniform near a jump discontinuity, even though it is pointwise. This is fundamentally different from power series, where convergence inside the radius of convergence is uniform on compact subsets ([Power Series & Taylor Series](/topics/power-taylor-series), Theorem 4). For Fourier series, uniform convergence requires global smoothness (see Section 7).
+</TheoremBlock>
+
+Increase $n$ in the explorer below and watch: the overshoot region gets narrower but the peak height stays at $\approx 1.179$. The right panel confirms that the overshoot ratio converges to the Gibbs constant.
+
+<GibbsPhenomenonExplorer client:visible />
+
+![Gibbs phenomenon — zoomed view of overshoot at the square wave discontinuity for n = 10, 50, 200, and the overshoot ratio converging to ≈ 1.179](/images/topics/fourier-series/gibbs-phenomenon.png)
+
+## 6. Coefficient Decay & Smoothness
+
+The central principle of Fourier analysis: **smoothness of $f$ controls the decay rate of Fourier coefficients**, and conversely.
+
+<TheoremBlock type="proposition" number={1} title="Coefficient Decay and Smoothness">
+**(a)** If $f$ is $C^k$ (i.e., $k$ times continuously differentiable) and $2\pi$-periodic, then $a_n, b_n = O(1/n^k)$ as $n \to \infty$. In particular:
+- Discontinuous $\Rightarrow$ $O(1/n)$
+- $C^1 \Rightarrow O(1/n^2)$
+- $C^\infty \Rightarrow$ faster than any polynomial (superpolynomial decay)
+
+**(b)** The mechanism: integration by parts $k$ times transfers $k$ powers of $n$ from the coefficient to the function. Specifically, if $f$ is $C^k$ and periodic, then the Fourier coefficients of $f^{(k)}$ satisfy $(f^{(k)})^\wedge(n) = (in)^k \hat{f}(n)$, so $|c_n| = |c_n^{(k)}|/n^k$ where $c_n^{(k)}$ are the (bounded) coefficients of $f^{(k)}$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={10} title="Three decay regimes">
+**(a)** The square wave has $b_n = O(1/n)$ — discontinuous function, slowest possible decay.
+
+**(b)** The triangle wave has $a_n = O(1/n^2)$ — continuous but not differentiable (corner at $x = 0$), one degree faster.
+
+**(c)** The smooth periodic function $f(x) = 1/(2 - \cos x)$ has coefficients that decay exponentially: $a_n = O(r^n)$ with $r = 2 - \sqrt{3} \approx 0.268$. This is the Fourier counterpart of the smooth-vs-analytic distinction from [Power Series & Taylor Series](/topics/power-taylor-series).
+</TheoremBlock>
+
+Compare the three decay regimes in the explorer. On a log scale, $O(1/n)$ decay is a straight line with slope $-1$, $O(1/n^2)$ has slope $-2$, and exponential decay drops off a cliff.
+
+<CoefficientDecayExplorer client:visible />
+
+![Coefficient decay on log scale for three smoothness classes — discontinuous (1/n), C⁰ (1/n²), and analytic (exponential)](/images/topics/fourier-series/coefficient-decay.png)
+
+## 7. Uniform Convergence & $C^1$ Functions
+
+<TheoremBlock type="theorem" number={5} title="Uniform Convergence under Smoothness">
+If $f$ is $C^1$ (continuously differentiable) and $2\pi$-periodic, then the Fourier series of $f$ converges **uniformly** to $f$.
+
+More generally, if $f$ is continuous, $2\pi$-periodic, and the Fourier coefficients satisfy $\sum_{n=1}^{\infty}(|a_n| + |b_n|) < \infty$, then the Fourier series converges uniformly by the Weierstrass M-test from [Uniform Convergence](/topics/uniform-convergence).
+</TheoremBlock>
+
+<TheoremBlock type="example" number={11} title="Triangle wave — uniform but slow">
+The triangle wave $f(x) = |x|$ on $(-\pi, \pi)$ has $a_n = O(1/n^2)$. Since $\sum 1/n^2 < \infty$ ($p$-series with $p = 2$ from [Series Convergence & Tests](/topics/series-convergence)), the Fourier series converges uniformly to $f$ by the Weierstrass M-test. There is no Gibbs phenomenon because $f$ is continuous (though not differentiable). But the convergence rate is $O(1/n)$ in the sup-norm — much slower than exponential convergence for smooth functions.
+</TheoremBlock>
+
+## 8. Bessel's Inequality & Parseval's Identity
+
+Energy conservation in the frequency domain. Bessel's inequality says the energy in the Fourier coefficients cannot exceed the energy in $f$. Parseval's identity says equality holds — no energy is lost.
+
+<TheoremBlock type="theorem" number={2} title="Bessel's Inequality">
+For any integrable $f$ on $[-\pi, \pi]$,
+
+$$\frac{a_0^2}{2} + \sum_{n=1}^{N}(a_n^2 + b_n^2) \leq \frac{1}{\pi}\int_{-\pi}^{\pi} f(x)^2\,dx = \|f\|^2$$
+
+for every $N$. Taking $N \to \infty$: $\frac{a_0^2}{2} + \sum_{n=1}^{\infty}(a_n^2 + b_n^2) \leq \|f\|^2$.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+Expand $\|f - S_N\|^2 \geq 0$:
+
+$$0 \leq \frac{1}{\pi}\int_{-\pi}^{\pi}\bigl(f(x) - S_N(x)\bigr)^2\,dx = \|f\|^2 - 2\langle f, S_N \rangle + \|S_N\|^2$$
+
+By orthogonality, $\langle f, S_N \rangle = \frac{a_0^2}{2} + \sum_{n=1}^{N}(a_n^2 + b_n^2)$ and $\|S_N\|^2 = \frac{a_0^2}{2} + \sum_{n=1}^{N}(a_n^2 + b_n^2)$. Substituting:
+
+$$0 \leq \|f\|^2 - \frac{a_0^2}{2} - \sum_{n=1}^{N}(a_n^2 + b_n^2) \qquad \square$$
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={6} title="Parseval's Identity">
+If $f$ is square-integrable on $[-\pi, \pi]$, then
+
+$$\frac{a_0^2}{2} + \sum_{n=1}^{\infty}(a_n^2 + b_n^2) = \|f\|^2 = \frac{1}{\pi}\int_{-\pi}^{\pi} f(x)^2\,dx$$
+
+Equality holds in Bessel's inequality: **no energy is lost** in the Fourier decomposition.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={6} title="Bessel verification for the square wave">
+The square wave $\text{sgn}(x)$ has $\|f\|^2 = \frac{1}{\pi}\int_{-\pi}^{\pi} 1\,dx = 2$. With $b_n = 4/(n\pi)$ for odd $n$, Parseval gives
+
+$$\sum_{k=0}^{\infty} \frac{16}{(2k+1)^2\pi^2} = 2$$
+
+which rearranges to $\sum_{k=0}^{\infty}\frac{1}{(2k+1)^2} = \frac{\pi^2}{8}$ — a non-trivial identity derived purely from Parseval.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={7} title="Parseval for the sawtooth — the Basel problem">
+The sawtooth $f(x) = x$ has $\|f\|^2 = \frac{1}{\pi}\int_{-\pi}^{\pi} x^2\,dx = \frac{2\pi^2}{3}$. With $b_n = 2(-1)^{n+1}/n$, Parseval gives
+
+$$\sum_{n=1}^{\infty}\frac{4}{n^2} = \frac{2\pi^2}{3}$$
+
+which yields $\sum_{n=1}^{\infty}\frac{1}{n^2} = \frac{\pi^2}{6}$ — the **Basel problem**, one of the most celebrated results in analysis, solved here by Fourier theory.
+</TheoremBlock>
+
+![Cumulative coefficient energy approaching the norm squared, and Parseval yielding π²/6 and π²/8](/images/topics/fourier-series/bessel-parseval.png)
+
+## 9. Term-by-Term Integration & Differentiation Caveats
+
+<TheoremBlock type="theorem" number={7} title="Term-by-Term Integration of Fourier Series">
+If $f$ is integrable on $[-\pi, \pi]$ with Fourier series $f(x) \sim \frac{a_0}{2} + \sum(a_n \cos nx + b_n \sin nx)$, then for any $x \in [-\pi, \pi]$:
+
+$$\int_{-\pi}^{x} f(t)\,dt = \frac{a_0}{2}(x + \pi) + \sum_{n=1}^{\infty}\left(\frac{a_n \sin nx}{n} + \frac{b_n(1 - \cos nx)}{n}\right)$$
+
+The integrated series converges **uniformly**, even if the original Fourier series does not.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+The integrated series has coefficients $O(a_n/n)$ and $O(b_n/n)$. By Bessel's inequality from Theorem 2, $\sum(a_n^2 + b_n^2) < \infty$. By Cauchy-Schwarz,
+
+$$\sum_{n=1}^{\infty}\left(\frac{|a_n|}{n} + \frac{|b_n|}{n}\right) \leq \sqrt{\sum(a_n^2 + b_n^2)} \cdot \sqrt{\sum \frac{1}{n^2}} < \infty$$
+
+The Weierstrass M-test from [Uniform Convergence](/topics/uniform-convergence) then gives uniform convergence.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={8} title="Integrating the square wave">
+Integrating $\text{sgn}(x) \sim \frac{4}{\pi}\sum_{k=0}^{\infty}\frac{\sin((2k+1)x)}{2k+1}$ from $-\pi$ to $x$ gives
+
+$$|x| - \pi \sim -\frac{4}{\pi}\sum_{k=0}^{\infty}\frac{1 - \cos((2k+1)x)}{(2k+1)^2}$$
+
+which converges *uniformly* — the integrated series of a non-uniformly convergent Fourier series is uniformly convergent. Integration improves convergence by one order.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={6} title="Differentiation caveats">
+Term-by-term *differentiation* of Fourier series is not generally valid. Differentiating the square wave's Fourier series gives $\frac{4}{\pi}\sum_{k=0}^{\infty}\cos((2k+1)x)$, which diverges everywhere. Differentiation multiplies the $n$th coefficient by $n$, making decay *worse*. For term-by-term differentiation to be valid, $f$ must be $C^1$ and periodic (so that $f'$ also has a convergent Fourier series). Compare with [power series](/topics/power-taylor-series), where differentiation preserves the radius of convergence — Fourier series are more delicate.
+</TheoremBlock>
+
+![Term-by-term integration: the integrated series converges uniformly even though the original does not](/images/topics/fourier-series/term-by-term-integration.png)
+
+## 10. The Complex Exponential Form
+
+<TheoremBlock type="remark" number={7} title="Complex exponential form">
+Using $\cos nx = (e^{inx} + e^{-inx})/2$ and $\sin nx = (e^{inx} - e^{-inx})/(2i)$, the Fourier series can be written
+
+$$f(x) \sim \sum_{n=-\infty}^{\infty} c_n e^{inx} \qquad \text{where} \quad c_n = \frac{1}{2\pi}\int_{-\pi}^{\pi} f(x)e^{-inx}\,dx$$
+
+The complex form is more compact and connects directly to the **Fourier transform** (the non-periodic analog, extending this to all of $\mathbb{R}$). In the complex form, Parseval's identity becomes $\sum_{n=-\infty}^{\infty}|c_n|^2 = \frac{1}{2\pi}\int_{-\pi}^{\pi}|f(x)|^2\,dx$.
+</TheoremBlock>
+
+## 11. Connections to ML — Positional Encodings, Spectral Methods, Signal Processing
+
+### 11.1. Sinusoidal positional encodings in transformers
+
+The Transformer architecture encodes sequence position using
+
+$$\text{PE}(\text{pos}, 2i) = \sin(\text{pos}/10000^{2i/d_{\text{model}}}), \qquad \text{PE}(\text{pos}, 2i+1) = \cos(\text{pos}/10000^{2i/d_{\text{model}}})$$
+
+This is a Fourier basis at geometrically spaced frequencies. The orthogonality of the trigonometric system means the encoding at each frequency carries independent positional information. The choice of sinusoidal functions (rather than polynomial functions of position) enables the model to attend to *relative* positions via linear transformations — because $\sin(a + b)$ and $\cos(a + b)$ are linear combinations of $\sin a, \cos a, \sin b, \cos b$.
+
+→ formalML: [PAC Learning](https://formalml.com/topics/pac-learning) — Fourier analysis on Boolean functions uses the same orthogonal decomposition structure.
+
+### 11.2. Random Fourier Features
+
+For shift-invariant kernels $k(x, y) = k(x - y)$, Bochner's theorem says $k(z) = \int e^{i\omega^T z}\,dp(\omega)$ for some probability measure $p$. Random Fourier Features approximate the kernel using random trigonometric functions:
+
+$$k(x, y) \approx z(x)^T z(y) \quad \text{where} \quad z(x) = \sqrt{2/D}\,[\cos(\omega_1^T x + b_1), \ldots, \cos(\omega_D^T x + b_D)]^T$$
+
+with $\omega_j \sim p$ and $b_j \sim \text{Uniform}[0, 2\pi]$. Each random feature samples one Fourier coefficient of the kernel.
+
+→ formalML: [Gradient Descent](https://formalml.com/topics/gradient-descent) — Random Fourier Features enable scalable kernel methods in optimization.
+
+### 11.3. Spectral normalization
+
+In GANs and deep networks, spectral normalization constrains the Lipschitz constant of each layer by dividing the weight matrix by its largest singular value. The singular values are the "spectral" (frequency-domain) quantities of the linear map — a generalization of Fourier analysis from functions to linear operators. Understanding Parseval's identity (energy conservation under the Fourier transform) motivates why spectral normalization preserves representational power while constraining capacity.
+
+### 11.4. Frequency-domain signal processing
+
+Convolutional neural networks process signals in the spatial domain, but the convolution theorem says $\widehat{f * g} = \hat{f} \cdot \hat{g}$ — convolution in the spatial domain is pointwise multiplication in the Fourier domain. Fast implementations of large-kernel convolutions use FFT to compute convolutions in $O(n \log n)$ rather than $O(n^2)$. The Fourier basis makes this possible because multiplication of Fourier coefficients is equivalent to function convolution.
+
+![ML connections — positional encodings, random Fourier features, spectral normalization, FFT convolution](/images/topics/fourier-series/ml-connections.png)
+
+## 12. Computational Notes
+
+**Fourier coefficient computation.** For explicit functions, compute $a_n$ and $b_n$ analytically when possible; otherwise, use numerical quadrature. The trapezoidal rule is especially accurate for periodic functions — it converges *exponentially* for smooth periodic integrands, a fact that is itself a consequence of Fourier theory (the quadrature error depends on the Fourier coefficient decay of the integrand).
+
+**The FFT.** The Fast Fourier Transform computes all $n$ discrete Fourier coefficients in $O(n \log n)$ operations, compared to $O(n^2)$ for direct computation. This is used in practice for signal processing, image analysis, and spectral methods in PDEs.
+
+**Gibbs mitigation.** Cesàro (Fejér) summation replaces $S_n$ with $\sigma_n = (S_0 + S_1 + \cdots + S_n)/(n+1)$, which converges uniformly even at discontinuities — the Gibbs overshoot is smoothed out by averaging. The Lanczos sigma factor provides another smoothing approach. These techniques are used in spectral methods for PDEs where Gibbs oscillations corrupt numerical solutions.
+
+![Computational verification — FFT coefficients vs analytic, and convergence rates for different smoothness classes](/images/topics/fourier-series/computational-verification.png)
+
+## 13. Connections & Further Reading
+
+**Prerequisites (live links):**
+
+- [Power Series & Taylor Series](/topics/power-taylor-series) — monomial basis $\{x^n\}$ for local approximation; Fourier series use trigonometric basis $\{1, \cos nx, \sin nx\}$ for global periodic approximation.
+- [The Riemann Integral & FTC](/topics/riemann-integral) — Fourier coefficients are Riemann integrals; the inner product $\langle f, g \rangle = (1/\pi)\int f\,g$ is defined via the integral.
+- [Uniform Convergence](/topics/uniform-convergence) — the Weierstrass M-test establishes uniform convergence of Fourier series; interchange theorems justify term-by-term integration.
+- [Series Convergence & Tests](/topics/series-convergence) — Bessel's inequality is a series convergence statement; comparison tests bound coefficient decay rates.
+- [Improper Integrals & Special Functions](/topics/improper-integrals) — the Riemann-Lebesgue lemma connects to improper integrals on $\mathbb{R}$.
+
+**Downstream within formalCalculus:**
+
+- **Approximation Theory** *(coming soon)* — Weierstrass approximation, Stone-Weierstrass, best approximation in $L^2$ and $C[a,b]$.
+- **Stability & Dynamical Systems** *(coming soon)* — Fourier modes as eigenfunctions of the Laplacian, spectral gap, and convergence rates.
+- **$L^p$ Spaces** *(coming soon)* — $L^2$ completeness and Fourier series as orthogonal expansions in Hilbert space.
+- **Inner Product & Hilbert Spaces** *(coming soon)* — the inner product defined here on $L^2[-\pi, \pi]$ is the prototype for abstract Hilbert space theory.
+
+**Forward links to formalml.com:**
+
+- → [Gradient Descent](https://formalml.com/topics/gradient-descent) — Random Fourier Features for kernel approximation
+- → [Spectral Theorem](https://formalml.com/topics/spectral-theorem) — Fourier decomposition as prototype of the spectral theorem
+- → [Information Geometry](https://formalml.com/topics/information-geometry) — orthogonal decomposition on statistical manifolds
+- → [PAC Learning](https://formalml.com/topics/pac-learning) — Fourier analysis on Boolean functions
