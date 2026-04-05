@@ -89,7 +89,7 @@ const geometric: PowerSeriesPreset = {
   endpointBehavior: { left: 'diverges', right: 'diverges' },
   analyticity: 'analytic-on-interval',
   tags: ['geometric', 'rational', 'R=1'],
-  mlNote: 'Neumann series (I−A)⁻¹ = Σ Aᵏ for ��A‖ < 1 in iterative solvers',
+  mlNote: 'Neumann series (I−A)⁻¹ = Σ Aᵏ for ‖A‖ < 1 in iterative solvers',
 };
 
 const exponential: PowerSeriesPreset = {
@@ -219,16 +219,21 @@ export function getPowerSeriesPresets(): PowerSeriesPreset[] {
 
 // ── Binomial preset factory ─────────────────────────────────
 
-/** Create a binomial series preset for a specific α value. */
+/** Create a binomial series preset for a specific α value.
+ * Endpoint convergence follows the classical criteria:
+ *   x = -1 (left):  converges if α > 0 or α is a non-negative integer
+ *   x = +1 (right): converges if α > -1 or α is a non-negative integer
+ */
 export function makeBinomialPreset(alpha: number): PowerSeriesPreset {
+  const terminates = Number.isInteger(alpha) && alpha >= 0;
   return {
     ...binomialSeries,
     label: `(1+x)^{${alpha}} = Σ C(${alpha},n) xⁿ`,
     coefficients: (n: number) => binomialCoeff(alpha, n),
     targetFunction: (x: number) => Math.pow(1 + x, alpha),
     endpointBehavior: {
-      left: alpha > 0 ? 'converges' : 'diverges',
-      right: alpha > 0 ? 'converges' : 'diverges',
+      left: terminates || alpha > 0 ? 'converges' : 'diverges',
+      right: terminates || alpha > -1 ? 'converges' : 'diverges',
     },
   };
 }

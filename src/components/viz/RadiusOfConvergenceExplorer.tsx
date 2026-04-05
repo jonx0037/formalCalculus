@@ -226,7 +226,8 @@ export default function RadiusOfConvergenceExplorer() {
 
       if (diagnostics.length > 1) {
         // X scale: n
-        const xExtent = d3.extent(diagnostics, (d) => d.n) as [number, number];
+        const xExtRaw = d3.extent(diagnostics, (d) => d.n);
+        const xExtent = (xExtRaw[0] !== undefined ? xExtRaw : [1, maxN]) as [number, number];
         const xScaleL = d3.scaleLinear().domain(xExtent).range([0, panelW]);
 
         // Y scale: diagnostic values, including the asymptote 1/R if finite
@@ -235,7 +236,8 @@ export default function RadiusOfConvergenceExplorer() {
         if (oneOverR !== null) yValues.push(oneOverR);
         if (preset.R === Infinity) yValues.push(0);
 
-        const yExt = d3.extent(yValues.filter((v) => isFinite(v))) as [number, number];
+        const yExtRaw = d3.extent(yValues.filter((v) => isFinite(v)));
+        const yExt = (yExtRaw[0] !== undefined ? yExtRaw : [0, 1]) as [number, number];
         const yRange = yExt[1] - yExt[0];
         const yPad = (yRange * 0.15) || 0.2;
         const yScaleL = d3.scaleLinear()
@@ -360,7 +362,8 @@ export default function RadiusOfConvergenceExplorer() {
         const targetVal = preset.targetFn && isInside ? preset.targetFn(clampedX) : null;
         if (targetVal !== null && isFinite(targetVal)) snValues.push(targetVal);
 
-        const yExtR = d3.extent(snValues) as [number, number];
+        const yExtRRaw = d3.extent(snValues);
+        const yExtR = (yExtRRaw[0] !== undefined ? yExtRRaw : [-1, 1]) as [number, number];
         const yRangeR = yExtR[1] - yExtR[0];
         const yPadR = (yRangeR * 0.12) || 0.5;
         const yScaleR = d3.scaleLinear()

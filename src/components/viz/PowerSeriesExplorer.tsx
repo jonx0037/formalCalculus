@@ -5,7 +5,7 @@ import { useD3 } from './shared/useD3';
 import { powerSeriesEvaluate } from './shared/series';
 import { getPowerSeriesPresets, makeBinomialPreset } from '../../data/power-taylor-series-data';
 import type { PowerSeriesPreset } from '../../data/power-taylor-series-data';
-import { functionColors, regionColors } from './shared/colorScales';
+import { functionColors } from './shared/colorScales';
 
 // ── Presets ─────────────────────────────────────────────────
 
@@ -129,7 +129,8 @@ export default function PowerSeriesExplorer() {
       const allY = [...curves.targetPts, ...curves.partialPts]
         .map((d) => d.y)
         .filter((v) => isFinite(v));
-      const yExtent = d3.extent(allY) as [number, number];
+      const yExtentRaw = d3.extent(allY);
+      const yExtent = (yExtentRaw[0] !== undefined ? yExtentRaw : [-1, 1]) as [number, number];
       const yPad = ((yExtent[1] - yExtent[0]) * 0.1) || 1;
       const yScale = d3
         .scaleLinear()
@@ -289,7 +290,7 @@ export default function PowerSeriesExplorer() {
     [curves, width, height, xRange, preset, probeX, probeValues],
   );
 
-  // ── JSX ────────────���──────────────────────────────────────
+  // ── JSX ───────────────────────────────────────────────────
 
   const R = preset.radius;
   const rLabel = isFinite(R) ? R.toFixed(R === Math.round(R) ? 0 : 2) : '∞';

@@ -205,9 +205,11 @@ export default function TermByTermExplorer() {
 
         // Compute scales from both data sets
         const allPoints = [...solidData, ...dashedData];
-        const xExtent = d3.extent(allPoints, (d) => d.x) as [number, number];
+        const xExtRaw = d3.extent(allPoints, (d) => d.x);
+        const xExtent = (xExtRaw[0] !== undefined ? xExtRaw : [-1, 1]) as [number, number];
         const yValues = allPoints.map((d) => d.y);
-        const yExtent = d3.extent(yValues) as [number, number];
+        const yExtRaw = d3.extent(yValues);
+        const yExtent = (yExtRaw[0] !== undefined ? yExtRaw : [-1, 1]) as [number, number];
         const yPad = ((yExtent[1] - yExtent[0]) * 0.12) || 0.5;
 
         const xScale = d3.scaleLinear().domain(xExtent).range([0, panelW]);

@@ -377,6 +377,10 @@ export function radiusOfConvergence(
 
 /**
  * Evaluate a power series partial sum Sₙ(x) = Σ_{k=0}^{n} aₖ (x - c)^k.
+ *
+ * Uses Horner's method: a₀ + dx·(a₁ + dx·(a₂ + ... + dx·aₙ)).
+ * This evaluates in O(n) with one multiplication per step and reduces
+ * overflow risk compared to computing (x-c)^k directly.
  */
 export function powerSeriesEvaluate(
   coefficients: (k: number) => number,
@@ -386,14 +390,12 @@ export function powerSeriesEvaluate(
 ): number {
   const dx = x - center;
   let sum = 0;
-  let power = 1; // (x-c)^0 = 1
 
-  for (let k = 0; k <= n; k++) {
+  for (let k = n; k >= 0; k--) {
     const ak = coefficients(k);
-    if (isFinite(ak) && isFinite(power)) {
-      sum += ak * power;
-    }
-    power *= dx;
+    if (!isFinite(ak)) return ak;
+    sum = ak + sum * dx;
+    if (!isFinite(sum)) return sum;
   }
 
   return sum;
