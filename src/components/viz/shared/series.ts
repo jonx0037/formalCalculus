@@ -527,6 +527,130 @@ export function dirichletKernel(n: number, t: number): number {
   return Math.sin((n + 0.5) * t) / (2 * Math.sin(halfT));
 }
 
+// ── Approximation theory utilities (Topic 20) ─────────────────
+
+/**
+ * Evaluate the nth Bernstein polynomial of f at x.
+ * B_n(f; x) = Σ_{k=0}^{n} f(k/n) · C(n,k) · x^k · (1−x)^{n−k}
+ *
+ * For n ≤ 60, uses direct computation with log-space binomial
+ * coefficients to avoid overflow. For larger n, the same approach
+ * remains stable because we compute each basis term in log space
+ * and only exponentiate at the end.
+ *
+ * @param f - The function to approximate (defined on [0, 1])
+ * @param n - Bernstein polynomial degree (n ≥ 1)
+ * @param x - Evaluation point in [0, 1]
+ * @returns B_n(f; x)
+ */
+export function bernsteinPolynomial(
+  f: (x: number) => number,
+  n: number,
+  x: number,
+): number {
+  if (n < 1) return f(x);
+
+  // Boundary cases: avoid 0^0 issues
+  if (x <= 0) return f(0);
+  if (x >= 1) return f(1);
+
+  let result = 0;
+
+  // Compute each term using log-space to avoid overflow of C(n,k)
+  // log(b_{k,n}(x)) = logC(n,k) + k·log(x) + (n−k)·log(1−x)
+  const logX = Math.log(x);
+  const log1mX = Math.log(1 - x);
+
+  // Build log(C(n,k)) incrementally: logC(n,0) = 0, logC(n,k) = logC(n,k-1) + log(n-k+1) - log(k)
+  let logBinom = 0;
+
+  for (let k = 0; k <= n; k++) {
+    if (k > 0) {
+      logBinom += Math.log(n - k + 1) - Math.log(k);
+    }
+    const logBasis = logBinom + k * logX + (n - k) * log1mX;
+    result += f(k / n) * Math.exp(logBasis);
+  }
+
+  return result;
+}
+
+/**
+ * Evaluate the kth Bernstein basis polynomial of degree n at x.
+ * b_{k,n}(x) = C(n,k) · x^k · (1−x)^{n−k}
+ *
+ * These basis polynomials form a partition of unity on [0, 1]:
+ * Σ_{k=0}^{n} b_{k,n}(x) = 1 for all x ∈ [0, 1].
+ *
+ * @param k - Basis index (0 ≤ k ≤ n)
+ * @param n - Polynomial degree
+ * @param x - Evaluation point in [0, 1]
+ * @returns b_{k,n}(x)
+ */
+export function bernsteinBasis(
+  k: number,
+  n: number,
+  x: number,
+): number {
+  if (k < 0 || k > n) return 0;
+  if (x <= 0) return k === 0 ? 1 : 0;
+  if (x >= 1) return k === n ? 1 : 0;
+
+  // Log-space computation for stability
+  let logBinom = 0;
+  for (let i = 1; i <= k; i++) {
+    logBinom += Math.log(n - k + i) - Math.log(i);
+  }
+
+  const logBasis = logBinom + k * Math.log(x) + (n - k) * Math.log(1 - x);
+  return Math.exp(logBasis);
+}
+
+/**
+ * Compute the Chebyshev nodes of the first kind on [−1, 1].
+ * x_k = cos((2k − 1)π / (2n)) for k = 1, …, n.
+ *
+ * These are the zeros of T_n(x) and the optimal interpolation nodes
+ * that minimize the Lebesgue constant.
+ *
+ * @param n - Number of nodes (n ≥ 1)
+ * @returns Array of n Chebyshev nodes in decreasing order
+ */
+export function chebyshevNodes(n: number): number[] {
+  const nodes: number[] = [];
+  for (let k = 1; k <= n; k++) {
+    nodes.push(Math.cos(((2 * k - 1) * Math.PI) / (2 * n)));
+  }
+  return nodes;
+}
+
+/**
+ * Evaluate the Chebyshev polynomial T_n(x) = cos(n · arccos(x)).
+ *
+ * Uses the three-term recurrence T_{n+1}(x) = 2x·T_n(x) − T_{n−1}(x)
+ * with T_0(x) = 1, T_1(x) = x, which is numerically stable and
+ * avoids computing arccos.
+ *
+ * @param n - Polynomial degree (n ≥ 0)
+ * @param x - Evaluation point in [−1, 1]
+ * @returns T_n(x)
+ */
+export function chebyshevPolynomial(n: number, x: number): number {
+  if (n === 0) return 1;
+  if (n === 1) return x;
+
+  let prev2 = 1;   // T_0
+  let prev1 = x;   // T_1
+
+  for (let k = 2; k <= n; k++) {
+    const curr = 2 * x * prev1 - prev2;
+    prev2 = prev1;
+    prev1 = curr;
+  }
+
+  return prev1;
+}
+
 // ── Re-exports for convenience ──────────────────────────────
 
 export { generateSequence, computeEpsilonN } from './limits';
