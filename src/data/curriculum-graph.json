@@ -26,7 +26,7 @@
     { "id": "approximation-theory", "label": "Approximation Theory", "domain": "series-approximation", "status": "published", "url": "/topics/approximation-theory" },
 
     { "id": "first-order-odes", "label": "First-Order ODEs & Existence Theorems", "domain": "odes", "status": "published", "url": "/topics/first-order-odes" },
-    { "id": "linear-systems", "label": "Linear Systems & Matrix Exponential", "domain": "odes", "status": "planned", "url": "/topics/linear-systems" },
+    { "id": "linear-systems", "label": "Linear Systems & Matrix Exponential", "domain": "odes", "status": "published", "url": "/topics/linear-systems" },
     { "id": "stability-dynamics", "label": "Stability & Dynamical Systems", "domain": "odes", "status": "planned", "url": "/topics/stability-dynamics" },
     { "id": "numerical-odes", "label": "Numerical Methods for ODEs", "domain": "odes", "status": "planned", "url": "/topics/numerical-odes" },
 
@@ -91,6 +91,7 @@
 
     { "source": "derivative", "target": "first-order-odes" },
     { "source": "first-order-odes", "target": "linear-systems" },
+    { "source": "jacobian", "target": "linear-systems" },
     { "source": "linear-systems", "target": "stability-dynamics" },
     { "source": "first-order-odes", "target": "numerical-odes" },
 

@@ -53,9 +53,8 @@ export const tracks: Track[] = [
     title: 'Ordinary Differential Equations',
     description: 'Existence theorems, linear systems, stability, and numerical methods.',
     domain: 'odes',
-    published: ['First-Order ODEs & Existence Theorems'],
+    published: ['First-Order ODEs & Existence Theorems', 'Linear Systems & Matrix Exponential'],
     planned: [
-      'Linear Systems & Matrix Exponential',
       'Stability & Dynamical Systems',
       'Numerical Methods for ODEs',
     ],

@@ -2,8 +2,8 @@
  * Shared ODE utility functions for Track 6: Ordinary Differential Equations.
  *
  * Created by Topic 21 (First-Order ODEs & Existence Theorems).
- * Will be extended by:
- *   - Topic 22 (Linear Systems & Matrix Exponential): matrix exponential, eigenvalue methods
+ * Extended by:
+ *   - Topic 22 (Linear Systems & Matrix Exponential): matrix exponential, eigenvalue methods ← CURRENT
  *   - Topic 23 (Stability & Dynamical Systems): phase portrait generators, Lyapunov analysis
  *   - Topic 24 (Numerical Methods for ODEs): higher-order solvers, adaptive stepping, error analysis
  *
@@ -441,4 +441,455 @@ export function findEquilibria(
   }
 
   return deduped;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Topic 22: Linear Systems & Matrix Exponential
+// ═══════════════════════════════════════════════════════════════
+
+// ── Interfaces (Topic 22) ──────────────────────────────────
+
+/** A 2×2 real matrix stored as four named entries. */
+export interface Matrix2x2 {
+  a11: number;
+  a12: number;
+  a21: number;
+  a22: number;
+}
+
+/** Eigenvalue/eigenvector decomposition of a 2×2 matrix. */
+export interface EigenResult2x2 {
+  /** Eigenvalues: real parts in .real, imaginary parts in .imag */
+  eigenvalues: { real: [number, number]; imag: [number, number] };
+  /**
+   * Eigenvectors as column arrays (each [v1, v2]).
+   * null when eigenvalues are complex (use real/imag decomposition instead).
+   */
+  eigenvectors: [number, number][] | null;
+  /** True if both eigenvalues are real */
+  isReal: boolean;
+  /** True if the matrix has two linearly independent eigenvectors */
+  isDiagonalizable: boolean;
+}
+
+/** Classification of a 2×2 phase portrait by trace-determinant analysis. */
+export interface PhasePortraitClassification {
+  type:
+    | 'stable-node'
+    | 'unstable-node'
+    | 'saddle'
+    | 'stable-spiral'
+    | 'unstable-spiral'
+    | 'center'
+    | 'degenerate';
+  trace: number;
+  determinant: number;
+  /** τ² − 4Δ: positive → real eigenvalues, negative → complex */
+  discriminant: number;
+}
+
+/** Trajectory of a 2D system, storing t, y1, y2 arrays. */
+export interface SystemTrajectory {
+  t: number[];
+  y1: number[];
+  y2: number[];
+  method: 'rk4-system' | 'exact';
+}
+
+/** Result of a matrix exponential computation. */
+export interface MatrixExponentialResult {
+  /** The 2×2 result e^{At} as [[r00, r01], [r10, r11]] */
+  matrix: number[][];
+  /** Optional partial sums S_0, S_1, ..., S_N for animation */
+  partialSums?: number[][][];
+}
+
+// ── Eigenvalue methods (Topic 22) ──────────────────────────
+
+/**
+ * Compute eigenvalues and eigenvectors of a 2×2 matrix using the
+ * closed-form quadratic formula: λ = (τ ± √(τ² − 4Δ)) / 2.
+ *
+ * @param A - 2×2 matrix
+ * @returns EigenResult2x2 with eigenvalues, eigenvectors, and classification flags
+ */
+export function eigenDecomposition2x2(A: Matrix2x2): EigenResult2x2 {
+  const tau = A.a11 + A.a22; // trace
+  const delta = A.a11 * A.a22 - A.a12 * A.a21; // determinant
+  const disc = tau * tau - 4 * delta;
+
+  if (disc >= 0) {
+    // Real eigenvalues
+    const sqrtDisc = Math.sqrt(disc);
+    const lam1 = (tau + sqrtDisc) / 2;
+    const lam2 = (tau - sqrtDisc) / 2;
+
+    // Compute eigenvectors
+    const vecs: [number, number][] = [];
+    for (const lam of [lam1, lam2]) {
+      // Solve (A - λI)v = 0
+      const r1 = A.a11 - lam;
+      const r2 = A.a12;
+      const r3 = A.a21;
+      const r4 = A.a22 - lam;
+
+      let v: [number, number];
+      if (Math.abs(r2) > 1e-12) {
+        v = [-r2, r1];
+      } else if (Math.abs(r4) > 1e-12) {
+        v = [-r4, r3];
+      } else if (Math.abs(r1) > 1e-12) {
+        v = [0, 1];
+      } else {
+        v = [1, 0];
+      }
+
+      // Normalize
+      const norm = Math.sqrt(v[0] * v[0] + v[1] * v[1]);
+      if (norm > 1e-14) {
+        v = [v[0] / norm, v[1] / norm];
+      }
+      vecs.push(v);
+    }
+
+    // Check diagonalizability: defective if repeated eigenvalue with
+    // parallel eigenvectors
+    const isRepeated = Math.abs(lam1 - lam2) < 1e-10;
+    let isDiag = true;
+    if (isRepeated) {
+      // Check if A - λI = 0 (scalar multiple of I → diag) or not (defective)
+      const offDiag =
+        Math.abs(A.a12) + Math.abs(A.a21) + Math.abs(A.a11 - A.a22);
+      isDiag = offDiag < 1e-10;
+    }
+
+    return {
+      eigenvalues: { real: [lam1, lam2], imag: [0, 0] },
+      eigenvectors: vecs,
+      isReal: true,
+      isDiagonalizable: isDiag,
+    };
+  } else {
+    // Complex eigenvalues: α ± iβ
+    const alpha = tau / 2;
+    const beta = Math.sqrt(-disc) / 2;
+
+    return {
+      eigenvalues: { real: [alpha, alpha], imag: [beta, -beta] },
+      eigenvectors: null,
+      isReal: false,
+      isDiagonalizable: true, // complex eigenvalues are always diagonalizable over ℂ
+    };
+  }
+}
+
+/**
+ * Classify the phase portrait of a 2×2 linear system y' = Ay
+ * using the trace-determinant plane.
+ *
+ * @param A - 2×2 matrix
+ * @returns PhasePortraitClassification
+ */
+export function classifyPhasePortrait(A: Matrix2x2): PhasePortraitClassification {
+  const tau = A.a11 + A.a22;
+  const delta = A.a11 * A.a22 - A.a12 * A.a21;
+  const disc = tau * tau - 4 * delta;
+
+  let type: PhasePortraitClassification['type'];
+
+  if (Math.abs(delta) < 1e-10) {
+    type = 'degenerate';
+  } else if (delta < 0) {
+    type = 'saddle';
+  } else if (disc > 1e-10) {
+    // Real distinct eigenvalues, same sign
+    type = tau < 0 ? 'stable-node' : 'unstable-node';
+  } else if (disc < -1e-10) {
+    // Complex eigenvalues
+    if (Math.abs(tau) < 1e-10) {
+      type = 'center';
+    } else {
+      type = tau < 0 ? 'stable-spiral' : 'unstable-spiral';
+    }
+  } else {
+    // Repeated eigenvalue (disc ≈ 0)
+    type = tau < 0 ? 'stable-node' : tau > 0 ? 'unstable-node' : 'degenerate';
+  }
+
+  return { type, trace: tau, determinant: delta, discriminant: disc };
+}
+
+// ── Matrix exponential (Topic 22) ──────────────────────────
+
+/**
+ * Multiply two 2×2 matrices: C = AB.
+ */
+function matMul2x2(
+  a: number[][],
+  b: number[][],
+): number[][] {
+  return [
+    [
+      a[0][0] * b[0][0] + a[0][1] * b[1][0],
+      a[0][0] * b[0][1] + a[0][1] * b[1][1],
+    ],
+    [
+      a[1][0] * b[0][0] + a[1][1] * b[1][0],
+      a[1][0] * b[0][1] + a[1][1] * b[1][1],
+    ],
+  ];
+}
+
+/**
+ * Compute the matrix exponential e^{At} for a 2×2 matrix.
+ *
+ * Uses eigendecomposition when possible:
+ *   - Diagonalizable with real eigenvalues: e^{At} = P diag(e^{λt}) P⁻¹
+ *   - Complex eigenvalues α ± iβ: rotation-dilation formula
+ *   - Defective: Jordan block formula with te^{λt} terms
+ *
+ * Falls back to truncated power series for edge cases.
+ *
+ * @param A - 2×2 matrix
+ * @param t - Time parameter
+ * @param options - numTerms for series fallback; returnPartialSums for animation
+ * @returns MatrixExponentialResult
+ */
+export function matrixExponential2x2(
+  A: Matrix2x2,
+  t: number,
+  options?: { numTerms?: number; returnPartialSums?: boolean },
+): MatrixExponentialResult {
+  const N = options?.numTerms ?? 20;
+  const returnPartials = options?.returnPartialSums ?? false;
+
+  // Always compute partial sums if requested (for the convergence animation)
+  if (returnPartials) {
+    return matExpSeries(A, t, N, true);
+  }
+
+  const eigen = eigenDecomposition2x2(A);
+
+  if (eigen.isReal && eigen.isDiagonalizable && eigen.eigenvectors) {
+    // Diagonalizable with real eigenvalues: P diag(e^{λt}) P⁻¹
+    const [lam1, lam2] = eigen.eigenvalues.real;
+    const [v1, v2] = eigen.eigenvectors;
+
+    // P = [v1 | v2], P⁻¹ via 2×2 inverse
+    const det = v1[0] * v2[1] - v1[1] * v2[0];
+    if (Math.abs(det) < 1e-14) {
+      return matExpSeries(A, t, N, false);
+    }
+
+    const Pinv = [
+      [v2[1] / det, -v2[0] / det],
+      [-v1[1] / det, v1[0] / det],
+    ];
+    const P = [
+      [v1[0], v2[0]],
+      [v1[1], v2[1]],
+    ];
+    const D = [
+      [Math.exp(lam1 * t), 0],
+      [0, Math.exp(lam2 * t)],
+    ];
+
+    const matrix = matMul2x2(matMul2x2(P, D), Pinv);
+    return { matrix };
+  } else if (!eigen.isReal) {
+    // Complex eigenvalues α ± iβ
+    const alpha = eigen.eigenvalues.real[0];
+    const beta = eigen.eigenvalues.imag[0];
+    const eat = Math.exp(alpha * t);
+    const cosbt = Math.cos(beta * t);
+    const sinbt = Math.sin(beta * t);
+
+    // e^{At} = e^{αt}[cos(βt)I + sin(βt)(A - αI)/β]
+    const B11 = (A.a11 - alpha) / beta;
+    const B12 = A.a12 / beta;
+    const B21 = A.a21 / beta;
+    const B22 = (A.a22 - alpha) / beta;
+
+    const matrix = [
+      [eat * (cosbt + sinbt * B11), eat * sinbt * B12],
+      [eat * sinbt * B21, eat * (cosbt + sinbt * B22)],
+    ];
+    return { matrix };
+  } else {
+    // Defective: repeated eigenvalue λ, Jordan block
+    // e^{Jt} = e^{λt}[I + t(A - λI)]
+    const lam = eigen.eigenvalues.real[0];
+    const elt = Math.exp(lam * t);
+    const N11 = A.a11 - lam;
+    const N12 = A.a12;
+    const N21 = A.a21;
+    const N22 = A.a22 - lam;
+
+    const matrix = [
+      [elt * (1 + t * N11), elt * t * N12],
+      [elt * t * N21, elt * (1 + t * N22)],
+    ];
+    return { matrix };
+  }
+}
+
+/**
+ * Compute e^{At} via truncated power series: Σ_{k=0}^{N} (At)^k / k!
+ * Used as fallback and for partial-sum animation.
+ */
+function matExpSeries(
+  A: Matrix2x2,
+  t: number,
+  N: number,
+  returnPartials: boolean,
+): MatrixExponentialResult {
+  const I: number[][] = [[1, 0], [0, 1]];
+  const At: number[][] = [
+    [A.a11 * t, A.a12 * t],
+    [A.a21 * t, A.a22 * t],
+  ];
+
+  // Running power (At)^k / k!
+  let term: number[][] = [[1, 0], [0, 1]]; // k=0 term = I
+  let sum: number[][] = [[1, 0], [0, 1]];
+
+  const partials: number[][][] | undefined = returnPartials
+    ? [[[1, 0], [0, 1]]]
+    : undefined;
+
+  for (let k = 1; k <= N; k++) {
+    // term = (previous term) * At / k
+    const next = matMul2x2(term, At);
+    term = next.map((row) => row.map((v) => v / k));
+
+    sum = sum.map((row, i) => row.map((v, j) => v + term[i][j]));
+
+    if (partials) {
+      partials.push(sum.map((row) => [...row]));
+    }
+  }
+
+  return { matrix: sum, partialSums: partials };
+}
+
+// ── System trajectory solver (Topic 22) ────────────────────
+
+/**
+ * Solve a 2×2 linear system y' = Ay (+ optional forcing g(t)) using RK4.
+ *
+ * @param A - 2×2 system matrix
+ * @param y0 - Initial condition [y1_0, y2_0]
+ * @param tRange - [t_start, t_end]
+ * @param h - Step size
+ * @param g - Optional forcing function g(t) → [g1, g2]
+ * @returns SystemTrajectory with t, y1, y2 arrays
+ */
+export function computeSystemTrajectory(
+  A: Matrix2x2,
+  y0: [number, number],
+  tRange: [number, number],
+  h: number,
+  g?: (t: number) => [number, number],
+): SystemTrajectory {
+  const BLOW_UP = 1e6;
+  const [tStart, tEnd] = tRange;
+  const direction = tEnd >= tStart ? 1 : -1;
+  const step = direction * Math.abs(h);
+  const nSteps = Math.ceil(Math.abs(tEnd - tStart) / Math.abs(h));
+
+  const ts: number[] = [tStart];
+  const y1s: number[] = [y0[0]];
+  const y2s: number[] = [y0[1]];
+
+  let t = tStart;
+  let y: [number, number] = [y0[0], y0[1]];
+
+  // f(t, y) = Ay + g(t)
+  const f = (tc: number, yc: [number, number]): [number, number] => {
+    const dy1 = A.a11 * yc[0] + A.a12 * yc[1];
+    const dy2 = A.a21 * yc[0] + A.a22 * yc[1];
+    if (g) {
+      const [g1, g2] = g(tc);
+      return [dy1 + g1, dy2 + g2];
+    }
+    return [dy1, dy2];
+  };
+
+  for (let i = 0; i < nSteps; i++) {
+    const remaining = tEnd - t;
+    const currentStep =
+      Math.abs(remaining) < Math.abs(step) ? remaining : step;
+
+    const k1 = f(t, y);
+    const k2 = f(t + currentStep / 2, [
+      y[0] + (currentStep / 2) * k1[0],
+      y[1] + (currentStep / 2) * k1[1],
+    ]);
+    const k3 = f(t + currentStep / 2, [
+      y[0] + (currentStep / 2) * k2[0],
+      y[1] + (currentStep / 2) * k2[1],
+    ]);
+    const k4 = f(t + currentStep, [
+      y[0] + currentStep * k3[0],
+      y[1] + currentStep * k3[1],
+    ]);
+
+    y = [
+      y[0] + (currentStep / 6) * (k1[0] + 2 * k2[0] + 2 * k3[0] + k4[0]),
+      y[1] + (currentStep / 6) * (k1[1] + 2 * k2[1] + 2 * k3[1] + k4[1]),
+    ];
+    t = t + currentStep;
+
+    ts.push(t);
+    y1s.push(y[0]);
+    y2s.push(y[1]);
+
+    if (Math.abs(y[0]) > BLOW_UP || Math.abs(y[1]) > BLOW_UP) break;
+  }
+
+  return { t: ts, y1: y1s, y2: y2s, method: 'rk4-system' };
+}
+
+// ── Vector field computation (Topic 22) ────────────────────
+
+/**
+ * Compute the 2D vector field for y' = Ay on a grid.
+ *
+ * @param A - 2×2 system matrix
+ * @param y1Range - [y1_min, y1_max]
+ * @param y2Range - [y2_min, y2_max]
+ * @param n1 - Grid points in y1 direction
+ * @param n2 - Grid points in y2 direction
+ * @returns Array of { y1, y2, dy1, dy2, magnitude }
+ */
+export function computeSystemField(
+  A: Matrix2x2,
+  y1Range: [number, number],
+  y2Range: [number, number],
+  n1: number,
+  n2: number,
+): Array<{ y1: number; y2: number; dy1: number; dy2: number; magnitude: number }> {
+  const points: Array<{
+    y1: number;
+    y2: number;
+    dy1: number;
+    dy2: number;
+    magnitude: number;
+  }> = [];
+
+  const d1 = (y1Range[1] - y1Range[0]) / (n1 - 1);
+  const d2 = (y2Range[1] - y2Range[0]) / (n2 - 1);
+
+  for (let i = 0; i < n1; i++) {
+    const v1 = y1Range[0] + i * d1;
+    for (let j = 0; j < n2; j++) {
+      const v2 = y2Range[0] + j * d2;
+      const dy1 = A.a11 * v1 + A.a12 * v2;
+      const dy2 = A.a21 * v1 + A.a22 * v2;
+      const magnitude = Math.sqrt(dy1 * dy1 + dy2 * dy2);
+      points.push({ y1: v1, y2: v2, dy1, dy2, magnitude });
+    }
+  }
+
+  return points;
 }
