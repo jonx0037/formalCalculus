@@ -106,7 +106,10 @@ export function getMethodComparisonPresets(): MethodComparisonPreset[] {
       name: 'logistic-growth',
       label: "Logistic growth: y' = y(1-y)",
       f: (_t, y) => y * (1 - y),
-      exactSolution: (t) => 1 / (1 + Math.exp(-t)),
+      // General closed-form solution of y' = y(1-y) with y(0) = y0:
+      //   y(t) = 1 / (1 + C·e^{-t}) where C = (1 - y0) / y0.
+      // For y0 = 0.05, C = 0.95 / 0.05 = 19.
+      exactSolution: (t) => 1 / (1 + 19 * Math.exp(-t)),
       t0: 0,
       y0: 0.05,
       tEnd: 8,

@@ -1406,14 +1406,34 @@ export interface ConvergenceOrderResult {
  * Solve a scalar IVP using the Dormand-Prince adaptive RK45 method.
  *
  * Uses an embedded 4(5) order pair: a 4th-order solution and a 5th-order
- * solution are computed from the same six stages, and the difference
+ * solution are computed from the same seven stages, and the difference
  * estimates the local truncation error of the 4th-order solution. The
  * step size is then adjusted to keep this estimate within the tolerance.
  *
+ * Tolerance convention: this implementation uses a combined absolute +
+ * relative tolerance derived from a single `tol` parameter, via the
+ * standard scaling
+ *   scale_n = tol + tol · max(|y_n|, |y_{n+1}|)
+ * Each step is accepted when the embedded-pair error estimate satisfies
+ * `errEst ≤ scale_n`. In scipy language this is equivalent to setting
+ * `atol = rtol = tol`. If you need separate absolute and relative
+ * tolerances, use scipy.integrate.solve_ivp directly — this helper
+ * intentionally exposes a single knob to keep the slider-driven
+ * visualization story simple.
+ *
  * Step-size update rule:
- *   h_new = h · safety · (tol / errEst)^(1/5)
- * with safety factor 0.9. Steps where errEst > tol are rejected and
- * retried with the new (smaller) h. Step size is clamped to [hMin, hMax].
+ *   h_new = h · safety · (scale / errEst)^(1/5)
+ * with safety factor 0.9, clamped to [hMin, hMax] and limited to
+ * growing by at most 5× or shrinking by at most 0.2× per accepted step
+ * (0.1× per rejected step). Steps where `errEst > scale` are rejected
+ * and retried with the smaller h.
+ *
+ * Implements the **FSAL optimization** (First Same As Last): stage 7 of
+ * an accepted step, `k7 = f(t + h, y_new)`, is exactly the function
+ * value needed as stage 1 of the next step, so it is cached and reused.
+ * This saves one `f` evaluation per accepted step (6 evaluations per
+ * step instead of 7), bringing the per-step cost of Dormand-Prince to
+ * the same level as a non-embedded 6-stage RK method.
  *
  * This is the same algorithm scipy.integrate.solve_ivp uses with
  * method='RK45' and what torchdiffeq exposes as 'dopri5'.
@@ -1425,7 +1445,8 @@ export interface ConvergenceOrderResult {
  * @param t0 - Initial time
  * @param y0 - Initial value
  * @param tEnd - Final time
- * @param tol - Absolute error tolerance per step (default 1e-6)
+ * @param tol - Combined atol + rtol tolerance per step (default 1e-6).
+ *              Effective tolerance is `tol + tol · max(|y|, |y_new|)`.
  * @param hInit - Initial step size (default (tEnd - t0) / 100)
  * @param hMin - Minimum step size (default 1e-12)
  * @param hMax - Maximum step size (default (tEnd - t0) / 4)
@@ -1445,7 +1466,7 @@ export function adaptiveRK45(
   const SAFETY = 0.9;
   const totalSpan = tEnd - t0;
 
-  // Dormand-Prince coefficients (FSAL: stage 7 of step n = stage 1 of step n+1)
+  // Dormand-Prince coefficients.
   // c-coefficients (time fractions for intermediate stages)
   const c2 = 1 / 5;
   const c3 = 3 / 10;
@@ -1458,7 +1479,9 @@ export function adaptiveRK45(
   const a51 = 19372 / 6561, a52 = -25360 / 2187, a53 = 64448 / 6561, a54 = -212 / 729;
   const a61 = 9017 / 3168, a62 = -355 / 33, a63 = 46732 / 5247, a64 = 49 / 176, a65 = -5103 / 18656;
   const a71 = 35 / 384, a72 = 0, a73 = 500 / 1113, a74 = 125 / 192, a75 = -2187 / 6784, a76 = 11 / 84;
-  // b-coefficients (5th order solution; identical to a7* — that's the FSAL property)
+  // The 5th-order weights b_i equal a7i exactly — that's what makes FSAL
+  // work: stage 7 is computed at (t+h, y_new), which is the same point
+  // stage 1 of the next step needs.
   // e-coefficients (difference between 5th and 4th order solutions)
   const e1 = 71 / 57600;
   const e3 = -71 / 16695;
@@ -1479,6 +1502,9 @@ export function adaptiveRK45(
 
   let t = t0;
   let y = y0;
+  // FSAL: cache k1 across iterations. Seeded with the actual f(t0, y0)
+  // for the first step; updated to k7 on every accepted step.
+  let k1 = f(t0, y0);
   let safetyCounter = 0; // hard cap on iterations
   const SAFETY_CAP = 100000;
 
@@ -1490,8 +1516,9 @@ export function adaptiveRK45(
       h = tEnd - t;
     }
 
-    // Compute six stages
-    const k1 = f(t, y);
+    // k1 is reused from the previous accepted step's k7 (FSAL). On the
+    // very first iteration it was seeded with f(t0, y0) above. On rejected
+    // steps we never advance t or y, so the cached k1 is still valid.
     const k2 = f(t + c2 * h, y + h * (a21 * k1));
     const k3 = f(t + c3 * h, y + h * (a31 * k1 + a32 * k2));
     const k4 = f(t + c4 * h, y + h * (a41 * k1 + a42 * k2 + a43 * k3));
@@ -1502,7 +1529,8 @@ export function adaptiveRK45(
     const yNew =
       y + h * (a71 * k1 + a72 * k2 + a73 * k3 + a74 * k4 + a75 * k5 + a76 * k6);
 
-    // 7th stage (FSAL): for the error estimate
+    // 7th stage: evaluated at (t + h, y_new). Also serves as k1 of the
+    // next step if this one is accepted (FSAL).
     const k7 = f(t + h, yNew);
 
     // Local error estimate: the e-coefficients give |y_5 - y_4|
@@ -1510,7 +1538,7 @@ export function adaptiveRK45(
       Math.abs(h) *
       Math.abs(e1 * k1 + e3 * k3 + e4 * k4 + e5 * k5 + e6 * k6 + e7 * k7);
 
-    // Tolerance scaled by the magnitude of y (relative + absolute)
+    // Combined absolute + relative tolerance: tol serves as both atol and rtol
     const scale = tol + tol * Math.max(Math.abs(y), Math.abs(yNew));
 
     if (errEst <= scale || Math.abs(h) <= hMin) {
@@ -1518,6 +1546,9 @@ export function adaptiveRK45(
       stepSizes.push(Math.abs(h));
       t = t + h;
       y = yNew;
+      // FSAL: k7 of this step becomes k1 of the next step. This saves
+      // exactly one f evaluation per accepted step.
+      k1 = k7;
       ts.push(t);
       ys.push(y);
 
@@ -1531,7 +1562,8 @@ export function adaptiveRK45(
       const newHMag = Math.min(hMaxEffective, Math.max(hMin, Math.abs(newH)));
       h = direction * newHMag;
     } else {
-      // Reject the step, shrink h, retry
+      // Reject the step, shrink h, retry. Note that `t` and `y` are
+      // unchanged, so the cached k1 remains valid for the retry.
       rejectedSteps.push(t);
       const ratio = Math.pow(scale / errEst, 1 / 5);
       const factor = Math.max(0.1, SAFETY * ratio);
@@ -1722,7 +1754,9 @@ export function stiffnessDetector(
  * @param tEnd - Final time
  * @param h - Base step size
  * @param method - 'euler' (order 1) or 'rk4' (order 4)
- * @returns Estimated error at tEnd
+ * @returns Estimated error at tEnd, or NaN if either solver terminated
+ *          early (e.g. hit the BLOW_UP threshold) and did not reach tEnd.
+ *          Callers should check Number.isFinite on the result.
  */
 export function errorEstimation(
   f: (t: number, y: number) => number,
@@ -1737,6 +1771,16 @@ export function errorEstimation(
 
   const coarse = solver(f, t0, y0, tEnd, h);
   const fine = solver(f, t0, y0, tEnd, h / 2);
+
+  // Richardson extrapolation is only valid if both runs actually reach tEnd.
+  // If either terminated early (blow-up, divergence), comparing the last
+  // values would mix different terminal times and give a meaningless number.
+  const tCoarse = coarse.t[coarse.t.length - 1];
+  const tFine = fine.t[fine.t.length - 1];
+  const REACH_TOL = 1e-10;
+  if (Math.abs(tCoarse - tEnd) > REACH_TOL || Math.abs(tFine - tEnd) > REACH_TOL) {
+    return Number.NaN;
+  }
 
   const yCoarse = coarse.y[coarse.y.length - 1];
   const yFine = fine.y[fine.y.length - 1];

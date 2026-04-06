@@ -2,7 +2,6 @@ import { useState, useMemo, useCallback } from 'react';
 import * as d3 from 'd3';
 import { useResizeObserver } from './shared/useResizeObserver';
 import { useD3 } from './shared/useD3';
-import { adaptiveRK45 } from './shared/odes';
 import { getNeuralODEPresets } from '../../data/numerical-odes-data';
 
 // ── Constants ─────────────────────────────────────────────────
@@ -14,7 +13,6 @@ const CLASS_1_COLOR = '#DC2626'; // red
 
 const EULER_COLOR = '#DC2626';
 const RK4_COLOR = '#2563EB';
-const RK45_COLOR = '#059669';
 
 // ── Trajectory integrator (2D, RK4) ──────────────────────────
 
@@ -87,17 +85,25 @@ export default function NeuralODEExplorer() {
 
   // ── Convergence-order computation ─────────────────────────
 
-  // Use a representative scalar projection: integrate the y-component of the
-  // first sample point and compare against an "exact" reference computed with
-  // tight adaptive RK45. The empirical order should be ≈1 for Euler, ≈4 for RK4.
+  // Compare the full 2D trajectory of the first sample point against a
+  // high-resolution RK4 reference, then fit the log-log slope of global
+  // error vs step size. The empirical order should be ≈1 for Euler and ≈4
+  // for RK4, which is the experimental verification of the Lax equivalence
+  // theorem in the topic body.
   const convergenceData = useMemo(() => {
     const [x0, y0] = preset.samplePoints[0] ?? [1, 0];
     const tFinal = preset.tRange[1];
 
-    // Reference solution at tFinal: tight adaptive RK45 on the scalar y-component
-    // tracking only y(t) given x(t) computed alongside. We integrate the full 2D
-    // system at tight tolerance and use the final y as the reference.
-    const refPts = integrate2D(preset.vectorField, x0, y0, tFinal, 0.0005, 'rk4');
+    // Reference solution: fixed-step RK4 at a step size that scales with the
+    // integration interval. With ~4000 steps across [0, tFinal], the reference
+    // error is O((tFinal/4000)^4) — well below the global errors of the test
+    // solvers at the coarsest step size (tFinal/2) we fit against, so the
+    // reference is effectively "ground truth" for the convergence fit. We
+    // deliberately use a fixed-step method here (not adaptive) because a
+    // uniform step gives a reproducible reference that doesn't depend on
+    // tolerance choice.
+    const refStep = tFinal / 4000;
+    const refPts = integrate2D(preset.vectorField, x0, y0, tFinal, refStep, 'rk4');
     const yRef = refPts[refPts.length - 1][1];
 
     // Compute the global error of "single-step Euler over all of t" and the
@@ -431,20 +437,15 @@ export default function NeuralODEExplorer() {
     setTFraction(1.0);
   }, []);
 
-  // Compute the adaptive RK45 reference for the demo (just for showing step count)
-  const adaptiveDemo = useMemo(() => {
-    const x0 = preset.samplePoints[0]?.[0] ?? 1;
-    return adaptiveRK45(
-      (t, y) => {
-        const [, dy] = preset.vectorField(x0, y, t);
-        return dy;
-      },
-      0,
-      preset.samplePoints[0]?.[1] ?? 0,
-      preset.tRange[1],
-      1e-6,
-    );
-  }, [preset]);
+  // Step count for the currently selected solver and step size. This is
+  // a straightforward ceil((tRange[1] - tRange[0]) / hStep) and serves as
+  // a "compute budget" indicator for the comparison — more steps means
+  // more forward passes through the vector field, which for a real neural
+  // ODE means more network evaluations.
+  const solverSteps = useMemo(() => {
+    const span = preset.tRange[1] - preset.tRange[0];
+    return Math.ceil(span / hStep);
+  }, [preset.tRange, hStep]);
 
   // ── Render ────────────────────────────────────────────────
 
@@ -528,7 +529,7 @@ export default function NeuralODEExplorer() {
         </label>
 
         <span style={{ color: 'var(--color-text-muted)' }}>
-          adaptive RK45 ref: <b style={{ color: RK45_COLOR }}>{adaptiveDemo.totalSteps}</b> steps
+          solver steps: <b>{solverSteps}</b> (compute budget)
         </span>
       </div>
 
