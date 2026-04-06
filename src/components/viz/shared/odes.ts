@@ -11,8 +11,7 @@
  * All functions are pure and deterministic — no Math.random().
  */
 
-// Import seededRandom for use in this module and re-export for downstream consumers
-import { seededRandom } from './limits';
+// Re-export seededRandom for downstream consumers
 export { seededRandom } from './limits';
 
 // ── Interfaces ──────────────────────────────────────────────
@@ -133,13 +132,14 @@ export function eulerMethod(
   let y = y0;
 
   for (let i = 0; i < nSteps; i++) {
-    const slope = f(t, y);
-    y = y + step * slope;
-    t = t + step;
+    // Use a reduced step on the final iteration to land exactly on tEnd
+    const remaining = tEnd - t;
+    const currentStep =
+      Math.abs(remaining) < Math.abs(step) ? remaining : step;
 
-    // Clamp to final time on the last step
-    if (direction > 0 && t > tEnd) t = tEnd;
-    if (direction < 0 && t < tEnd) t = tEnd;
+    const slope = f(t, y);
+    y = y + currentStep * slope;
+    t = t + currentStep;
 
     ts.push(t);
     ys.push(y);
@@ -182,16 +182,18 @@ export function rk4Method(
   let y = y0;
 
   for (let i = 0; i < nSteps; i++) {
+    // Use a reduced step on the final iteration to land exactly on tEnd
+    const remaining = tEnd - t;
+    const currentStep =
+      Math.abs(remaining) < Math.abs(step) ? remaining : step;
+
     const k1 = f(t, y);
-    const k2 = f(t + step / 2, y + (step / 2) * k1);
-    const k3 = f(t + step / 2, y + (step / 2) * k2);
-    const k4 = f(t + step, y + step * k3);
+    const k2 = f(t + currentStep / 2, y + (currentStep / 2) * k1);
+    const k3 = f(t + currentStep / 2, y + (currentStep / 2) * k2);
+    const k4 = f(t + currentStep, y + currentStep * k3);
 
-    y = y + (step / 6) * (k1 + 2 * k2 + 2 * k3 + k4);
-    t = t + step;
-
-    if (direction > 0 && t > tEnd) t = tEnd;
-    if (direction < 0 && t < tEnd) t = tEnd;
+    y = y + (currentStep / 6) * (k1 + 2 * k2 + 2 * k3 + k4);
+    t = t + currentStep;
 
     ts.push(t);
     ys.push(y);
@@ -429,5 +431,14 @@ export function findEquilibria(
     prevVal = val;
   }
 
-  return equilibria;
+  // De-duplicate: merge values within epsilon to avoid duplicate equilibrium lines
+  const MERGE_EPS = dy * 2;
+  const deduped: number[] = [];
+  for (const eq of equilibria) {
+    if (deduped.length === 0 || Math.abs(eq - deduped[deduped.length - 1]) > MERGE_EPS) {
+      deduped.push(eq);
+    }
+  }
+
+  return deduped;
 }

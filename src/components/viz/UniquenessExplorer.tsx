@@ -1,14 +1,13 @@
-import { useState, useMemo, useCallback, type ChangeEvent } from 'react';
+import { useState, useMemo, type ChangeEvent } from 'react';
 import * as d3 from 'd3';
 import { useResizeObserver } from './shared/useResizeObserver';
 import { useD3 } from './shared/useD3';
 import { computeDirectionField, rk4Method } from './shared/odes';
 
-// ── Constants ────��─────────────────��──────────────────────────
+// ── Constants ─────────────────────────────────────────────────
 
 const margin = { top: 20, right: 20, bottom: 40, left: 50 };
 const MUTED = '#6b7280';
-const BLUE = '#2563EB';
 const RED = '#DC2626';
 const RED_DOT = '#EF4444';
 
@@ -27,7 +26,7 @@ function branchingSolution(t: number, c: number): number {
   return Math.pow((t - c) / 3, 3);
 }
 
-// ── Component ───────────────────���─────────────────────────────
+// ── Component ─────────────────────────────────────────────────
 
 export default function UniquenessExplorer() {
   const { ref: containerRef, width } = useResizeObserver<HTMLDivElement>();
@@ -36,7 +35,7 @@ export default function UniquenessExplorer() {
   const [branchC, setBranchC] = useState(0.5);
   const [showField, setShowField] = useState(true);
 
-  // ── Direction fields ─────���─────────────────────────────────
+  // ── Direction fields ─────────────────────────────────────────
 
   const lipschitzField = useMemo(
     () => (showField ? computeDirectionField((_t, y) => y, T_RANGE, Y_RANGE, 20, 20) : []),
@@ -57,7 +56,7 @@ export default function UniquenessExplorer() {
     [showField],
   );
 
-  // ── Solution curves ──────────────────���─────────────────────
+  // ── Solution curves ─────────────────────────────────────────
 
   // Lipschitz side: y' = y, several ICs
   const lipschitzSolutions = useMemo(() => {
@@ -95,7 +94,7 @@ export default function UniquenessExplorer() {
     }));
   }, []);
 
-  // ── D3 rendering ��───────────────────��─────────────────────
+  // ── D3 rendering ────────────────────────────────────────────
 
   const svgRef = useD3<SVGSVGElement>(
     (svg) => {
@@ -263,7 +262,7 @@ export default function UniquenessExplorer() {
     [width, totalHeight, lipschitzField, nonLipschitzField, lipschitzSolutions, branchingSolutions, zeroSolution, showField],
   );
 
-  // ── JSX ──────────────────────────────────────────���─────────
+  // ── JSX ─────────────────────────────────────────────────────
 
   return (
     <div ref={containerRef} style={{ width: '100%', maxWidth: 780 }}>

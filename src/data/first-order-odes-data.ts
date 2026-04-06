@@ -60,7 +60,9 @@ export interface PicardPreset {
   /**
    * Precomputed Picard iterates as functions of t.
    * iterates[0] = y_0(t), iterates[1] = y_1(t), etc.
-   * Closed-form where possible; otherwise undefined (computed numerically).
+   * Contains only the available closed-form iterates; if higher iterates
+   * are not stored in closed form, callers should rely on maxN and/or a
+   * numerical fallback rather than expecting undefined entries.
    */
   iterates: Array<(t: number) => number>;
   /** Maximum number of precomputed iterates */
@@ -371,11 +373,12 @@ export function getExactEquationPresets(): ExactEquationPreset[] {
     },
     {
       name: 'non-exact',
-      label: '(y + t²) dt + t dy = 0',
-      M: (_t, y) => y + _t * _t,
+      label: '(2y) dt + t dy = 0',
+      M: (_t, y) => 2 * y,
       N: (t) => t,
-      // Not exact: M_y = 1 ≠ 2t = N_t
-      psi: () => 0, // No potential (non-exact)
+      // Not exact: M_y = 2 ≠ 1 = N_t
+      // Integrating factor μ = t converts to (2ty) dt + t² dy = 0, which is exact
+      psi: () => 0, // No potential without integrating factor
       isExact: false,
     },
   ];

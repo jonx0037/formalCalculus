@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect, type ChangeEvent } from 'react';
+import { useState, useMemo, useEffect, type ChangeEvent } from 'react';
 import * as d3 from 'd3';
 import { useResizeObserver } from './shared/useResizeObserver';
 import { useD3 } from './shared/useD3';
@@ -32,7 +32,6 @@ export default function PicardIterationExplorer() {
   const [playing, setPlaying] = useState(false);
   const [showExact, setShowExact] = useState(true);
   const [showError, setShowError] = useState(false);
-  const animRef = useRef<number | null>(null);
 
   const preset = PRESETS[selectedIdx];
 

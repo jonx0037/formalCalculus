@@ -231,7 +231,7 @@ Consider $(2ty + 3)\,dt + (t^2 + 4y)\,dy = 0$. Check: $M_y = 2t = N_t$. So $\Psi
 </TheoremBlock>
 
 <TheoremBlock type="example" number={6} title="Integrating factors for non-exact equations">
-Consider $(y + t^2)\,dt + t\,dy = 0$. Check: $M_y = 1 \neq 2t = N_t$. Not exact. Try an integrating factor $\mu(t)$: we need $\frac{M_y - N_t}{N} = \frac{1 - 2t}{t}$ to depend only on $t$. It does: $\mu(t) = e^{\int (1/t - 2)\,dt} = te^{-2t}$. Multiplying through and verifying exactness yields the solution.
+Consider $(2y)\,dt + t\,dy = 0$. Check: $M_y = 2 \neq 1 = N_t$. Not exact. Try an integrating factor $\mu(t)$: we need $\frac{M_y - N_t}{N} = \frac{2 - 1}{t} = \frac{1}{t}$ to depend only on $t$. It does: $\mu(t) = e^{\int 1/t\,dt} = t$. Multiplying: $(2ty)\,dt + t^2\,dy = 0$. Now $M_y = 2t = N_t$ — exact. Potential: $\Psi_t = 2ty \Rightarrow \Psi = t^2 y$. Solution: $t^2 y = C$.
 </TheoremBlock>
 
 <TheoremBlock type="remark" number={4} title="The exact equation ↔ conservative field dictionary">

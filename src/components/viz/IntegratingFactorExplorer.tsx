@@ -42,9 +42,6 @@ export default function IntegratingFactorExplorer() {
     const homPts: { t: number; y: number }[] = [];
     const partPts: { t: number; y: number }[] = [];
 
-    // Particular solution y_p: solution with y_p(t0) = 0 homogeneous part
-    const yp0 = preset.generalSolution(t0, 0, t0);
-
     for (let i = 0; i <= NUM_PTS; i++) {
       const t = tMin + i * dt;
       const yVal = preset.generalSolution(t, y0, t0);
