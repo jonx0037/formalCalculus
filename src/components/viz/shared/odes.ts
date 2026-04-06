@@ -3,8 +3,8 @@
  *
  * Created by Topic 21 (First-Order ODEs & Existence Theorems).
  * Extended by:
- *   - Topic 22 (Linear Systems & Matrix Exponential): matrix exponential, eigenvalue methods ← CURRENT
- *   - Topic 23 (Stability & Dynamical Systems): phase portrait generators, Lyapunov analysis
+ *   - Topic 22 (Linear Systems & Matrix Exponential): matrix exponential, eigenvalue methods
+ *   - Topic 23 (Stability & Dynamical Systems): nonlinear phase portraits, Lyapunov analysis ← CURRENT
  *   - Topic 24 (Numerical Methods for ODEs): higher-order solvers, adaptive stepping, error analysis
  *
  * All existing functions and interfaces remain stable across extensions.
@@ -896,4 +896,428 @@ export function computeSystemField(
   }
 
   return points;
+}
+
+// ── Topic 23: Stability & Dynamical Systems ─────────────────
+
+// ── Interfaces (Topic 23) ──────────────────────────────────
+
+/** Classified equilibrium of a 2D nonlinear system. */
+export interface Equilibrium2D {
+  /** Equilibrium position [y1, y2] */
+  y: [number, number];
+  /** Jacobian at this equilibrium */
+  jacobian: Matrix2x2;
+  /** Phase portrait classification from the Jacobian eigenvalues */
+  classification: PhasePortraitClassification;
+  /** Eigenvalues of the Jacobian */
+  eigenvalues: { real: [number, number]; imag: [number, number] };
+  /** True when all eigenvalues have nonzero real part */
+  isHyperbolic: boolean;
+}
+
+/** Nullcline data: zero-level sets of f₁ and f₂ plus their intersections. */
+export interface NullclineData {
+  /** Points along the curve f₁(y1, y2) = 0 */
+  f1Zero: Array<{ y1: number; y2: number }>;
+  /** Points along the curve f₂(y1, y2) = 0 */
+  f2Zero: Array<{ y1: number; y2: number }>;
+  /** Approximate equilibria at nullcline intersections */
+  intersections: Array<[number, number]>;
+}
+
+/** A single point in a nonlinear vector field. */
+export interface NonlinearFieldPoint {
+  y1: number;
+  y2: number;
+  dy1: number;
+  dy2: number;
+  magnitude: number;
+}
+
+/** Result of largest Lyapunov exponent computation. */
+export interface LyapunovExponentResult {
+  /** Largest Lyapunov exponent */
+  exponent: number;
+  /** Running average during computation */
+  convergenceHistory: number[];
+}
+
+// ── Functions (Topic 23) ───────────────────────────────────
+
+/**
+ * Classify equilibria of a 2D nonlinear system by computing the Jacobian
+ * numerically (via central differences) and applying eigenvalue classification.
+ *
+ * Reuses eigenDecomposition2x2 and classifyPhasePortrait from Topic 22.
+ *
+ * @param f - System RHS: (y1, y2) => [dy1, dy2]
+ * @param equilibria - Array of [y1, y2] equilibrium positions
+ * @param h - Finite difference step size (default 1e-6)
+ */
+export function classifyEquilibrium(
+  f: (y1: number, y2: number) => [number, number],
+  equilibria: Array<[number, number]>,
+  h: number = 1e-6,
+): Equilibrium2D[] {
+  return equilibria.map(([y1, y2]) => {
+    // Compute Jacobian via central differences
+    const fxp = f(y1 + h, y2);
+    const fxm = f(y1 - h, y2);
+    const fyp = f(y1, y2 + h);
+    const fym = f(y1, y2 - h);
+
+    const jacobian: Matrix2x2 = {
+      a11: (fxp[0] - fxm[0]) / (2 * h),
+      a12: (fyp[0] - fym[0]) / (2 * h),
+      a21: (fxp[1] - fxm[1]) / (2 * h),
+      a22: (fyp[1] - fym[1]) / (2 * h),
+    };
+
+    const eigen = eigenDecomposition2x2(jacobian);
+    const classification = classifyPhasePortrait(jacobian);
+
+    const isHyperbolic =
+      Math.abs(eigen.eigenvalues.real[0]) > 1e-10 &&
+      Math.abs(eigen.eigenvalues.real[1]) > 1e-10;
+
+    return {
+      y: [y1, y2] as [number, number],
+      jacobian,
+      classification,
+      eigenvalues: eigen.eigenvalues,
+      isHyperbolic,
+    };
+  });
+}
+
+/**
+ * Compute nullclines of a 2D nonlinear system on a grid.
+ * Uses sign-change detection (simplified marching squares) to trace zero-level sets.
+ *
+ * The grid is pre-evaluated once, and intersection finding uses spatial binning
+ * for O(N) instead of O(N·M) complexity.
+ *
+ * @param f - System RHS: (y1, y2) => [dy1, dy2]
+ * @param y1Range - [y1_min, y1_max]
+ * @param y2Range - [y2_min, y2_max]
+ * @param resolution - Grid resolution per dimension (default 200)
+ */
+export function computeNullclines(
+  f: (y1: number, y2: number) => [number, number],
+  y1Range: [number, number],
+  y2Range: [number, number],
+  resolution: number = 200,
+): NullclineData {
+  const f1Zero: Array<{ y1: number; y2: number }> = [];
+  const f2Zero: Array<{ y1: number; y2: number }> = [];
+  const intersections: Array<[number, number]> = [];
+
+  const dy1 = (y1Range[1] - y1Range[0]) / resolution;
+  const dy2 = (y2Range[1] - y2Range[0]) / resolution;
+
+  // Pre-evaluate f on the entire grid once (avoids redundant calls)
+  const gridF1 = new Float64Array(resolution * resolution);
+  const gridF2 = new Float64Array(resolution * resolution);
+  for (let i = 0; i < resolution; i++) {
+    const v1 = y1Range[0] + (i + 0.5) * dy1;
+    for (let j = 0; j < resolution; j++) {
+      const v2 = y2Range[0] + (j + 0.5) * dy2;
+      const [fv1, fv2] = f(v1, v2);
+      const idx = i * resolution + j;
+      gridF1[idx] = fv1;
+      gridF2[idx] = fv2;
+    }
+  }
+
+  // Detect sign changes using the pre-evaluated grid
+  for (let i = 0; i < resolution; i++) {
+    const v1 = y1Range[0] + (i + 0.5) * dy1;
+    for (let j = 0; j < resolution; j++) {
+      const v2 = y2Range[0] + (j + 0.5) * dy2;
+      const idx = i * resolution + j;
+      const fv1 = gridF1[idx];
+      const fv2 = gridF2[idx];
+
+      // Check right neighbor for f₁ sign change
+      if (i < resolution - 1) {
+        const fr1 = gridF1[(i + 1) * resolution + j];
+        if (fv1 * fr1 <= 0 && (Math.abs(fv1) + Math.abs(fr1)) > 1e-14) {
+          const t = Math.abs(fv1) / (Math.abs(fv1) + Math.abs(fr1));
+          f1Zero.push({ y1: v1 + t * dy1, y2: v2 });
+        }
+      }
+      // Check top neighbor for f₁ sign change
+      if (j < resolution - 1) {
+        const ft1 = gridF1[i * resolution + (j + 1)];
+        if (fv1 * ft1 <= 0 && (Math.abs(fv1) + Math.abs(ft1)) > 1e-14) {
+          const t = Math.abs(fv1) / (Math.abs(fv1) + Math.abs(ft1));
+          f1Zero.push({ y1: v1, y2: v2 + t * dy2 });
+        }
+      }
+      // Check right neighbor for f₂ sign change
+      if (i < resolution - 1) {
+        const fr2 = gridF2[(i + 1) * resolution + j];
+        if (fv2 * fr2 <= 0 && (Math.abs(fv2) + Math.abs(fr2)) > 1e-14) {
+          const t = Math.abs(fv2) / (Math.abs(fv2) + Math.abs(fr2));
+          f2Zero.push({ y1: v1 + t * dy1, y2: v2 });
+        }
+      }
+      // Check top neighbor for f₂ sign change
+      if (j < resolution - 1) {
+        const ft2 = gridF2[i * resolution + (j + 1)];
+        if (fv2 * ft2 <= 0 && (Math.abs(fv2) + Math.abs(ft2)) > 1e-14) {
+          const t = Math.abs(fv2) / (Math.abs(fv2) + Math.abs(ft2));
+          f2Zero.push({ y1: v1, y2: v2 + t * dy2 });
+        }
+      }
+    }
+  }
+
+  // Spatial binning for O(N) intersection finding
+  const tol = 3 * Math.max(dy1, dy2);
+  const cellSize = tol;
+  const toCellCoord = (value: number) => Math.floor(value / cellSize);
+  const cellKey = (y1: number, y2: number) =>
+    `${toCellCoord(y1)},${toCellCoord(y2)}`;
+
+  // Bin f2Zero points
+  const f2Bins = new Map<string, Array<{ y1: number; y2: number }>>();
+  for (const p2 of f2Zero) {
+    const key = cellKey(p2.y1, p2.y2);
+    const bucket = f2Bins.get(key);
+    if (bucket) bucket.push(p2);
+    else f2Bins.set(key, [p2]);
+  }
+
+  // Bin found intersections for deduplication
+  const intBins = new Map<string, Array<[number, number]>>();
+  const isNearExisting = (pt: [number, number]) => {
+    const cy1 = toCellCoord(pt[0]);
+    const cy2 = toCellCoord(pt[1]);
+    for (let di = -1; di <= 1; di++) {
+      for (let dj = -1; dj <= 1; dj++) {
+        const bucket = intBins.get(`${cy1 + di},${cy2 + dj}`);
+        if (!bucket) continue;
+        for (const q of bucket) {
+          if (Math.sqrt((pt[0] - q[0]) ** 2 + (pt[1] - q[1]) ** 2) < tol) return true;
+        }
+      }
+    }
+    return false;
+  };
+
+  // Search for intersections: for each f1Zero point, check nearby f2Zero bins
+  for (const p1 of f1Zero) {
+    const cy1 = toCellCoord(p1.y1);
+    const cy2 = toCellCoord(p1.y2);
+    for (let di = -1; di <= 1; di++) {
+      for (let dj = -1; dj <= 1; dj++) {
+        const bucket = f2Bins.get(`${cy1 + di},${cy2 + dj}`);
+        if (!bucket) continue;
+        for (const p2 of bucket) {
+          const dist = Math.sqrt((p1.y1 - p2.y1) ** 2 + (p1.y2 - p2.y2) ** 2);
+          if (dist < tol) {
+            const mid: [number, number] = [(p1.y1 + p2.y1) / 2, (p1.y2 + p2.y2) / 2];
+            if (!isNearExisting(mid)) {
+              intersections.push(mid);
+              const key = cellKey(mid[0], mid[1]);
+              const bucket2 = intBins.get(key);
+              if (bucket2) bucket2.push(mid);
+              else intBins.set(key, [mid]);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return { f1Zero, f2Zero, intersections };
+}
+
+/**
+ * Compute the largest Lyapunov exponent of a 2D system via the standard algorithm:
+ * integrate the base trajectory + variational equation together using RK4,
+ * periodically renormalize the perturbation vector.
+ *
+ * Both the trajectory and the variational equation are integrated with RK4
+ * for consistent numerical accuracy.
+ *
+ * @param f - System RHS: (y1, y2) => [dy1, dy2]
+ * @param y0 - Initial condition [y1, y2]
+ * @param tTotal - Total integration time
+ * @param dt - Time step
+ * @param renormInterval - Steps between renormalization (default 10)
+ */
+export function computeLyapunovExponent(
+  f: (y1: number, y2: number) => [number, number],
+  y0: [number, number],
+  tTotal: number,
+  dt: number,
+  renormInterval: number = 10,
+): LyapunovExponentResult {
+  const fdh = 1e-6; // finite difference step for Jacobian
+
+  /** Compute Jacobian of f at (y1, y2) via central differences. */
+  function jacobian(y1: number, y2: number): [number, number, number, number] {
+    const fxp = f(y1 + fdh, y2);
+    const fxm = f(y1 - fdh, y2);
+    const fyp = f(y1, y2 + fdh);
+    const fym = f(y1, y2 - fdh);
+    return [
+      (fxp[0] - fxm[0]) / (2 * fdh), // J11
+      (fyp[0] - fym[0]) / (2 * fdh), // J12
+      (fxp[1] - fxm[1]) / (2 * fdh), // J21
+      (fyp[1] - fym[1]) / (2 * fdh), // J22
+    ];
+  }
+
+  /** RHS of the combined system: (y1, y2, w1, w2) → (dy1, dy2, dw1, dw2). */
+  function combined(cy1: number, cy2: number, cw1: number, cw2: number): [number, number, number, number] {
+    const [dy1, dy2] = f(cy1, cy2);
+    const [J11, J12, J21, J22] = jacobian(cy1, cy2);
+    return [dy1, dy2, J11 * cw1 + J12 * cw2, J21 * cw1 + J22 * cw2];
+  }
+
+  let y1 = y0[0];
+  let y2 = y0[1];
+  let w1 = 1.0;
+  let w2 = 0.0;
+
+  let sumLog = 0;
+  let count = 0;
+  const convergenceHistory: number[] = [];
+  const steps = Math.floor(tTotal / dt);
+
+  for (let n = 0; n < steps; n++) {
+    // Coupled RK4 step for trajectory + variational equation
+    const k1 = combined(y1, y2, w1, w2);
+    const k2 = combined(
+      y1 + 0.5 * dt * k1[0], y2 + 0.5 * dt * k1[1],
+      w1 + 0.5 * dt * k1[2], w2 + 0.5 * dt * k1[3],
+    );
+    const k3 = combined(
+      y1 + 0.5 * dt * k2[0], y2 + 0.5 * dt * k2[1],
+      w1 + 0.5 * dt * k2[2], w2 + 0.5 * dt * k2[3],
+    );
+    const k4 = combined(
+      y1 + dt * k3[0], y2 + dt * k3[1],
+      w1 + dt * k3[2], w2 + dt * k3[3],
+    );
+
+    y1 += (dt / 6) * (k1[0] + 2 * k2[0] + 2 * k3[0] + k4[0]);
+    y2 += (dt / 6) * (k1[1] + 2 * k2[1] + 2 * k3[1] + k4[1]);
+    w1 += (dt / 6) * (k1[2] + 2 * k2[2] + 2 * k3[2] + k4[2]);
+    w2 += (dt / 6) * (k1[3] + 2 * k2[3] + 2 * k3[3] + k4[3]);
+
+    // Renormalize periodically
+    if ((n + 1) % renormInterval === 0) {
+      const norm = Math.sqrt(w1 * w1 + w2 * w2);
+      if (norm > 1e-14) {
+        sumLog += Math.log(norm);
+        count++;
+        w1 /= norm;
+        w2 /= norm;
+        convergenceHistory.push(sumLog / ((count * renormInterval) * dt));
+      }
+    }
+  }
+
+  const exponent = count > 0
+    ? sumLog / (count * renormInterval * dt)
+    : 0;
+
+  return { exponent, convergenceHistory };
+}
+
+/**
+ * Compute a nonlinear vector field on a grid.
+ * The nonlinear counterpart of computeSystemField from Topic 22.
+ *
+ * @param f - System RHS: (y1, y2) => [dy1, dy2]
+ * @param y1Range - [y1_min, y1_max]
+ * @param y2Range - [y2_min, y2_max]
+ * @param n1 - Grid points in y1 direction
+ * @param n2 - Grid points in y2 direction
+ */
+export function computeNonlinearField(
+  f: (y1: number, y2: number) => [number, number],
+  y1Range: [number, number],
+  y2Range: [number, number],
+  n1: number,
+  n2: number,
+): NonlinearFieldPoint[] {
+  const points: NonlinearFieldPoint[] = [];
+
+  const d1 = (y1Range[1] - y1Range[0]) / (n1 - 1);
+  const d2 = (y2Range[1] - y2Range[0]) / (n2 - 1);
+
+  for (let i = 0; i < n1; i++) {
+    const v1 = y1Range[0] + i * d1;
+    for (let j = 0; j < n2; j++) {
+      const v2 = y2Range[0] + j * d2;
+      const [dy1, dy2] = f(v1, v2);
+      const magnitude = Math.sqrt(dy1 * dy1 + dy2 * dy2);
+      points.push({ y1: v1, y2: v2, dy1, dy2, magnitude });
+    }
+  }
+
+  return points;
+}
+
+/**
+ * Solve a 2D nonlinear system y' = f(y) using RK4.
+ * The nonlinear counterpart of computeSystemTrajectory from Topic 22.
+ *
+ * @param f - System RHS: (y1, y2) => [dy1, dy2]
+ * @param y0 - Initial condition [y1, y2]
+ * @param tRange - [t_start, t_end]
+ * @param h - Step size
+ * @returns SystemTrajectory with method 'rk4-system'
+ */
+export function computeNonlinearTrajectory(
+  f: (y1: number, y2: number) => [number, number],
+  y0: [number, number],
+  tRange: [number, number],
+  h: number,
+): SystemTrajectory {
+  const tArr: number[] = [];
+  const y1Arr: number[] = [];
+  const y2Arr: number[] = [];
+
+  let t = tRange[0];
+  let y1 = y0[0];
+  let y2 = y0[1];
+
+  tArr.push(t);
+  y1Arr.push(y1);
+  y2Arr.push(y2);
+
+  const direction = tRange[1] >= tRange[0] ? 1 : -1;
+  const step = direction * Math.abs(h);
+  const maxSteps = Math.ceil(Math.abs(tRange[1] - tRange[0]) / Math.abs(h)) + 1;
+
+  for (let n = 0; n < maxSteps; n++) {
+    const k1 = f(y1, y2);
+    const k2 = f(y1 + 0.5 * step * k1[0], y2 + 0.5 * step * k1[1]);
+    const k3 = f(y1 + 0.5 * step * k2[0], y2 + 0.5 * step * k2[1]);
+    const k4 = f(y1 + step * k3[0], y2 + step * k3[1]);
+
+    y1 += (step / 6) * (k1[0] + 2 * k2[0] + 2 * k3[0] + k4[0]);
+    y2 += (step / 6) * (k1[1] + 2 * k2[1] + 2 * k3[1] + k4[1]);
+    t += step;
+
+    // Bail out if trajectory blows up
+    if (!isFinite(y1) || !isFinite(y2) || Math.abs(y1) > 1e6 || Math.abs(y2) > 1e6) {
+      break;
+    }
+
+    tArr.push(t);
+    y1Arr.push(y1);
+    y2Arr.push(y2);
+
+    if (direction > 0 ? t >= tRange[1] : t <= tRange[1]) break;
+  }
+
+  return { t: tArr, y1: y1Arr, y2: y2Arr, method: 'rk4-system' };
 }
