@@ -4,9 +4,10 @@
  * Created by Topic 21 (First-Order ODEs & Existence Theorems).
  * Extended by:
  *   - Topic 22 (Linear Systems & Matrix Exponential): matrix exponential, eigenvalue methods
- *   - Topic 23 (Stability & Dynamical Systems): nonlinear phase portraits, Lyapunov analysis ← CURRENT
- *   - Topic 24 (Numerical Methods for ODEs): higher-order solvers, adaptive stepping, error analysis
+ *   - Topic 23 (Stability & Dynamical Systems): nonlinear phase portraits, Lyapunov analysis
+ *   - Topic 24 (Numerical Methods for ODEs): adaptive solvers, implicit methods, error analysis ← FINAL
  *
+ * Module complete — 39 total exports across 4 topics.
  * All existing functions and interfaces remain stable across extensions.
  * All functions are pure and deterministic — no Math.random().
  */
@@ -1320,4 +1321,496 @@ export function computeNonlinearTrajectory(
   }
 
   return { t: tArr, y1: y1Arr, y2: y2Arr, method: 'rk4-system' };
+}
+
+// ════════════════════════════════════════════════════════════
+// Topic 24: Numerical Methods for ODEs ─ FINAL EXTENSION
+// ════════════════════════════════════════════════════════════
+
+// ── Topic 24 interfaces ─────────────────────────────────────
+
+/**
+ * Output of an adaptive Runge-Kutta solver (Dormand-Prince RK45).
+ * The t and y arrays are non-uniformly spaced — the solver chose
+ * step sizes based on local error estimates.
+ */
+export interface AdaptiveRK45Result {
+  t: number[];
+  y: number[];
+  /** Step size h actually used at each accepted step (length = t.length - 1) */
+  stepSizes: number[];
+  /** t-values where a step was rejected and retried with smaller h */
+  rejectedSteps: number[];
+  /** Number of accepted steps (= stepSizes.length) */
+  totalSteps: number;
+  /** Number of rejected steps (= rejectedSteps.length) */
+  totalRejections: number;
+  method: 'rk45';
+}
+
+/**
+ * Output of the implicit (backward) Euler solver.
+ * For scalar problems, only y is populated. For 2D systems, y1 and y2 hold
+ * the component arrays. The newtonIterations array tracks how many Newton
+ * iterations each step required — useful for diagnosing stiffness or
+ * Newton convergence issues.
+ */
+export interface ImplicitEulerResult {
+  t: number[];
+  y: number[];
+  /** Component-1 array for 2D systems (undefined for scalar problems) */
+  y1?: number[];
+  /** Component-2 array for 2D systems (undefined for scalar problems) */
+  y2?: number[];
+  /** Newton iterations used per step (length = t.length - 1) */
+  newtonIterations: number[];
+  method: 'implicit-euler';
+}
+
+/**
+ * Stiffness diagnostic for a 2D system at a point.
+ * The stiffness ratio is the ratio of the Jacobian's largest to smallest
+ * eigenvalue (in modulus). Systems with stiffnessRatio ≫ 1 are stiff.
+ */
+export interface StiffnessInfo {
+  /** |λ_max| / |λ_min| of the Jacobian at the queried point */
+  stiffnessRatio: number;
+  /** Real and imaginary parts of the two eigenvalues */
+  eigenvalues: { real: [number, number]; imag: [number, number] };
+  /** True if stiffnessRatio > 100 (rule-of-thumb threshold) */
+  isStiff: boolean;
+  /** Recommendation: explicit methods are fine if not stiff, implicit otherwise */
+  recommendedMethod: 'explicit' | 'implicit';
+}
+
+/**
+ * Result of an empirical convergence-order verification.
+ * Runs a method at successively halved step sizes and fits a power law
+ * to the global error: error(h) ≈ C·h^p, so log(error) ≈ log C + p·log h.
+ * The slope p is the empirical convergence order.
+ */
+export interface ConvergenceOrderResult {
+  /** Step sizes used (length = numRefinements) */
+  stepSizes: number[];
+  /** Global error |y_h(tEnd) - exact(tEnd)| at each step size */
+  errors: number[];
+  /** Slope of the log-log fit (should be ≈ 1 for Euler, ≈ 4 for RK4) */
+  empiricalOrder: number;
+  /** Theoretical convergence order of the method (1 for Euler, 4 for RK4) */
+  theoreticalOrder: number;
+}
+
+// ── Adaptive Runge-Kutta (Dormand-Prince RK45) ──────────────
+
+/**
+ * Solve a scalar IVP using the Dormand-Prince adaptive RK45 method.
+ *
+ * Uses an embedded 4(5) order pair: a 4th-order solution and a 5th-order
+ * solution are computed from the same six stages, and the difference
+ * estimates the local truncation error of the 4th-order solution. The
+ * step size is then adjusted to keep this estimate within the tolerance.
+ *
+ * Step-size update rule:
+ *   h_new = h · safety · (tol / errEst)^(1/5)
+ * with safety factor 0.9. Steps where errEst > tol are rejected and
+ * retried with the new (smaller) h. Step size is clamped to [hMin, hMax].
+ *
+ * This is the same algorithm scipy.integrate.solve_ivp uses with
+ * method='RK45' and what torchdiffeq exposes as 'dopri5'.
+ *
+ * Honors the existing convention: returns a partial trajectory if the
+ * solution exceeds the BLOW_UP threshold (1e6); does not throw.
+ *
+ * @param f - Right-hand side f(t, y)
+ * @param t0 - Initial time
+ * @param y0 - Initial value
+ * @param tEnd - Final time
+ * @param tol - Absolute error tolerance per step (default 1e-6)
+ * @param hInit - Initial step size (default (tEnd - t0) / 100)
+ * @param hMin - Minimum step size (default 1e-12)
+ * @param hMax - Maximum step size (default (tEnd - t0) / 4)
+ * @returns AdaptiveRK45Result with non-uniform t/y arrays plus step-size history
+ */
+export function adaptiveRK45(
+  f: (t: number, y: number) => number,
+  t0: number,
+  y0: number,
+  tEnd: number,
+  tol: number = 1e-6,
+  hInit?: number,
+  hMin: number = 1e-12,
+  hMax?: number,
+): AdaptiveRK45Result {
+  const BLOW_UP = 1e6;
+  const SAFETY = 0.9;
+  const totalSpan = tEnd - t0;
+
+  // Dormand-Prince coefficients (FSAL: stage 7 of step n = stage 1 of step n+1)
+  // c-coefficients (time fractions for intermediate stages)
+  const c2 = 1 / 5;
+  const c3 = 3 / 10;
+  const c4 = 4 / 5;
+  const c5 = 8 / 9;
+  // a-coefficients (intermediate-stage weights)
+  const a21 = 1 / 5;
+  const a31 = 3 / 40, a32 = 9 / 40;
+  const a41 = 44 / 45, a42 = -56 / 15, a43 = 32 / 9;
+  const a51 = 19372 / 6561, a52 = -25360 / 2187, a53 = 64448 / 6561, a54 = -212 / 729;
+  const a61 = 9017 / 3168, a62 = -355 / 33, a63 = 46732 / 5247, a64 = 49 / 176, a65 = -5103 / 18656;
+  const a71 = 35 / 384, a72 = 0, a73 = 500 / 1113, a74 = 125 / 192, a75 = -2187 / 6784, a76 = 11 / 84;
+  // b-coefficients (5th order solution; identical to a7* — that's the FSAL property)
+  // e-coefficients (difference between 5th and 4th order solutions)
+  const e1 = 71 / 57600;
+  const e3 = -71 / 16695;
+  const e4 = 71 / 1920;
+  const e5 = -17253 / 339200;
+  const e6 = 22 / 525;
+  const e7 = -1 / 40;
+
+  const direction = tEnd >= t0 ? 1 : -1;
+  const span = Math.abs(totalSpan);
+  const hMaxEffective = hMax ?? span / 4;
+  let h = direction * Math.abs(hInit ?? span / 100);
+
+  const ts: number[] = [t0];
+  const ys: number[] = [y0];
+  const stepSizes: number[] = [];
+  const rejectedSteps: number[] = [];
+
+  let t = t0;
+  let y = y0;
+  let safetyCounter = 0; // hard cap on iterations
+  const SAFETY_CAP = 100000;
+
+  while ((direction > 0 ? t < tEnd : t > tEnd) && safetyCounter < SAFETY_CAP) {
+    safetyCounter++;
+
+    // Don't overshoot tEnd
+    if ((direction > 0 ? t + h > tEnd : t + h < tEnd)) {
+      h = tEnd - t;
+    }
+
+    // Compute six stages
+    const k1 = f(t, y);
+    const k2 = f(t + c2 * h, y + h * (a21 * k1));
+    const k3 = f(t + c3 * h, y + h * (a31 * k1 + a32 * k2));
+    const k4 = f(t + c4 * h, y + h * (a41 * k1 + a42 * k2 + a43 * k3));
+    const k5 = f(t + c5 * h, y + h * (a51 * k1 + a52 * k2 + a53 * k3 + a54 * k4));
+    const k6 = f(t + h, y + h * (a61 * k1 + a62 * k2 + a63 * k3 + a64 * k4 + a65 * k5));
+
+    // 5th-order solution (b-coefficients = a7*)
+    const yNew =
+      y + h * (a71 * k1 + a72 * k2 + a73 * k3 + a74 * k4 + a75 * k5 + a76 * k6);
+
+    // 7th stage (FSAL): for the error estimate
+    const k7 = f(t + h, yNew);
+
+    // Local error estimate: the e-coefficients give |y_5 - y_4|
+    const errEst =
+      Math.abs(h) *
+      Math.abs(e1 * k1 + e3 * k3 + e4 * k4 + e5 * k5 + e6 * k6 + e7 * k7);
+
+    // Tolerance scaled by the magnitude of y (relative + absolute)
+    const scale = tol + tol * Math.max(Math.abs(y), Math.abs(yNew));
+
+    if (errEst <= scale || Math.abs(h) <= hMin) {
+      // Accept the step
+      stepSizes.push(Math.abs(h));
+      t = t + h;
+      y = yNew;
+      ts.push(t);
+      ys.push(y);
+
+      if (Math.abs(y) > BLOW_UP) break;
+
+      // Adapt step size for next iteration (5th-order error → exponent 1/5)
+      const ratio = errEst === 0 ? 5 : Math.pow(scale / errEst, 1 / 5);
+      const factor = Math.min(5, Math.max(0.2, SAFETY * ratio));
+      const newH = h * factor;
+      // Clamp magnitude to [hMin, hMax]
+      const newHMag = Math.min(hMaxEffective, Math.max(hMin, Math.abs(newH)));
+      h = direction * newHMag;
+    } else {
+      // Reject the step, shrink h, retry
+      rejectedSteps.push(t);
+      const ratio = Math.pow(scale / errEst, 1 / 5);
+      const factor = Math.max(0.1, SAFETY * ratio);
+      h = h * factor;
+      if (Math.abs(h) < hMin) {
+        // Step size has shrunk to the floor — accept anyway and let the
+        // BLOW_UP check catch it on the next iteration
+        h = direction * hMin;
+      }
+    }
+  }
+
+  return {
+    t: ts,
+    y: ys,
+    stepSizes,
+    rejectedSteps,
+    totalSteps: stepSizes.length,
+    totalRejections: rejectedSteps.length,
+    method: 'rk45',
+  };
+}
+
+// ── Implicit (backward) Euler ───────────────────────────────
+
+/**
+ * Solve a scalar IVP using the implicit (backward) Euler method.
+ *
+ * The recurrence y_{n+1} = y_n + h · f(t_{n+1}, y_{n+1}) is implicit in
+ * y_{n+1}, so we solve for it via Newton iteration on the residual:
+ *   g(y) = y - y_n - h · f(t_{n+1}, y) = 0
+ *   g'(y) = 1 - h · ∂f/∂y(t_{n+1}, y)
+ *   y^{k+1} = y^k - g(y^k) / g'(y^k)
+ *
+ * The user supplies dfdy explicitly. For systems where ∂f/∂y is not
+ * available analytically, the caller can compute it via finite differences.
+ *
+ * Implicit Euler is A-stable: |R(z)| = |1/(1-z)| ≤ 1 for all Re(z) ≤ 0.
+ * It can take arbitrarily large step sizes on stiff stable problems.
+ *
+ * @param f - Right-hand side f(t, y)
+ * @param dfdy - Partial derivative ∂f/∂y(t, y), used for Newton iteration
+ * @param t0 - Initial time
+ * @param y0 - Initial value
+ * @param tEnd - Final time
+ * @param h - Step size (always positive; direction inferred from t0, tEnd)
+ * @param newtonTol - Newton convergence tolerance (default 1e-10)
+ * @param maxNewtonIter - Maximum Newton iterations per step (default 20)
+ * @returns ImplicitEulerResult with the trajectory and per-step Newton counts
+ */
+export function implicitEuler(
+  f: (t: number, y: number) => number,
+  dfdy: (t: number, y: number) => number,
+  t0: number,
+  y0: number,
+  tEnd: number,
+  h: number,
+  newtonTol: number = 1e-10,
+  maxNewtonIter: number = 20,
+): ImplicitEulerResult {
+  const BLOW_UP = 1e6;
+  const direction = tEnd >= t0 ? 1 : -1;
+  const step = direction * Math.abs(h);
+  const nSteps = Math.ceil(Math.abs(tEnd - t0) / Math.abs(h));
+
+  const ts: number[] = [t0];
+  const ys: number[] = [y0];
+  const newtonIterations: number[] = [];
+
+  let t = t0;
+  let y = y0;
+
+  for (let i = 0; i < nSteps; i++) {
+    // Reduce final step to land exactly on tEnd
+    const remaining = tEnd - t;
+    const currentStep =
+      Math.abs(remaining) < Math.abs(step) ? remaining : step;
+    const tNext = t + currentStep;
+
+    // Newton iteration to solve y_{n+1} = y_n + h · f(t_{n+1}, y_{n+1})
+    let yGuess = y + currentStep * f(t, y); // explicit-Euler initial guess
+    let iter = 0;
+    for (iter = 0; iter < maxNewtonIter; iter++) {
+      const g = yGuess - y - currentStep * f(tNext, yGuess);
+      const gPrime = 1 - currentStep * dfdy(tNext, yGuess);
+      if (Math.abs(gPrime) < 1e-14) {
+        // Singular Jacobian — abort Newton, accept current guess
+        break;
+      }
+      const dy = g / gPrime;
+      yGuess = yGuess - dy;
+      if (Math.abs(dy) < newtonTol) {
+        iter++; // count this final iteration
+        break;
+      }
+    }
+
+    y = yGuess;
+    t = tNext;
+    ts.push(t);
+    ys.push(y);
+    newtonIterations.push(iter);
+
+    if (!isFinite(y) || Math.abs(y) > BLOW_UP) break;
+  }
+
+  return {
+    t: ts,
+    y: ys,
+    newtonIterations,
+    method: 'implicit-euler',
+  };
+}
+
+// ── Stiffness detector ──────────────────────────────────────
+
+/**
+ * Diagnose the stiffness of a 2D system at a given point by computing
+ * the Jacobian's eigenvalues. Reuses eigenDecomposition2x2 from Topic 22
+ * and the central-difference Jacobian pattern from classifyEquilibrium.
+ *
+ * Heuristic threshold: a system is "stiff" if the ratio of the largest
+ * to smallest eigenvalue magnitude exceeds 100. This is a rule of thumb,
+ * not a sharp definition — stiffness is also a function of the desired
+ * integration interval relative to the fastest time scale.
+ *
+ * @param f - System RHS: (y1, y2) => [dy1, dy2]
+ * @param y - Point [y1, y2] at which to evaluate stiffness
+ * @param fdh - Finite-difference step size for the Jacobian (default 1e-6)
+ * @returns StiffnessInfo with eigenvalues, ratio, and method recommendation
+ */
+export function stiffnessDetector(
+  f: (y1: number, y2: number) => [number, number],
+  y: [number, number],
+  fdh: number = 1e-6,
+): StiffnessInfo {
+  const [y1, y2] = y;
+
+  // Central-difference Jacobian (matches classifyEquilibrium pattern)
+  const fxp = f(y1 + fdh, y2);
+  const fxm = f(y1 - fdh, y2);
+  const fyp = f(y1, y2 + fdh);
+  const fym = f(y1, y2 - fdh);
+
+  const J: Matrix2x2 = {
+    a11: (fxp[0] - fxm[0]) / (2 * fdh),
+    a12: (fyp[0] - fym[0]) / (2 * fdh),
+    a21: (fxp[1] - fxm[1]) / (2 * fdh),
+    a22: (fyp[1] - fym[1]) / (2 * fdh),
+  };
+
+  const eig = eigenDecomposition2x2(J);
+  const [lam1Re, lam2Re] = eig.eigenvalues.real;
+  const [lam1Im, lam2Im] = eig.eigenvalues.imag;
+  const mag1 = Math.sqrt(lam1Re * lam1Re + lam1Im * lam1Im);
+  const mag2 = Math.sqrt(lam2Re * lam2Re + lam2Im * lam2Im);
+
+  const lambdaMax = Math.max(mag1, mag2);
+  const lambdaMin = Math.min(mag1, mag2);
+
+  // Avoid division by zero for systems with a zero eigenvalue
+  const stiffnessRatio = lambdaMin > 1e-14 ? lambdaMax / lambdaMin : Infinity;
+  const isStiff = stiffnessRatio > 100;
+
+  return {
+    stiffnessRatio,
+    eigenvalues: {
+      real: [lam1Re, lam2Re],
+      imag: [lam1Im, lam2Im],
+    },
+    isStiff,
+    recommendedMethod: isStiff ? 'implicit' : 'explicit',
+  };
+}
+
+// ── Error estimation via Richardson extrapolation ───────────
+
+/**
+ * Estimate the local error of a single-step method at tEnd by Richardson
+ * extrapolation: run with step h and step h/2, then
+ *   error ≈ |y_h(tEnd) - y_{h/2}(tEnd)| / (2^p - 1)
+ * where p is the method's theoretical order. The denominator (2^p - 1)
+ * comes from the leading-order error term canceling under refinement.
+ *
+ * @param f - Right-hand side f(t, y)
+ * @param t0 - Initial time
+ * @param y0 - Initial value
+ * @param tEnd - Final time
+ * @param h - Base step size
+ * @param method - 'euler' (order 1) or 'rk4' (order 4)
+ * @returns Estimated error at tEnd
+ */
+export function errorEstimation(
+  f: (t: number, y: number) => number,
+  t0: number,
+  y0: number,
+  tEnd: number,
+  h: number,
+  method: 'euler' | 'rk4',
+): number {
+  const solver = method === 'euler' ? eulerMethod : rk4Method;
+  const p = method === 'euler' ? 1 : 4;
+
+  const coarse = solver(f, t0, y0, tEnd, h);
+  const fine = solver(f, t0, y0, tEnd, h / 2);
+
+  const yCoarse = coarse.y[coarse.y.length - 1];
+  const yFine = fine.y[fine.y.length - 1];
+
+  return Math.abs(yCoarse - yFine) / (Math.pow(2, p) - 1);
+}
+
+// ── Empirical convergence order ─────────────────────────────
+
+/**
+ * Estimate the empirical convergence order of a method by running it at
+ * successively halved step sizes and fitting log(error) vs log(h).
+ *
+ * For a method of theoretical order p, error(h) ≈ C · h^p, so a plot of
+ * log(error) vs log(h) is a straight line with slope p. Computing this
+ * slope from data is a direct experimental verification of the
+ * convergence theory developed in Section 9 of the topic.
+ *
+ * @param f - Right-hand side f(t, y)
+ * @param exactSolution - Exact y(t) for computing the global error
+ * @param t0 - Initial time
+ * @param y0 - Initial value
+ * @param tEnd - Final time
+ * @param method - 'euler' or 'rk4'
+ * @param numRefinements - Number of step-size halvings (default 6)
+ * @returns ConvergenceOrderResult with stepSizes, errors, and fitted slope
+ */
+export function convergenceOrder(
+  f: (t: number, y: number) => number,
+  exactSolution: (t: number) => number,
+  t0: number,
+  y0: number,
+  tEnd: number,
+  method: 'euler' | 'rk4',
+  numRefinements: number = 6,
+): ConvergenceOrderResult {
+  const solver = method === 'euler' ? eulerMethod : rk4Method;
+  const theoreticalOrder = method === 'euler' ? 1 : 4;
+  const yExact = exactSolution(tEnd);
+
+  // Start with a "moderate" step size and halve it numRefinements times
+  const h0 = (tEnd - t0) / 16;
+  const stepSizes: number[] = [];
+  const errors: number[] = [];
+
+  for (let k = 0; k < numRefinements; k++) {
+    const hk = h0 / Math.pow(2, k);
+    const sol = solver(f, t0, y0, tEnd, hk);
+    const yEnd = sol.y[sol.y.length - 1];
+    const err = Math.abs(yEnd - yExact);
+
+    stepSizes.push(hk);
+    // Guard against zero error (which would break the log fit)
+    errors.push(Math.max(err, 1e-300));
+  }
+
+  // Linear fit of log(error) vs log(h) — the slope is the empirical order
+  const logH = stepSizes.map((h) => Math.log(h));
+  const logE = errors.map((e) => Math.log(e));
+  const n = logH.length;
+  const meanH = logH.reduce((a, b) => a + b, 0) / n;
+  const meanE = logE.reduce((a, b) => a + b, 0) / n;
+  let num = 0;
+  let den = 0;
+  for (let i = 0; i < n; i++) {
+    num += (logH[i] - meanH) * (logE[i] - meanE);
+    den += (logH[i] - meanH) * (logH[i] - meanH);
+  }
+  const empiricalOrder = den > 1e-14 ? num / den : theoreticalOrder;
+
+  return {
+    stepSizes,
+    errors,
+    empiricalOrder,
+    theoreticalOrder,
+  };
 }
