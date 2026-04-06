@@ -1,0 +1,500 @@
+---
+title: "Linear Systems & Matrix Exponential"
+subtitle: "From scalar ODEs to coupled systems — eigenvalue methods, phase portraits, and the matrix exponential that unifies them. The linear algebra engine of dynamical systems."
+status: "published"
+difficulty: "intermediate"
+prerequisites:
+  - "first-order-odes"
+  - "jacobian"
+tags:
+  - "calculus"
+  - "ordinary-differential-equations"
+  - "linear-systems"
+  - "matrix-exponential"
+  - "phase-portraits"
+  - "eigenvalue-methods"
+  - "state-space-models"
+domain: "odes"
+videoId: null
+notebookPath: "notebooks/linear-systems/22_linear_systems.ipynb"
+githubUrl: "https://github.com/jonx0037/formalCalculus/blob/main/src/content/topics/linear-systems.mdx"
+datePublished: 2026-04-05
+estimatedReadTime: 50
+abstract: "A system of first-order ODEs y' = Ay couples multiple evolving quantities through a matrix A. The solution is y(t) = e^{At}y₀, where the matrix exponential e^{At} = Σ (At)^k/k! is a matrix-valued power series that always converges. When A is diagonalizable with eigendecomposition A = PDP⁻¹, the matrix exponential factors as e^{At} = P·diag(e^{λ₁t}, ..., e^{λₙt})·P⁻¹, reducing the system to n independent scalar equations — each solved by the methods of Topic 21. For 2×2 systems, the eigenvalues of A completely classify the phase portrait: real eigenvalues of the same sign produce nodes, opposite signs produce saddles, and complex eigenvalues produce spirals or centers. The trace-determinant plane organizes this classification into a single diagram. Non-homogeneous systems y' = Ay + g(t) are solved by variation of parameters: y(t) = e^{At}y₀ + ∫₀ᵗ e^{A(t-s)}g(s)ds — the convolution of the matrix exponential with the forcing term. The Picard-Lindelöf theorem extends immediately to vector IVPs because any matrix A is Lipschitz with constant ‖A‖. In machine learning, linear systems appear everywhere: gradient descent on a quadratic loss L(θ) = ½θᵀHθ yields the system θ̇ = -Hθ whose convergence rate is controlled by the eigenvalues of the Hessian H. Structured state-space models (S4, Mamba) parameterize sequence models as linear systems with learned matrices A, B, C — discretized via the matrix exponential for efficient training."
+formalmlConnections:
+  - topic: "gradient-descent"
+    site: "formalml"
+    relationship: "Gradient descent on a quadratic loss L(θ) = ½θᵀHθ is the linear system θ̇ = −Hθ with solution θ(t) = e^{−Ht}θ₀. The eigenvalues of the Hessian H determine convergence rates: each eigen-component decays as e^{−λᵢt}. The condition number κ(H) = λ_max/λ_min is the ratio of fastest to slowest decay, explaining why ill-conditioned problems converge slowly."
+  - topic: "spectral-theorem"
+    site: "formalml"
+    relationship: "The spectral decomposition A = PDP⁻¹ is the computational engine of the matrix exponential. The spectral theorem guarantees that symmetric matrices have real eigenvalues and orthogonal eigenvectors, yielding e^{At} = Σ e^{λᵢt}vᵢvᵢᵀ — a sum of rank-one exponentials. This spectral representation appears in kernel methods (Mercer's theorem), PCA, and spectral graph theory."
+  - topic: "information-geometry"
+    site: "formalml"
+    relationship: "Natural gradient descent θ̇ = −F⁻¹∇L defines a linear system in the tangent space of the statistical manifold. The Fisher information matrix F acts as the metric tensor, and the matrix exponential e^{−F⁻¹∇²L·t} describes local training dynamics in natural gradient coordinates."
+connections:
+  - topic: "first-order-odes"
+    relationship: "The scalar linear ODE y' + p(t)y = q(t) from Topic 21 is the 1×1 case of y' = Ay + g(t). The integrating factor e^{∫p(t)dt} becomes the matrix exponential e^{At}. The Picard-Lindelöf theorem extends to vector IVPs with the same proof — the Lipschitz constant is the operator norm ‖A‖."
+  - topic: "jacobian"
+    relationship: "The matrix A in y' = Ay is the Jacobian of the right-hand side — constant, so the linearization is exact. The eigendecomposition A = PDP⁻¹ is a change of basis that diagonalizes the linear map, the same operation introduced in Topic 10 for understanding how the Jacobian distorts neighborhoods."
+  - topic: "power-taylor-series"
+    relationship: "The matrix exponential e^{At} = Σ (At)^k/k! is a power series in the matrix variable At. Convergence is proved using the operator norm and the ratio test, exactly as for scalar power series in Topic 18. The radius of convergence is infinite — the matrix exponential converges for all t and all A."
+  - topic: "hessian"
+    relationship: "Phase portrait classification by eigenvalues of A mirrors the second-derivative test from Topic 11: the Hessian's eigenvalues classify critical points as minima, maxima, or saddle points; the system matrix's eigenvalues classify equilibria as stable nodes, unstable nodes, or saddles."
+  - topic: "derivative"
+    relationship: "The matrix exponential satisfies d/dt[e^{At}] = Ae^{At}, the matrix analog of d/dt[e^{at}] = ae^{at}. The chain rule extends: d/dt[e^{f(t)A}] = f'(t)Ae^{f(t)A}."
+  - topic: "completeness-compactness"
+    relationship: "Convergence of the matrix exponential series requires completeness of the normed space of n×n matrices. The argument parallels the scalar case (absolute convergence of Σ‖A‖^k t^k/k!) but takes place in a finite-dimensional Banach algebra."
+references:
+  - type: "book"
+    title: "Ordinary Differential Equations"
+    authors: "Arnold"
+    year: 1992
+    note: "Chapters 5–6 develop the matrix exponential and phase portrait classification from the geometric viewpoint. The primary reference for our visualization-first approach to 2×2 systems"
+  - type: "book"
+    title: "Ordinary Differential Equations"
+    authors: "Teschl"
+    year: 2012
+    note: "Chapter 3 provides the rigorous treatment of linear systems, fundamental matrices, and variation of parameters. Clear and free online"
+  - type: "book"
+    title: "Differential Equations, Dynamical Systems, and an Introduction to Chaos"
+    authors: "Hirsch, Smale & Devaney"
+    year: 2013
+    note: "Chapters 2–6 are the standard reference for phase portrait classification and the trace-determinant diagram. Excellent for building geometric intuition"
+  - type: "book"
+    title: "Matrix Analysis and Applied Linear Algebra"
+    authors: "Meyer"
+    year: 2000
+    note: "Chapter 10 covers the matrix exponential, Jordan normal form, and matrix functions with full rigor. The computational reference for matrix exponential properties"
+  - type: "paper"
+    title: "Efficiently Modeling Long Sequences with Structured State Spaces"
+    authors: "Gu, Goel & Ré"
+    year: 2022
+    url: "https://arxiv.org/abs/2111.00396"
+    note: "The S4 paper — introduces structured state-space models (SSMs) as discretized linear systems y' = Ay + Bu with learned matrices. The matrix exponential is central to the discretization and efficient computation via the HiPPO framework"
+  - type: "paper"
+    title: "Mamba: Linear-Time Sequence Modeling with Selective State Spaces"
+    authors: "Gu & Dao"
+    year: 2023
+    url: "https://arxiv.org/abs/2312.00752"
+    note: "Extends S4 with input-dependent (selective) state-space parameters, achieving transformer-competitive performance. The linear system structure y' = A(x)y + B(x)u connects linear systems theory to modern sequence modeling"
+  - type: "paper"
+    title: "Nineteen Dubious Ways to Compute the Exponential of a Matrix, Twenty-Five Years Later"
+    authors: "Moler & Van Loan"
+    year: 2003
+    url: "https://doi.org/10.1137/S00361445024180"
+    note: "The classic survey of matrix exponential computation methods — eigendecomposition, Padé approximation, scaling-and-squaring, ODE solvers. Essential context for the computational notes section"
+---
+
+import TheoremBlock from '../../components/ui/TheoremBlock.astro';
+
+import PhasePortraitExplorer from '../../components/viz/PhasePortraitExplorer.tsx';
+import MatrixExponentialExplorer from '../../components/viz/MatrixExponentialExplorer.tsx';
+import VariationOfParametersExplorer from '../../components/viz/VariationOfParametersExplorer.tsx';
+import TrainingDynamicsExplorer from '../../components/viz/TrainingDynamicsExplorer.tsx';
+
+## 1. From Scalar to System — The Vector ODE
+
+In [First-Order ODEs](/topics/first-order-odes), we solved scalar equations $y' = f(t, y)$ — one unknown function evolving according to one rule. But almost nothing interesting is one-dimensional. Two masses connected by a spring give a system of two coupled equations. A circuit with an inductor and capacitor gives another. A neural network with $p$ parameters evolving under gradient descent gives a system of $p$ coupled equations. The passage from scalar to system is the passage from one-dimensional calculus to linear algebra.
+
+A system of $n$ first-order ODEs can always be written as a single vector equation $\mathbf{y}' = \mathbf{f}(t, \mathbf{y})$, where $\mathbf{y}(t) \in \mathbb{R}^n$ is a vector-valued function. For a **linear** system with constant coefficients, this becomes $\mathbf{y}' = A\mathbf{y}$, where $A \in \mathbb{R}^{n \times n}$ is a constant matrix. The direction field from Topic 21 — a slope at every point — becomes a **vector field**: at each point $\mathbf{y}$, the matrix $A$ assigns a velocity vector $A\mathbf{y}$.
+
+**Why this matters for ML:** Neural network parameters form a vector $\theta \in \mathbb{R}^p$, and gradient descent $\dot{\theta} = -\nabla L(\theta)$ is a system of $p$ coupled ODEs. Near a minimum, linearizing gives $\dot{\theta} \approx -H\theta$ — a linear system whose behavior is governed by the [Hessian](/topics/hessian) eigenvalues. Understanding linear systems is understanding the local behavior of gradient descent.
+
+<TheoremBlock type="definition" number={1} title="Linear System of ODEs">
+A *linear system of first-order ordinary differential equations* with constant coefficients is an equation
+
+$$\mathbf{y}'(t) = A\mathbf{y}(t),$$
+
+where $A \in \mathbb{R}^{n \times n}$ is a constant matrix and $\mathbf{y}: I \to \mathbb{R}^n$ is the unknown vector-valued function. The *initial value problem* is $\mathbf{y}'(t) = A\mathbf{y}(t)$, $\mathbf{y}(0) = \mathbf{y}_0$. The system is *homogeneous* if there is no additional forcing term; the *non-homogeneous* version is $\mathbf{y}'(t) = A\mathbf{y}(t) + \mathbf{g}(t)$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={1} title="Coupled oscillators">
+Two masses connected by springs: $y_1' = y_2$, $y_2' = -\omega^2 y_1$. In matrix form:
+
+$$\mathbf{y}' = \begin{pmatrix} 0 & 1 \\ -\omega^2 & 0 \end{pmatrix} \mathbf{y}.$$
+
+The eigenvalues are $\pm i\omega$, producing oscillatory solutions $y_1(t) = A\cos(\omega t + \phi)$ — the system *rotates* in the phase plane. This is the harmonic oscillator, the most fundamental dynamical system in physics and engineering.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={2} title="Higher-order to first-order conversion">
+The second-order equation $y'' + 3y' + 2y = 0$ converts to a first-order system via $y_1 = y$, $y_2 = y'$:
+
+$$\mathbf{y}' = \begin{pmatrix} 0 & 1 \\ -2 & -3 \end{pmatrix} \mathbf{y}.$$
+
+Every $n$-th order linear ODE becomes an $n \times n$ first-order system. This reduction is not just a notational convenience — it places all linear ODEs (regardless of order) into a single framework where eigenvalue methods apply uniformly.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={1} title="Autonomous vs. non-autonomous systems">
+When $A$ is constant, the system is *autonomous*: the velocity field $A\mathbf{y}$ depends only on the state $\mathbf{y}$, not on time. This is the typical case in ML — the loss landscape does not change during training (for fixed data). Time-dependent systems $\mathbf{y}' = A(t)\mathbf{y}$ are harder and appear in §7 via the non-homogeneous formulation.
+</TheoremBlock>
+
+![Scalar ODE direction field compared with 2D vector field for a coupled system, and higher-order to first-order conversion diagram](/images/topics/linear-systems/scalar-to-system.png)
+
+## 2. The Matrix Exponential
+
+The scalar ODE $y' = ay$ has the solution $y(t) = e^{at}y_0$. The system $\mathbf{y}' = A\mathbf{y}$ has the solution $\mathbf{y}(t) = e^{At}\mathbf{y}_0$, where the **matrix exponential** is defined by the power series:
+
+$$e^{At} = I + At + \frac{(At)^2}{2!} + \frac{(At)^3}{3!} + \cdots = \sum_{k=0}^{\infty} \frac{(At)^k}{k!}$$
+
+This series **always converges** for any square matrix $A$ and any $t \in \mathbb{R}$. The proof uses the submultiplicativity of the operator norm: $\|A^k\| \leq \|A\|^k$, so the series is dominated by $\sum \|A\|^k |t|^k / k! = e^{\|A\||t|} < \infty$.
+
+The matrix exponential is a [power series](/topics/power-taylor-series) in the matrix variable $At$, with infinite radius of convergence. Everything we proved about scalar power series in Topic 18 — absolute convergence, term-by-term differentiation — extends to matrix-valued series.
+
+<TheoremBlock type="definition" number={2} title="Matrix Exponential">
+For any $n \times n$ matrix $A$ and scalar $t \in \mathbb{R}$, the *matrix exponential* is
+
+$$e^{At} = \sum_{k=0}^{\infty} \frac{(At)^k}{k!},$$
+
+where $A^0 = I$ (the identity matrix) and $A^k$ denotes the $k$-th matrix power. The series converges absolutely in any matrix norm.
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={1} title="Convergence of the Matrix Exponential">
+For any $A \in \mathbb{R}^{n \times n}$ and $t \in \mathbb{R}$, the series $\sum_{k=0}^{\infty} \frac{(At)^k}{k!}$ converges absolutely, and $\|e^{At}\| \leq e^{\|A\||t|}$.
+</TheoremBlock>
+
+<TheoremBlock type="proof" title="Proof of Theorem 1">
+For any submultiplicative norm $\|\cdot\|$, we have
+
+$$\left\|\frac{(At)^k}{k!}\right\| \leq \frac{\|A\|^k |t|^k}{k!}.$$
+
+The scalar series $\sum_{k=0}^{\infty} \frac{(\|A\||t|)^k}{k!} = e^{\|A\||t|}$ converges (it is the exponential function evaluated at $\|A\||t|$). Therefore the matrix series converges absolutely by comparison.
+
+Absolute convergence in a finite-dimensional normed space implies convergence (because $\mathbb{R}^{n \times n}$ with any matrix norm is a [complete](/topics/completeness-compactness) normed space), so $e^{At}$ is well-defined.
+
+The bound follows from the triangle inequality applied to the partial sums:
+
+$$\|e^{At}\| = \left\|\sum_{k=0}^{\infty} \frac{(At)^k}{k!}\right\| \leq \sum_{k=0}^{\infty} \frac{\|A\|^k |t|^k}{k!} = e^{\|A\||t|}. \qquad \blacksquare$$
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={2} title="Properties of the Matrix Exponential">
+Let $A, B \in \mathbb{R}^{n \times n}$ and $t, s \in \mathbb{R}$. Then:
+
+**(a)** $e^{A \cdot 0} = I$.
+
+**(b)** $\displaystyle\frac{d}{dt}e^{At} = Ae^{At} = e^{At}A$.
+
+**(c)** $e^{A(t+s)} = e^{At}e^{As}$ for all $t, s$.
+
+**(d)** $e^{At}$ is invertible with $(e^{At})^{-1} = e^{-At}$.
+
+**(e)** If $AB = BA$, then $e^{(A+B)t} = e^{At}e^{Bt}$.
+
+**(f)** If $AB \neq BA$, then $e^{(A+B)t} \neq e^{At}e^{Bt}$ in general.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={2} title="The commutativity caveat">
+Property (e) fails without commutativity. The Baker-Campbell-Hausdorff formula gives the correction: $e^A e^B = e^{A + B + \frac{1}{2}[A,B] + \cdots}$ where $[A, B] = AB - BA$ is the commutator. This non-commutativity is why matrix exponentials are harder than scalar exponentials, and why Lie theory is the natural language for matrix groups. In ML, this matters when composing transformations that don't commute — rotation followed by scaling is not the same as scaling followed by rotation.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={3} title="Diagonal and nilpotent exponentials">
+If $A = \text{diag}(\lambda_1, \ldots, \lambda_n)$, then $e^{At} = \text{diag}(e^{\lambda_1 t}, \ldots, e^{\lambda_n t})$ — each component evolves independently.
+
+If $N$ is nilpotent ($N^m = 0$ for some $m$), then $e^{Nt} = I + Nt + \frac{(Nt)^2}{2!} + \cdots + \frac{(Nt)^{m-1}}{(m-1)!}$ — a matrix polynomial in $t$, since all higher powers vanish. This finite truncation makes nilpotent exponentials easy to compute.
+</TheoremBlock>
+
+<MatrixExponentialExplorer client:visible />
+
+![Partial sums of the matrix exponential converging, with entry-wise error on a log scale](/images/topics/linear-systems/matrix-exponential.png)
+
+## 3. Eigenvalue Methods — Diagonalizable Systems
+
+If $A$ has $n$ linearly independent eigenvectors — i.e., $A$ is *diagonalizable* with $A = PDP^{-1}$ where $D = \text{diag}(\lambda_1, \ldots, \lambda_n)$ — then the matrix exponential factors cleanly:
+
+$$e^{At} = Pe^{Dt}P^{-1} = P \begin{pmatrix} e^{\lambda_1 t} & & \\ & \ddots & \\ & & e^{\lambda_n t} \end{pmatrix} P^{-1}$$
+
+This reduces the system to $n$ independent scalar equations. The general solution is $\mathbf{y}(t) = c_1 e^{\lambda_1 t}\mathbf{v}_1 + \cdots + c_n e^{\lambda_n t}\mathbf{v}_n$, where $\mathbf{v}_i$ are the eigenvectors and $c_i$ are determined by the initial condition. Each term $c_i e^{\lambda_i t}\mathbf{v}_i$ is a scalar ODE solution ([Topic 21](/topics/first-order-odes)) dressed in the direction of its eigenvector.
+
+The [Jacobian](/topics/jacobian) introduced eigendecomposition as a change of basis that diagonalizes a linear map. Here the same idea solves a differential equation: in the eigenbasis, the coupled system decouples into $n$ independent exponentials.
+
+<TheoremBlock type="theorem" number={3} title="Solution via Eigendecomposition">
+Let $A \in \mathbb{R}^{n \times n}$ be diagonalizable with eigenvalues $\lambda_1, \ldots, \lambda_n$ and corresponding linearly independent eigenvectors $\mathbf{v}_1, \ldots, \mathbf{v}_n$. The general solution of $\mathbf{y}' = A\mathbf{y}$ is
+
+$$\mathbf{y}(t) = c_1 e^{\lambda_1 t}\mathbf{v}_1 + \cdots + c_n e^{\lambda_n t}\mathbf{v}_n,$$
+
+where $c_i \in \mathbb{R}$ (or $\mathbb{C}$) are constants determined by $\mathbf{y}(0) = \mathbf{y}_0$.
+</TheoremBlock>
+
+<TheoremBlock type="proof" title="Proof of Theorem 3">
+Each $e^{\lambda_i t}\mathbf{v}_i$ satisfies
+
+$$\frac{d}{dt}\bigl[e^{\lambda_i t}\mathbf{v}_i\bigr] = \lambda_i e^{\lambda_i t}\mathbf{v}_i = A\bigl(e^{\lambda_i t}\mathbf{v}_i\bigr)$$
+
+because $A\mathbf{v}_i = \lambda_i \mathbf{v}_i$. By linearity of differentiation, any linear combination $\sum c_i e^{\lambda_i t}\mathbf{v}_i$ is also a solution.
+
+Since $\{\mathbf{v}_1, \ldots, \mathbf{v}_n\}$ is a basis for $\mathbb{R}^n$, every initial condition $\mathbf{y}_0 = \sum c_i \mathbf{v}_i$ can be uniquely represented, so the general solution captures *all* solutions. $\blacksquare$
+</TheoremBlock>
+
+<TheoremBlock type="example" number={4} title="A 2×2 system with real eigenvalues">
+Consider $A = \begin{pmatrix} -1 & 2 \\ 0 & -3 \end{pmatrix}$. The eigenvalues are $\lambda_1 = -1$, $\lambda_2 = -3$, with eigenvectors $\mathbf{v}_1 = (1, 0)^T$, $\mathbf{v}_2 = (1, -1)^T$. The general solution is
+
+$$\mathbf{y}(t) = c_1 e^{-t}\begin{pmatrix} 1 \\ 0 \end{pmatrix} + c_2 e^{-3t}\begin{pmatrix} 1 \\ -1 \end{pmatrix}.$$
+
+Both eigenvalues are negative, so all solutions decay to the origin — a *stable node*. The fast component ($e^{-3t}$) dies out first, and trajectories ultimately align with the slow eigendirection $\mathbf{v}_1$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={5} title="Complex eigenvalues">
+The rotation matrix $A = \begin{pmatrix} 0 & -\omega \\ \omega & 0 \end{pmatrix}$ has eigenvalues $\pm i\omega$. The solution is $\mathbf{y}(t) = c_1 \cos(\omega t) + c_2 \sin(\omega t)$ — pure rotation in the phase plane (a *center*). With damping, $A = \begin{pmatrix} -\alpha & -\omega \\ \omega & -\alpha \end{pmatrix}$ ($\alpha > 0$), the eigenvalues become $-\alpha \pm i\omega$, and solutions spiral inward — a *stable spiral*.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={3} title="Real solutions from complex eigenvalues">
+When $A$ is real and $\lambda = \alpha + i\beta$ is a complex eigenvalue with eigenvector $\mathbf{v} = \mathbf{a} + i\mathbf{b}$, the two real-valued solutions are
+
+$$e^{\alpha t}\bigl(\cos(\beta t)\,\mathbf{a} - \sin(\beta t)\,\mathbf{b}\bigr) \quad\text{and}\quad e^{\alpha t}\bigl(\sin(\beta t)\,\mathbf{a} + \cos(\beta t)\,\mathbf{b}\bigr).$$
+
+The factor $e^{\alpha t}$ controls growth or decay; $\cos(\beta t)$ and $\sin(\beta t)$ produce rotation. When $\alpha < 0$, we get spirals that decay inward; when $\alpha > 0$, spirals that grow outward; when $\alpha = 0$, closed ellipses.
+</TheoremBlock>
+
+![Eigendecomposition visualization showing eigenvectors determining solution structure](/images/topics/linear-systems/eigenvalue-methods.png)
+
+## 4. Phase Portraits for 2×2 Systems
+
+For a $2 \times 2$ system $\mathbf{y}' = A\mathbf{y}$, the qualitative behavior is completely determined by the eigenvalues of $A$. The **trace-determinant plane** organizes all possibilities into a single diagram — one of the most useful classification tools in dynamical systems.
+
+The eigenvalues of a $2 \times 2$ matrix are $\lambda = \frac{\tau \pm \sqrt{\tau^2 - 4\Delta}}{2}$, where $\tau = \text{tr}(A)$ and $\Delta = \det(A)$. Every qualitative feature of the phase portrait — stability, oscillation, node vs. spiral — is encoded in these two numbers.
+
+<TheoremBlock type="definition" number={3} title="Phase Portrait">
+The *phase portrait* of $\mathbf{y}' = A\mathbf{y}$ is the collection of all solution trajectories $\mathbf{y}(t)$ plotted in the phase plane $(y_1, y_2)$. The origin $\mathbf{0}$ is the only equilibrium point (assuming $A$ is invertible, i.e., $\det(A) \neq 0$).
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={4} title="Trace-Determinant Classification">
+Let $A$ be a $2 \times 2$ real matrix with $\tau = \text{tr}(A)$ and $\Delta = \det(A)$, and define the discriminant $D = \tau^2 - 4\Delta$. The phase portrait of $\mathbf{y}' = A\mathbf{y}$ is classified as follows:
+
+**(i)** $\Delta < 0$: **saddle** (eigenvalues of opposite sign).
+
+**(ii)** $\Delta > 0$, $D > 0$, $\tau < 0$: **stable node** (distinct negative real eigenvalues).
+
+**(iii)** $\Delta > 0$, $D > 0$, $\tau > 0$: **unstable node** (distinct positive real eigenvalues).
+
+**(iv)** $\Delta > 0$, $D < 0$, $\tau < 0$: **stable spiral** (complex eigenvalues with negative real part).
+
+**(v)** $\Delta > 0$, $D < 0$, $\tau > 0$: **unstable spiral** (complex eigenvalues with positive real part).
+
+**(vi)** $\Delta > 0$, $\tau = 0$: **center** (pure imaginary eigenvalues).
+
+**(vii)** $\Delta = 0$: **degenerate** (at least one zero eigenvalue; line of equilibria).
+</TheoremBlock>
+
+<TheoremBlock type="example" number={6} title="The trace-determinant plane as a map">
+Place a dot at $(\tau, \Delta)$ for any $2 \times 2$ matrix, and the diagram immediately tells you the phase portrait type. The parabola $\Delta = \tau^2/4$ separates nodes from spirals. The $\tau$-axis ($\tau = 0$) separates stable from unstable. The $\Delta$-axis ($\Delta = 0$) separates saddles from non-saddles. Every $2 \times 2$ linear system lives at exactly one point on this map.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={4} title="Phase portraits and the Hessian">
+Compare with the [second-derivative test](/topics/hessian): the Hessian's eigenvalues classify critical points of a function as minima ($\lambda_1, \lambda_2 > 0$), maxima ($\lambda_1, \lambda_2 < 0$), or saddle points (mixed signs). The ODE system matrix's eigenvalues classify equilibria as stable nodes, unstable nodes, or saddles — the same eigenvalue analysis, governing dynamics instead of statics. [Gradient descent](https://formalml.com/topics/gradient-descent) connects them: $\dot{\theta} = -\nabla^2 f \cdot \theta$ near a critical point.
+</TheoremBlock>
+
+<PhasePortraitExplorer client:visible />
+
+![The six canonical 2×2 phase portraits: stable node, unstable node, saddle, stable spiral, unstable spiral, center](/images/topics/linear-systems/phase-portraits.png)
+
+## 5. Repeated and Complex Eigenvalues — Beyond Diagonalizability
+
+What happens when $A$ is *defective* — a repeated eigenvalue $\lambda$ with only one linearly independent eigenvector? The matrix is not diagonalizable, and the Jordan normal form provides the solution. We find a *generalized eigenvector* $\mathbf{w}$ satisfying $(A - \lambda I)\mathbf{w} = \mathbf{v}$ (where $\mathbf{v}$ is the eigenvector), and the solution involves terms $te^{\lambda t}$ — the same polynomial-times-exponential that appeared in the scalar repeated-root case.
+
+<TheoremBlock type="definition" number={4} title="Generalized Eigenvector">
+A vector $\mathbf{w}$ is a *generalized eigenvector of rank 2* for $A$ with eigenvalue $\lambda$ if $(A - \lambda I)\mathbf{w} = \mathbf{v}$, where $\mathbf{v}$ is an eigenvector ($(A - \lambda I)\mathbf{v} = \mathbf{0}$, $\mathbf{v} \neq \mathbf{0}$). More generally, a generalized eigenvector of rank $k$ satisfies $(A - \lambda I)^k \mathbf{w} = \mathbf{0}$ but $(A - \lambda I)^{k-1}\mathbf{w} \neq \mathbf{0}$.
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={5} title="Solution for Defective 2×2 Systems">
+If $A$ has a repeated eigenvalue $\lambda$ with a single eigenvector $\mathbf{v}$ and generalized eigenvector $\mathbf{w}$ (with $(A - \lambda I)\mathbf{w} = \mathbf{v}$), then the general solution is
+
+$$\mathbf{y}(t) = c_1 e^{\lambda t}\mathbf{v} + c_2 e^{\lambda t}(t\mathbf{v} + \mathbf{w}).$$
+</TheoremBlock>
+
+<TheoremBlock type="example" number={7} title="A defective node">
+$A = \begin{pmatrix} 2 & 1 \\ 0 & 2 \end{pmatrix}$. The repeated eigenvalue is $\lambda = 2$, with a single eigenvector $\mathbf{v} = (1, 0)^T$. The generalized eigenvector satisfies $(A - 2I)\mathbf{w} = \mathbf{v}$, giving $\mathbf{w} = (0, 1)^T$. The solution is
+
+$$\mathbf{y}(t) = c_1 e^{2t}\begin{pmatrix} 1 \\ 0 \end{pmatrix} + c_2 e^{2t}\left(t\begin{pmatrix} 1 \\ 0 \end{pmatrix} + \begin{pmatrix} 0 \\ 1 \end{pmatrix}\right).$$
+
+The phase portrait is a *degenerate unstable node* — all trajectories are tangent to the eigenvector direction at the origin.
+</TheoremBlock>
+
+<TheoremBlock type="proposition" number={1} title="Jordan Normal Form and the Matrix Exponential">
+If $A = PJP^{-1}$ where $J$ is in Jordan normal form with blocks $J_k = \lambda_k I + N_k$ ($N_k$ nilpotent), then $e^{At} = P e^{Jt} P^{-1}$ where
+
+$$e^{J_k t} = e^{\lambda_k t} e^{N_k t} = e^{\lambda_k t}\left(I + N_k t + \frac{N_k^2 t^2}{2!} + \cdots\right).$$
+
+This is a finite sum because $N_k$ is nilpotent ($N_k^m = 0$ for some $m$). Each Jordan block of size $m$ contributes terms $t^j e^{\lambda t}$ for $j = 0, 1, \ldots, m-1$.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={5} title="Defective matrices are rare but important">
+Generically, matrices are diagonalizable — defective matrices form a set of measure zero in matrix space. But in applications, defective matrices arise naturally at *bifurcation points* — the boundary between qualitatively different behaviors. The transition from a stable spiral to a stable node passes through a defective node at $\tau^2 = 4\Delta$ on the trace-determinant diagram. **Stability & Dynamical Systems** *(coming soon)* will examine these transitions systematically.
+</TheoremBlock>
+
+![Defective node phase portrait with te^{λt} growth, and Jordan block exponential showing polynomial times exponential terms](/images/topics/linear-systems/repeated-eigenvalues.png)
+
+## 6. Fundamental Matrices & the Wronskian
+
+A *fundamental matrix* $\Phi(t)$ is an $n \times n$ matrix whose columns are $n$ linearly independent solutions. For the system $\mathbf{y}' = A\mathbf{y}$, the standard choice is $\Phi(t) = e^{At}$, satisfying $\Phi(0) = I$. Abel's formula connects the determinant of the fundamental matrix (the Wronskian) to the trace of $A$, telling us exactly how volumes evolve under the flow.
+
+<TheoremBlock type="definition" number={5} title="Fundamental Matrix">
+A *fundamental matrix* for the system $\mathbf{y}' = A\mathbf{y}$ is a matrix-valued function $\Phi(t)$ satisfying $\Phi'(t) = A\Phi(t)$ whose columns $\boldsymbol{\phi}_1(t), \ldots, \boldsymbol{\phi}_n(t)$ are linearly independent solutions. The *standard fundamental matrix* is $\Phi(t) = e^{At}$, satisfying $\Phi(0) = I$.
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={6} title="Abel's Formula (Liouville's Formula)">
+If $\Phi(t)$ is a fundamental matrix for $\mathbf{y}' = A\mathbf{y}$, then
+
+$$\det \Phi(t) = \det \Phi(0) \cdot e^{\operatorname{tr}(A) \cdot t}.$$
+
+For the standard fundamental matrix, $\det e^{At} = e^{\operatorname{tr}(A) \cdot t}$.
+</TheoremBlock>
+
+<TheoremBlock type="proof" title="Proof of Theorem 6 (Abel's Formula)">
+We show that $\frac{d}{dt}\det \Phi(t) = \operatorname{tr}(A) \cdot \det \Phi(t)$ — a scalar linear ODE with solution $\det \Phi(t) = \det \Phi(0) \cdot e^{\operatorname{tr}(A)t}$.
+
+For the [derivative](/topics/derivative) of the determinant: by the multilinearity of the determinant in its rows,
+
+$$\frac{d}{dt}\det \Phi = \sum_{i=1}^{n} \det \Phi_i(t),$$
+
+where $\Phi_i$ replaces the $i$-th row of $\Phi$ with its derivative (the $i$-th row of $\Phi' = A\Phi$).
+
+The $i$-th row of $A\Phi$ is $\sum_j a_{ij} (\text{row } j \text{ of } \Phi)$. By the alternating property of the determinant, a matrix with two identical rows has determinant zero. Therefore, only the diagonal term $a_{ii}$ survives in each $\det \Phi_i(t)$:
+
+$$\frac{d}{dt}\det \Phi = \sum_{i=1}^{n} a_{ii} \det \Phi = \operatorname{tr}(A) \det \Phi.$$
+
+This is the scalar ODE $W' = \operatorname{tr}(A) \cdot W$ with $W(0) = \det \Phi(0)$, whose unique solution is $W(t) = \det \Phi(0) \cdot e^{\operatorname{tr}(A)t}$. $\blacksquare$
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={6} title="Volume evolution">
+Abel's formula says that the flow of $\mathbf{y}' = A\mathbf{y}$ preserves volume if and only if $\operatorname{tr}(A) = 0$. Hamiltonian systems (from classical mechanics) have $\operatorname{tr}(A) = 0$ and are volume-preserving — this is Liouville's theorem. Dissipative systems ($\operatorname{tr}(A) < 0$) contract volumes, which is why stable systems have trajectories that converge to lower-dimensional attractors.
+</TheoremBlock>
+
+![Columns of the fundamental matrix as evolving basis vectors, with volume evolution showing expansion, contraction, and preservation](/images/topics/linear-systems/fundamental-matrices.png)
+
+## 7. Non-Homogeneous Systems & Variation of Parameters
+
+The non-homogeneous system $\mathbf{y}' = A\mathbf{y} + \mathbf{g}(t)$ adds a *forcing term* — an external input that drives the system. The solution method is **variation of parameters**: replace the constant vector $\mathbf{c}$ in the homogeneous solution $e^{At}\mathbf{c}$ by a time-dependent vector $\mathbf{c}(t)$, and solve for $\mathbf{c}'(t) = e^{-At}\mathbf{g}(t)$.
+
+<TheoremBlock type="theorem" number={7} title="Variation of Parameters for Linear Systems">
+The solution of the IVP $\mathbf{y}' = A\mathbf{y} + \mathbf{g}(t)$, $\mathbf{y}(0) = \mathbf{y}_0$ is:
+
+$$\mathbf{y}(t) = e^{At}\mathbf{y}_0 + \int_0^t e^{A(t-s)}\mathbf{g}(s)\,ds.$$
+
+The first term is the homogeneous solution (*free response*); the integral is the *convolution* of the matrix exponential with the forcing (*forced response*).
+</TheoremBlock>
+
+<TheoremBlock type="proof" title="Proof of Theorem 7">
+Let $\mathbf{y}(t) = e^{At}\mathbf{c}(t)$ (variation of parameters ansatz). Differentiating using the product rule:
+
+$$\mathbf{y}' = Ae^{At}\mathbf{c} + e^{At}\mathbf{c}' = A\mathbf{y} + e^{At}\mathbf{c}'.$$
+
+Comparing with $\mathbf{y}' = A\mathbf{y} + \mathbf{g}(t)$ gives $e^{At}\mathbf{c}'(t) = \mathbf{g}(t)$, so $\mathbf{c}'(t) = e^{-At}\mathbf{g}(t)$.
+
+Integrating with the initial condition $\mathbf{c}(0) = \mathbf{y}_0$:
+
+$$\mathbf{c}(t) = \mathbf{y}_0 + \int_0^t e^{-As}\mathbf{g}(s)\,ds.$$
+
+Substituting back: $\mathbf{y}(t) = e^{At}\mathbf{y}_0 + \int_0^t e^{A(t-s)}\mathbf{g}(s)\,ds$. $\blacksquare$
+</TheoremBlock>
+
+<TheoremBlock type="example" number={8} title="Forced harmonic oscillator">
+The system $\mathbf{y}' = \begin{pmatrix} 0 & 1 \\ -\omega^2 & 0 \end{pmatrix}\mathbf{y} + \begin{pmatrix} 0 \\ \cos(\Omega t) \end{pmatrix}$ models a harmonic oscillator driven by an external force at frequency $\Omega$. The convolution integral produces *resonance* when $\Omega = \omega$ — the forced response grows without bound because the driving frequency matches the natural frequency.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={9} title="Input-output systems and the transfer function">
+Writing $\mathbf{y}' = A\mathbf{y} + B\mathbf{u}$, $\mathbf{z} = C\mathbf{y}$ (state-space form), the output is
+
+$$\mathbf{z}(t) = Ce^{At}\mathbf{y}_0 + C\int_0^t e^{A(t-s)}B\mathbf{u}(s)\,ds.$$
+
+The matrix $Ce^{At}B$ is the *impulse response* — the system's output when the input is a delta function. This is exactly the structure of state-space models in ML (S4/Mamba): the matrices $A$, $B$, $C$ are learned, and the matrix exponential mediates between continuous and discrete representations.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={7} title="Convolution and the Laplace transform">
+The variation of parameters formula is a *matrix convolution*. The Laplace transform converts this to an algebraic equation: $\hat{\mathbf{y}}(s) = (sI - A)^{-1}\mathbf{y}_0 + (sI - A)^{-1}\hat{\mathbf{g}}(s)$. The *transfer matrix* $(sI - A)^{-1}$ encodes the system's frequency response. The poles of the transfer function are the eigenvalues of $A$ — connecting back to the phase portrait classification.
+</TheoremBlock>
+
+<VariationOfParametersExplorer client:visible />
+
+![Decomposition of forced system response into homogeneous and particular components](/images/topics/linear-systems/variation-of-parameters.png)
+
+## 8. Existence, Uniqueness & the Vector Picard-Lindelöf Theorem
+
+The [Picard-Lindelöf theorem](/topics/first-order-odes) (Topic 21) extends directly to vector-valued IVPs. For linear systems, the Lipschitz condition is automatically satisfied: $\|A\mathbf{y}_1 - A\mathbf{y}_2\| \leq \|A\| \|\mathbf{y}_1 - \mathbf{y}_2\|$, so the Lipschitz constant is simply $L = \|A\|$. Moreover, linear systems never blow up in finite time — solutions exist for all $t \in \mathbb{R}$.
+
+<TheoremBlock type="theorem" number={8} title="Picard-Lindelöf for Vector IVPs">
+Let $\mathbf{f}: D \to \mathbb{R}^n$ be continuous on an open set $D \subseteq \mathbb{R} \times \mathbb{R}^n$ and Lipschitz in $\mathbf{y}$:
+
+$$\|\mathbf{f}(t, \mathbf{y}_1) - \mathbf{f}(t, \mathbf{y}_2)\| \leq L\|\mathbf{y}_1 - \mathbf{y}_2\| \quad \text{for all } (t, \mathbf{y}_1), (t, \mathbf{y}_2) \in D.$$
+
+Then the IVP $\mathbf{y}' = \mathbf{f}(t, \mathbf{y})$, $\mathbf{y}(t_0) = \mathbf{y}_0$ has a unique local solution.
+</TheoremBlock>
+
+<TheoremBlock type="corollary" number={1} title="Global Existence for Linear Systems">
+If $A \in \mathbb{R}^{n \times n}$ is constant and $\mathbf{g}: \mathbb{R} \to \mathbb{R}^n$ is continuous, then the IVP $\mathbf{y}' = A\mathbf{y} + \mathbf{g}(t)$, $\mathbf{y}(0) = \mathbf{y}_0$ has a unique solution on all of $\mathbb{R}$.
+
+This follows because $\mathbf{f}(\mathbf{y}) = A\mathbf{y}$ is globally Lipschitz with constant $\|A\|$, and the Grönwall inequality prevents blow-up: $\|\mathbf{y}(t)\| \leq e^{\|A\|t}\|\mathbf{y}_0\| + \int_0^t e^{\|A\|(t-s)}\|\mathbf{g}(s)\|\,ds$.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={8} title="Linear systems never blow up">
+Compare with Topic 21's blow-up example $y' = y^2$, where the nonlinearity causes finite-time escape to infinity. For linear systems, the solution $\mathbf{y}(t) = e^{At}\mathbf{y}_0$ grows at most exponentially: $\|\mathbf{y}(t)\| \leq e^{\|A\|t}\|\mathbf{y}_0\|$. Exponential growth is fast, but it never reaches infinity in finite time. This is why linearization is always locally valid — the linear approximation never predicts blow-up.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={9} title="Uniqueness implies no trajectory crossing">
+In the phase plane, solution trajectories of $\mathbf{y}' = A\mathbf{y}$ never cross (except at the origin, which is an equilibrium). If two trajectories crossed at a point $\mathbf{y}^*$ at time $t^*$, that point would have two distinct solutions to the same IVP — contradicting uniqueness. This topological consequence constrains the geometry of phase portraits: trajectories can approach or depart from the origin, but they cannot intersect.
+</TheoremBlock>
+
+![Trajectories that never cross in the phase plane, with exponential growth bound envelope](/images/topics/linear-systems/existence-uniqueness.png)
+
+## 9. ML Connections — State-Space Models, Training Dynamics, and Continuous-Time Architectures
+
+Linear systems are not just a theoretical stepping stone — they are the mathematical backbone of several active research areas in machine learning. The matrix exponential, eigenvalue decomposition, and phase portrait analysis appear directly in the design and analysis of modern architectures.
+
+### 9.1: Gradient descent as a linear system
+
+Near a critical point $\theta^*$ of a smooth loss $L(\theta)$, the [gradient flow](https://formalml.com/topics/gradient-descent) $\dot{\theta} = -\nabla L(\theta)$ linearizes to $\dot{\delta} = -H\delta$ where $H = \nabla^2 L(\theta^*)$ is the [Hessian](/topics/hessian) and $\delta = \theta - \theta^*$. The solution $\delta(t) = e^{-Ht}\delta_0$ decays along each eigendirection of $H$ at rate $e^{-\lambda_i t}$.
+
+The slowest mode ($\lambda_{\min}$) dominates: convergence is governed by $e^{-\lambda_{\min}t}$, and the condition number $\kappa(H) = \lambda_{\max}/\lambda_{\min}$ measures how anisotropic the convergence is. This is why preconditioning (replacing $H$ with $I$, as in Newton's method) speeds up training — it makes all eigenvalues equal, so all directions converge at the same rate.
+
+<TheoremBlock type="example" number={10} title="Quadratic loss and eigen-decomposition of convergence">
+Consider $L(\theta) = \frac{1}{2}\theta^T H \theta$ with $H = \text{diag}(1, 10, 100)$. The gradient flow $\dot{\theta} = -H\theta$ has solution $\theta_i(t) = \theta_{i,0} e^{-\lambda_i t}$.
+
+After time $t$, the residual error in each direction is $e^{-\lambda_i t}$: direction 3 converges 100× faster than direction 1. The loss $L(t) = \frac{1}{2}\sum \theta_{i,0}^2 e^{-2\lambda_i t}$ shows multi-scale decay — a fast initial drop (the large-eigenvalue components) followed by a long tail (the small-eigenvalue component).
+</TheoremBlock>
+
+<TrainingDynamicsExplorer client:visible />
+
+### 9.2: Structured state-space models (S4/Mamba)
+
+The S4 architecture (Gu et al. 2022) parameterizes a sequence model as a continuous-time linear system:
+
+$$\mathbf{h}'(t) = A\mathbf{h}(t) + B\mathbf{x}(t), \quad \mathbf{z}(t) = C\mathbf{h}(t).$$
+
+The matrices $A$, $B$, $C$ are *learned parameters*. The system is discretized for training: $\mathbf{h}_{k+1} = \bar{A}\mathbf{h}_k + \bar{B}\mathbf{x}_k$ where $\bar{A} = e^{A\Delta t}$ — the matrix exponential from this topic.
+
+<TheoremBlock type="example" number={11} title="S4 discretization via matrix exponential">
+Given continuous parameters $A, B$, the discrete parameters are $\bar{A} = e^{A\Delta t}$ and $\bar{B} = (e^{A\Delta t} - I)A^{-1}B$ (assuming $A$ is invertible). This exact discretization preserves the dynamics of the continuous system. The bilinear (Tustin) approximation $\bar{A} = (I + A\Delta t/2)(I - A\Delta t/2)^{-1}$ is a Padé approximant that preserves stability — mapping eigenvalues with negative real part to eigenvalues inside the unit circle.
+</TheoremBlock>
+
+### 9.3: Continuous-time RNNs and neural CDEs
+
+A continuous-time RNN replaces the discrete update $\mathbf{h}_{k+1} = \sigma(W\mathbf{h}_k + U\mathbf{x}_k)$ with the ODE $\dot{\mathbf{h}} = -\mathbf{h} + \sigma(W\mathbf{h} + U\mathbf{x}(t))$. Near a fixed point, this is a linear system whose dynamics are governed by the [Jacobian](/topics/jacobian) $J = -I + W \cdot \text{diag}(\sigma'(\cdot))$. The eigenvalues of $J$ determine whether the hidden state remembers (eigenvalues near 0) or forgets (eigenvalues $\ll 0$) — the vanishing/exploding gradient problem in its continuous-time form.
+
+### 9.4: Spectral analysis of training dynamics
+
+The loss Hessian's eigenvalue distribution controls training: the bulk spectrum determines the average learning speed, while outlier eigenvalues (from batch normalization, skip connections, or specific data directions) create fast modes that converge first. The matrix exponential $e^{-Ht}$ encodes the full training dynamics: each eigen-component is an independent exponential decay, and the superposition of all $p$ components determines the loss trajectory. Understanding this spectral picture is the gateway to [spectral methods](https://formalml.com/topics/spectral-theorem) in ML.
+
+![ML connections: quadratic loss contours with gradient flow, condition number effect, S4 discretization, and continuous-time RNN dynamics](/images/topics/linear-systems/ml-connections.png)
+
+## Connections & Further Reading
+
+**Prerequisites used in this topic:**
+
+- [First-Order ODEs & Existence Theorems](/topics/first-order-odes) — scalar linear equations are the 1×1 case; Picard-Lindelöf extends to systems
+- [The Jacobian & Multivariate Chain Rule](/topics/jacobian) — the system matrix $A$ is the constant Jacobian; eigendecomposition is a change of basis
+
+**Cross-track connections:**
+
+- [Power & Taylor Series](/topics/power-taylor-series) — the matrix exponential $e^{At} = \sum (At)^k/k!$ is a power series with infinite radius of convergence
+- [The Hessian & Second-Derivative Test](/topics/hessian) — eigenvalue classification of equilibria mirrors the second-derivative test for critical points
+- [The Derivative & Chain Rule](/topics/derivative) — $\frac{d}{dt}e^{At} = Ae^{At}$ is the matrix analog of $\frac{d}{dt}e^{at} = ae^{at}$
+- [Completeness & Compactness](/topics/completeness-compactness) — convergence of the matrix exponential series requires completeness of the matrix algebra
+
+**Looking ahead in this track:**
+
+- **Stability & Dynamical Systems** *(coming soon)* — phase portrait classification becomes the linearization stability theorem; Lyapunov functions and bifurcation theory
+- **Numerical Methods for ODEs** *(coming soon)* — numerical computation of the matrix exponential (scaling-and-squaring, Padé), stiff systems, and adaptive methods
+
+**Forward links to formalML:**
+
+- [Gradient Descent](https://formalml.com/topics/gradient-descent) — training dynamics on quadratic loss as the linear system $\dot{\theta} = -H\theta$
+- [Spectral Theorem](https://formalml.com/topics/spectral-theorem) — spectral decomposition is the computational engine of the matrix exponential
+- [Information Geometry](https://formalml.com/topics/information-geometry) — natural gradient descent as a linear system in the statistical manifold's tangent space
