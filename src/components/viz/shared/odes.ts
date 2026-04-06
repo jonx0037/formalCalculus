@@ -3,8 +3,8 @@
  *
  * Created by Topic 21 (First-Order ODEs & Existence Theorems).
  * Extended by:
- *   - Topic 22 (Linear Systems & Matrix Exponential): matrix exponential, eigenvalue methods ← CURRENT
- *   - Topic 23 (Stability & Dynamical Systems): phase portrait generators, Lyapunov analysis
+ *   - Topic 22 (Linear Systems & Matrix Exponential): matrix exponential, eigenvalue methods
+ *   - Topic 23 (Stability & Dynamical Systems): nonlinear phase portraits, Lyapunov analysis ← CURRENT
  *   - Topic 24 (Numerical Methods for ODEs): higher-order solvers, adaptive stepping, error analysis
  *
  * All existing functions and interfaces remain stable across extensions.
@@ -896,4 +896,356 @@ export function computeSystemField(
   }
 
   return points;
+}
+
+// ── Topic 23: Stability & Dynamical Systems ─────────────────
+
+// ── Interfaces (Topic 23) ──────────────────────────────────
+
+/** Classified equilibrium of a 2D nonlinear system. */
+export interface Equilibrium2D {
+  /** Equilibrium position [y1, y2] */
+  y: [number, number];
+  /** Jacobian at this equilibrium */
+  jacobian: Matrix2x2;
+  /** Phase portrait classification from the Jacobian eigenvalues */
+  classification: PhasePortraitClassification;
+  /** Eigenvalues of the Jacobian */
+  eigenvalues: { real: [number, number]; imag: [number, number] };
+  /** True when all eigenvalues have nonzero real part */
+  isHyperbolic: boolean;
+}
+
+/** Nullcline data: zero-level sets of f₁ and f₂ plus their intersections. */
+export interface NullclineData {
+  /** Points along the curve f₁(y1, y2) = 0 */
+  f1Zero: Array<{ y1: number; y2: number }>;
+  /** Points along the curve f₂(y1, y2) = 0 */
+  f2Zero: Array<{ y1: number; y2: number }>;
+  /** Approximate equilibria at nullcline intersections */
+  intersections: Array<[number, number]>;
+}
+
+/** A single point in a nonlinear vector field. */
+export interface NonlinearFieldPoint {
+  y1: number;
+  y2: number;
+  dy1: number;
+  dy2: number;
+  magnitude: number;
+}
+
+/** Result of largest Lyapunov exponent computation. */
+export interface LyapunovExponentResult {
+  /** Largest Lyapunov exponent */
+  exponent: number;
+  /** Running average during computation */
+  convergenceHistory: number[];
+}
+
+// ── Functions (Topic 23) ───────────────────────────────────
+
+/**
+ * Classify equilibria of a 2D nonlinear system by computing the Jacobian
+ * numerically (via central differences) and applying eigenvalue classification.
+ *
+ * Reuses eigenDecomposition2x2 and classifyPhasePortrait from Topic 22.
+ *
+ * @param f - System RHS: (y1, y2) => [dy1, dy2]
+ * @param equilibria - Array of [y1, y2] equilibrium positions
+ * @param h - Finite difference step size (default 1e-6)
+ */
+export function classifyEquilibrium(
+  f: (y1: number, y2: number) => [number, number],
+  equilibria: Array<[number, number]>,
+  h: number = 1e-6,
+): Equilibrium2D[] {
+  return equilibria.map(([y1, y2]) => {
+    // Compute Jacobian via central differences
+    const fxp = f(y1 + h, y2);
+    const fxm = f(y1 - h, y2);
+    const fyp = f(y1, y2 + h);
+    const fym = f(y1, y2 - h);
+
+    const jacobian: Matrix2x2 = {
+      a11: (fxp[0] - fxm[0]) / (2 * h),
+      a12: (fyp[0] - fym[0]) / (2 * h),
+      a21: (fxp[1] - fxm[1]) / (2 * h),
+      a22: (fyp[1] - fym[1]) / (2 * h),
+    };
+
+    const eigen = eigenDecomposition2x2(jacobian);
+    const classification = classifyPhasePortrait(jacobian);
+
+    const isHyperbolic =
+      Math.abs(eigen.eigenvalues.real[0]) > 1e-10 &&
+      Math.abs(eigen.eigenvalues.real[1]) > 1e-10;
+
+    return {
+      y: [y1, y2] as [number, number],
+      jacobian,
+      classification,
+      eigenvalues: eigen.eigenvalues,
+      isHyperbolic,
+    };
+  });
+}
+
+/**
+ * Compute nullclines of a 2D nonlinear system on a grid.
+ * Uses sign-change detection (simplified marching squares) to trace zero-level sets.
+ *
+ * @param f - System RHS: (y1, y2) => [dy1, dy2]
+ * @param y1Range - [y1_min, y1_max]
+ * @param y2Range - [y2_min, y2_max]
+ * @param resolution - Grid resolution per dimension (default 200)
+ */
+export function computeNullclines(
+  f: (y1: number, y2: number) => [number, number],
+  y1Range: [number, number],
+  y2Range: [number, number],
+  resolution: number = 200,
+): NullclineData {
+  const f1Zero: Array<{ y1: number; y2: number }> = [];
+  const f2Zero: Array<{ y1: number; y2: number }> = [];
+  const intersections: Array<[number, number]> = [];
+
+  const dy1 = (y1Range[1] - y1Range[0]) / resolution;
+  const dy2 = (y2Range[1] - y2Range[0]) / resolution;
+
+  // Evaluate f on the grid and detect sign changes
+  for (let i = 0; i < resolution; i++) {
+    const v1 = y1Range[0] + (i + 0.5) * dy1;
+    for (let j = 0; j < resolution; j++) {
+      const v2 = y2Range[0] + (j + 0.5) * dy2;
+      const [fv1, fv2] = f(v1, v2);
+
+      // Check right neighbor for f₁ sign change
+      if (i < resolution - 1) {
+        const v1r = v1 + dy1;
+        const [fr1] = f(v1r, v2);
+        if (fv1 * fr1 <= 0 && (Math.abs(fv1) + Math.abs(fr1)) > 1e-14) {
+          // Linear interpolation
+          const t = Math.abs(fv1) / (Math.abs(fv1) + Math.abs(fr1));
+          f1Zero.push({ y1: v1 + t * dy1, y2: v2 });
+        }
+      }
+      // Check top neighbor for f₁ sign change
+      if (j < resolution - 1) {
+        const v2t = v2 + dy2;
+        const [ft1] = f(v1, v2t);
+        if (fv1 * ft1 <= 0 && (Math.abs(fv1) + Math.abs(ft1)) > 1e-14) {
+          const t = Math.abs(fv1) / (Math.abs(fv1) + Math.abs(ft1));
+          f1Zero.push({ y1: v1, y2: v2 + t * dy2 });
+        }
+      }
+      // Check right neighbor for f₂ sign change
+      if (i < resolution - 1) {
+        const v1r = v1 + dy1;
+        const [, fr2] = f(v1r, v2);
+        if (fv2 * fr2 <= 0 && (Math.abs(fv2) + Math.abs(fr2)) > 1e-14) {
+          const t = Math.abs(fv2) / (Math.abs(fv2) + Math.abs(fr2));
+          f2Zero.push({ y1: v1 + t * dy1, y2: v2 });
+        }
+      }
+      // Check top neighbor for f₂ sign change
+      if (j < resolution - 1) {
+        const v2t = v2 + dy2;
+        const [, ft2] = f(v1, v2t);
+        if (fv2 * ft2 <= 0 && (Math.abs(fv2) + Math.abs(ft2)) > 1e-14) {
+          const t = Math.abs(fv2) / (Math.abs(fv2) + Math.abs(ft2));
+          f2Zero.push({ y1: v1, y2: v2 + t * dy2 });
+        }
+      }
+    }
+  }
+
+  // Find approximate intersections: f₁ zero-points that are close to f₂ zero-points
+  const tol = 3 * Math.max(dy1, dy2);
+  for (const p1 of f1Zero) {
+    for (const p2 of f2Zero) {
+      const dist = Math.sqrt(
+        (p1.y1 - p2.y1) ** 2 + (p1.y2 - p2.y2) ** 2,
+      );
+      if (dist < tol) {
+        const mid: [number, number] = [
+          (p1.y1 + p2.y1) / 2,
+          (p1.y2 + p2.y2) / 2,
+        ];
+        // Deduplicate: only add if no existing intersection is nearby
+        const duplicate = intersections.some(
+          (q) => Math.sqrt((mid[0] - q[0]) ** 2 + (mid[1] - q[1]) ** 2) < tol,
+        );
+        if (!duplicate) intersections.push(mid);
+      }
+    }
+  }
+
+  return { f1Zero, f2Zero, intersections };
+}
+
+/**
+ * Compute the largest Lyapunov exponent of a 2D system via the standard algorithm:
+ * integrate the system + variational equation, periodically renormalize.
+ *
+ * @param f - System RHS: (y1, y2) => [dy1, dy2]
+ * @param y0 - Initial condition [y1, y2]
+ * @param tTotal - Total integration time
+ * @param dt - Time step
+ * @param renormInterval - Steps between renormalization (default 10)
+ */
+export function computeLyapunovExponent(
+  f: (y1: number, y2: number) => [number, number],
+  y0: [number, number],
+  tTotal: number,
+  dt: number,
+  renormInterval: number = 10,
+): LyapunovExponentResult {
+  const h = 1e-6;
+  let y1 = y0[0];
+  let y2 = y0[1];
+  // Perturbation vector
+  let w1 = 1.0;
+  let w2 = 0.0;
+
+  let sumLog = 0;
+  let count = 0;
+  const convergenceHistory: number[] = [];
+  const steps = Math.floor(tTotal / dt);
+
+  for (let n = 0; n < steps; n++) {
+    // RK4 step for the base trajectory
+    const k1 = f(y1, y2);
+    const k2 = f(y1 + 0.5 * dt * k1[0], y2 + 0.5 * dt * k1[1]);
+    const k3 = f(y1 + 0.5 * dt * k2[0], y2 + 0.5 * dt * k2[1]);
+    const k4 = f(y1 + dt * k3[0], y2 + dt * k3[1]);
+    y1 += (dt / 6) * (k1[0] + 2 * k2[0] + 2 * k3[0] + k4[0]);
+    y2 += (dt / 6) * (k1[1] + 2 * k2[1] + 2 * k3[1] + k4[1]);
+
+    // Compute Jacobian at current point via central differences
+    const fxp = f(y1 + h, y2);
+    const fxm = f(y1 - h, y2);
+    const fyp = f(y1, y2 + h);
+    const fym = f(y1, y2 - h);
+    const J11 = (fxp[0] - fxm[0]) / (2 * h);
+    const J12 = (fyp[0] - fym[0]) / (2 * h);
+    const J21 = (fxp[1] - fxm[1]) / (2 * h);
+    const J22 = (fyp[1] - fym[1]) / (2 * h);
+
+    // Euler step for the perturbation (variational equation)
+    const dw1 = J11 * w1 + J12 * w2;
+    const dw2 = J21 * w1 + J22 * w2;
+    w1 += dt * dw1;
+    w2 += dt * dw2;
+
+    // Renormalize periodically
+    if ((n + 1) % renormInterval === 0) {
+      const norm = Math.sqrt(w1 * w1 + w2 * w2);
+      if (norm > 1e-14) {
+        sumLog += Math.log(norm);
+        count++;
+        w1 /= norm;
+        w2 /= norm;
+        convergenceHistory.push(sumLog / ((count * renormInterval) * dt));
+      }
+    }
+  }
+
+  const exponent = count > 0
+    ? sumLog / (count * renormInterval * dt)
+    : 0;
+
+  return { exponent, convergenceHistory };
+}
+
+/**
+ * Compute a nonlinear vector field on a grid.
+ * The nonlinear counterpart of computeSystemField from Topic 22.
+ *
+ * @param f - System RHS: (y1, y2) => [dy1, dy2]
+ * @param y1Range - [y1_min, y1_max]
+ * @param y2Range - [y2_min, y2_max]
+ * @param n1 - Grid points in y1 direction
+ * @param n2 - Grid points in y2 direction
+ */
+export function computeNonlinearField(
+  f: (y1: number, y2: number) => [number, number],
+  y1Range: [number, number],
+  y2Range: [number, number],
+  n1: number,
+  n2: number,
+): NonlinearFieldPoint[] {
+  const points: NonlinearFieldPoint[] = [];
+
+  const d1 = (y1Range[1] - y1Range[0]) / (n1 - 1);
+  const d2 = (y2Range[1] - y2Range[0]) / (n2 - 1);
+
+  for (let i = 0; i < n1; i++) {
+    const v1 = y1Range[0] + i * d1;
+    for (let j = 0; j < n2; j++) {
+      const v2 = y2Range[0] + j * d2;
+      const [dy1, dy2] = f(v1, v2);
+      const magnitude = Math.sqrt(dy1 * dy1 + dy2 * dy2);
+      points.push({ y1: v1, y2: v2, dy1, dy2, magnitude });
+    }
+  }
+
+  return points;
+}
+
+/**
+ * Solve a 2D nonlinear system y' = f(y) using RK4.
+ * The nonlinear counterpart of computeSystemTrajectory from Topic 22.
+ *
+ * @param f - System RHS: (y1, y2) => [dy1, dy2]
+ * @param y0 - Initial condition [y1, y2]
+ * @param tRange - [t_start, t_end]
+ * @param h - Step size
+ * @returns SystemTrajectory with method 'rk4-system'
+ */
+export function computeNonlinearTrajectory(
+  f: (y1: number, y2: number) => [number, number],
+  y0: [number, number],
+  tRange: [number, number],
+  h: number,
+): SystemTrajectory {
+  const tArr: number[] = [];
+  const y1Arr: number[] = [];
+  const y2Arr: number[] = [];
+
+  let t = tRange[0];
+  let y1 = y0[0];
+  let y2 = y0[1];
+
+  tArr.push(t);
+  y1Arr.push(y1);
+  y2Arr.push(y2);
+
+  const direction = tRange[1] >= tRange[0] ? 1 : -1;
+  const step = direction * Math.abs(h);
+  const maxSteps = Math.ceil(Math.abs(tRange[1] - tRange[0]) / Math.abs(h)) + 1;
+
+  for (let n = 0; n < maxSteps; n++) {
+    const k1 = f(y1, y2);
+    const k2 = f(y1 + 0.5 * step * k1[0], y2 + 0.5 * step * k1[1]);
+    const k3 = f(y1 + 0.5 * step * k2[0], y2 + 0.5 * step * k2[1]);
+    const k4 = f(y1 + step * k3[0], y2 + step * k3[1]);
+
+    y1 += (step / 6) * (k1[0] + 2 * k2[0] + 2 * k3[0] + k4[0]);
+    y2 += (step / 6) * (k1[1] + 2 * k2[1] + 2 * k3[1] + k4[1]);
+    t += step;
+
+    // Bail out if trajectory blows up
+    if (!isFinite(y1) || !isFinite(y2) || Math.abs(y1) > 1e6 || Math.abs(y2) > 1e6) {
+      break;
+    }
+
+    tArr.push(t);
+    y1Arr.push(y1);
+    y2Arr.push(y2);
+
+    if (direction > 0 ? t >= tRange[1] : t <= tRange[1]) break;
+  }
+
+  return { t: tArr, y1: y1Arr, y2: y2Arr, method: 'rk4-system' };
 }

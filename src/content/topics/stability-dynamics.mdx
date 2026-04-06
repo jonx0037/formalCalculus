@@ -1,0 +1,645 @@
+---
+title: "Stability & Dynamical Systems"
+subtitle: "When eigenvalues predict the future — linearization, Lyapunov functions, bifurcations, and the qualitative theory that tells you whether trajectories converge, diverge, or orbit forever."
+status: "published"
+difficulty: "intermediate"
+prerequisites:
+  - "linear-systems"
+  - "hessian"
+tags:
+  - "calculus"
+  - "ordinary-differential-equations"
+  - "stability"
+  - "dynamical-systems"
+  - "lyapunov-functions"
+  - "bifurcation-theory"
+  - "phase-portraits"
+  - "linearization"
+domain: "odes"
+videoId: null
+notebookPath: "notebooks/stability-dynamics/23_stability_dynamics.ipynb"
+githubUrl: "https://github.com/jonx0037/formalCalculus/blob/main/src/content/topics/stability-dynamics.mdx"
+datePublished: 2026-04-06
+estimatedReadTime: 40
+abstract: "Stability analysis is the qualitative theory of differential equations — the art of predicting long-term behavior without solving the ODE explicitly. The linearization stability theorem connects the eigenvalues of the Jacobian at an equilibrium to the local phase portrait, reducing nonlinear analysis to the linear classification from Topic 22. Lyapunov's direct method provides a complementary energy-based approach: if a scalar function V decreases along trajectories, the system is stable. Bifurcation theory asks what happens when parameters change — equilibria can appear, disappear, or exchange stability at critical thresholds. These tools are the mathematical backbone of gradient descent convergence analysis, GAN training dynamics, and neural ODE stability."
+formalmlConnections:
+  - topic: "gradient-descent"
+    site: "formalml"
+    relationship: "Convergence of gradient descent to a local minimum is asymptotic stability of the gradient flow ODE. The Hessian eigenvalues at a critical point determine whether GD converges (stable) or diverges (unstable). Saddle-point escape is exit along the unstable manifold."
+  - topic: "information-geometry"
+    site: "formalml"
+    relationship: "Natural gradient descent stability depends on the eigenvalues of the preconditioned Hessian F⁻¹∇²L, where the Fisher metric reshapes the convergence landscape."
+  - topic: "smooth-manifolds"
+    site: "formalml"
+    relationship: "Stable and unstable manifolds of equilibria are immersed submanifolds. The Poincaré-Bendixson theorem extends to compact 2-manifolds. Dynamical systems on manifolds generalize phase portraits to curved spaces."
+  - topic: "spectral-theorem"
+    site: "formalml"
+    relationship: "The Lyapunov equation A^T P + PA = -Q is a Sylvester equation whose solvability depends on the spectra of A and -A^T. The spectral theorem guarantees P is symmetric positive-definite when A is Hurwitz."
+connections:
+  - topic: "linear-systems"
+    relationship: "Phase portrait classification and eigenvalue methods from linear systems are the foundation of linearization stability analysis. The trace-determinant classification carries directly into the nonlinear Jacobian analysis."
+  - topic: "hessian"
+    relationship: "Lyapunov functions use positive-definiteness criteria from Hessian analysis. The loss landscape Hessian eigenvalues determine gradient descent stability at critical points."
+  - topic: "jacobian"
+    relationship: "Linearization computes the Jacobian of the vector field at an equilibrium. The Jacobian matrix is the system matrix A of the linearized system."
+  - topic: "gradient"
+    relationship: "Gradient systems y' = -∇V(y) are automatically stable with Lyapunov function V. The gradient provides the connection between scalar energy and vector dynamics."
+  - topic: "first-order-odes"
+    relationship: "Existence and uniqueness (Picard-Lindelöf) guarantee that trajectories exist near equilibria and never cross — the foundation of qualitative analysis."
+  - topic: "inverse-implicit"
+    relationship: "The Implicit Function Theorem determines when equilibria persist under parameter perturbation — the starting point of bifurcation theory."
+references:
+  - type: "book"
+    title: "Nonlinear Dynamics and Chaos"
+    authors: "Strogatz"
+    year: 2015
+    note: "Chapters 5–8: stability, phase portraits, bifurcations, limit cycles. The primary reference for exposition style."
+  - type: "book"
+    title: "Differential Equations and Dynamical Systems"
+    authors: "Perko"
+    year: 2001
+    note: "Chapters 2–3: linearization, Lyapunov stability, stable manifold theorem. More rigorous proofs."
+  - type: "book"
+    title: "Ordinary Differential Equations"
+    authors: "Teschl"
+    year: 2012
+    note: "Chapters 6–7: stability theory, Poincaré-Bendixson theorem."
+  - type: "paper"
+    title: "Identifying and attacking the saddle point problem in high-dimensional non-convex optimization"
+    authors: "Dauphin, Pascanu, Gulcehre, Cho, Ganguli & Bengio"
+    year: 2014
+    url: "https://arxiv.org/abs/1406.2572"
+    note: "Connects Hessian eigenvalue analysis to saddle point escape in deep learning — the stability theory of loss landscapes."
+---
+
+import TheoremBlock from '../../components/ui/TheoremBlock.astro';
+import NonlinearPhasePortraitExplorer from '../../components/viz/NonlinearPhasePortraitExplorer.tsx';
+import LyapunovFunctionExplorer from '../../components/viz/LyapunovFunctionExplorer.tsx';
+import BifurcationDiagramExplorer from '../../components/viz/BifurcationDiagramExplorer.tsx';
+import TrainingStabilityExplorer from '../../components/viz/TrainingStabilityExplorer.tsx';
+
+## 1. What Happens Next?
+
+You train a neural network and the loss plateaus. Is it stuck at a local minimum — a stable equilibrium where gradient descent has settled in? Is it perched on a saddle point, about to escape along some direction you haven't explored yet? Or is it approaching a slow-converging valley where the landscape is nearly flat?
+
+The answer depends on the eigenvalues of the Hessian $\nabla^2 L(\theta^*)$ at the critical point. All eigenvalues positive means stable minimum. Any eigenvalue negative means saddle — the corresponding eigenvector points along the escape route. Near-zero eigenvalues mean near-degeneracy — convergence along those directions is glacially slow.
+
+This is exactly the **linearization stability theorem** applied to the gradient flow ODE $\dot{\theta} = -\nabla L(\theta)$. The Jacobian of the right-hand side at a critical point is $-\nabla^2 L(\theta^*)$, and its eigenvalues — the negatives of the Hessian eigenvalues — determine local stability.
+
+This topic develops the complete qualitative theory of differential equations. We build three tools:
+
+1. **Linearization** — reduce a nonlinear system to a linear one near an equilibrium by computing the Jacobian. The eigenvalue classification from [Topic 22](/topics/linear-systems) tells us the local behavior.
+2. **Lyapunov functions** — find a scalar "energy" function that decreases along trajectories. If such a function exists, the system is stable — no need to solve the ODE.
+3. **Bifurcation theory** — study how qualitative behavior changes as parameters vary. Equilibria can appear, disappear, or exchange stability at critical thresholds.
+
+Together, these tools explain why gradient descent converges, why GANs oscillate, and why learning rate schedules work.
+
+## 2. Equilibria & Nullclines
+
+We work with autonomous 2D systems: $\dot{y}_1 = f_1(y_1, y_2)$, $\dot{y}_2 = f_2(y_1, y_2)$, written compactly as $\dot{\mathbf{y}} = \mathbf{f}(\mathbf{y})$.
+
+<TheoremBlock type="definition" number={1} title="Equilibrium Point (Stationary Point, Fixed Point)">
+A point $\mathbf{y}^* \in \mathbb{R}^2$ is an **equilibrium** of $\dot{\mathbf{y}} = \mathbf{f}(\mathbf{y})$ if $\mathbf{f}(\mathbf{y}^*) = \mathbf{0}$. If $\mathbf{y}(0) = \mathbf{y}^*$, then $\mathbf{y}(t) = \mathbf{y}^*$ for all $t$ — the system stays put.
+</TheoremBlock>
+
+Finding equilibria means solving $f_1(y_1, y_2) = 0$ and $f_2(y_1, y_2) = 0$ simultaneously. For nonlinear systems, this can be difficult. Nullclines make the search geometric.
+
+<TheoremBlock type="definition" number={2} title="Nullcline">
+The **$y_1$-nullcline** (or $\dot{y}_1$-nullcline) is the curve $\{ (y_1, y_2) : f_1(y_1, y_2) = 0 \}$. On this curve, $\dot{y}_1 = 0$ — trajectories move purely vertically. Similarly, the **$y_2$-nullcline** is $\{ (y_1, y_2) : f_2(y_1, y_2) = 0 \}$, where trajectories move purely horizontally. Equilibria occur where the nullclines **intersect**.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={1} title="Lotka-Volterra Equilibria and Nullclines">
+The predator-prey system is:
+$$\dot{x} = \alpha x - \beta xy, \qquad \dot{y} = \delta xy - \gamma y$$
+where $x$ is prey population, $y$ is predator population, and $\alpha, \beta, \delta, \gamma > 0$.
+
+**$x$-nullcline:** $x(\alpha - \beta y) = 0$, so $x = 0$ or $y = \alpha/\beta$.
+
+**$y$-nullcline:** $y(\delta x - \gamma) = 0$, so $y = 0$ or $x = \gamma/\delta$.
+
+**Equilibria** are the intersections:
+- $(0, 0)$ — both species extinct (trivial equilibrium)
+- $(\gamma/\delta, \alpha/\beta)$ — coexistence equilibrium
+
+The nullclines divide the positive quadrant into four regions, and in each region we can determine the direction of the flow by checking the sign of $f_1$ and $f_2$. This gives a coarse picture of the dynamics without solving anything.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={2} title="Damped Pendulum Equilibria">
+The damped pendulum $\ddot{\theta} + b\dot{\theta} + \sin\theta = 0$ becomes a first-order system:
+$$\dot{\theta} = \omega, \qquad \dot{\omega} = -\sin\theta - b\omega$$
+
+**$\theta$-nullcline:** $\omega = 0$ (the $\theta$-axis).
+
+**$\omega$-nullcline:** $\sin\theta = -b\omega$ (an S-shaped curve through the origin).
+
+**Equilibria:** $\omega = 0$ and $\sin\theta = 0$, giving $(\theta^*, \omega^*) = (n\pi, 0)$ for all integers $n$. The pendulum has infinitely many equilibria — the downward rest positions $(2n\pi, 0)$ and the upward balance points $((2n+1)\pi, 0)$.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={1} title="Nullclines Reduce a 2D Search to Curve Intersections">
+Without nullclines, finding equilibria requires solving two nonlinear equations simultaneously — a 2D root-finding problem. Nullclines reduce this to a 1D problem: trace each nullcline as a curve, then find where they cross. The flow directions between nullclines then give a rough sketch of the phase portrait for free.
+</TheoremBlock>
+
+![Nullclines and equilibria for the Lotka-Volterra predator-prey system (left) and the damped pendulum (right). Dashed curves are nullclines; filled circles mark equilibria. Arrows indicate flow direction in each region.](/images/topics/stability-dynamics/nullclines-equilibria.png)
+
+## 3. The Linearization Stability Theorem
+
+We now develop the fundamental tool for classifying equilibria of nonlinear systems. The idea: near an equilibrium, a nonlinear system looks like a linear system, and we already know how to classify linear systems from [Topic 22](/topics/linear-systems).
+
+<TheoremBlock type="definition" number={3} title="Stability, Asymptotic Stability, and Instability (Lyapunov)">
+Let $\mathbf{y}^*$ be an equilibrium of $\dot{\mathbf{y}} = \mathbf{f}(\mathbf{y})$.
+
+- $\mathbf{y}^*$ is **stable** (in the sense of Lyapunov) if for every $\varepsilon > 0$ there exists $\delta > 0$ such that $\|\mathbf{y}(0) - \mathbf{y}^*\| < \delta$ implies $\|\mathbf{y}(t) - \mathbf{y}^*\| < \varepsilon$ for all $t \geq 0$. Trajectories starting close stay close.
+
+- $\mathbf{y}^*$ is **asymptotically stable** if it is stable and additionally $\|\mathbf{y}(t) - \mathbf{y}^*\| \to 0$ as $t \to \infty$ for all $\mathbf{y}(0)$ sufficiently close to $\mathbf{y}^*$. Trajectories starting close converge to the equilibrium.
+
+- $\mathbf{y}^*$ is **unstable** if it is not stable — some trajectories starting arbitrarily close eventually leave a neighborhood of $\mathbf{y}^*$.
+</TheoremBlock>
+
+<TheoremBlock type="definition" number={4} title="Hyperbolic Equilibrium">
+An equilibrium $\mathbf{y}^*$ is **hyperbolic** if every eigenvalue of the Jacobian $J_{\mathbf{f}}(\mathbf{y}^*)$ has nonzero real part: $\operatorname{Re}(\lambda_i) \neq 0$ for all $i$. In the language of [Topic 22](/topics/linear-systems), the linearized system has no center component — it is a node, saddle, or spiral, never a center.
+</TheoremBlock>
+
+Here is the main theorem. It says that at a hyperbolic equilibrium, linearization tells the whole story.
+
+<TheoremBlock type="theorem" number={1} title="Linearization Stability Theorem (Hartman-Grobman, Stability Version)">
+Let $\mathbf{y}^*$ be an equilibrium of $\dot{\mathbf{y}} = \mathbf{f}(\mathbf{y})$ with $\mathbf{f}$ continuously differentiable, and let $J = J_{\mathbf{f}}(\mathbf{y}^*)$ be the Jacobian at $\mathbf{y}^*$.
+
+1. If all eigenvalues of $J$ satisfy $\operatorname{Re}(\lambda_i) < 0$, then $\mathbf{y}^*$ is **asymptotically stable**.
+2. If any eigenvalue of $J$ satisfies $\operatorname{Re}(\lambda_i) > 0$, then $\mathbf{y}^*$ is **unstable**.
+3. If all eigenvalues have $\operatorname{Re}(\lambda_i) \neq 0$ (the equilibrium is hyperbolic), the phase portrait near $\mathbf{y}^*$ is qualitatively equivalent to that of the linear system $\dot{\mathbf{z}} = J\mathbf{z}$.
+</TheoremBlock>
+
+<TheoremBlock type="proof" title="Proof of Theorem 1 (Linearization Stability)">
+We prove statement (1); statement (2) follows by a time-reversal argument.
+
+Set $\mathbf{z} = \mathbf{y} - \mathbf{y}^*$. Taylor expansion gives:
+$$\dot{\mathbf{z}} = \mathbf{f}(\mathbf{y}^* + \mathbf{z}) = \underbrace{\mathbf{f}(\mathbf{y}^*)}_{= \mathbf{0}} + J\mathbf{z} + \mathbf{r}(\mathbf{z})$$
+where the remainder $\mathbf{r}(\mathbf{z})$ satisfies $\|\mathbf{r}(\mathbf{z})\| \leq C\|\mathbf{z}\|^2$ for $\|\mathbf{z}\|$ sufficiently small (since $\mathbf{f}$ is $C^1$).
+
+**Step 1: The linear part decays exponentially.** Since all eigenvalues of $J$ have $\operatorname{Re}(\lambda_i) < 0$, there exist constants $M > 0$ and $\alpha > 0$ such that $\|e^{Jt}\| \leq Me^{-\alpha t}$ for all $t \geq 0$. (This uses the Jordan normal form and the fact that $\alpha$ can be taken as any number smaller than $\min_i |\operatorname{Re}(\lambda_i)|$.)
+
+**Step 2: Variation of constants formula.** The solution of $\dot{\mathbf{z}} = J\mathbf{z} + \mathbf{r}(\mathbf{z})$ satisfies the integral equation:
+$$\mathbf{z}(t) = e^{Jt}\mathbf{z}(0) + \int_0^t e^{J(t-s)}\mathbf{r}(\mathbf{z}(s))\,ds$$
+
+**Step 3: Gronwall estimate.** Let $u(t) = \|\mathbf{z}(t)\|$. Then:
+$$u(t) \leq Me^{-\alpha t}\,u(0) + \int_0^t Me^{-\alpha(t-s)} C\,u(s)^2\,ds$$
+
+For $u(0)$ sufficiently small (say $u(0) \leq \varepsilon$ with $\varepsilon < \alpha/(2MC)$), a continuation argument shows that $u(t) \leq 2M\varepsilon\, e^{-\alpha t/2}$ for all $t \geq 0$.
+
+Specifically: suppose $u(t) \leq 2M\varepsilon$ on $[0, T]$. Then on this interval:
+$$u(t) \leq Me^{-\alpha t}\varepsilon + \int_0^t Me^{-\alpha(t-s)} C \cdot (2M\varepsilon) \cdot u(s)\,ds$$
+
+By Gronwall's inequality, if $2MC\varepsilon < \alpha$, the integral term does not overcome the exponential decay of the first term. The bound $u(t) \leq 2M\varepsilon\,e^{-\alpha t/2}$ holds on $[0, T]$, and since the bound does not saturate, it extends beyond $T$ — by continuity, the bound holds for all $t \geq 0$.
+
+**Conclusion:** $\|\mathbf{z}(t)\| \to 0$ exponentially, so $\mathbf{y}^*$ is asymptotically stable. $\blacksquare$
+</TheoremBlock>
+
+<TheoremBlock type="example" number={3} title="Classify Lotka-Volterra Equilibria via Linearization">
+From Example 1, the Lotka-Volterra system $\dot{x} = \alpha x - \beta xy$, $\dot{y} = \delta xy - \gamma y$ has equilibria at $(0,0)$ and $(\gamma/\delta, \alpha/\beta)$.
+
+The Jacobian is:
+$$J = \begin{pmatrix} \alpha - \beta y & -\beta x \\ \delta y & \delta x - \gamma \end{pmatrix}$$
+
+**At $(0, 0)$:** $J = \begin{pmatrix} \alpha & 0 \\ 0 & -\gamma \end{pmatrix}$. Eigenvalues: $\lambda_1 = \alpha > 0$, $\lambda_2 = -\gamma < 0$. This is a **saddle point** — unstable. The prey axis is the unstable manifold (prey grow exponentially without predators); the predator axis is the stable manifold (predators die without prey).
+
+**At $(\gamma/\delta, \alpha/\beta)$:** $J = \begin{pmatrix} 0 & -\beta\gamma/\delta \\ \delta\alpha/\beta & 0 \end{pmatrix}$. The eigenvalues are $\lambda = \pm i\sqrt{\alpha\gamma}$ — pure imaginary. This is a **non-hyperbolic center** in the linearization. Linearization is inconclusive! (In fact, the nonlinear system has a conserved quantity, so the orbits are genuinely closed — but the linearization cannot tell us this.)
+</TheoremBlock>
+
+<TheoremBlock type="example" number={4} title="Non-Hyperbolic Case — Center vs. Spiral">
+Consider the family:
+$$\dot{y}_1 = \mu y_1 - y_2 - y_1(y_1^2 + y_2^2), \qquad \dot{y}_2 = y_1 + \mu y_2 - y_2(y_1^2 + y_2^2)$$
+
+The Jacobian at the origin is $J = \begin{pmatrix} \mu & -1 \\ 1 & \mu \end{pmatrix}$ with eigenvalues $\lambda = \mu \pm i$.
+
+- For $\mu < 0$: $\operatorname{Re}(\lambda) < 0$ → **stable spiral** (linearization is conclusive).
+- For $\mu = 0$: $\operatorname{Re}(\lambda) = 0$ → linearization gives a center, but the nonlinear cubic terms create a **stable spiral** (trajectories decay).
+- For $\mu > 0$: $\operatorname{Re}(\lambda) > 0$ → **unstable spiral** (linearization is conclusive), and a stable limit cycle of radius $\sqrt{\mu}$ appears.
+
+The non-hyperbolic case $\mu = 0$ shows that linearization alone cannot distinguish a true center from a spiral when eigenvalues are pure imaginary. We need Lyapunov functions (Section 4) or the Hopf bifurcation theorem (Section 8).
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={2} title="Hyperbolicity as a Genericity Condition">
+Non-hyperbolic equilibria are "exceptional" — they require eigenvalues to land exactly on the imaginary axis, which is a codimension-one condition in parameter space. Generically (for "almost all" parameter values), all equilibria are hyperbolic. Non-hyperbolic equilibria typically occur at **bifurcation points** — the boundaries between qualitatively different behaviors (Section 8).
+</TheoremBlock>
+
+![Linearization of a nonlinear system near a stable equilibrium. Left: the nonlinear phase portrait. Center: the linearized phase portrait (a stable spiral). Right: the eigenvalue plane, showing eigenvalues in the left half-plane (stable region).](/images/topics/stability-dynamics/linearization.png)
+
+<NonlinearPhasePortraitExplorer client:visible />
+
+## 4. Lyapunov's Direct Method
+
+Linearization classifies equilibria using the Jacobian's eigenvalues — a local, algebraic test. Lyapunov's direct method takes a completely different approach: find a scalar "energy" function that decreases along trajectories. If such a function exists, the system is stable, and we never need to solve the ODE or compute eigenvalues.
+
+The key is the **orbital derivative**: if $V(\mathbf{y})$ is a smooth scalar function and $\mathbf{y}(t)$ is a solution of $\dot{\mathbf{y}} = \mathbf{f}(\mathbf{y})$, then by the chain rule:
+$$\dot{V} = \frac{d}{dt}V(\mathbf{y}(t)) = \nabla V(\mathbf{y}) \cdot \mathbf{f}(\mathbf{y})$$
+
+This is computable directly from $V$ and $\mathbf{f}$ — we don't need the solution $\mathbf{y}(t)$.
+
+<TheoremBlock type="definition" number={5} title="Lyapunov Function">
+A continuously differentiable function $V: U \to \mathbb{R}$ defined on a neighborhood $U$ of an equilibrium $\mathbf{y}^*$ is a **Lyapunov function** if:
+1. $V(\mathbf{y}^*) = 0$ and $V(\mathbf{y}) > 0$ for $\mathbf{y} \neq \mathbf{y}^*$ in $U$ (positive-definite)
+2. $\dot{V}(\mathbf{y}) = \nabla V(\mathbf{y}) \cdot \mathbf{f}(\mathbf{y}) \leq 0$ in $U$ (negative-semidefinite orbital derivative)
+
+If additionally $\dot{V}(\mathbf{y}) < 0$ for $\mathbf{y} \neq \mathbf{y}^*$ (negative-definite), then $V$ is a **strict Lyapunov function**.
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={2} title="Lyapunov Stability Theorem">
+Let $\mathbf{y}^*$ be an equilibrium of $\dot{\mathbf{y}} = \mathbf{f}(\mathbf{y})$.
+
+1. If there exists a Lyapunov function $V$ with $\dot{V} \leq 0$, then $\mathbf{y}^*$ is **stable**.
+2. If there exists a strict Lyapunov function $V$ with $\dot{V} < 0$ for $\mathbf{y} \neq \mathbf{y}^*$, then $\mathbf{y}^*$ is **asymptotically stable**.
+</TheoremBlock>
+
+<TheoremBlock type="proof" title="Proof of Theorem 2 (Lyapunov Stability)">
+We prove statement (1). Statement (2) follows by a similar argument with the additional conclusion that $V(\mathbf{y}(t)) \to 0$ forces $\mathbf{y}(t) \to \mathbf{y}^*$.
+
+**Goal:** For every $\varepsilon > 0$, find $\delta > 0$ such that $\|\mathbf{y}(0) - \mathbf{y}^*\| < \delta$ implies $\|\mathbf{y}(t) - \mathbf{y}^*\| < \varepsilon$ for all $t \geq 0$.
+
+**Step 1: Sublevel set confinement.** Fix $\varepsilon > 0$ and consider the compact set $S_\varepsilon = \{ \mathbf{y} : \|\mathbf{y} - \mathbf{y}^*\| = \varepsilon \}$ (the sphere of radius $\varepsilon$). Since $V$ is continuous and positive on $S_\varepsilon$, it attains a minimum:
+$$c = \min_{\mathbf{y} \in S_\varepsilon} V(\mathbf{y}) > 0$$
+
+**Step 2: Choose $\delta$.** Since $V(\mathbf{y}^*) = 0$ and $V$ is continuous, there exists $\delta > 0$ (with $\delta < \varepsilon$) such that $\|\mathbf{y} - \mathbf{y}^*\| < \delta$ implies $V(\mathbf{y}) < c$.
+
+**Step 3: Trajectories stay inside.** Suppose $\|\mathbf{y}(0) - \mathbf{y}^*\| < \delta$, so $V(\mathbf{y}(0)) < c$. Since $\dot{V} \leq 0$ along trajectories:
+$$V(\mathbf{y}(t)) \leq V(\mathbf{y}(0)) < c \quad \text{for all } t \geq 0$$
+
+If the trajectory were to reach $S_\varepsilon$, we would have $V(\mathbf{y}(t)) \geq c$ — a contradiction. Therefore $\|\mathbf{y}(t) - \mathbf{y}^*\| < \varepsilon$ for all $t \geq 0$. $\blacksquare$
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={3} title="LaSalle's Invariance Principle">
+Suppose $V$ is a Lyapunov function with $\dot{V} \leq 0$ on a compact positively invariant set $\Omega$. Let $E = \{ \mathbf{y} \in \Omega : \dot{V}(\mathbf{y}) = 0 \}$, and let $M$ be the largest invariant set contained in $E$. Then every trajectory starting in $\Omega$ converges to $M$ as $t \to \infty$.
+
+In particular, if the only invariant subset of $E$ is $\{\mathbf{y}^*\}$, then $\mathbf{y}^*$ is asymptotically stable — even though $\dot{V}$ may vanish on a larger set.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={5} title="Damped Pendulum Energy as a Lyapunov Function">
+For the damped pendulum $\dot{\theta} = \omega$, $\dot{\omega} = -\sin\theta - b\omega$ with $b > 0$, the total energy is:
+$$V(\theta, \omega) = \frac{1}{2}\omega^2 + (1 - \cos\theta)$$
+
+This is positive-definite near $(\theta, \omega) = (0, 0)$: $V(0, 0) = 0$ and $V > 0$ for $(\theta, \omega) \neq (0, 0)$ when $|\theta| < \pi$.
+
+The orbital derivative is:
+$$\dot{V} = \omega \cdot (-\sin\theta - b\omega) + \sin\theta \cdot \omega = -b\omega^2 \leq 0$$
+
+So $V$ is a Lyapunov function and the origin is stable. But $\dot{V} = 0$ on the set $E = \{\omega = 0\}$ — not just at the origin. Is it asymptotically stable?
+
+**LaSalle's principle to the rescue:** The largest invariant set in $E = \{\omega = 0\}$ is just $\{(0, 0)\}$, because if $\omega(t) = 0$ for all $t$ then $\dot{\omega}(t) = 0$, forcing $\sin\theta(t) = 0$, hence $\theta(t) = 0$ (near the origin). By LaSalle's principle, $(0, 0)$ is **asymptotically stable**.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={6} title="Computing the Orbital Derivative for a Quadratic Lyapunov Function">
+Consider the system $\dot{y}_1 = -y_1 + y_2$, $\dot{y}_2 = -y_1 - y_2$ with candidate $V(y_1, y_2) = y_1^2 + y_2^2$.
+
+The gradient is $\nabla V = (2y_1, 2y_2)$, and the orbital derivative is:
+$$\dot{V} = 2y_1(-y_1 + y_2) + 2y_2(-y_1 - y_2) = -2y_1^2 + 2y_1 y_2 - 2y_1 y_2 - 2y_2^2 = -2(y_1^2 + y_2^2)$$
+
+Since $\dot{V} = -2\|\mathbf{y}\|^2 < 0$ for $\mathbf{y} \neq \mathbf{0}$, $V$ is a strict Lyapunov function and the origin is **asymptotically stable**. The decay rate is $\dot{V} = -2V$, so $V(t) = V(0)e^{-2t}$ — exponential convergence.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={3} title="Finding Lyapunov Functions is an Art">
+There is no systematic method for constructing Lyapunov functions for general nonlinear systems. Common strategies include:
+- **Physical energy** (kinetic + potential) for mechanical systems
+- **Quadratic forms** $V = \mathbf{y}^T P \mathbf{y}$ for systems near a linear regime (see Section 5)
+- **Sum-of-squares (SOS) programming** — a computational approach using semidefinite optimization
+- **Trial and error** guided by the structure of $\mathbf{f}$
+
+The art is in finding a $V$ whose level curves "match" the dynamics well enough that $\dot{V}$ comes out negative-definite. This is one place where understanding the physics or geometry of a system genuinely helps.
+</TheoremBlock>
+
+![Lyapunov function as a 3D surface (left) with a trajectory spiraling down toward the minimum, and V(t) decreasing monotonically along the trajectory (right).](/images/topics/stability-dynamics/lyapunov-functions.png)
+
+<LyapunovFunctionExplorer client:visible />
+
+## 5. The Lyapunov Equation & Quadratic Lyapunov Functions
+
+For linear systems $\dot{\mathbf{y}} = A\mathbf{y}$, Lyapunov functions can be constructed systematically. The key is the quadratic form $V(\mathbf{y}) = \mathbf{y}^T P \mathbf{y}$, where $P$ is a symmetric positive-definite matrix.
+
+The orbital derivative is:
+$$\dot{V} = \dot{\mathbf{y}}^T P \mathbf{y} + \mathbf{y}^T P \dot{\mathbf{y}} = \mathbf{y}^T A^T P \mathbf{y} + \mathbf{y}^T P A \mathbf{y} = \mathbf{y}^T (A^T P + PA) \mathbf{y}$$
+
+If we can choose $P$ so that $A^T P + PA = -Q$ for some positive-definite $Q$, then $\dot{V} = -\mathbf{y}^T Q \mathbf{y} < 0$ for $\mathbf{y} \neq \mathbf{0}$ — a strict Lyapunov function.
+
+<TheoremBlock type="definition" number={6} title="Hurwitz Matrix">
+A matrix $A$ is **Hurwitz** (or **stable**) if every eigenvalue has strictly negative real part: $\operatorname{Re}(\lambda_i(A)) < 0$ for all $i$. Equivalently, $A$ is Hurwitz if and only if $e^{At} \to 0$ as $t \to \infty$.
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={4} title="The Lyapunov Equation">
+Let $A$ be a real $n \times n$ matrix and $Q$ a symmetric positive-definite matrix. The matrix equation
+$$A^T P + PA = -Q \qquad \text{(the Lyapunov equation)}$$
+has a unique symmetric positive-definite solution $P$ **if and only if** $A$ is Hurwitz.
+
+When $A$ is Hurwitz, $V(\mathbf{y}) = \mathbf{y}^T P \mathbf{y}$ is a strict Lyapunov function for $\dot{\mathbf{y}} = A\mathbf{y}$, confirming asymptotic stability.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={7} title="Solving the Lyapunov Equation for a 2×2 Hurwitz Matrix">
+Let $A = \begin{pmatrix} -1 & 2 \\ -3 & -2 \end{pmatrix}$. The eigenvalues are $\lambda \approx -1.5 \pm 2.18i$ — both have negative real part, so $A$ is Hurwitz.
+
+Choose $Q = I$ (the simplest positive-definite choice). The Lyapunov equation $A^T P + PA = -I$ is a linear system in the entries of $P = \begin{pmatrix} p_{11} & p_{12} \\ p_{12} & p_{22} \end{pmatrix}$:
+$$-2p_{11} - 6p_{12} = -1, \qquad 2p_{11} - 3p_{12} - 3p_{22} = 0, \qquad 4p_{12} - 4p_{22} = -1$$
+
+Solving: $P \approx \begin{pmatrix} 1.50 & 0.10 \\ 0.10 & 0.65 \end{pmatrix}$. The eigenvalues of $P$ are approximately $1.52$ and $0.63$, both positive — confirming $P \succ 0$.
+
+The Lyapunov function $V(\mathbf{y}) = 1.50\,y_1^2 + 0.20\,y_1 y_2 + 0.65\,y_2^2$ has elliptical level curves, and $\dot{V} = -(y_1^2 + y_2^2) < 0$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={8} title="Quadratic Lyapunov Function for Training Dynamics">
+Gradient descent on the quadratic loss $L(\theta) = \frac{1}{2}\theta^T H \theta$ yields the linear system $\dot{\theta} = -H\theta$. If $H$ is positive-definite (a local minimum), then $A = -H$ is Hurwitz.
+
+The loss function itself is a Lyapunov function: $V(\theta) = L(\theta) = \frac{1}{2}\theta^T H \theta$ with $\dot{V} = -\theta^T H^2 \theta < 0$. This proves gradient descent converges — the loss decreases monotonically along the gradient flow.
+
+More precisely, $P = \frac{1}{2}H$ solves $A^T P + PA = -H^2$ (the Lyapunov equation with $Q = H^2$). The condition number $\kappa(H) = \lambda_{\max}/\lambda_{\min}$ controls the eccentricity of the level ellipses — ill-conditioned Hessians produce elongated ellipses where gradient descent zig-zags.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={4} title="The Lyapunov Equation as a Linear System">
+The Lyapunov equation $A^T P + PA = -Q$ can be rewritten using the Kronecker product:
+$$(I \otimes A^T + A^T \otimes I) \operatorname{vec}(P) = -\operatorname{vec}(Q)$$
+
+This is a linear system of size $n^2 \times n^2$, solvable by standard methods. In Python: `scipy.linalg.solve_continuous_lyapunov(A.T, -Q)`. The condition for unique solvability is that $A$ and $-A^T$ share no eigenvalues — which holds precisely when $A$ is Hurwitz (since then all eigenvalues of $A$ have negative real parts, while eigenvalues of $-A^T$ have positive real parts).
+</TheoremBlock>
+
+![Level curves of the quadratic Lyapunov function V = yᵀPy (left) with trajectories confined inside shrinking ellipses. Eigenvalues of P and A shown side by side (right).](/images/topics/stability-dynamics/lyapunov-equation.png)
+
+## 6. Invariant Manifolds
+
+At a saddle-type equilibrium, some directions attract trajectories while others repel them. The **invariant manifolds** organize these directions into global geometric structures.
+
+<TheoremBlock type="definition" number={7} title="Stable and Unstable Manifolds">
+Let $\mathbf{y}^*$ be a hyperbolic equilibrium of $\dot{\mathbf{y}} = \mathbf{f}(\mathbf{y})$.
+
+- The **stable manifold** is $W^s(\mathbf{y}^*) = \{ \mathbf{y}_0 : \mathbf{y}(t; \mathbf{y}_0) \to \mathbf{y}^* \text{ as } t \to +\infty \}$ — the set of initial conditions that converge to $\mathbf{y}^*$ in forward time.
+
+- The **unstable manifold** is $W^u(\mathbf{y}^*) = \{ \mathbf{y}_0 : \mathbf{y}(t; \mathbf{y}_0) \to \mathbf{y}^* \text{ as } t \to -\infty \}$ — the set of initial conditions that converge to $\mathbf{y}^*$ in backward time (equivalently, trajectories that depart from $\mathbf{y}^*$ in forward time).
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={5} title="Stable Manifold Theorem">
+Let $\mathbf{y}^*$ be a hyperbolic equilibrium of $\dot{\mathbf{y}} = \mathbf{f}(\mathbf{y})$ with $\mathbf{f} \in C^1$. Let $J = J_{\mathbf{f}}(\mathbf{y}^*)$ have $k$ eigenvalues with negative real part and $n - k$ eigenvalues with positive real part. Then:
+
+1. $W^s(\mathbf{y}^*)$ is a smooth manifold of dimension $k$, tangent to the stable eigenspace $E^s$ of $J$ at $\mathbf{y}^*$.
+2. $W^u(\mathbf{y}^*)$ is a smooth manifold of dimension $n - k$, tangent to the unstable eigenspace $E^u$ of $J$ at $\mathbf{y}^*$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={9} title="Stable and Unstable Manifolds of a Lotka-Volterra Saddle">
+At the origin of the Lotka-Volterra system, the Jacobian has eigenvalues $\lambda_1 = \alpha > 0$ (unstable, prey direction) and $\lambda_2 = -\gamma < 0$ (stable, predator direction).
+
+The **stable manifold** $W^s(0,0)$ is the positive $y$-axis: $\{(0, y) : y > 0\}$. Predators with no prey die exponentially — trajectories along this axis converge to the origin.
+
+The **unstable manifold** $W^u(0,0)$ is the positive $x$-axis: $\{(x, 0) : x > 0\}$. Prey with no predators grow exponentially — trajectories along this axis depart from the origin.
+
+Both manifolds are straight lines — they coincide with the eigenspaces of the Jacobian. For nonlinear systems in general, the manifolds are **curves** (not lines) that are tangent to the eigenspaces at the equilibrium but curve away from them further out.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={5} title="Center Manifolds and Dimensional Reduction">
+When the Jacobian has eigenvalues on the imaginary axis ($\operatorname{Re}(\lambda) = 0$), the **center manifold** $W^c$ captures the "slow" dynamics that linearization cannot resolve. The center manifold theorem states that $W^c$ exists, is tangent to the center eigenspace $E^c$ at the equilibrium, and is locally invariant. The dynamics restricted to $W^c$ determine the stability of the full system — this is the principle of **dimensional reduction**: reduce the analysis to the center manifold, where the essential nonlinearity lives.
+</TheoremBlock>
+
+![Stable and unstable manifolds at a saddle equilibrium. The manifolds curve away from the linear eigenspaces but remain tangent at the equilibrium (zoom on right).](/images/topics/stability-dynamics/invariant-manifolds.png)
+
+## 7. Limit Cycles & the Poincaré-Bendixson Theorem
+
+Linear systems can have periodic orbits — the centers of [Topic 22](/topics/linear-systems), where trajectories form closed ellipses. But these orbits are not isolated: every nearby initial condition also produces a periodic orbit. Limit cycles are a fundamentally nonlinear phenomenon: **isolated** periodic orbits that attract (or repel) neighboring trajectories.
+
+<TheoremBlock type="definition" number={8} title="Limit Cycle">
+A **limit cycle** is an isolated closed orbit $\Gamma$ of $\dot{\mathbf{y}} = \mathbf{f}(\mathbf{y})$.
+
+- **Stable limit cycle:** Nearby trajectories spiral toward $\Gamma$ from both inside and outside. $\Gamma$ is an attractor.
+- **Unstable limit cycle:** Nearby trajectories spiral away from $\Gamma$.
+- **Semi-stable limit cycle:** Trajectories approach from one side and recede on the other.
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={6} title="Poincaré-Bendixson Theorem">
+Let $\dot{\mathbf{y}} = \mathbf{f}(\mathbf{y})$ be a $C^1$ planar system. If a trajectory remains in a bounded region $R \subset \mathbb{R}^2$ for all $t \geq 0$, and $R$ contains no equilibria, then the $\omega$-limit set of the trajectory is a periodic orbit.
+
+More generally: if the $\omega$-limit set is nonempty, compact, and contains no equilibria, it is a periodic orbit.
+</TheoremBlock>
+
+<TheoremBlock type="proof" title="Proof Sketch of Theorem 6 (Poincaré-Bendixson)">
+The full proof is long and uses delicate topological arguments about planar flows. We outline the key ideas.
+
+**Step 1: $\omega$-limit set structure.** The $\omega$-limit set $\omega(\mathbf{y}_0) = \bigcap_{T \geq 0} \overline{\{ \mathbf{y}(t) : t \geq T \}}$ is nonempty (by boundedness), compact, connected, and invariant under the flow.
+
+**Step 2: No equilibria in $\omega$.** By hypothesis, $\omega$ contains no equilibria. Therefore every point of $\omega$ lies on a regular orbit arc.
+
+**Step 3: Flow box and transversal.** At any point $p \in \omega$, the flow is locally a parallel flow (by the Flow Box Theorem). Take a small transversal segment $\Sigma$ through $p$. The trajectory must cross $\Sigma$ repeatedly (since $p$ is an $\omega$-limit point).
+
+**Step 4: Monotonicity on $\Sigma$.** The Jordan Curve Theorem constrains how the trajectory can cross $\Sigma$: successive crossings must be monotone (each crossing is "closer" to $p$ than the last). This is where 2D topology is essential — and why the theorem fails in 3D.
+
+**Step 5: Convergence.** The monotone sequence of crossings converges to a fixed point on $\Sigma$, which lies on a periodic orbit in $\omega$. Since $\omega$ is connected and contains no equilibria, the entire $\omega$-limit set equals this periodic orbit. $\blacksquare$
+</TheoremBlock>
+
+<TheoremBlock type="example" number={10} title="Van der Pol Limit Cycle — Trapping Region">
+The Van der Pol oscillator $\ddot{x} - \mu(1 - x^2)\dot{x} + x = 0$ (with $\mu > 0$) becomes:
+$$\dot{x} = y, \qquad \dot{y} = \mu(1 - x^2)y - x$$
+
+**Linearization at origin:** The Jacobian has eigenvalues $\lambda = \frac{\mu}{2} \pm \frac{1}{2}\sqrt{\mu^2 - 4}$. For $\mu > 0$, $\operatorname{Re}(\lambda) > 0$ — the origin is an **unstable spiral** (or unstable node for $\mu \geq 2$).
+
+**Trapping region:** Construct a bounded, positively invariant annular region $R$ surrounding the origin that contains no equilibria (the only equilibrium is the origin, which is excluded). By the Poincaré-Bendixson theorem, $R$ must contain a periodic orbit — the **Van der Pol limit cycle**.
+
+For $\mu$ small, the limit cycle is nearly circular with radius $\approx 2$. As $\mu$ increases, it develops sharp corners — the characteristic **relaxation oscillation** shape.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={6} title="Poincaré-Bendixson is Special to 2D">
+The Poincaré-Bendixson theorem critically uses 2D topology — the Jordan Curve Theorem, which has no analog in higher dimensions. In 3D, bounded trajectories that avoid equilibria need not converge to periodic orbits. Instead, they can exhibit **chaotic** behavior: the Lorenz attractor ($\dot{x} = \sigma(y - x)$, $\dot{y} = x(\rho - z) - y$, $\dot{z} = xy - \beta z$) is bounded, has no periodic orbits, and is a strange attractor with sensitive dependence on initial conditions. Chaos is impossible in 2D autonomous systems — a fundamental constraint of planar topology.
+</TheoremBlock>
+
+![Van der Pol oscillator: phase portrait with the stable limit cycle (left) and the time series x(t) showing convergence to periodic oscillation from both inside and outside the limit cycle (right).](/images/topics/stability-dynamics/limit-cycles.png)
+
+## 8. Bifurcation Theory
+
+So far we've asked: given a system, what is the long-term behavior? Bifurcation theory asks a deeper question: **how does the behavior change as a parameter varies?** A bifurcation occurs when the qualitative structure of the phase portrait changes — equilibria appear or disappear, or exchange stability.
+
+<TheoremBlock type="definition" number={9} title="Bifurcation and Bifurcation Point">
+A **bifurcation** of $\dot{\mathbf{y}} = \mathbf{f}(\mathbf{y}; \mu)$ occurs at a parameter value $\mu = \mu^*$ if the phase portrait for $\mu$ near $\mu^*$ is not qualitatively equivalent to the phase portrait at $\mu^*$. The value $\mu^*$ is a **bifurcation point**.
+
+Typical signatures: the number of equilibria changes, or an equilibrium changes stability (eigenvalues cross the imaginary axis).
+</TheoremBlock>
+
+<TheoremBlock type="definition" number={10} title="Saddle-Node Bifurcation (Normal Form)">
+The **saddle-node bifurcation** has normal form $\dot{x} = \mu - x^2$ (in 1D) or $\dot{x}_1 = \mu - x_1^2$, $\dot{x}_2 = -x_2$ (in 2D).
+
+- For $\mu > 0$: two equilibria at $x = \pm\sqrt{\mu}$ — one stable node, one saddle.
+- At $\mu = 0$: the equilibria merge into a single half-stable equilibrium at $x = 0$.
+- For $\mu < 0$: no equilibria — all trajectories escape.
+
+Two equilibria collide, annihilate, and disappear as $\mu$ decreases through zero.
+</TheoremBlock>
+
+<TheoremBlock type="definition" number={11} title="Hopf Bifurcation (Supercritical and Subcritical)">
+A **Hopf bifurcation** occurs when a pair of complex conjugate eigenvalues $\lambda(\mu) = \alpha(\mu) \pm i\beta(\mu)$ of the Jacobian crosses the imaginary axis: $\alpha(\mu^*) = 0$ with $\alpha'(\mu^*) \neq 0$ (transversality).
+
+- **Supercritical Hopf:** For $\mu < \mu^*$, a stable equilibrium. At $\mu = \mu^*$, the equilibrium loses stability and a **stable limit cycle** is born. The limit cycle grows as $\sqrt{\mu - \mu^*}$.
+- **Subcritical Hopf:** For $\mu < \mu^*$, a stable equilibrium coexists with an **unstable limit cycle**. At $\mu = \mu^*$, the limit cycle shrinks to zero and the equilibrium becomes unstable — often accompanied by a sudden jump to a distant attractor.
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={7} title="Hopf Bifurcation Theorem">
+Let $\dot{\mathbf{y}} = \mathbf{f}(\mathbf{y}; \mu)$ have an equilibrium $\mathbf{y}^*(\mu)$ with Jacobian eigenvalues $\lambda(\mu) = \alpha(\mu) \pm i\beta(\mu)$. Suppose:
+1. $\alpha(\mu^*) = 0$ and $\beta(\mu^*) \neq 0$ (eigenvalues on imaginary axis)
+2. $\alpha'(\mu^*) \neq 0$ (transversal crossing)
+
+Then a branch of periodic orbits bifurcates from $\mathbf{y}^*$ at $\mu = \mu^*$. The period is approximately $2\pi / \beta(\mu^*)$ and the amplitude scales as $O(\sqrt{|\mu - \mu^*|})$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={11} title="Saddle-Node Bifurcation — Complete Analysis">
+Consider $\dot{x} = \mu - x^2$ on $\mathbb{R}$.
+
+**Equilibria:** $x^* = \pm\sqrt{\mu}$ (exist only for $\mu \geq 0$).
+
+**Stability:** $f'(x) = -2x$, so $f'(\sqrt{\mu}) = -2\sqrt{\mu} < 0$ (stable) and $f'(-\sqrt{\mu}) = 2\sqrt{\mu} > 0$ (unstable).
+
+**Bifurcation diagram:** Plot $x^*$ vs. $\mu$. The curve $x = \sqrt{\mu}$ (upper branch, stable, solid line) and $x = -\sqrt{\mu}$ (lower branch, unstable, dashed line) meet at the origin $(\mu, x) = (0, 0)$ — the bifurcation point. The branches form a parabola opening to the right.
+
+**At the bifurcation ($\mu = 0$):** The linearization is $f'(0) = 0$ — a non-hyperbolic equilibrium. The system slows down critically: trajectories approach $x = 0$ algebraically ($x(t) \sim t^{-1}$) rather than exponentially.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={12} title="Supercritical Hopf — Birth of a Limit Cycle">
+The Hopf normal form:
+$$\dot{x}_1 = \mu x_1 - x_2 - x_1(x_1^2 + x_2^2), \qquad \dot{x}_2 = x_1 + \mu x_2 - x_2(x_1^2 + x_2^2)$$
+
+In polar coordinates $(r, \theta)$: $\dot{r} = \mu r - r^3$, $\dot{\theta} = 1$.
+
+**Equilibria of the radial equation:** $r = 0$ (always) and $r = \sqrt{\mu}$ (for $\mu > 0$).
+
+- $\mu < 0$: Only $r = 0$ exists. Since $\dot{r} = r(\mu - r^2) < 0$ for $r > 0$, the origin is asymptotically stable (stable spiral).
+- $\mu = 0$: The origin is non-hyperbolic. The cubic term stabilizes it weakly.
+- $\mu > 0$: $r = 0$ is unstable, $r = \sqrt{\mu}$ is a stable limit cycle. Every trajectory (except the origin itself) spirals toward the circle of radius $\sqrt{\mu}$.
+
+The limit cycle amplitude grows as $\sqrt{\mu}$ — a square-root scaling that is universal for supercritical Hopf bifurcations.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={7} title="Transcritical and Pitchfork Bifurcations">
+Two other common bifurcation types are:
+- **Transcritical:** $\dot{x} = \mu x - x^2$. Two equilibria ($x = 0$ and $x = \mu$) exist for all $\mu$ but **exchange stability** at $\mu = 0$.
+- **Pitchfork:** $\dot{x} = \mu x - x^3$ (supercritical). For $\mu < 0$: one stable equilibrium at $x = 0$. For $\mu > 0$: $x = 0$ becomes unstable and two symmetric stable equilibria $x = \pm\sqrt{\mu}$ appear. Common in systems with symmetry.
+
+Both are present in the bifurcation taxonomy but are not covered in full here. The saddle-node and Hopf bifurcations are the generic ones — they occur without symmetry and are the most important for applications.
+</TheoremBlock>
+
+![Bifurcation diagrams. Left: saddle-node (two equilibria merge and disappear). Center: Hopf (equilibrium loses stability and a limit cycle is born). Right: phase portraits at three values of μ for the Hopf system.](/images/topics/stability-dynamics/bifurcation-diagrams.png)
+
+<BifurcationDiagramExplorer client:visible />
+
+## 9. Nonlinear Phase Portrait Gallery
+
+We now bring together all the tools — nullclines, linearization, Lyapunov functions, invariant manifolds, limit cycles — in a gallery of canonical nonlinear 2D systems.
+
+<TheoremBlock type="example" number={13} title="Lotka-Volterra — Full Analysis">
+The predator-prey system $\dot{x} = \alpha x - \beta xy$, $\dot{y} = \delta xy - \gamma y$ with standard parameters $\alpha = 1, \beta = 0.5, \delta = 0.25, \gamma = 0.5$:
+
+- **Equilibria:** $(0, 0)$ (saddle) and $(2, 2)$ (center in linearization).
+- **Nullclines:** $x = 0$ or $y = 2$ (x-nullcline); $y = 0$ or $x = 2$ (y-nullcline).
+- **Conserved quantity:** $H(x, y) = \delta x - \gamma \ln x + \beta y - \alpha \ln y$ is constant along trajectories. The orbits are closed curves — genuine periodic oscillations of predator and prey populations.
+- **Key feature:** The nonzero equilibrium is a center, not merely in the linearization but in the full nonlinear system. This is exceptional — it relies on the special structure (Hamiltonian system). Generic perturbations break the closed orbits into spirals.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={14} title="Damped Pendulum — Separatrices">
+The damped pendulum $\dot{\theta} = \omega$, $\dot{\omega} = -\sin\theta - b\omega$ with $b = 0.3$:
+
+- **Equilibria:** $(\theta, \omega) = (n\pi, 0)$. Even multiples of $\pi$ are stable spirals (downward rest positions); odd multiples are saddle points (upward balance points).
+- **Separatrices:** The stable and unstable manifolds of the saddle points form **heteroclinic connections** — curves connecting one saddle to the next. These separatrices divide the phase plane into basins of attraction for the different stable equilibria.
+- **Physical interpretation:** A trajectory starting with just enough energy to pass over the top of the pendulum follows a separatrix. Slightly less energy and it oscillates back; slightly more and it whips over the top and settles into the next well.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={15} title="SIR Epidemic Model">
+The SIR model $\dot{S} = -\beta SI$, $\dot{I} = \beta SI - \gamma I$ models an epidemic:
+
+- **Equilibria:** The line $I = 0$ consists entirely of equilibria (disease-free states). The $I$-nullcline $S = \gamma/\beta$ divides the positive quadrant.
+- **Basic reproduction number:** $R_0 = \beta S_0 / \gamma$ where $S_0$ is the initial susceptible fraction. If $R_0 > 1$, the infected population initially grows (epidemic). If $R_0 < 1$, it decays (no epidemic).
+- **Threshold behavior:** This is a transcritical-type bifurcation in disguise. As $S$ decreases below $\gamma/\beta$ during the epidemic, $\dot{I}$ changes sign — the epidemic peaks and begins to decline. The parameter $R_0$ plays the role of the bifurcation parameter.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={8} title="Gradient Systems — Always Stable, No Limit Cycles">
+A **gradient system** $\dot{\mathbf{y}} = -\nabla V(\mathbf{y})$ uses $V$ itself as a Lyapunov function: $\dot{V} = -\|\nabla V\|^2 \leq 0$. Consequences:
+1. Every trajectory converges to an equilibrium (no periodic orbits possible).
+2. Every local minimum of $V$ is an asymptotically stable equilibrium.
+3. Saddle points of $V$ have unstable manifolds of dimension equal to the Morse index (number of negative eigenvalues of $\nabla^2 V$).
+
+Gradient descent in ML is precisely a gradient system — which is why understanding loss landscape critical points is equivalent to stability analysis.
+</TheoremBlock>
+
+![Phase portrait gallery: Lotka-Volterra (top-left), Van der Pol (top-right), damped pendulum (bottom-left), SIR model (bottom-right). Each panel shows nullclines (dashed), equilibria, and representative trajectories.](/images/topics/stability-dynamics/nonlinear-gallery.png)
+
+## 10. Computational Notes
+
+Stability analysis in practice relies on numerical tools. Here are the key computational techniques.
+
+**Computing Jacobians.** For an analytically given $\mathbf{f}$, symbolic differentiation is exact. For black-box systems (e.g., neural ODEs), use central finite differences:
+$$\frac{\partial f_i}{\partial y_j}(\mathbf{y}^*) \approx \frac{f_i(\mathbf{y}^* + h\mathbf{e}_j) - f_i(\mathbf{y}^* - h\mathbf{e}_j)}{2h}$$
+with $h \approx 10^{-6}$ (balancing truncation and roundoff error).
+
+**Solving the Lyapunov equation.** In Python:
+```python
+import numpy as np
+from scipy.linalg import solve_continuous_lyapunov
+
+A = np.array([[-1, 2], [-3, -2]])
+Q = np.eye(2)
+P = solve_continuous_lyapunov(A.T, -Q)  # Solves A^T P + P A = -Q
+print("P =", P)
+print("Eigenvalues of P:", np.linalg.eigvalsh(P))  # Should be positive
+```
+
+**Continuation methods.** Bifurcation diagrams are computed by *continuation*: start at a known equilibrium, then incrementally change $\mu$ while tracking the equilibrium position using Newton's method. When the Jacobian becomes singular (a saddle-node) or eigenvalues cross the imaginary axis (a Hopf), the continuation algorithm detects the bifurcation. Software: AUTO, PyDSTool, MATCONT.
+
+**Lyapunov function construction via SDP.** For polynomial systems, the search for a polynomial Lyapunov function can be cast as a semidefinite program (SDP): find $P \succeq 0$ such that $V(\mathbf{y}) = \mathbf{p}(\mathbf{y})^T P \,\mathbf{p}(\mathbf{y})$ satisfies $\dot{V} \leq 0$, where $\mathbf{p}(\mathbf{y})$ is a vector of monomials. Tools like SOSTOOLS (MATLAB) and DSOS/SDSOS (Julia) automate this.
+
+## 11. Connections to ML — Stability of Learning
+
+The stability theory developed in this topic is the mathematical language of optimization dynamics. Here we make the connections explicit.
+
+**Loss landscape stability.** A critical point $\theta^*$ of $L(\theta)$ (where $\nabla L(\theta^*) = 0$) is the equilibrium of the gradient flow $\dot{\theta} = -\nabla L(\theta)$. The Jacobian of the RHS at $\theta^*$ is $-\nabla^2 L(\theta^*)$, so:
+- **Local minimum** ($\nabla^2 L \succ 0$): asymptotically stable. Gradient descent converges.
+- **Saddle point** ($\nabla^2 L$ indefinite): unstable. The unstable manifold directions are the eigenvectors of $\nabla^2 L$ with **negative** eigenvalues — these are the escape routes.
+- **Local maximum** ($\nabla^2 L \prec 0$): unstable in all directions.
+
+In high dimensions (thousands of parameters), saddle points vastly outnumber local minima. The empirical observation that SGD reliably finds good minima is explained by the noise-driven escape from saddle points along the unstable manifold.
+
+<TheoremBlock type="example" number={16} title="Gradient Flow on a Loss Landscape with a Saddle Point">
+Consider $L(x, y) = \frac{1}{2}(x^2 - y^2)$ with critical point at the origin.
+
+The gradient flow is $\dot{x} = -x$, $\dot{y} = y$. The Hessian is $\nabla^2 L = \begin{pmatrix} 1 & 0 \\ 0 & -1 \end{pmatrix}$ — indefinite.
+
+- **Stable manifold** $W^s$: the $x$-axis. Starting on $W^s$, the $x$-component decays and $y$ stays at zero. The iterate approaches the saddle.
+- **Unstable manifold** $W^u$: the $y$-axis. Starting on $W^u$, the $y$-component grows exponentially. The iterate escapes the saddle.
+
+In practice, SGD adds noise that has a component along $W^u$, causing the iterate to escape the saddle point — this is the mechanism behind *saddle-point escape* in deep learning optimization.
+</TheoremBlock>
+
+**GAN training dynamics.** A GAN trains a generator $G$ and discriminator $D$ simultaneously. In simplified models, the training dynamics form a 2D system:
+$$\dot{\theta}_G = -\nabla_{\theta_G} V(\theta_G, \theta_D), \qquad \dot{\theta}_D = \nabla_{\theta_D} V(\theta_G, \theta_D)$$
+
+This is *not* a gradient system — it's a saddle-point optimization (min-max). The Jacobian at equilibrium has the form $J = \begin{pmatrix} -A & -B \\ B^T & -C \end{pmatrix}$, and its eigenvalues can be complex, leading to oscillatory behavior. Mode collapse corresponds to a bifurcation: as the generator becomes too confident, the equilibrium loses stability (a Hopf-like bifurcation) and training oscillates.
+
+<TheoremBlock type="example" number={17} title="Simplified GAN Dynamics">
+Consider the simplified GAN: $\dot{x} = -xy$, $\dot{y} = x^2 - 1$ where $x$ represents the generator and $y$ the discriminator.
+
+The equilibrium at $(1, 0)$ has Jacobian $J = \begin{pmatrix} 0 & -1 \\ 2 & 0 \end{pmatrix}$ with eigenvalues $\lambda = \pm i\sqrt{2}$ — a center. The linearization predicts perpetual oscillation, and indeed the nonlinear system has a conserved quantity $H(x, y) = \frac{1}{2}y^2 + x^2 - \ln(x^2)$.
+
+Adding regularization (spectral normalization of $D$, gradient penalties) modifies the Jacobian to have $\operatorname{Re}(\lambda) < 0$ — turning the center into a stable spiral and stabilizing training.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={9} title="Learning Rate Schedules and Stability">
+Stability theory explains why learning rate schedules work. Discrete gradient descent $\theta_{k+1} = \theta_k - \eta \nabla L(\theta_k)$ is a discretization of the gradient flow with step size $\eta$. The discrete system is stable (converges) only if $\eta < 2/\lambda_{\max}(\nabla^2 L)$ — the CFL-like condition for gradient descent.
+
+A **constant learning rate** must satisfy $\eta < 2/\lambda_{\max}$ everywhere along the trajectory. A **learning rate schedule** that decreases $\eta$ over time allows initially large steps (fast exploration, saddle escape via effective noise) that later shrink to ensure convergence (stability near the minimum). The schedule effectively transitions from the unstable regime (escape saddles) to the stable regime (converge to minimum).
+</TheoremBlock>
+
+![ML connections: gradient flow on a loss landscape with saddle point and manifolds (top-left), Hessian eigenvalue spectrum at saddle vs. minimum (top-right), GAN training dynamics as a 2D phase portrait (bottom-left), neural ODE stability (bottom-right).](/images/topics/stability-dynamics/ml-connections.png)
+
+<TrainingStabilityExplorer client:visible />
+
+## 12. Connections & Further Reading
+
+This topic is the **theoretical peak** of the ODE track — the point where linear algebra (eigenvalues, matrix exponential) becomes predictive for nonlinear systems through linearization, and where energy methods (Lyapunov functions) provide an alternative path that doesn't require solving the ODE.
+
+**Within formalCalculus:**
+- [Linear Systems & Matrix Exponential](/topics/linear-systems) — the eigenvalue classification of linear phase portraits is the engine that drives the linearization stability theorem
+- [The Hessian & Second-Order Analysis](/topics/hessian) — positive-definiteness tests for the Lyapunov function $V$ and the loss landscape Hessian $\nabla^2 L$
+- [The Jacobian & Linear Approximation](/topics/jacobian) — computing the Jacobian of $\mathbf{f}$ at an equilibrium is the first step of linearization
+- [The Gradient & Directional Derivatives](/topics/gradient) — gradient systems $\dot{\mathbf{y}} = -\nabla V$ are automatically stable
+- [First-Order ODEs & Existence Theorems](/topics/first-order-odes) — existence and uniqueness guarantee trajectories don't cross, enabling qualitative analysis
+- [The Inverse & Implicit Function Theorems](/topics/inverse-implicit) — the IFT determines when equilibria persist under perturbation, the foundation of bifurcation theory
+- **Numerical Methods for ODEs** *(coming soon)* — numerical stability of ODE solvers mirrors continuous-time stability; stiffness detection uses the eigenvalue spread of the Jacobian
+
+**Forward to formalml.com:**
+- [Gradient Descent](https://formalml.com/topics/gradient-descent) — convergence analysis is stability of the gradient flow ODE
+- [Information Geometry](https://formalml.com/topics/information-geometry) — natural gradient stability via the Fisher-preconditioned Hessian
+- [Smooth Manifolds](https://formalml.com/topics/smooth-manifolds) — stable/unstable manifolds as immersed submanifolds; Poincaré-Bendixson on compact 2-manifolds
+- [Spectral Theorem](https://formalml.com/topics/spectral-theorem) — Lyapunov equation solvability via spectral conditions on $A$ and $-A^T$
