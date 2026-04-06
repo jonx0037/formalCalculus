@@ -1,0 +1,482 @@
+---
+title: "First-Order ODEs & Existence Theorems"
+subtitle: "Equations where the unknown is a function — direction fields, separation of variables, integrating factors, and the Picard-Lindelöf theorem that guarantees solutions exist and are unique when the right-hand side is Lipschitz."
+status: "published"
+difficulty: "foundational"
+prerequisites:
+  - "derivative"
+  - "inverse-implicit"
+tags:
+  - "calculus"
+  - "ordinary-differential-equations"
+  - "picard-lindelof"
+  - "existence-uniqueness"
+  - "direction-fields"
+  - "separable-equations"
+  - "integrating-factor"
+  - "gradient-flow"
+  - "neural-ode"
+domain: "odes"
+videoId: null
+notebookPath: "notebooks/first-order-odes/21_first_order_odes.ipynb"
+githubUrl: "https://github.com/jonx0037/formalCalculus/blob/main/src/content/topics/first-order-odes.mdx"
+datePublished: 2026-04-05
+estimatedReadTime: 50
+abstract: "A first-order ordinary differential equation y' = f(t, y) asks: which function y(t) has the property that its derivative at every point equals f(t, y(t))? Direction fields visualize the answer geometrically — at every point (t, y), draw a short line segment with slope f(t, y), and the solution curves are the paths that follow these slopes. For separable equations y' = g(t)h(y), the variables can be separated and integrated independently. For linear equations y' + p(t)y = q(t), the integrating factor μ(t) = exp(∫p(t)dt) converts the left side into an exact derivative. For exact equations M dt + N dy = 0 with M_y = N_t, the solution is a level curve of a potential function — the same structure as conservative vector fields. The Picard-Lindelöf theorem guarantees that if f is continuous and Lipschitz in y, then the initial value problem y' = f(t, y), y(t₀) = y₀ has a unique local solution. The proof is constructive: the Picard iterates y_{n+1}(t) = y₀ + ∫f(s, yₙ(s))ds form a contraction mapping in the space of continuous functions, converging to the unique solution — the same fixed-point technique that proved the Inverse Function Theorem. When the Lipschitz condition fails, as in y' = y^{2/3}, existence (Peano) still holds, but uniqueness fails — solutions can branch. In machine learning, gradient descent is a discretized ODE: the continuous gradient flow θ̇ = −∇L(θ) is a first-order ODE whose solutions are guaranteed by Picard-Lindelöf when the loss landscape is smooth. Neural ODEs (Chen et al. 2018) replace discrete layers with continuous dynamics, using ODE solvers for the forward pass and the adjoint method for backpropagation."
+formalmlConnections:
+  - topic: "gradient-descent"
+    site: "formalml"
+    relationship: "Gradient descent is the Euler discretization of gradient flow θ̇ = −∇L(θ), a first-order ODE. The Picard-Lindelöf theorem guarantees the existence and uniqueness of the gradient flow trajectory when ∇L is Lipschitz, the smoothness assumption underlying most convergence proofs. The learning rate η is the Euler step size, and a smaller η yields a better approximation of the continuous trajectory."
+  - topic: "smooth-manifolds"
+    site: "formalml"
+    relationship: "A vector field X on a smooth manifold M defines a first-order ODE: the integral curves of X are the solutions. The existence and uniqueness theorem guarantees local integral curves exist, and the flow map Φ_t: M → M is a local diffeomorphism. This is the ODE-theoretic foundation of dynamical systems on manifolds."
+  - topic: "measure-theoretic-probability"
+    site: "formalml"
+    relationship: "Stochastic differential equations dX_t = f(X_t)dt + σ(X_t)dW_t extend deterministic ODEs by adding Brownian noise. Itô's existence theorem is the stochastic analog of Picard-Lindelöf, using the same Lipschitz condition and contraction argument in a space of stochastic processes."
+connections:
+  - topic: "derivative"
+    relationship: "An ODE y' = f(t, y) is an equation involving the derivative — the foundational object from Topic 5. The product rule drives the integrating factor method, implicit differentiation verifies solutions obtained by separation, and the chain rule underpins the conversion between implicit and explicit solution forms."
+  - topic: "inverse-implicit"
+    relationship: "The contraction mapping principle from Topic 12 (§8) is the proof engine of the Picard-Lindelöf theorem. The pattern is identical — define an iteration operator T, prove it is a contraction under the sup-norm, invoke completeness to get a fixed point — but applied in the function space C([t₀ − δ, t₀ + δ]) instead of ℝⁿ. The reader who understood the IFT proof already knows the script."
+  - topic: "line-integrals"
+    relationship: "Exact differential equations M dt + N dy = 0 with M_y = N_t are the ODE analog of conservative vector fields from Topic 15. The exactness criterion is identical, and the solution method (finding a potential function) is the same. The integrating factor technique converts non-exact equations into exact ones, paralleling the search for a potential function."
+  - topic: "riemann-integral"
+    relationship: "The Picard iteration y_{n+1}(t) = y₀ + ∫f(s, yₙ(s))ds involves Riemann integration at every step. The integral formulation of the IVP — y(t) = y₀ + ∫f(s, y(s))ds — is the starting point for both the existence proof and numerical methods."
+  - topic: "completeness-compactness"
+    relationship: "The Picard-Lindelöf proof requires the completeness of the function space (C([a,b]), ‖·‖∞). A Cauchy sequence of continuous functions converges to a continuous function under the sup-norm — the same completeness property from Topic 3 applied in an infinite-dimensional setting."
+  - topic: "mean-value-taylor"
+    relationship: "The Lipschitz condition |f(t, y₁) − f(t, y₂)| ≤ L|y₁ − y₂| is implied by a bound on the partial derivative: if |∂f/∂y| ≤ L on the domain, then the Mean Value Theorem gives the Lipschitz estimate. Taylor expansion is used to analyze local behavior of solutions near equilibria."
+references:
+  - type: "book"
+    title: "Ordinary Differential Equations"
+    authors: "Arnold"
+    year: 1992
+    note: "Chapters 1–4 develop the geometric viewpoint: ODEs as vector fields, integral curves as trajectories, the phase plane. The primary reference for our geometric-first approach and the direction field visualizations"
+  - type: "book"
+    title: "Ordinary Differential Equations"
+    authors: "Teschl"
+    year: 2012
+    note: "Chapters 1–2 provide a rigorous treatment of existence and uniqueness via the contraction mapping principle. Available free online. Our model for the Picard-Lindelöf proof structure"
+  - type: "book"
+    title: "Principles of Mathematical Analysis"
+    authors: "Rudin"
+    year: 1976
+    note: "Chapter 9 (Theorem 9.12) proves the Picard-Lindelöf theorem as a contraction mapping application, connecting to the IFT proof in the same chapter. Useful for the condensed proof style"
+  - type: "book"
+    title: "Elementary Differential Equations and Boundary Value Problems"
+    authors: "Boyce & DiPrima"
+    year: 2012
+    note: "Chapters 2–3 provide the standard undergraduate treatment of first-order methods (separable, linear, exact) with extensive examples. Reference for the computational sections"
+  - type: "paper"
+    title: "Neural Ordinary Differential Equations"
+    authors: "Chen, Rubanova, Bettencourt & Duvenaud"
+    year: 2018
+    url: "https://arxiv.org/abs/1806.07366"
+    note: "The foundational neural ODE paper — replaces discrete residual layers with continuous dynamics, uses the adjoint method for backpropagation. The primary ML connection for this topic"
+  - type: "paper"
+    title: "Dissecting Neural ODEs"
+    authors: "Massaroli, Poli, Park, Yamashita & Asama"
+    year: 2020
+    url: "https://arxiv.org/abs/2002.08071"
+    note: "A comprehensive analysis of neural ODE architectures, training dynamics, and expressiveness. Complements the Chen et al. paper with practical insights"
+  - type: "paper"
+    title: "How Does Batch Normalization Help Optimization?"
+    authors: "Santurkar, Tsipras, Ilyas & Madry"
+    year: 2018
+    url: "https://arxiv.org/abs/1805.11604"
+    note: "Shows that batch normalization smooths the loss landscape, making ∇L Lipschitz — exactly the condition needed for Picard-Lindelöf to guarantee gradient flow solutions"
+---
+
+import TheoremBlock from '../../components/ui/TheoremBlock.astro';
+
+import DirectionFieldExplorer from '../../components/viz/DirectionFieldExplorer.tsx';
+import IntegratingFactorExplorer from '../../components/viz/IntegratingFactorExplorer.tsx';
+import PicardIterationExplorer from '../../components/viz/PicardIterationExplorer.tsx';
+import UniquenessExplorer from '../../components/viz/UniquenessExplorer.tsx';
+
+## 1. Direction Fields — The Geometry of an ODE
+
+Until now, every equation we have solved has asked for a *number*: find $x$ such that $f(x) = 0$, or find the value $\int_a^b f(x)\,dx$. An ordinary differential equation asks for something fundamentally different — a *function*. The equation $y'(t) = f(t, y(t))$ asks: which function $y(t)$ has the property that its derivative at every point $(t, y)$ equals $f(t, y)$?
+
+Before any algebra, we draw. A first-order ODE $y' = f(t, y)$ assigns a slope to every point $(t, y)$ in the plane. A **direction field** (also called a slope field) draws a short line segment at each point with the assigned slope. A **solution** $y(t)$ is a curve that is tangent to the direction field at every point — an **integral curve** that threads through the field.
+
+<TheoremBlock type="definition" number={1} title="Ordinary Differential Equation (First-Order)">
+A *first-order ordinary differential equation* (ODE) is an equation of the form
+
+$$y'(t) = f(t, y(t)),$$
+
+where $f: D \to \mathbb{R}$ is a given function on an open set $D \subseteq \mathbb{R}^2$, and $y: I \to \mathbb{R}$ is the unknown function defined on an interval $I \subseteq \mathbb{R}$. The variable $t$ is the *independent variable* (often representing time), $y$ is the *dependent variable* (the state), and $f$ is the *right-hand side* (the vector field, in 1D).
+</TheoremBlock>
+
+<TheoremBlock type="definition" number={2} title="Initial Value Problem">
+An *initial value problem* (IVP) is an ODE together with an initial condition:
+
+$$y'(t) = f(t, y(t)), \qquad y(t_0) = y_0,$$
+
+where $(t_0, y_0) \in D$ is the specified starting point. A *solution* is a differentiable function $y: I \to \mathbb{R}$ (with $t_0 \in I$) satisfying both the equation and the initial condition.
+</TheoremBlock>
+
+<TheoremBlock type="definition" number={3} title="Direction Field and Integral Curve">
+The *direction field* of $y' = f(t, y)$ is the assignment $(t, y) \mapsto (1, f(t, y))$ — a line element of slope $f(t, y)$ at each point. An *integral curve* is a curve $\gamma(t) = (t, y(t))$ that is tangent to the direction field at every point, i.e., $y'(t) = f(t, y(t))$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={1} title="Exponential growth">
+Consider $y' = ky$ with $k > 0$. The direction field has slope $ky$ at $(t, y)$: horizontal along $y = 0$, steeper as $|y|$ increases. Solutions are $y(t) = Ce^{kt}$ — exponentials that grow away from the equilibrium $y = 0$. Each initial condition $y(0) = C$ determines a unique integral curve.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={1} title="Direction fields vs. gradient fields">
+The direction field of $y' = f(t, y)$ is a 1D analog of the gradient field $\nabla L(\theta)$ from [The Gradient & Directional Derivatives](/topics/gradient). Gradient descent $\dot{\theta} = -\nabla L(\theta)$ is a first-order ODE whose direction field is $-\nabla L$. The integral curves are the gradient descent trajectories. This is not an analogy — it is literally the same mathematical structure.
+</TheoremBlock>
+
+<DirectionFieldExplorer client:visible />
+
+![Direction fields for three ODEs — exponential growth, logistic growth with equilibria, and oscillatory decay — each with solution curves threaded through the field](/images/topics/first-order-odes/direction-fields.png)
+
+## 2. Separable Equations
+
+The simplest class of first-order ODEs is the **separable equation**, where the right-hand side factors as a product of a function of $t$ alone and a function of $y$ alone. This factorization allows us to move all $y$-terms to one side and all $t$-terms to the other, then integrate each side independently.
+
+<TheoremBlock type="definition" number={4} title="Separable Equation">
+An ODE $y' = f(t, y)$ is *separable* if it can be written as $y' = g(t)h(y)$ for continuous functions $g$ and $h$. The general solution procedure is:
+
+1. **Separate:** $\displaystyle\frac{1}{h(y)}\,dy = g(t)\,dt$.
+2. **Integrate both sides:** $H(y) = G(t) + C$ where $H$ and $G$ are antiderivatives.
+3. **Solve for $y$** if possible, obtaining the solution in explicit form $y = H^{-1}(G(t) + C)$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={2} title="Logistic equation">
+The logistic equation $y' = ry(1 - y/K)$ is separable with $g(t) = r$ and $h(y) = y(1 - y/K)$. Partial fractions and integration give the logistic curve
+
+$$y(t) = \frac{K}{1 + \left(\frac{K}{y_0} - 1\right)e^{-rt}},$$
+
+which appears as the sigmoid activation function in ML when $K = 1$, $r = 1$. The solution interpolates between the unstable equilibrium $y = 0$ and the stable equilibrium $y = K$, approaching the carrying capacity from any positive initial condition.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={3} title="Newton's law of cooling">
+The equation $y' = -k(y - T_{\text{env}})$ models a body at temperature $y$ cooling toward ambient temperature $T_{\text{env}}$. This is separable: $\frac{dy}{y - T_{\text{env}}} = -k\,dt$. Integrating gives $y(t) = T_{\text{env}} + (y_0 - T_{\text{env}})e^{-kt}$ — an exponential decay toward equilibrium.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={2} title="Equilibrium solutions and singular points">
+When $h(y_0) = 0$, the constant function $y(t) \equiv y_0$ is an *equilibrium solution* (the direction field is horizontal along $y = y_0$). Division by $h(y)$ during separation is only valid away from these equilibria. The equilibria of the logistic equation are $y = 0$ (unstable) and $y = K$ (stable) — solutions approach $K$ from any positive initial condition.
+</TheoremBlock>
+
+![Separable equations — logistic growth, Newton's cooling, and Gaussian solutions](/images/topics/first-order-odes/separable-equations.png)
+
+## 3. Linear First-Order Equations
+
+A linear first-order ODE $y' + p(t)y = q(t)$ is not separable (unless $q = 0$), but it has a systematic solution method: multiply both sides by the *integrating factor* $\mu(t) = e^{\int p(t)\,dt}$, which converts the left side into an exact derivative via the [product rule](/topics/derivative).
+
+<TheoremBlock type="definition" number={5} title="Linear First-Order ODE">
+An ODE is *linear of first order* if it has the form
+
+$$y' + p(t)y = q(t),$$
+
+where $p$ and $q$ are continuous functions on an interval $I$. The equation is *homogeneous* if $q(t) = 0$ and *inhomogeneous* otherwise.
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={1} title="General Solution of Linear First-Order ODEs">
+If $p$ and $q$ are continuous on an interval $I$ containing $t_0$, then the IVP $y' + p(t)y = q(t)$, $y(t_0) = y_0$ has the unique solution
+
+$$y(t) = e^{-P(t)}\left(y_0 + \int_{t_0}^{t} q(s)\,e^{P(s)}\,ds\right)$$
+
+where $P(t) = \int_{t_0}^{t} p(s)\,ds$. In particular, the solution exists on all of $I$ — there is no finite-time blow-up for linear equations.
+</TheoremBlock>
+
+<TheoremBlock type="proof" title="Proof of Theorem 1">
+Multiply $y' + p(t)y = q(t)$ by $\mu(t) = e^{P(t)}$. The left side becomes $\frac{d}{dt}[\mu(t) y(t)]$ by the product rule ([Topic 5, Theorem 3](/topics/derivative)): $\mu y' + \mu p y = \mu y' + \mu' y = (\mu y)'$. So
+
+$$(\mu y)' = \mu q.$$
+
+Integrate from $t_0$ to $t$:
+
+$$\mu(t) y(t) - \mu(t_0) y(t_0) = \int_{t_0}^{t} \mu(s) q(s)\,ds.$$
+
+Since $\mu(t_0) = e^0 = 1$, solve for $y(t)$:
+
+$$y(t) = e^{-P(t)}\left(y_0 + \int_{t_0}^{t} q(s)\,e^{P(s)}\,ds\right).$$
+
+Uniqueness follows from the Picard-Lindelöf theorem (Theorem 3 below) since $f(t, y) = q(t) - p(t)y$ is Lipschitz in $y$ with $L = \sup|p|$. $\square$
+</TheoremBlock>
+
+<TheoremBlock type="example" number={4} title="First-order linear decay with forcing">
+Consider $y' + 2y = e^{-t}$, $y(0) = 3$. The integrating factor is $\mu(t) = e^{2t}$. Multiplying: $(e^{2t} y)' = e^{2t} \cdot e^{-t} = e^t$. Integrating: $e^{2t} y = e^t + C$, so $y(t) = e^{-t} + Ce^{-2t}$. From $y(0) = 3$: $C = 2$. The solution is $y(t) = e^{-t} + 2e^{-2t}$ — the forced response $e^{-t}$ plus a transient $2e^{-2t}$ that decays faster.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={3} title="Linear equations always have global solutions">
+Theorem 1 guarantees that the solution exists on the *entire* interval $I$ where $p$ and $q$ are continuous. This is a stronger result than the general Picard-Lindelöf theorem, which only guarantees *local* existence. The linearity of the equation prevents finite-time blow-up — the growth rate of $y$ is at most exponential, never faster. This global existence result breaks down for nonlinear equations (see Section 7).
+</TheoremBlock>
+
+<IntegratingFactorExplorer client:visible />
+
+![Linear first-order ODE — direction field, solution family, integrating factor, and superposition](/images/topics/first-order-odes/linear-first-order.png)
+
+## 4. Exact Equations & Connection to Conservative Fields
+
+An exact equation $M(t, y)\,dt + N(t, y)\,dy = 0$ is one where the left side is the total differential of some potential function $\Psi(t, y)$: $d\Psi = M\,dt + N\,dy$. The solution curves are the level sets $\Psi(t, y) = C$ — exactly the conservative field structure from [Line Integrals & Conservative Fields](/topics/line-integrals).
+
+<TheoremBlock type="definition" number={6} title="Exact Equation">
+The equation $M(t, y)\,dt + N(t, y)\,dy = 0$ is *exact* on a simply connected region $D$ if there exists a function $\Psi: D \to \mathbb{R}$ with $\frac{\partial \Psi}{\partial t} = M$ and $\frac{\partial \Psi}{\partial y} = N$. The function $\Psi$ is the *potential function*, and solutions are the level curves $\Psi(t, y) = C$.
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={2} title="Exactness Criterion">
+Let $M$ and $N$ have continuous first partial derivatives on a simply connected open set $D$. Then $M\,dt + N\,dy = 0$ is exact if and only if
+
+$$\frac{\partial M}{\partial y} = \frac{\partial N}{\partial t}$$
+
+on $D$. This is the ODE analog of the conservative field criterion $\frac{\partial F_1}{\partial y} = \frac{\partial F_2}{\partial x}$ from [Line Integrals & Conservative Fields](/topics/line-integrals) (Theorem 4).
+</TheoremBlock>
+
+<TheoremBlock type="example" number={5} title="An exact equation">
+Consider $(2ty + 3)\,dt + (t^2 + 4y)\,dy = 0$. Check: $M_y = 2t = N_t$. So $\Psi_t = 2ty + 3 \Rightarrow \Psi = t^2 y + 3t + g(y)$. Then $\Psi_y = t^2 + g'(y) = t^2 + 4y \Rightarrow g'(y) = 4y \Rightarrow g(y) = 2y^2$. Solution: $t^2 y + 3t + 2y^2 = C$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={6} title="Integrating factors for non-exact equations">
+Consider $(y + t^2)\,dt + t\,dy = 0$. Check: $M_y = 1 \neq 2t = N_t$. Not exact. Try an integrating factor $\mu(t)$: we need $\frac{M_y - N_t}{N} = \frac{1 - 2t}{t}$ to depend only on $t$. It does: $\mu(t) = e^{\int (1/t - 2)\,dt} = te^{-2t}$. Multiplying through and verifying exactness yields the solution.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={4} title="The exact equation ↔ conservative field dictionary">
+Exact equations and conservative fields are the same mathematics in different notation. The dictionary:
+
+| **ODE** | **Vector calculus** |
+|---|---|
+| $M(t, y)\,dt + N(t, y)\,dy = 0$ | Field $\mathbf{F} = (M, N)$ with $\nabla \Psi = \mathbf{F}$ |
+| Exactness: $M_y = N_t$ | Irrotational: $\nabla \times \mathbf{F} = 0$ |
+| Solution: $\Psi(t, y) = C$ | Flow along level curves of the potential |
+
+The simply connected domain requirement ([Topic 15, Definition 5](/topics/line-integrals)) ensures there are no topological obstructions.
+</TheoremBlock>
+
+![Exact equations — level curves of the potential function and comparison with non-exact fields](/images/topics/first-order-odes/exact-equations.png)
+
+## 5. The Picard-Lindelöf Theorem — Existence and Uniqueness
+
+We now turn to the deepest question in ODE theory: when does an IVP have a solution, and is it unique? The **Picard-Lindelöf theorem** answers: if $f$ is continuous and Lipschitz in $y$, then the IVP $y' = f(t, y)$, $y(t_0) = y_0$ has a unique local solution. The proof uses the contraction mapping principle from [Inverse & Implicit Function Theorems](/topics/inverse-implicit) (§8) — the same technique that proved the Inverse Function Theorem, now applied in a function space.
+
+<TheoremBlock type="definition" number={7} title="Lipschitz Condition">
+A function $f: D \to \mathbb{R}$ (with $D \subseteq \mathbb{R}^2$) satisfies a *Lipschitz condition in $y$* on $D$ if there exists a constant $L \geq 0$ such that
+
+$$|f(t, y_1) - f(t, y_2)| \leq L|y_1 - y_2|$$
+
+for all $(t, y_1), (t, y_2) \in D$. The constant $L$ is the *Lipschitz constant*. If $f$ is $C^1$ in $y$ and $|\partial f / \partial y| \leq L$ on $D$, then $f$ is Lipschitz with constant $L$ (by the [Mean Value Theorem](/topics/mean-value-taylor)).
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={3} title="The Picard-Lindelöf Theorem">
+Let $f: D \to \mathbb{R}$ be continuous on an open set $D \subseteq \mathbb{R}^2$ and satisfy a Lipschitz condition in $y$ on $D$ with Lipschitz constant $L$. Let $(t_0, y_0) \in D$. Then there exists $\delta > 0$ such that the IVP
+
+$$y' = f(t, y), \qquad y(t_0) = y_0$$
+
+has a **unique** solution $y: [t_0 - \delta, t_0 + \delta] \to \mathbb{R}$.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={5} title="Integral formulation">
+The IVP $y' = f(t, y)$, $y(t_0) = y_0$ is equivalent to the integral equation
+
+$$y(t) = y_0 + \int_{t_0}^{t} f(s, y(s))\,ds.$$
+
+This reformulation is crucial: it converts a *differential* equation (involving derivatives) into an *integral* equation (involving only continuous functions and [Riemann integration](/topics/riemann-integral)). The Picard iteration is defined in integral form, avoiding the need to differentiate the iterates.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={6} title="The Picard-Lindelöf theorem and the IFT — same proof, different spaces">
+The structure of the proof is identical to the IFT proof ([Topic 12, §8](/topics/inverse-implicit)). Define an operator $T$, show it maps a closed set into itself, show it is a contraction, and invoke [completeness](/topics/completeness-compactness). The only difference is the space: the IFT works in $(\mathbb{R}^n, \|\cdot\|)$, while Picard-Lindelöf works in $(C([t_0 - \delta, t_0 + \delta]), \|\cdot\|_\infty)$. The reader who followed the IFT proof already knows the playbook.
+</TheoremBlock>
+
+![The Picard-Lindelöf setup — rectangle R with domain restriction and the contraction mapping argument](/images/topics/first-order-odes/picard-lindelof.png)
+
+## 6. Picard Iteration — The Constructive Proof
+
+The Picard-Lindelöf theorem is not merely an existence result — the proof is an **algorithm**. The Picard iterates
+
+$$y_0(t) \equiv y_0, \qquad y_{n+1}(t) = y_0 + \int_{t_0}^{t} f(s, y_n(s))\,ds$$
+
+converge uniformly to the unique solution. Each iterate refines the previous approximation, and the Lipschitz condition ensures the refinements shrink geometrically — exactly the contraction mapping mechanism.
+
+<TheoremBlock type="definition" number={8} title="Picard Iteration">
+The *Picard iterates* for the IVP $y' = f(t, y)$, $y(t_0) = y_0$ are defined recursively:
+
+$$y_0(t) = y_0 \quad\text{(the constant initial guess)}$$
+
+$$y_{n+1}(t) = y_0 + \int_{t_0}^{t} f(s, y_n(s))\,ds \quad\text{for } n \geq 0.$$
+</TheoremBlock>
+
+<TheoremBlock type="proof" title="Proof of Theorem 3 (Picard-Lindelöf)">
+We give the full proof via the contraction mapping principle.
+
+**Setup.** Choose a closed rectangle $R = \{(t, y) : |t - t_0| \leq a,\, |y - y_0| \leq b\} \subseteq D$. Let $M = \max_R |f|$ (which exists since $f$ is continuous on the compact set $R$). Set $\delta = \min(a, b/M)$. Let $X = C([t_0 - \delta, t_0 + \delta])$ with the sup-norm $\|y\|_\infty = \max_{|t - t_0| \leq \delta} |y(t)|$, and let $S = \{y \in X : \|y - y_0\|_\infty \leq b\}$. The set $S$ is closed in the [complete metric space](/topics/completeness-compactness) $(X, \|\cdot\|_\infty)$.
+
+**Step 1 — $T$ maps $S$ into $S$.** Define the Picard operator $T: S \to X$ by
+
+$$(Ty)(t) = y_0 + \int_{t_0}^{t} f(s, y(s))\,ds.$$
+
+For $y \in S$:
+
+$$|(Ty)(t) - y_0| = \left|\int_{t_0}^{t} f(s, y(s))\,ds\right| \leq M|t - t_0| \leq M\delta \leq b.$$
+
+So $Ty \in S$.
+
+**Step 2 — $T$ is a contraction (for small $\delta$).** For $y, z \in S$:
+
+$$|(Ty)(t) - (Tz)(t)| = \left|\int_{t_0}^{t} [f(s, y(s)) - f(s, z(s))]\,ds\right| \leq \int_{t_0}^{t} L|y(s) - z(s)|\,ds \leq L\delta \|y - z\|_\infty.$$
+
+If we further require $\delta \leq 1/(2L)$, then $\|Ty - Tz\|_\infty \leq \frac{1}{2}\|y - z\|_\infty$. So $T$ is a contraction with factor $\lambda = L\delta \leq 1/2$.
+
+**Step 3 — Fixed point.** The space $(S, \|\cdot\|_\infty)$ is a closed subset of a complete metric space, hence complete. By the contraction mapping theorem ([Topic 12, Theorem 6](/topics/inverse-implicit)), $T$ has a unique fixed point $y^* \in S$:
+
+$$y^*(t) = y_0 + \int_{t_0}^{t} f(s, y^*(s))\,ds.$$
+
+This $y^*$ is the unique solution to the IVP on $[t_0 - \delta, t_0 + \delta]$.
+
+**Step 4 — Convergence of Picard iterates.** The contraction mapping theorem also guarantees that $y_n \to y^*$ uniformly:
+
+$$\|y_n - y^*\|_\infty \leq \frac{\lambda^n}{1 - \lambda}\|y_1 - y_0\|_\infty \to 0.$$
+
+The convergence is geometric with rate $\lambda = L\delta$. $\square$
+</TheoremBlock>
+
+<TheoremBlock type="example" number={7} title="Picard iteration for y' = y, y(0) = 1">
+Starting from $y_0(t) = 1$:
+
+$$y_1(t) = 1 + \int_0^t 1\,ds = 1 + t$$
+
+$$y_2(t) = 1 + \int_0^t (1 + s)\,ds = 1 + t + \frac{t^2}{2}$$
+
+$$y_3(t) = 1 + t + \frac{t^2}{2} + \frac{t^3}{6}$$
+
+The pattern is $y_n(t) = \sum_{k=0}^{n} t^k/k!$ — the partial sums of $e^t$. The Picard iterates converge to the [Taylor series](/topics/power-taylor-series) of the exact solution $y = e^t$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={8} title="Picard iteration for y' = t + y², y(0) = 0">
+Starting from $y_0(t) = 0$:
+
+$$y_1(t) = \int_0^t s\,ds = \frac{t^2}{2}$$
+
+$$y_2(t) = \int_0^t \left(s + \frac{s^4}{4}\right)ds = \frac{t^2}{2} + \frac{t^5}{20}.$$
+
+The iterates grow in complexity — no closed-form solution exists for this Riccati equation, but the Picard iterates provide a convergent sequence of polynomial approximations.
+</TheoremBlock>
+
+<PicardIterationExplorer client:visible />
+
+![Picard iterates converging to the exact solution — y' = y, y' = t + y², and error decay](/images/topics/first-order-odes/picard-iteration.png)
+
+## 7. Maximal Intervals & Blow-Up — When Solutions End
+
+The Picard-Lindelöf theorem guarantees *local* existence — a solution on some interval $[t_0 - \delta, t_0 + \delta]$. Can the solution always be extended? The **maximal interval of existence** is the largest interval on which the solution exists. If this interval is bounded, the solution must blow up (escape to infinity) at the boundary.
+
+<TheoremBlock type="proposition" number={1} title="Extension Theorem">
+If $y$ is a solution on $(a, b)$ and $\lim_{t \to b^-} (t, y(t))$ exists and lies in $D$, then $y$ can be extended past $b$. Equivalently, if $y$ cannot be extended past $b$, then either $|y(t)| \to \infty$ as $t \to b^-$ or $(t, y(t))$ approaches the boundary of $D$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={9} title="Finite-time blow-up">
+Consider $y' = y^2$, $y(0) = 1$. This is separable: $-1/y = t + C$, so $y(t) = 1/(1 - t)$. The solution blows up at $t = 1$: $y(t) \to +\infty$ as $t \to 1^-$. The maximal interval of existence is $(-\infty, 1)$, not $(-\infty, +\infty)$.
+
+The nonlinearity $y^2$ amplifies growth faster than exponential, causing the solution to reach infinity in finite time. Compare with the linear equation $y' = y$, whose solution $y = e^t$ grows but never blows up.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={7} title="Linear equations never blow up">
+Theorem 1 guarantees that solutions to linear equations $y' + p(t)y = q(t)$ exist on the entire interval where $p$ and $q$ are continuous. This is because linear growth $|f(t, y)| \leq C(1 + |y|)$ prevents finite-time blow-up by Gronwall's inequality. Nonlinear equations ($y^2$, $y^3$, $\tan y$) can violate this bound and reach infinity in finite time.
+</TheoremBlock>
+
+![Blow-up comparison — y' = y² solution diverging at t = 1 vs. y' = y growing exponentially](/images/topics/first-order-odes/blow-up.png)
+
+## 8. Uniqueness Failure — The Peano Theorem and Non-Lipschitz ODEs
+
+What happens without the Lipschitz condition? The **Peano existence theorem** guarantees that *existence* requires only continuity of $f$ — no Lipschitz condition needed. But *uniqueness* fails without Lipschitz continuity: multiple solutions can pass through the same initial point, leading to branching trajectories.
+
+<TheoremBlock type="theorem" number={4} title="Peano Existence Theorem">
+If $f$ is continuous on an open set $D \subseteq \mathbb{R}^2$ containing $(t_0, y_0)$, then the IVP $y' = f(t, y)$, $y(t_0) = y_0$ has at least one local solution. (No Lipschitz condition required.) The proof uses the Arzelà-Ascoli theorem (compactness in function spaces) rather than contraction mapping.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={10} title="Uniqueness failure — y' = y^{2/3}">
+Consider $y' = y^{2/3}$, $y(0) = 0$. The function $f(y) = y^{2/3}$ is continuous but **not Lipschitz** at $y = 0$ (the derivative $f'(y) = \frac{2}{3}y^{-1/3} \to \infty$ as $y \to 0$).
+
+Two solutions through $(0, 0)$:
+
+1. $y(t) \equiv 0$ (the trivial solution).
+2. $y(t) = (t/3)^3 = t^3/27$ (verified: $y' = t^2/9 = (t^3/27)^{2/3}$).
+
+In fact, for any $c \geq 0$, the function
+
+$$y_c(t) = \begin{cases} 0, & t \leq c \\ ((t-c)/3)^3, & t > c \end{cases}$$
+
+is also a solution — there are **infinitely many** solutions through the origin.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={8} title="Why Lipschitz is the right condition">
+The Lipschitz condition $|f(t, y_1) - f(t, y_2)| \leq L|y_1 - y_2|$ prevents the right-hand side from changing "too fast" as $y$ varies. When $f$ is not Lipschitz (as in $y^{2/3}$ near $y = 0$), the direction field near the initial point is too "flat" — nearby solutions cannot distinguish themselves, and multiple integral curves can merge or branch at the non-Lipschitz point. The Lipschitz condition is the minimal regularity that prevents this pathology.
+</TheoremBlock>
+
+<UniquenessExplorer client:visible />
+
+![Uniqueness comparison — unique solutions for y' = y vs. branching solutions for y' = y^{2/3}](/images/topics/first-order-odes/uniqueness-failure.png)
+
+## 9. ML Connections — Gradient Flow, Neural ODEs, and the Adjoint Method
+
+ODEs are not just classical analysis — they are the mathematical backbone of several central ideas in modern machine learning. Gradient descent is a discretized ODE. Neural ODEs replace discrete layers with continuous dynamics. The Picard iteration is a fixed-point computation analogous to training.
+
+### 9.1 Gradient flow as an ODE
+
+Gradient descent $\theta_{k+1} = \theta_k - \eta \nabla L(\theta_k)$ is the Euler discretization (step size $\eta$) of the **gradient flow** ODE
+
+$$\dot{\theta}(t) = -\nabla L(\theta(t)).$$
+
+When $\nabla L$ is Lipschitz (with constant $L$), the Picard-Lindelöf theorem guarantees the gradient flow has a unique trajectory from any initial $\theta_0$. Convergence of the continuous flow to a critical point ($\nabla L(\theta^*) = 0$) is analyzed by treating $L(\theta(t))$ as a Lyapunov function:
+
+$$\frac{d}{dt}L(\theta(t)) = \nabla L \cdot \dot{\theta} = -\|\nabla L\|^2 \leq 0.$$
+
+The loss decreases monotonically along the flow — the continuous-time version of the "gradient descent decreases the loss" guarantee. The learning rate $\eta$ controls how well the discrete steps approximate the continuous trajectory.
+
+→ [Gradient Descent](https://formalml.com/topics/gradient-descent) → formalML
+
+### 9.2 Neural ODEs
+
+Chen et al. (2018) observed that a residual network $h_{t+1} = h_t + f_\theta(h_t, t)$ (where $t$ indexes layers, not time) is the Euler discretization of $\dot{h}(t) = f_\theta(h(t), t)$. Replacing discrete layers with the continuous ODE yields a **neural ODE**: the forward pass solves the IVP $\dot{h} = f_\theta(h, t)$, $h(0) = x$ using a black-box ODE solver (Runge-Kutta, adaptive stepping — **Numerical Methods for ODEs** *(coming soon)*).
+
+The Picard-Lindelöf theorem guarantees the forward pass has a unique solution when $f_\theta$ is Lipschitz in $h$, which holds when the network weights are bounded. Memory cost is $O(1)$ regardless of depth (the ODE solver stores only the current state), whereas a residual network with $L$ layers incurs $O(L)$ memory cost.
+
+### 9.3 The adjoint method
+
+Backpropagation through a neural ODE cannot store intermediate activations (there are infinitely many "layers"). Instead, the **adjoint method** computes gradients by solving a *second* ODE backward in time. Define the adjoint $a(t) = \partial \mathcal{L} / \partial h(t)$. Then $a$ satisfies the adjoint ODE
+
+$$\dot{a}(t) = -a(t) \cdot \frac{\partial f_\theta}{\partial h}(h(t), t),$$
+
+integrated backward from $a(T) = \partial \mathcal{L} / \partial h(T)$. The gradient with respect to parameters is
+
+$$\frac{d\mathcal{L}}{d\theta} = -\int_0^T a(t) \cdot \frac{\partial f_\theta}{\partial \theta}(h(t), t)\,dt.$$
+
+This is another first-order ODE — and its existence is guaranteed by Picard-Lindelöf under the same Lipschitz conditions.
+
+### 9.4 Picard iteration as a training analog
+
+The Picard iteration $y_{n+1} = T(y_n)$ converges to a fixed point of the operator $T$. Training a neural network $\theta_{k+1} = \theta_k - \eta \nabla L(\theta_k)$ is also a fixed-point iteration — it converges to a fixed point of the gradient descent operator. Deep equilibrium models (DEQs, Bai et al. 2019) make this analogy explicit: the forward pass finds a fixed point $z^* = f_\theta(z^*)$ by iterating $z_{k+1} = f_\theta(z_k)$ until convergence, and backpropagation through the fixed point uses the [Implicit Function Theorem](/topics/inverse-implicit) to compute $\partial z^* / \partial \theta$.
+
+→ [Smooth Manifolds](https://formalml.com/topics/smooth-manifolds) → formalML
+→ [Measure-Theoretic Probability](https://formalml.com/topics/measure-theoretic-probability) → formalML
+
+![ML connections — gradient flow, neural ODEs, the adjoint method, and Picard-as-training](/images/topics/first-order-odes/ml-connections.png)
+
+## 10. Computational Notes
+
+- **Direction field visualization:** Compute $f(t, y)$ on a grid and draw line segments with slope $f$ at each gridpoint. Grid density should be at least 20×20 for visual clarity. Normalize segment lengths by $\sqrt{1 + f^2}$ to keep the display uniform.
+- **Numerical solution:** `scipy.integrate.solve_ivp` solves IVPs with adaptive Runge-Kutta methods (default: RK45). For stiff equations, use `method='Radau'` or `'BDF'`. The Picard iteration converges in theory, but is impractical for computation — the integrals become intractable after a few iterations for most equations.
+- **Blow-up detection:** Adaptive solvers detect blow-up when the step size shrinks below machine epsilon. Setting `max_step` and monitoring $|y|$ can provide early warning.
+- **Lipschitz constant estimation:** For $f(t, y)$ with bounded $\partial f / \partial y$, estimate $L$ numerically: $L \approx \max_{(t,y) \in R} |\partial f / \partial y(t, y)|$, computed on a grid via the [Mean Value Theorem](/topics/mean-value-taylor).
+
+## 11. Connections & Further Reading
+
+This is the **first of four topics** in the Ordinary Differential Equations track. The track progresses from first-order scalar equations (this topic) to systems and the matrix exponential (**Linear Systems & Matrix Exponential** *(coming soon)*), to qualitative analysis of equilibria and stability (**Stability & Dynamical Systems** *(coming soon)*), and finally to numerical methods (**Numerical Methods for ODEs** *(coming soon)*). The thread connecting them all is the interplay between *existence* (does a solution exist?), *structure* (what does the solution look like?), and *computation* (how do we find it?).
+
+**Prerequisites used in this topic:**
+
+- [The Derivative & Chain Rule](/topics/derivative) — the derivative is the central object in an ODE; the product rule drives integrating factors
+- [Inverse & Implicit Function Theorems](/topics/inverse-implicit) — the contraction mapping principle is the proof engine of the Picard-Lindelöf theorem
+- [Line Integrals & Conservative Fields](/topics/line-integrals) — exact equations share the conservative field criterion
+- [The Riemann Integral](/topics/riemann-integral) — Picard iteration involves integration at every step
+- [Completeness & Compactness](/topics/completeness-compactness) — completeness of $(C([a,b]), \|\cdot\|_\infty)$ underpins the contraction mapping proof
+- [Mean Value & Taylor Theorems](/topics/mean-value-taylor) — the MVT yields the Lipschitz condition from $|\partial f / \partial y| \leq L$
+
+**Looking ahead in this track:**
+
+- **Linear Systems & Matrix Exponential** *(coming soon)* — systems $\mathbf{y}' = A\mathbf{y}$ generalize scalar linear equations; the matrix exponential $e^{At}$ extends the scalar solution $e^{at}$
+- **Stability & Dynamical Systems** *(coming soon)* — phase portraits and Lyapunov stability classify the long-time behavior near equilibria
+- **Numerical Methods for ODEs** *(coming soon)* — Euler's method is the simplest discretization; RK4 and adaptive methods are the workhorses
+- **Metric Spaces & Topology** *(coming soon)* — the contraction mapping theorem in general complete metric spaces abstracts the pattern from this topic and the IFT
