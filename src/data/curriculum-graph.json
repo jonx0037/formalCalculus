@@ -25,7 +25,7 @@
     { "id": "fourier-series", "label": "Fourier Series & Orthogonal Expansions", "domain": "series-approximation", "status": "published", "url": "/topics/fourier-series" },
     { "id": "approximation-theory", "label": "Approximation Theory", "domain": "series-approximation", "status": "published", "url": "/topics/approximation-theory" },
 
-    { "id": "first-order-odes", "label": "First-Order ODEs & Existence Theorems", "domain": "odes", "status": "planned", "url": "/topics/first-order-odes" },
+    { "id": "first-order-odes", "label": "First-Order ODEs & Existence Theorems", "domain": "odes", "status": "published", "url": "/topics/first-order-odes" },
     { "id": "linear-systems", "label": "Linear Systems & Matrix Exponential", "domain": "odes", "status": "planned", "url": "/topics/linear-systems" },
     { "id": "stability-dynamics", "label": "Stability & Dynamical Systems", "domain": "odes", "status": "planned", "url": "/topics/stability-dynamics" },
     { "id": "numerical-odes", "label": "Numerical Methods for ODEs", "domain": "odes", "status": "planned", "url": "/topics/numerical-odes" },
