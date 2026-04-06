@@ -1,0 +1,658 @@
+---
+title: "Numerical Methods for ODEs"
+subtitle: "From Euler's method to adaptive solvers — error analysis, stability regions, stiff systems, and the convergence theory that guarantees discrete approximations track continuous solutions. The computational engine behind neural ODEs."
+status: "published"
+difficulty: "intermediate"
+prerequisites:
+  - "first-order-odes"
+  - "stability-dynamics"
+tags:
+  - "calculus"
+  - "ordinary-differential-equations"
+  - "numerical-methods"
+  - "runge-kutta"
+  - "adaptive-stepping"
+  - "stiff-systems"
+  - "stability-regions"
+  - "neural-ode"
+  - "convergence-theory"
+domain: "odes"
+videoId: null
+notebookPath: "notebooks/numerical-odes/24_numerical_odes.ipynb"
+githubUrl: "https://github.com/jonx0037/formalCalculus/blob/main/src/content/topics/numerical-odes.mdx"
+datePublished: 2026-06-19
+estimatedReadTime: 45
+abstract: "We can prove solutions to y' = f(t,y) exist (Picard-Lindelöf) and analyze their stability (Lyapunov theory) — but how do we actually compute them? Euler's method replaces the derivative with a finite difference: y_{n+1} = y_n + h·f(t_n,y_n). This is first-order accurate — global error grows as O(h). Runge-Kutta methods evaluate f at intermediate points to achieve higher accuracy: the classical RK4 is O(h⁴). But accuracy is not enough. For stiff systems — where the Jacobian eigenvalues span many orders of magnitude — explicit methods require impossibly small step sizes for stability. Implicit methods (backward Euler, trapezoidal rule) sacrifice some computational simplicity for unconditional stability. Adaptive solvers (Dormand-Prince/RK45) adjust step sizes on the fly, concentrating computational effort where the solution changes rapidly. The Lax equivalence theorem unifies the theory: consistency plus stability equals convergence. These ideas have direct ML implications — neural ODEs use adaptive ODE solvers as their forward pass, ResNets are Euler discretizations of continuous dynamics, and the condition number of the Hessian is the stiffness ratio of the gradient flow."
+formalmlConnections:
+  - topic: "random-walks"
+    site: "formalml"
+    relationship: "The convergence theory developed here — consistency, stability, and the Lax equivalence theorem — provides the analytical framework for understanding when discrete random walks approximate continuous diffusions, and at what rate."
+connections:
+  - topic: "first-order-odes"
+    relationship: "Euler's method and RK4 were introduced computationally in Topic 21. This topic provides the full error analysis and explains why RK4 is O(h⁴) and what conditions guarantee convergence."
+  - topic: "stability-dynamics"
+    relationship: "Numerical stability mirrors continuous-time stability. The stiffness ratio is the eigenvalue spread of the Jacobian from the linearization analysis, and stability regions in the complex plane are the discrete analog of the trace-determinant classification."
+  - topic: "linear-systems"
+    relationship: "The matrix exponential e^{At} provides exact solutions for linear systems — perfect benchmarks for measuring numerical accuracy, and the test equation y' = λy on which all stability analysis is built."
+  - topic: "mean-value-taylor"
+    relationship: "Taylor expansion is the fundamental tool for deriving truncation error bounds and the order conditions that classical RK4 satisfies."
+references:
+  - type: "book"
+    title: "Solving Ordinary Differential Equations I: Nonstiff Problems"
+    authors: "Hairer, Nørsett & Wanner"
+    year: 1993
+    note: "The definitive reference on Runge-Kutta methods, order conditions, and Butcher's algebraic theory. The standard text for everything in Sections 2–4."
+  - type: "book"
+    title: "Solving Ordinary Differential Equations II: Stiff and Differential-Algebraic Problems"
+    authors: "Hairer & Wanner"
+    year: 1996
+    note: "Companion volume covering stiff systems, A-stability, implicit methods, and DAEs. The reference for Sections 5–7."
+  - type: "book"
+    title: "A First Course in the Numerical Analysis of Differential Equations"
+    authors: "Iserles"
+    year: 2008
+    note: "Excellent undergraduate-level introduction to multistep methods and stability theory. Best for first encounter with the Lax equivalence theorem."
+  - type: "book"
+    title: "Numerical Methods for Ordinary Differential Equations"
+    authors: "Butcher"
+    year: 2016
+    note: "The original source for the Butcher tableau formalism and order conditions. The combinatorial theory of trees underlying Section 3."
+  - type: "paper"
+    title: "Neural Ordinary Differential Equations"
+    authors: "Chen, Rubanova, Bettencourt & Duvenaud"
+    year: 2018
+    url: "https://arxiv.org/abs/1806.07366"
+    note: "NeurIPS 2018 best paper. Introduced continuous-depth networks via adaptive ODE solvers and the adjoint method for backpropagation. The paper Section 11 builds on."
+---
+
+import TheoremBlock from '../../components/ui/TheoremBlock.astro';
+import MethodComparisonExplorer from '../../components/viz/MethodComparisonExplorer.tsx';
+import AdaptiveStepExplorer from '../../components/viz/AdaptiveStepExplorer.tsx';
+import StiffnessExplorer from '../../components/viz/StiffnessExplorer.tsx';
+import NeuralODEExplorer from '../../components/viz/NeuralODEExplorer.tsx';
+
+## 1. The Computational Question
+
+We've spent three topics building the theory of ordinary differential equations. We proved that solutions to $y' = f(t, y)$ exist and are unique whenever $f$ is Lipschitz (Picard-Lindelöf, Topic 21). We classified linear systems via the eigenvalues of the system matrix and computed exact solutions through the matrix exponential $e^{At}$ (Topic 22). We analyzed nonlinear systems through linearization and Lyapunov functions, predicting long-term behavior without ever solving the equation (Topic 23).
+
+But we haven't asked the most practical question of all: **how do we actually compute solutions?**
+
+For most ODEs that arise in practice — neural network training dynamics, planetary motion, chemical kinetics, fluid flow — there is no closed-form solution. Picard-Lindelöf says a solution exists, but it doesn't tell us what that solution looks like at $t = 1$. Lyapunov theory says trajectories converge to an equilibrium, but it doesn't tell us how *fast*, or what they look like along the way. To get actual numbers, we need numerical methods.
+
+A numerical method discretizes the continuous problem: instead of computing $y(t)$ for all $t \in [t_0, T]$, we compute approximations $y_n \approx y(t_n)$ on a discrete grid $t_0 < t_1 < \cdots < t_N = T$. The simplest such scheme is **Euler's method**, which we already met in Topic 21:
+$$y_{n+1} = y_n + h \, f(t_n, y_n), \qquad h = t_{n+1} - t_n.$$
+
+It's the most natural thing to write down — replace the derivative $y'$ with a forward difference $(y_{n+1} - y_n)/h$, solve for $y_{n+1}$, and march forward. But Euler's method opens up a Pandora's box of questions that the rest of this topic answers:
+
+1. **How accurate is it?** If we use a step size $h = 0.01$, how close is our computed $y_n$ to the true $y(t_n)$? What if $h = 0.001$? Does the error shrink linearly with $h$, quadratically, or some other rate?
+2. **Can we do better?** Is there a computationally cheap way to get higher-order accuracy — error that shrinks faster as we refine the grid?
+3. **When does it fail?** Are there equations where Euler's method gives garbage no matter how small we make $h$? (Spoiler: yes — they're called *stiff* equations.)
+4. **How do we know when our answer is good enough?** Is there a way to estimate the error of a numerical method without knowing the true solution?
+5. **What does "convergence" even mean for a numerical method?** And when can we prove it?
+
+The answers to these questions form the field of **numerical analysis of ODEs**, and they have direct payoffs in machine learning. Neural ODEs (Chen et al., 2018) use adaptive ODE solvers as their forward pass — so the convergence rate of the underlying solver determines training accuracy and computational cost. ResNets implement $h_{l+1} = h_l + f_\theta(h_l)$ — exactly Euler's method with step size 1, where $\theta$ is the network's learned parameters. Gradient descent itself, $\theta_{n+1} = \theta_n - \eta \nabla L(\theta_n)$, is forward Euler applied to the gradient flow ODE $\dot\theta = -\nabla L(\theta)$, and the learning rate $\eta$ is a step size with all the stability constraints we're about to derive.
+
+This is the topic that closes the loop from theory to computation. Let's begin where we always begin: with the simplest method, and an honest accounting of its errors.
+
+## 2. Euler's Method — Error Analysis
+
+We met Euler's method in Topic 21 as a way to draw approximate solution curves on a direction field. We never asked how accurate those curves were. Now we will.
+
+The first thing to understand is that there are *two* different kinds of error in any numerical method, and they accumulate differently. The **local truncation error** is the error introduced by a single step, assuming the previous step was exact. The **global error** is the cumulative error after many steps. Local error tells us how good the *recipe* is; global error tells us how the recipe behaves over a long simulation.
+
+<TheoremBlock type="definition" number={1} title="Local Truncation Error">
+The **local truncation error** of a one-step method $y_{n+1} = y_n + h \cdot \Phi(t_n, y_n, h)$ at step $n$ is the residual:
+$$\tau_n \;=\; y(t_{n+1}) - y(t_n) - h \cdot \Phi(t_n, y(t_n), h),$$
+where $y(t)$ is the *exact* solution of the IVP. This measures how closely a single step of the method matches the true Taylor expansion of $y$ — independent of any errors that have already accumulated in $y_n$.
+</TheoremBlock>
+
+For forward Euler, $\Phi(t, y, h) = f(t, y)$, so the residual is
+$$\tau_n = y(t_{n+1}) - y(t_n) - h f(t_n, y(t_n)).$$
+
+We can compute this by Taylor-expanding $y(t_{n+1}) = y(t_n + h)$ around $t_n$:
+$$y(t_n + h) = y(t_n) + h y'(t_n) + \tfrac{h^2}{2} y''(\xi_n)$$
+for some $\xi_n \in (t_n, t_n + h)$, by Taylor's theorem with the Lagrange form of the remainder. Since $y'(t_n) = f(t_n, y(t_n))$, the first-order terms cancel:
+$$\tau_n = \tfrac{h^2}{2} y''(\xi_n).$$
+
+So the local truncation error of Euler's method is $O(h^2)$. Each individual step makes an error of order $h^2$. Over $N = (T - t_0)/h$ steps, naive accounting suggests the global error grows like $N \cdot h^2 = (T - t_0) h$ — that is, $O(h)$. We say Euler is a **first-order method**: global error is one power lower than local error, because the method takes $\sim 1/h$ steps, and each step contributes an error of $\sim h^2$.
+
+But this naive accounting hides a subtlety: errors don't just accumulate — they also get *amplified* by the method itself. If $f$ is sensitive to its $y$ argument (large $\partial f / \partial y$), then a small error in $y_n$ can grow into a large error in $y_{n+1}$. The right tool for this analysis is the **discrete Grönwall inequality**, which bounds error accumulation in linear recurrences.
+
+<TheoremBlock type="theorem" number={1} title="Global Error of Euler's Method">
+Let $f: [t_0, T] \times \mathbb{R} \to \mathbb{R}$ be continuous and Lipschitz in $y$ with constant $L$, and assume the exact solution $y(t)$ is twice continuously differentiable with $|y''(t)| \leq M$ on $[t_0, T]$. Let $y_0, y_1, \ldots, y_N$ be the Euler approximations with step size $h$, and let $e_n = y_n - y(t_n)$ be the error at step $n$ (so $e_0 = 0$). Then
+$$|e_n| \;\leq\; \frac{Mh}{2L}\bigl(e^{L(t_n - t_0)} - 1\bigr) \quad\text{for all } n.$$
+In particular, $|e_n| = O(h)$ as $h \to 0$, with the constant depending exponentially on $L$ and the integration interval.
+</TheoremBlock>
+
+<TheoremBlock type="proof" title="Proof of Theorem 1 (Global Error of Euler)">
+We track how the error $e_n = y_n - y(t_n)$ evolves from one step to the next. By the definitions of the Euler step and the local truncation error,
+$$y_{n+1} = y_n + h f(t_n, y_n)$$
+$$y(t_{n+1}) = y(t_n) + h f(t_n, y(t_n)) + \tau_n$$
+Subtracting,
+$$e_{n+1} = e_n + h\bigl[f(t_n, y_n) - f(t_n, y(t_n))\bigr] - \tau_n.$$
+Apply the Lipschitz condition $|f(t_n, y_n) - f(t_n, y(t_n))| \leq L|y_n - y(t_n)| = L|e_n|$ and the bound $|\tau_n| \leq Mh^2/2$ from the Taylor expansion above:
+$$|e_{n+1}| \;\leq\; |e_n| + hL|e_n| + \tfrac{Mh^2}{2} \;=\; (1 + hL)|e_n| + \tfrac{Mh^2}{2}.$$
+
+This is a linear recurrence in $|e_n|$ with growth factor $(1 + hL)$ and forcing term $Mh^2/2$. Solving by induction (or by the discrete Grönwall lemma), starting from $e_0 = 0$:
+$$|e_n| \;\leq\; \tfrac{Mh^2}{2} \sum_{k=0}^{n-1} (1 + hL)^k \;=\; \tfrac{Mh^2}{2} \cdot \frac{(1 + hL)^n - 1}{hL} \;=\; \tfrac{Mh}{2L}\bigl[(1 + hL)^n - 1\bigr].$$
+
+The geometric sum used the formula $\sum_{k=0}^{n-1} r^k = (r^n - 1)/(r - 1)$ with $r = 1 + hL$.
+
+Now use the elementary inequality $1 + x \leq e^x$ for all real $x$, applied to $x = hL$:
+$$(1 + hL)^n \;\leq\; (e^{hL})^n \;=\; e^{nhL} \;=\; e^{L(t_n - t_0)},$$
+since $nh = t_n - t_0$. Substituting,
+$$|e_n| \;\leq\; \frac{Mh}{2L}\bigl(e^{L(t_n - t_0)} - 1\bigr).$$
+
+This bound has three pieces. The factor $Mh/(2L)$ shows the linear-in-$h$ scaling that defines first-order convergence. The factor $(e^{L(t_n - t_0)} - 1)$ is the error amplification — it grows exponentially in both the Lipschitz constant $L$ and the integration time. And the dependence on $M = \max|y''|$ shows that highly curved solutions accumulate error faster than nearly-linear ones, since the local truncation $\tau_n = (h^2/2)y''(\xi_n)$ depends on the second derivative. $\blacksquare$
+</TheoremBlock>
+
+The exponential factor $e^{L(T - t_0)}$ is the punchline. For long integration intervals or steep right-hand sides, even a perfectly linear-in-$h$ method can give catastrophically large errors unless $h$ is correspondingly small. This is the first hint that *accuracy alone is not enough* — we also need to think about how errors amplify.
+
+<TheoremBlock type="example" number={1} title="Euler on $y' = y$ — error grows exponentially">
+Take $y' = y$, $y(0) = 1$, with exact solution $y(t) = e^t$. Here $f(t, y) = y$, so $L = 1$ and $y'' = y$, giving $M = e^T$ on $[0, T]$. The Euler iteration is $y_{n+1} = y_n + h y_n = (1+h) y_n$, so $y_n = (1+h)^n$.
+
+At $T = 1$ with $h = 0.1$: $y_{10} = (1.1)^{10} \approx 2.594$, while the true value is $e \approx 2.718$. The error is $\approx 0.124$, which matches the bound $|e_n| \leq (Mh/2L)(e^L - 1) = (e \cdot 0.1 / 2)(e - 1) \approx 0.234$ (the bound is loose by a factor of 2 — Grönwall is conservative).
+
+Halving the step to $h = 0.05$: $y_{20} = (1.05)^{20} \approx 2.653$, error $\approx 0.065$ — exactly half. This is the linear-in-$h$ scaling that defines a first-order method. To get an error of $10^{-6}$, you'd need $h \approx 10^{-6}$ — *one million steps* on the unit interval. Euler's method is honest about its accuracy, but it makes you pay for it.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={2} title="Euler on $y' = -10y$ — accuracy vs. stability">
+Now try $y' = -10y$, $y(0) = 1$, with exact solution $y(t) = e^{-10t}$. This is a *fast-decaying* equation: by $t = 1$, the true solution is $e^{-10} \approx 4.5 \times 10^{-5}$.
+
+The Euler iteration is $y_{n+1} = (1 - 10h) y_n$, so $y_n = (1 - 10h)^n$. The behavior depends critically on $|1 - 10h|$:
+
+- If $h = 0.01$: $1 - 10h = 0.9$, so $y_{100} = 0.9^{100} \approx 2.7 \times 10^{-5}$. Reasonably close to the true answer.
+- If $h = 0.1$: $1 - 10h = 0$, so $y_n = 0$ for all $n \geq 1$. Wildly wrong (off by a factor of $\infty$ relatively, but at least bounded).
+- If $h = 0.2$: $1 - 10h = -1$, so $y_n$ oscillates between $1$ and $-1$ forever. The numerical solution doesn't even decay.
+- If $h = 0.3$: $1 - 10h = -2$, so $y_n = (-2)^n$ — the numerical solution **blows up**, even though the true solution is decaying to zero!
+
+This is shocking: making the step size *larger* didn't just reduce accuracy — at $h = 0.3$, it caused the numerical solution to head to $\pm\infty$ while the true solution is going to zero. The problem isn't truncation error: it's **stability**. The Euler method amplifies errors by a factor of $|1 - 10h|$ each step, and this amplification factor exceeds 1 once $h > 0.2$. We'll formalize this as the "stability region" of Euler's method in Section 5.
+</TheoremBlock>
+
+![Euler's method on $y' = y$ diverging from the exact solution; log-log error vs. step size showing slope 1 (first-order convergence)](/images/topics/numerical-odes/error-accumulation.png)
+
+<TheoremBlock type="remark" number={1} title="The two pressures on $h$">
+Examples 1 and 2 reveal the fundamental tension in numerical methods. Truncation error pushes us to make $h$ *small*: Euler is first-order, so halving $h$ halves the error. But stability also constrains $h$: if $h$ is too large, errors in past steps get amplified into runaway oscillations or blow-up. For Euler on the test equation $y' = \lambda y$ with $\lambda < 0$, stability requires $h \leq 2/|\lambda|$.
+
+For "well-behaved" equations these constraints don't conflict — accuracy demands a smaller $h$ than stability does, and you just pick the smaller of the two. But for **stiff** equations, where $|\lambda|$ is large but $y(t)$ is also small, the stability constraint dominates and forces $h$ to be far smaller than accuracy requires. Section 6 develops this in detail. The cure is *implicit methods*, which have unconditional stability and break the tension. The cost: each step requires solving a nonlinear equation rather than evaluating one. Section 7 develops them.
+</TheoremBlock>
+
+## 3. Runge-Kutta Methods
+
+Euler's method is first-order. To get more accuracy from a given step size, we need a higher-order method — one whose local truncation error is $O(h^{p+1})$ for some $p > 1$, giving global error $O(h^p)$.
+
+The naive way to increase order is to use higher derivatives of $y$ in the Taylor expansion. Since $y' = f(t, y)$, the chain rule gives $y'' = f_t + f_y \cdot f$ (where $f_t$ and $f_y$ denote the partial derivatives of $f$ with respect to $t$ and $y$), with progressively more complicated expressions for $y'''$, $y^{(4)}$, etc. We could write down a "Taylor method" that uses these expressions directly:
+$$y_{n+1} = y_n + h y'_n + \tfrac{h^2}{2} y''_n + \tfrac{h^3}{6} y'''_n + \cdots$$
+But this requires the user to symbolically differentiate $f$ — impractical for complicated right-hand sides, and a non-starter for ML applications where $f$ is a neural network.
+
+The brilliant idea of **Runge-Kutta methods** (Carl Runge 1895, Wilhelm Kutta 1901) is to mimic the higher-order Taylor expansion by *evaluating $f$ at multiple intermediate points* within a single step. The values of $f$ at carefully chosen "stages" implicitly compute the higher derivatives. We never have to differentiate $f$ ourselves — only evaluate it at a few extra locations.
+
+A general $s$-stage Runge-Kutta method has the form
+$$k_i = f(t_n + c_i h,\; y_n + h\, A_i),\qquad y_{n+1} = y_n + h \sum_i b_i k_i,$$
+where $A_i = \sum_j a_{i,j} k_j$ is the linear combination of previously-computed stages. The coefficients $c_i$, $a_{i,j}$, and $b_i$ define the method. If $a_{i,j} = 0$ whenever $j \geq i$, the stages can be computed sequentially ($k_1$ first, then $k_2$ using $k_1$, etc.) and the method is **explicit**. If the coefficient matrix has nonzero entries on or above the diagonal, $k_i$ depends on itself and the method is **implicit** — each stage requires solving a nonlinear equation. We'll meet implicit methods in Section 7.
+
+<TheoremBlock type="definition" number={2} title="Butcher Tableau">
+A Runge-Kutta method is uniquely specified by its coefficients, conventionally arranged in a **Butcher tableau** (after John Butcher, who systematized the theory in the 1960s). The tableau has three pieces: a column vector $\mathbf c$ listing the time fractions of each stage, an $s \times s$ matrix $A$ holding the stage-coupling coefficients, and a row vector $\mathbf b$ holding the weights used to combine the stages into the final update. The conventional layout writes $\mathbf c$ to the left of $A$, with a horizontal rule separating the stage rows from the row of weights $\mathbf b$. For an **explicit method**, the matrix $A$ is strictly lower triangular ($a_{i,j} = 0$ for $j \geq i$), which means the stages can be computed in order $k_1, k_2, \ldots, k_s$ without any nonlinear solve.
+
+Forward Euler corresponds to the trivial case $s = 1$, $c_1 = 0$, $a_{1,1} = 0$, $b_1 = 1$. The midpoint method uses $s = 2$ stages with $c_1 = 0$, $c_2 = 1/2$, $a_{2,1} = 1/2$, and weights $b_1 = 0$, $b_2 = 1$ to achieve order 2. The classical **RK4** uses $s = 4$ stages with $c = (0, 1/2, 1/2, 1)$, with the matrix $A$ filled in so that $k_2$ uses $k_1$ at the half-step, $k_3$ uses $k_2$ at the half-step, and $k_4$ uses $k_3$ at the full step. The weights are $b_1 = 1/6$, $b_2 = 1/3$, $b_3 = 1/3$, $b_4 = 1/6$ — Simpson's rule applied to the four stage-slopes.
+</TheoremBlock>
+
+![Butcher tableaux for forward Euler, midpoint method, classical RK4, and Dormand-Prince RK45 — visual layouts showing the c-vector, A-matrix, and b-vector structure](/images/topics/numerical-odes/butcher-tableaux.png)
+
+The classical RK4 is so important it deserves its formula spelled out. Reading off the tableau,
+$$k_1 = f(t_n, y_n),$$
+$$k_2 = f(t_n + h/2,\; y_n + (h/2) k_1),$$
+$$k_3 = f(t_n + h/2,\; y_n + (h/2) k_2),$$
+$$k_4 = f(t_n + h,\; y_n + h k_3),$$
+$$y_{n+1} = y_n + (h/6)(k_1 + 2k_2 + 2k_3 + k_4).$$
+Each step uses 4 evaluations of $f$. The pattern is unmistakable: $k_1$ is the slope at the left endpoint (Euler's slope), $k_2$ and $k_3$ are slopes at the midpoint computed in two slightly different ways, and $k_4$ is the slope at the right endpoint computed using $k_3$. The final update is a weighted average — Simpson's rule applied to slopes.
+
+How do we know this combination achieves order 4? The answer comes from systematically matching the Taylor expansion of $y(t_n + h)$ against the RK formula and equating coefficients.
+
+<TheoremBlock type="theorem" number={2} title="The Classical RK4 Method Has Order 4">
+The classical Runge-Kutta method defined above has local truncation error $O(h^5)$ and global error $O(h^4)$. Equivalently, it satisfies all eight of the order conditions required for a 4-stage explicit Runge-Kutta method to achieve order 4 in the Butcher theory.
+</TheoremBlock>
+
+A full proof of Theorem 2 requires the algebraic theory of *order conditions* — equations among the Butcher coefficients that must hold for the method's Taylor expansion to match the true solution's Taylor expansion to a given order. For order $p$, the number of order conditions grows quickly: 1 condition for order 1, 2 for order 2, 4 for order 3, 8 for order 4, 17 for order 5, 37 for order 6, and so on. (The growth is governed by *rooted trees* — each tree corresponds to a way of assembling powers of $f$ and its derivatives by chain rule, and each tree gives one equation.) The classical RK4 was discovered by Kutta in 1901 by solving all 8 order-4 equations simultaneously; it's an algebraic miracle that an explicit 4-stage method can satisfy all of them. Butcher's *Numerical Methods for Ordinary Differential Equations* is the canonical reference for this theory.
+
+What matters for us is the consequence: RK4 is fourth-order accurate. Halving $h$ reduces global error by a factor of $2^4 = 16$, not just 2 as Euler does. To achieve a target accuracy of $\varepsilon$, RK4 needs about $h \sim \varepsilon^{1/4}$, while Euler needs $h \sim \varepsilon$. To get $\varepsilon = 10^{-6}$, RK4 needs $h \sim 0.03$ ($\sim 30$ steps on the unit interval, $\sim 120$ function evaluations); Euler needs $h \sim 10^{-6}$ ($\sim 10^6$ steps and function evaluations). RK4 is roughly four orders of magnitude more efficient — and that's for a "smooth" problem where stability isn't the binding constraint.
+
+<TheoremBlock type="example" number={3} title="RK4 on $y' = y$, $y(0) = 1$ — one step">
+Let's compute one step of RK4 from $t_0 = 0$ with $h = 0.1$. The right-hand side is $f(t, y) = y$.
+
+$$k_1 = f(0, 1) = 1,$$
+$$k_2 = f(0.05,\; 1 + 0.05 \cdot 1) = f(0.05, 1.05) = 1.05,$$
+$$k_3 = f(0.05,\; 1 + 0.05 \cdot 1.05) = f(0.05, 1.0525) = 1.0525,$$
+$$k_4 = f(0.1,\; 1 + 0.1 \cdot 1.0525) = f(0.1, 1.10525) = 1.10525,$$
+$$y_1 = 1 + (0.1/6)(1 + 2(1.05) + 2(1.0525) + 1.10525) = 1 + 0.10517 = 1.10517.$$
+
+The exact value is $e^{0.1} = 1.10517091808\ldots$, so RK4 nailed it to 5 decimal places in a single step. Compare to Euler's $y_1 = 1 + 0.1 \cdot 1 = 1.1$, which is correct only to 2 decimal places. RK4 used four function evaluations to get five extra digits — a staggering improvement per evaluation.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={4} title="RK4 vs Euler — equal-accuracy step-size comparison">
+Suppose we want global error $\leq 10^{-3}$ on the IVP $y' = y$, $y(0) = 1$, integrated to $t = 1$. From the analysis above, Euler's global error is $\sim h$ (with constant of order 1 here), so we need $h \approx 10^{-3}$, i.e., 1000 steps.
+
+RK4's global error is $\sim h^4$, so we need $h^4 \approx 10^{-3}$, i.e., $h \approx 0.18$. That's about 6 steps. Each RK4 step costs 4 function evaluations, so RK4 uses $\approx 24$ function evaluations total. Euler uses $\approx 1000$. RK4 is **40 times faster** for the same accuracy on this problem.
+
+The crossover where Euler and RK4 cost the same per accuracy is roughly $h \approx 1$ — so for any reasonable accuracy target, RK4 wins. The story changes for stiff equations (Section 6) where stability, not accuracy, sets the step size; then the per-step cost of RK4 becomes a liability rather than an asset.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={2} title="Higher order isn't always better">
+RK4 is the workhorse of explicit methods for *moderate accuracy* problems. Going higher — RK5, RK8 — gives diminishing returns. The number of order conditions grows combinatorially, so an order-8 method might need 11 stages to satisfy them all, costing 11 function evaluations per step. This pays off only if the savings in step count exceed the per-step overhead. For very high accuracy ($\varepsilon < 10^{-12}$) on smooth problems, methods like Dormand-Prince 8(7) or extrapolation methods become competitive. For *low* accuracy ($\varepsilon > 10^{-3}$), Euler or RK2 may suffice. RK4 hits the sweet spot for typical problems.
+
+The right way to think about it: the "order vs. cost" trade-off depends on (a) the accuracy you need, (b) the cost of one $f$ evaluation, and (c) the smoothness of $f$. For neural ODEs, $f$ is a forward pass through a network — expensive — and the desired accuracy is moderate, so RK4 or RK45 are both popular choices. For molecular dynamics with millions of atoms, $f$ is even more expensive, and methods specialized for Hamiltonian structure (symplectic integrators) take precedence over generic high-order methods.
+</TheoremBlock>
+
+<MethodComparisonExplorer client:visible />
+
+## 4. Adaptive Step-Size Control
+
+Both Euler and RK4 above used a *fixed* step size $h$. But that's wasteful: the local truncation error $\tau_n$ depends on $|y''|$ (or higher derivatives), which can vary by orders of magnitude over the integration interval. In regions where the solution is nearly linear, we'd be happy with a large $h$. In regions of rapid change — near a transient, an oscillation, a near-singularity — we need a small $h$. A fixed-step method either wastes computation in smooth regions (using a step size suited to the worst case) or undershoots accuracy in tough regions (using a step size suited to the best case).
+
+The fix is **adaptive step-size control**: estimate the local error after each step, and grow or shrink $h$ based on whether the estimate is below or above a user-supplied tolerance. The trick is doing this *cheaply* — we'd like to estimate the error without doubling the number of function evaluations.
+
+The standard approach uses an **embedded Runge-Kutta pair**: two RK methods of orders $p$ and $p+1$ that share the same stages. From the same $\{k_1, \ldots, k_s\}$, you compute *two* updates $y_{n+1}$ (order $p$) and $\hat y_{n+1}$ (order $p+1$). The difference $\hat y_{n+1} - y_{n+1}$ is the local error of the lower-order solution to leading order — for free, since the stages were going to be computed anyway.
+
+<TheoremBlock type="definition" number={3} title="Embedded Runge-Kutta Pair">
+An **embedded RK pair** of orders $p$ and $p+1$ consists of two sets of weights $\{b_i\}$ and $\{\hat b_i\}$ applied to the same $s$ stages $k_1, \ldots, k_s$:
+$$y_{n+1} = y_n + h \sum_i b_i k_i \quad (\text{order } p), \qquad \hat y_{n+1} = y_n + h \sum_i \hat b_i k_i \quad (\text{order } p+1).$$
+The difference
+$$\hat y_{n+1} - y_{n+1} = h \sum_i (\hat b_i - b_i) k_i$$
+is an estimate of the local truncation error of the order-$p$ method, accurate to leading order. The most widely used embedded pair is the **Dormand-Prince RK4(5)** method (Dormand & Prince, 1980), which has $s = 7$ stages and is the default solver in `scipy.integrate.solve_ivp` (`method='RK45'`) and `torchdiffeq` (`'dopri5'`).
+</TheoremBlock>
+
+Once we have an error estimate $\text{errEst}_n = |\hat y_{n+1} - y_{n+1}|$, we adjust the step size to drive it toward a target tolerance $\text{tol}$. The optimal new step size comes from balancing two competing requirements: we want $\text{errEst} \approx \text{tol}$ (so we're not wasting effort), but we also want a safety margin so the *next* step is likely to be accepted on the first try.
+
+<TheoremBlock type="theorem" number={3} title="Optimal Step-Size Update">
+For an embedded RK pair where the lower-order method has order $p$, the local truncation error scales like $\text{errEst} \approx C h^{p+1}$ for some constant $C$. To achieve a target tolerance $\text{tol}$ on the next step, we want $\text{tol} = C \tilde h^{p+1}$, where $\tilde h$ is the new step size. Dividing the two equations and solving:
+$$\tilde h \;=\; h \cdot \left(\frac{\text{tol}}{\text{errEst}}\right)^{1/(p+1)}.$$
+In practice this is multiplied by a **safety factor** of about $0.9$ (so the new step is slightly conservative), and clamped to a range $[h_{\min}, h_{\max}]$ to prevent runaway shrinkage or growth. If $\text{errEst} > \text{tol}$, the current step is **rejected** (the computed $y_{n+1}$ is discarded) and the step is retried with the smaller $\tilde h$. If $\text{errEst} \leq \text{tol}$, the step is accepted and the larger $\tilde h$ is used for the next step.
+</TheoremBlock>
+
+The exponent $1/(p+1)$ comes from the order of the local truncation error, not the global error. For Dormand-Prince RK4(5), the lower-order method is order 4, so the exponent is $1/5$. Halving the error requires shrinking $h$ by a factor of $2^{1/5} \approx 0.87$ — a fairly modest change. Doubling $\text{tol}$ allows increasing $h$ by the same factor.
+
+<TheoremBlock type="example" number={5} title="RK45 on $y' = -50(y - \cos t) - \sin t$">
+Consider the forced linear ODE
+$$y' = -50(y - \cos t) - \sin t, \qquad y(0) = 0,$$
+which has the closed-form solution $y(t) = \cos t \cdot (1 - e^{-50 t})$ — a sinusoid that "rings up" to its steady-state amplitude over a transient of length $1/50$. For $t \lesssim 0.1$ the solution changes rapidly (rising from 0 to nearly $\cos t$); for $t \gtrsim 0.1$ it follows the smooth cosine.
+
+A fixed-step RK4 with $h = 0.01$ would take $100$ steps to reach $t = 1$, mostly in the smooth region where $h = 0.05$ would have sufficed. RK45 with $\text{tol} = 10^{-6}$ uses small steps in the transient ($h \sim 0.005$ for the first few accepted steps) and then expands rapidly: by $t = 0.5$ it's using $h \sim 0.1$. Total step count: maybe $\sim 30$ — three times fewer than the fixed-step version, with comparable accuracy. The savings come from concentrating computational effort where the solution actually demands it.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={6} title="Step-size adaptation near a finite-time blow-up">
+The IVP $y' = y^2$, $y(0) = 1$ has the explicit solution $y(t) = 1/(1-t)$, which blows up as $t \to 1^-$. A fixed-step method either misses the blow-up entirely (if $h$ is too small to reach $t = 1$) or overshoots and produces nonsense.
+
+RK45 handles this gracefully: as $y$ grows, $|f(t, y)| = y^2$ grows even faster, and the local truncation error explodes proportionally. The step-size formula $\tilde h = h \cdot (\text{tol}/\text{errEst})^{1/5}$ then shrinks $h$ rapidly. Near the singularity, RK45 takes geometrically smaller steps until $h$ hits the floor $h_{\min}$, at which point the integration halts. The user gets a reasonable solution up to $t \approx 0.99$ or so, with a clear signal (extreme step-size shrinkage, or hitting $h_{\min}$) that something is going wrong. This is the "graceful degradation" that adaptive methods provide and fixed-step methods don't.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={3} title="Absolute and relative tolerances">
+In practice, scientific ODE solvers use a *combined* tolerance: $\text{tol}_n = \text{atol} + \text{rtol} \cdot |y_n|$. The absolute tolerance $\text{atol}$ kicks in when $|y_n|$ is small (close to the noise floor), and the relative tolerance $\text{rtol}$ kicks in when $|y_n|$ is large (so the error is bounded as a fraction of the value). Typical defaults are $\text{atol} = 10^{-6}$ and $\text{rtol} = 10^{-3}$.
+
+This dual scheme avoids two failure modes: a pure relative tolerance breaks down when the solution crosses zero ($\text{tol} \to 0$ would force $h \to 0$); a pure absolute tolerance is too coarse for small solutions and too tight for large ones. In `scipy.integrate.solve_ivp`, you pass `atol` and `rtol` as arguments. In `torchdiffeq`, the same conventions apply. ML practitioners using neural ODEs should be aware of these — the wrong choice of tolerance can either slow training to a crawl (over-tight) or introduce solver-induced bias into gradients (over-loose).
+</TheoremBlock>
+
+<AdaptiveStepExplorer client:visible />
+
+## 5. Numerical Stability and A-Stability
+
+Example 2 in Section 2 hinted at it: Euler's method can blow up on a *stable* equation if the step size is too large. The numerical method introduces its own dynamics, and those dynamics can be unstable even when the underlying ODE isn't.
+
+To analyze this carefully, we restrict to the simplest possible test problem: the linear scalar equation $y' = \lambda y$ with $\lambda \in \mathbb{C}$. The exact solution is $y(t) = y_0 e^{\lambda t}$, which decays to zero iff $\text{Re}(\lambda) < 0$. We then ask: for which step sizes $h$ does the numerical method also produce a sequence that decays to zero?
+
+The answer depends only on the product $z = h\lambda \in \mathbb{C}$. For each numerical method, applying it to $y' = \lambda y$ produces a recurrence of the form $y_{n+1} = R(z) y_n$, where $R(z)$ is a rational (or polynomial) function called the **stability function** of the method. The numerical solution decays iff $|R(z)| \leq 1$.
+
+<TheoremBlock type="definition" number={4} title="Stability Region">
+The **stability region** of a numerical method is the set
+$$S \;=\; \{ z \in \mathbb{C} : |R(z)| \leq 1 \},$$
+where $R(z)$ is the method's stability function obtained by applying the method to $y' = \lambda y$ with $z = h\lambda$. The numerical solution decays for an eigenvalue $\lambda$ if and only if $h\lambda \in S$.
+
+For a scalar real $\lambda < 0$, this gives the constraint $h \leq h_{\max}(\lambda)$ where $h_{\max}$ is determined by where the boundary of $S$ crosses the real axis. For a system $y' = Ay$, *every* eigenvalue of $hA$ must lie in $S$, which is the constraint that determines the maximum stable step size for a multi-mode system.
+</TheoremBlock>
+
+<TheoremBlock type="definition" number={5} title="A-Stability">
+A numerical method is **A-stable** if its stability region $S$ contains the entire closed left half-plane $\mathbb{C}^- = \{z : \text{Re}(z) \leq 0\}$. Equivalently, $|R(z)| \leq 1$ for all $z$ with $\text{Re}(z) \leq 0$.
+
+A-stability is the strongest possible stability property: an A-stable method gives a decaying numerical solution for *any* stable scalar test equation, regardless of step size. There are no step-size restrictions for stability — only for accuracy.
+</TheoremBlock>
+
+A-stability is the holy grail of stability properties. If your method is A-stable, you never have to worry about choosing $h$ small enough to avoid blow-up; you only have to choose $h$ small enough to get the desired accuracy. For stiff problems, this is a *huge* deal — explicit methods can require $h$ smaller than accuracy demands by factors of $10^6$ or more, while A-stable implicit methods can use $h$ governed purely by accuracy requirements.
+
+The bad news, due to Germund Dahlquist in 1963: A-stability is much harder to achieve than you'd hope.
+
+<TheoremBlock type="theorem" number={4} title="Dahlquist's Second Barrier">
+There is no explicit Runge-Kutta method that is A-stable. More generally, no explicit linear multistep method of order greater than $2$ can be A-stable, and no implicit linear multistep method of order greater than $2$ can be A-stable. (The trapezoidal rule, which is implicit and second-order, is A-stable — it sits exactly at the barrier.)
+</TheoremBlock>
+
+This is a structural obstruction, not a technical one. The stability function of any explicit RK method is a polynomial in $z$ (since the method takes finitely many additions and multiplications), and polynomials grow without bound as $|z| \to \infty$ — so they can't satisfy $|R(z)| \leq 1$ in the unbounded left half-plane. Implicit methods can have rational stability functions whose denominators tame the growth at infinity, but Dahlquist showed that requiring both A-stability AND order $> 2$ leads to coefficient constraints that have no solution. The barrier is the reason A-stable methods are essentially limited to implicit Euler, the trapezoidal rule, and a handful of close cousins (BDF for stiffness, Radau IIA for higher order with weakened stability). All of these are **implicit**.
+
+Let's see the stability functions of the methods we've met.
+
+<TheoremBlock type="example" number={7} title="Stability region of forward Euler">
+Apply forward Euler to $y' = \lambda y$:
+$$y_{n+1} = y_n + h \lambda y_n = (1 + h\lambda) y_n.$$
+So $R(z) = 1 + z$, where $z = h\lambda$. The stability region is
+$$S = \{z \in \mathbb{C} : |1 + z| \leq 1\}.$$
+This is the closed disk of radius 1 centered at $z = -1$. On the real axis, it's the interval $[-2, 0]$. So for a real eigenvalue $\lambda < 0$, forward Euler is stable iff $h \leq 2/|\lambda|$. This recovers the constraint from Example 2 in Section 2: on $y' = -10y$, stability requires $h \leq 0.2$ — exactly where we saw the numerical solution start oscillating.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={8} title="Stability region of RK4">
+Applying RK4 to $y' = \lambda y$ and computing the four stages, the stability function turns out to be exactly the truncated Taylor series of $e^z$ to fourth order:
+$$R(z) = 1 + z + \tfrac{z^2}{2} + \tfrac{z^3}{6} + \tfrac{z^4}{24}.$$
+This is no accident: applying RK4 to the test equation forces $R$ to match $e^z = e^{h\lambda}$, the exact solution, to as many Taylor terms as the method's order — for RK4 that's 5 terms (orders 0 through 4).
+
+The stability region $\{z : |R(z)| \leq 1\}$ is now a *four-lobed* shape that extends along the real axis to about $z \approx -2.78$. So RK4 is stable for real $\lambda < 0$ when $h < 2.78/|\lambda|$ — a roughly 40% improvement over forward Euler, in addition to RK4's much higher accuracy. RK4 is *not* A-stable: its region is bounded, so for very stiff systems it still needs tiny step sizes for stability.
+</TheoremBlock>
+
+<TheoremBlock type="proof" title="Proof of the Forward Euler Stability Region">
+We compute the stability region directly. Forward Euler applied to $y' = \lambda y$ gives $y_{n+1} = (1 + h\lambda) y_n$, so iteratively $y_n = (1 + h\lambda)^n y_0 = R(z)^n y_0$ where $z = h\lambda$.
+
+The numerical solution remains bounded iff $|R(z)| \leq 1$, which is iff $|1 + z| \leq 1$. Writing $z = x + iy$ for real $x, y$:
+$$|1 + z|^2 = (1 + x)^2 + y^2 \leq 1 \iff (1 + x)^2 + y^2 \leq 1.$$
+This is the closed disk of radius $1$ centered at $z = -1$. It is a compact subset of $\mathbb{C}$, contained entirely in $\{z : -2 \leq \text{Re}(z) \leq 0\}$.
+
+The disk does *not* contain the entire left half-plane: for example, $z = -10$ gives $|1 + z| = 9 > 1$. Therefore forward Euler is **not** A-stable. For any real eigenvalue $\lambda < 0$, the constraint $h\lambda \in S$ becomes $-2 \leq h\lambda \leq 0$, i.e., $h \leq 2/|\lambda|$. As $|\lambda|$ grows, the maximum stable step size shrinks proportionally — this is the source of stiffness pain for explicit methods. $\blacksquare$
+</TheoremBlock>
+
+![Stability regions of forward Euler, backward Euler, classical RK4, and the trapezoidal rule plotted in the complex plane, with the left half-plane shaded for reference](/images/topics/numerical-odes/stability-regions.png)
+
+The implicit methods of Section 7 will have stability regions that *contain* the entire left half-plane — they'll be A-stable. For now, just note the qualitative picture: explicit methods have *bounded* stability regions (small islands in the complex plane), while A-stable implicit methods have *unbounded* stability regions (the entire left half-plane and often more). The boundedness vs. unboundedness is the structural difference Dahlquist's theorem exploits.
+
+## 6. Stiff Systems
+
+We now have all the tools to define stiffness precisely. A system of ODEs is **stiff** if its dynamics happen on widely separated time scales: some components decay (or oscillate) very fast, while others evolve very slowly. The fast components force *any explicit* method to use a step size suited to the fastest time scale, even if you only care about the slow dynamics.
+
+The right way to quantify this is via the eigenvalues of the Jacobian.
+
+<TheoremBlock type="definition" number={6} title="Stiffness Ratio">
+For a system $\dot{\mathbf{y}} = \mathbf{f}(\mathbf{y})$, the **stiffness ratio** at a point $\mathbf{y}$ is
+$$\kappa(\mathbf{y}) \;=\; \frac{\max_i |\lambda_i(J(\mathbf{y}))|}{\min_i |\lambda_i(J(\mathbf{y}))|},$$
+where $\lambda_i$ are the eigenvalues of the Jacobian $J(\mathbf{y}) = \partial \mathbf{f}/\partial \mathbf{y}$. A system is **stiff** at $\mathbf{y}$ if $\kappa(\mathbf{y}) \gg 1$ — typically $\kappa > 100$ or so. Stiffness depends on the integration interval: a system with $\kappa = 10^6$ is stiff for $T = 1$ (where you need to integrate through $\sim 10^6/T$ fast-decay periods) but not necessarily stiff for $T = 10^{-7}$ (where the slow dynamics haven't even started).
+
+Note the connection to Topic 23: the Jacobian eigenvalues are exactly what we computed for linearization stability analysis. A stable equilibrium has $\text{Re}(\lambda_i) < 0$ for all eigenvalues; a stiff stable equilibrium has *some* eigenvalues with very large $|\text{Re}(\lambda_i)|$ alongside others with small $|\text{Re}(\lambda_i)|$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={9} title="The Robertson chemical kinetics system">
+A canonical stiff test problem: three coupled chemical reactions
+$$\dot y_1 = -0.04\, y_1 + 10^4\, y_2 y_3,$$
+$$\dot y_2 = 0.04\, y_1 - 10^4\, y_2 y_3 - 3 \times 10^7\, y_2^2,$$
+$$\dot y_3 = 3 \times 10^7\, y_2^2,$$
+with $\mathbf{y}(0) = (1, 0, 0)$. The three rate constants span 9 orders of magnitude: $0.04$, $10^4$, $3 \times 10^7$. The Jacobian eigenvalues at the initial state have moduli ranging from $0.04$ to $\sim 10^7$, giving a stiffness ratio $\kappa \sim 10^9$.
+
+For an explicit method on this problem, stability requires $h \cdot 10^7 \lesssim 1$, i.e., $h \lesssim 10^{-7}$. To integrate to $t = 100$ (a typical time scale for the slow $y_1$ component), you'd need $\sim 10^9$ steps. With each step requiring 4 function evaluations for RK4, that's $\sim 4 \times 10^9$ function evaluations — completely intractable. An implicit method (which we develop in Section 7) can use $h \sim 0.1$ throughout, requiring only $\sim 1000$ steps. The speedup is six orders of magnitude.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={10} title="Van der Pol oscillator at large $\mu$">
+The Van der Pol oscillator $\ddot x - \mu(1 - x^2)\dot x + x = 0$, written as a first-order system with $y_1 = x$, $y_2 = \dot x$:
+$$\dot y_1 = y_2, \qquad \dot y_2 = \mu(1 - y_1^2) y_2 - y_1.$$
+For small $\mu$ this is a smooth oscillator. For large $\mu$ — say $\mu = 1000$ — it becomes a *relaxation oscillator*: long stretches where the solution is nearly constant, punctuated by very rapid jumps when $|y_1|$ crosses $1$ and the damping coefficient $\mu(1 - y_1^2)$ flips sign.
+
+During the slow stretches the Jacobian's eigenvalues are small. During the rapid jumps, one eigenvalue becomes very large (roughly $-2\mu$ at the most stiff points). The stiffness ratio varies from $O(1)$ during smooth stretches to $O(\mu^2) = O(10^6)$ during jumps. An explicit method has to use a step size suited to the worst stretches *throughout*, even though most of the trajectory is smooth. Adaptive step-size control helps somewhat (it can take big steps during smooth stretches and shrink during jumps), but even RK45 spends most of its computation in the rapid-jump regions and is still much slower than an implicit method. The Van der Pol oscillator at $\mu = 1000$ is a textbook case where you should reach for `solve_ivp(method='Radau')` or `'BDF'` rather than the default `'RK45'`.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={4} title="Stiffness is not a property of the equation alone">
+A subtle but important point: stiffness is a *combination* of the equation, the initial condition, and the desired integration interval. A system with $\kappa = 10^6$ is stiff only if you want to integrate through many fast-decay periods. If your interval is short enough that the fast modes are still active, you actually need to resolve them — and an explicit method with small $h$ is appropriate.
+
+This is why "stiff" is not a binary classification but a regime. Most modern ODE solvers (`solve_ivp`, `DifferentialEquations.jl`) include automatic stiffness detection: they monitor the Jacobian eigenvalues (or proxies like the step-size rejection rate of an explicit method) and switch between explicit and implicit methods on the fly. The field of ODE solving has matured to the point where users mostly don't need to make this choice manually — but understanding *why* stiffness matters lets you debug when the automation gets it wrong.
+</TheoremBlock>
+
+<StiffnessExplorer client:visible />
+
+## 7. Implicit Methods
+
+If explicit methods can't handle stiffness gracefully, what can? The answer is **implicit methods** — schemes where the unknown $y_{n+1}$ appears on both sides of the update equation, requiring an algebraic solve at each step. The cost is higher per step, but the payoff is dramatic: A-stability, meaning step sizes can be chosen for accuracy alone, regardless of stiffness.
+
+<TheoremBlock type="definition" number={7} title="Implicit Euler and Trapezoidal Rule">
+**Implicit (backward) Euler:** $y_{n+1} = y_n + h \cdot f(t_{n+1}, y_{n+1})$.
+The unknown $y_{n+1}$ appears inside $f$ on the right-hand side — this is an implicit equation that must be solved at each step. For linear $f$, the solve is a matrix inversion; for nonlinear $f$, it's a Newton iteration. This method is first-order accurate (same order as forward Euler) but A-stable.
+
+**Trapezoidal rule:** $y_{n+1} = y_n + (h/2)[f(t_n, y_n) + f(t_{n+1}, y_{n+1})]$.
+The average of forward and backward Euler. Second-order accurate and A-stable — sitting exactly at the Dahlquist barrier of "highest-order A-stable linear multistep method." Known as the *Crank-Nicolson method* in the PDE literature.
+</TheoremBlock>
+
+What does it mean to "solve" the implicit equation? Take backward Euler. We need to find $y_{n+1}$ such that
+$$g(y) := y - y_n - h f(t_{n+1}, y) = 0.$$
+For nonlinear $f$ this requires a root-finding method, and the standard choice is **Newton's iteration**:
+$$y^{(k+1)} = y^{(k)} - \frac{g(y^{(k)})}{g'(y^{(k)})}, \qquad g'(y) = 1 - h \cdot \frac{\partial f}{\partial y}(t_{n+1}, y).$$
+The iteration converges quadratically when $y^{(k)}$ is close to the true root. A typical implementation initializes with $y^{(0)} = y_n + h f(t_n, y_n)$ (one explicit Euler step) and converges in 2–4 iterations per timestep. Each iteration requires one evaluation of $f$ and one of $\partial f/\partial y$ — so the per-step cost is $\sim 4$ function evaluations and $\sim 4$ Jacobian evaluations. That's somewhat more expensive than RK4's 4 function evaluations, but per-*accuracy* it can be vastly cheaper because the step size isn't constrained by stability.
+
+<TheoremBlock type="theorem" number={5} title="A-Stability of the Implicit Euler Method">
+The implicit Euler method has stability function
+$$R(z) = \frac{1}{1 - z},$$
+and is A-stable: $|R(z)| \leq 1$ for all $z \in \mathbb{C}$ with $\text{Re}(z) \leq 0$.
+</TheoremBlock>
+
+<TheoremBlock type="proof" title="Proof of Theorem 5 (A-Stability of Implicit Euler)">
+Apply implicit Euler to the test equation $y' = \lambda y$:
+$$y_{n+1} = y_n + h\lambda y_{n+1}.$$
+Solving algebraically for $y_{n+1}$ (this is one of the rare cases where the implicit equation has a closed-form solution):
+$$(1 - h\lambda) y_{n+1} = y_n \implies y_{n+1} = \frac{1}{1 - h\lambda} y_n = \frac{1}{1 - z} y_n,$$
+where $z = h\lambda$. So the stability function is $R(z) = 1/(1 - z)$.
+
+To check A-stability, we need $|R(z)| \leq 1$ for all $z$ with $\text{Re}(z) \leq 0$. Write $z = x + iy$ with $x \leq 0$. Then $1 - z = (1 - x) - iy$, so
+$$|1 - z|^2 = (1 - x)^2 + y^2.$$
+Since $x \leq 0$, we have $1 - x \geq 1$, so $(1 - x)^2 \geq 1$. Therefore
+$$|1 - z|^2 = (1 - x)^2 + y^2 \geq 1 + y^2 \geq 1,$$
+which gives $|1 - z| \geq 1$ and so
+$$|R(z)| = \frac{1}{|1 - z|} \leq 1.$$
+Equality $|R(z)| = 1$ holds iff $x = 0$ and $y = 0$ — that is, only at $z = 0$. Everywhere else in the closed left half-plane, $|R(z)| < 1$ strictly. So implicit Euler is A-stable, and in fact *strongly* damping for any $\text{Re}(\lambda) < 0$. $\blacksquare$
+</TheoremBlock>
+
+The geometric picture is illuminating. Forward Euler's stability region was a unit disk centered at $z = -1$ (a small island in the left half-plane). Implicit Euler's stability region is everything *outside* the disk $|1 - z| < 1$ — that is, the complement of the open unit disk centered at $z = +1$. This complement contains the *entire* left half-plane, and most of the right half-plane as well. Implicit Euler is so stable that it actually damps numerical solutions for some unstable continuous problems (those with $\text{Re}(\lambda) > 0$ but small) — a property called "L-stability" that makes it useful for stiff transients but can also mask physical instabilities.
+
+<TheoremBlock type="example" number={11} title="Implicit Euler on the Robertson system: stable with large step sizes">
+On the Robertson kinetics from Example 9, implicit Euler (with Newton iteration on the $3 \times 3$ Jacobian) can use $h = 10^{-2}$ to $h = 1$ throughout the integration. To reach $t = 100$, that's $\sim 100$ to $10^4$ steps — six to seven orders of magnitude fewer than the $10^9$ steps an explicit method would need. Each implicit step is more expensive (Newton iteration costs $\sim 4 \times$ what one Euler step does), but $4 \cdot 10^4$ is still vastly less than $10^9$.
+
+This is the qualitative payoff of implicit methods: they trade per-step computational complexity for the freedom to take large step sizes. For stiff problems, that trade is overwhelmingly worth it.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={12} title="The trapezoidal rule — second-order and A-stable">
+Apply the trapezoidal rule to $y' = \lambda y$:
+$$y_{n+1} = y_n + (h\lambda/2)(y_n + y_{n+1}) \implies (1 - h\lambda/2) y_{n+1} = (1 + h\lambda/2) y_n.$$
+The stability function is $R(z) = (1 + z/2)/(1 - z/2)$. For $z = x + iy$ with $x \leq 0$, both numerator and denominator have the same imaginary part magnitude $|y/2|$, but $|1 + x/2| \leq |1 - x/2|$ (since $x \leq 0$). So $|R(z)| \leq 1$ on the closed left half-plane — A-stable.
+
+The trapezoidal rule is the *highest-order* A-stable linear multistep method (Dahlquist's barrier theorem). It's second-order accurate, A-stable, and requires only one implicit solve per step. For mildly stiff problems where you want better than first-order accuracy without giving up A-stability, it's the natural choice. (For higher-order A-stable methods, you have to abandon linear multistep and use implicit Runge-Kutta methods like Radau IIA.)
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={5} title="The cost of implicitness — Newton iteration">
+Each implicit step requires solving a nonlinear (or linear, for linear ODEs) equation. For systems of dimension $d$, the cost per Newton iteration is dominated by the cost of factoring the Jacobian matrix $I - h \cdot \partial \mathbf{f}/\partial \mathbf{y}$, which is $O(d^3)$ for dense matrices and $O(d^{1.5})$ to $O(d \log d)$ for sparse ones (banded, tridiagonal, etc.). A typical Newton iteration converges in 2–4 sweeps; if it doesn't converge, the step is reduced and retried.
+
+For neural ODEs, the implicit-method cost can be prohibitive: $d$ might be $10^5$ (the number of hidden units), making the $O(d^3)$ factorization $\sim 10^{15}$ flops per step. This is why neural ODE training almost always uses explicit adaptive methods (Dormand-Prince RK45) and accepts the stability constraints — the savings from avoiding implicit solves dominate. The exception is in *physics-informed* neural networks for stiff PDEs, where implicit solvers are essential despite the cost. Modern implementations (`diffrax`, `torchdiffeq`) provide both explicit and implicit options, and the user picks based on the stiffness regime.
+</TheoremBlock>
+
+![Comparison of explicit and implicit Euler on a stiff system: explicit blows up while implicit remains stable](/images/topics/numerical-odes/stiff-comparison.png)
+
+## 8. Multistep Methods
+
+Both Euler and the Runge-Kutta methods are **single-step**: each new value $y_{n+1}$ depends only on $y_n$ and possibly on intermediate evaluations of $f$ within the current step. **Multistep methods** instead reuse $y_{n-1}, y_{n-2}, \ldots$ from previous steps and the corresponding $f$-values $f_{n-1}, f_{n-2}, \ldots$. This is a fundamentally different way to gain order: rather than computing more stages within one step, you average more historical information.
+
+<TheoremBlock type="definition" number={8} title="Linear Multistep Methods">
+A **linear $k$-step method** has the form
+$$\sum_{j=0}^{k} \alpha_j y_{n+j} = h \sum_{j=0}^{k} \beta_j f_{n+j},$$
+where $f_{n+j} = f(t_{n+j}, y_{n+j})$ and $\alpha_k \neq 0$. If $\beta_k = 0$ the method is **explicit** (the new $y_{n+k}$ doesn't appear on the right-hand side); otherwise it's **implicit**.
+
+Two important families:
+- **Adams-Bashforth** (explicit): $y_{n+k} = y_{n+k-1} + h \sum_{j=0}^{k-1} \beta_j f_{n+j}$. The $k$-step Adams-Bashforth method achieves order $k$ by polynomial interpolation through past $f$-values.
+- **Adams-Moulton** (implicit): $y_{n+k} = y_{n+k-1} + h \sum_{j=0}^{k} \beta_j f_{n+j}$. Achieves order $k+1$ by including the new $f_{n+k}$ in the interpolation.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={13} title="Adams-Bashforth 2-step">
+The 2-step Adams-Bashforth method is
+$$y_{n+2} = y_{n+1} + \frac{h}{2}(3 f_{n+1} - f_n).$$
+This is exact for linear-in-$t$ functions $f$, and second-order accurate in general. The derivation: approximate $f(t, y(t))$ on $[t_{n+1}, t_{n+2}]$ by the linear extrapolation of $f_n, f_{n+1}$, then integrate that linear function exactly. The factor $3/2$ on $f_{n+1}$ and $-1/2$ on $f_n$ are exactly the coefficients of $\int_{t_{n+1}}^{t_{n+2}} L_n(s)\,ds$ where $L_n$ is the linear Lagrange polynomial through $(t_n, f_n)$ and $(t_{n+1}, f_{n+1})$.
+
+Adams-Bashforth methods are very efficient per step: only one $f$ evaluation per step, since you reuse $f_n$ from the previous step. To get started, you need a single-step method (e.g., one RK4 step) to compute $y_1$ from $y_0$. After that, the multistep recurrence takes over.
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={6} title="Convergence of Multistep Methods (Dahlquist Equivalence)">
+A linear multistep method is **convergent** (the numerical solution converges to the exact solution as $h \to 0$) if and only if it is both:
+1. **Consistent**: the local truncation error tends to zero as $h \to 0$.
+2. **Zero-stable**: the roots of the characteristic polynomial $\rho(\zeta) = \sum \alpha_j \zeta^j$ all lie in the closed unit disk $|\zeta| \leq 1$, with simple roots on the boundary.
+
+This is **Dahlquist's equivalence theorem** for linear multistep methods, the multistep analog of the Lax equivalence theorem we'll prove for one-step methods in Section 9.
+</TheoremBlock>
+
+The zero-stability condition is the discrete analog of continuous stability: it requires that the *trivial* equation $y' = 0$ (with $f = 0$) is solved correctly by the method. A multistep method with a root $\zeta$ outside the unit disk would have a parasitic numerical mode that grows like $\zeta^n$, drowning out the true solution even on the trivial problem. Zero-stability prevents this — it's a discrete echo of the linearization stability theorem from Topic 23.
+
+<TheoremBlock type="remark" number={6} title="Multistep vs. multistage — a cost/memory trade-off">
+Runge-Kutta methods (multistage) and Adams methods (multistep) both achieve high order, but they trade off differently. RK methods compute multiple $f$-evaluations per step but use only the previous $y$. Adams methods compute one $f$-evaluation per step but maintain a history of past $f$-values in memory.
+
+For neural ODEs, multistage is preferred because each $f$-evaluation is a forward pass through a network — *expensive* but cheap to checkpoint. For Adams methods, every retained $f_{n-j}$ is a snapshot of network activations, and over many steps the memory becomes prohibitive.
+
+For traditional scientific computing where $f$ is cheap (a polynomial or a finite-element matrix-vector product) but the integration interval is long, Adams methods can be more efficient: one $f$-evaluation per step beats four for RK4. The choice depends on what you're paying for — flops, memory, or something else.
+</TheoremBlock>
+
+![Adams-Bashforth stencil and accuracy comparison across orders 2, 3, and 4](/images/topics/numerical-odes/multistep-stencil.png)
+
+## 9. Convergence Theory — The Lax Equivalence Theorem
+
+We've now seen many methods, each with its own analysis of accuracy and stability. We've appealed to "consistency" (local truncation error → 0) and "stability" (errors don't amplify) as the two conditions a good method must satisfy. Now we make this precise and prove the unifying theorem.
+
+The result is due to Peter Lax (1956) for finite-difference methods on PDEs, but the same statement holds for one-step methods on ODEs. It's the most important theorem in numerical analysis.
+
+<TheoremBlock type="theorem" number={7} title="The Lax Equivalence Theorem (One-Step Version)">
+Let $\Phi(t, y, h)$ be the increment function of a one-step method $y_{n+1} = y_n + h \Phi(t_n, y_n, h)$ applied to the IVP $y' = f(t, y)$, $y(t_0) = y_0$, with $f$ Lipschitz in $y$. Then the method is **convergent** — meaning $\max_n |y_n - y(t_n)| \to 0$ as $h \to 0$ over any fixed interval $[t_0, T]$ — if and only if it is both:
+1. **Consistent**: the local truncation error satisfies $\tau_n \to 0$ uniformly in $n$ as $h \to 0$.
+2. **Stable**: the increment function $\Phi$ is Lipschitz in its second argument, with a constant $L_\Phi$ that does not depend on $h$.
+
+Moreover, if the method has order $p$ (meaning $\tau_n = O(h^{p+1})$), then the global error satisfies $|y_n - y(t_n)| = O(h^p)$ uniformly on $[t_0, T]$.
+</TheoremBlock>
+
+<TheoremBlock type="proof" title="Proof of Theorem 7 (Lax Equivalence)">
+We track how the global error $e_n = y_n - y(t_n)$ propagates from step to step, then sum the contributions. The argument is a generalization of the Euler-specific proof from Theorem 1.
+
+By the definitions of the numerical step and the local truncation error,
+$$y_{n+1} = y_n + h\, \Phi(t_n, y_n, h),$$
+$$y(t_{n+1}) = y(t_n) + h\, \Phi(t_n, y(t_n), h) + \tau_n.$$
+Subtracting,
+$$e_{n+1} = e_n + h\bigl[\Phi(t_n, y_n, h) - \Phi(t_n, y(t_n), h)\bigr] - \tau_n.$$
+
+Apply the stability condition (Lipschitz $\Phi$ with constant $L_\Phi$):
+$$|\Phi(t_n, y_n, h) - \Phi(t_n, y(t_n), h)| \leq L_\Phi |y_n - y(t_n)| = L_\Phi |e_n|.$$
+Combined with $|\tau_n| \leq C h^{p+1}$ (consistency, with constant $C$ depending on $\max|y^{(p+1)}|$):
+$$|e_{n+1}| \leq |e_n| + h L_\Phi |e_n| + C h^{p+1} = (1 + h L_\Phi) |e_n| + C h^{p+1}.$$
+
+This is a linear recurrence with growth factor $(1 + h L_\Phi)$ and forcing $C h^{p+1}$. Iterating from $e_0 = 0$:
+$$|e_n| \leq C h^{p+1} \sum_{k=0}^{n-1} (1 + h L_\Phi)^{n-1-k} = C h^{p+1} \cdot \frac{(1 + h L_\Phi)^n - 1}{h L_\Phi}.$$
+
+Using $(1 + x) \leq e^x$, we have $(1 + h L_\Phi)^n \leq e^{n h L_\Phi} = e^{L_\Phi (t_n - t_0)}$. So
+$$|e_n| \leq C h^{p+1} \cdot \frac{e^{L_\Phi (t_n - t_0)} - 1}{h L_\Phi} = \frac{C h^p}{L_\Phi}\bigl(e^{L_\Phi (t_n - t_0)} - 1\bigr).$$
+
+This bound has three pieces:
+- The factor $C h^p$ shows the order-$p$ convergence: global error is $p$ powers of $h$, one less than the local truncation order $p+1$, because we summed $\sim 1/h$ steps.
+- The factor $(e^{L_\Phi (t_n - t_0)} - 1)$ is the error amplification, growing exponentially in both the Lipschitz constant and the integration time. This is the "stability cost" — even a stable method amplifies errors over a long interval.
+- Both factors are independent of $n$ (uniform bound) and of $h$ (the bound is $O(h^p)$ as $h \to 0$).
+
+Conversely, if either consistency or stability fails, convergence fails. If the method is inconsistent ($\tau_n \not\to 0$), then even at $t = t_0 + h$ the single-step error doesn't shrink, so we can't have $|e_1| \to 0$. If the method is unstable (there's no uniform Lipschitz constant for $\Phi$), then small perturbations get amplified by an unbounded factor, and any roundoff or initial error grows without bound as $h \to 0$.
+
+So consistency $+$ stability $\iff$ convergence. This is the equivalence theorem: convergence is *equivalent* to the conjunction of two simpler, locally checkable conditions. $\blacksquare$
+</TheoremBlock>
+
+Lax's theorem is the unifying result of numerical analysis. It says: to verify that a method converges (a *global* property of solutions over an entire interval), you only need to check two *local* properties — that one step is asymptotically correct (consistency), and that the per-step amplification factor is bounded (stability). This is a massive simplification: you don't have to track the full numerical solution; you just check the recipe and the amplification.
+
+For RK methods, consistency comes from the order conditions (which are pure algebraic identities on the coefficients), and stability comes from the Lipschitz continuity of the increment function (which follows from the Lipschitz continuity of $f$, since $\Phi$ is built out of finitely many evaluations of $f$). So every RK method applied to a Lipschitz problem is convergent at its theoretical order — no matter how complicated the method.
+
+<TheoremBlock type="example" number={14} title="Verifying the Lax hypotheses for RK4">
+For RK4, the increment function is
+$$\Phi(t, y, h) = \tfrac{1}{6}\bigl(k_1 + 2k_2 + 2k_3 + k_4\bigr),$$
+where each $k_i$ is itself a finite combination of $f$-evaluations. Since $f$ is Lipschitz with constant $L$, each $k_i$ is Lipschitz in $y$ with constant bounded by some polynomial in $L$ and $h$. As $h \to 0$, this constant tends to $L$, so $\Phi$ is Lipschitz in $y$ with a uniform constant. *Stability checked.*
+
+Consistency follows from the order conditions: RK4 satisfies all 8 conditions for order 4, so its local truncation error is $\tau_n = O(h^5)$. *Consistency checked.*
+
+By Lax, RK4 converges at rate $O(h^4)$ on any Lipschitz IVP. Theorems 1 and 2 are now special cases of Theorem 7 — Theorem 1 verified the conditions for forward Euler ($p=1$), and Theorem 2 verified the order conditions for RK4 ($p=4$).
+</TheoremBlock>
+
+<TheoremBlock type="example" number={15} title="Richardson extrapolation for empirical order verification">
+Lax's theorem gives a beautiful experimental tool: **measure** the convergence order of any method by running it at successively halved step sizes. If global error scales like $|e(h)| \approx C h^p$, then
+$$\frac{|e(h)|}{|e(h/2)|} \approx \frac{C h^p}{C (h/2)^p} = 2^p,$$
+so $\log_2(|e(h)|/|e(h/2)|) \approx p$. Plotting $\log|e(h)|$ vs $\log h$ gives a straight line whose slope is the empirical order. This is *Richardson extrapolation*, and it converts an abstract theorem about convergence rates into a quick numerical check.
+
+In practice: take a problem with a known exact solution (e.g., $y' = -y$, $y(t) = e^{-t}$), run your method at step sizes $h, h/2, h/4, h/8, h/16$, compute the error at $t = T$ for each, and fit a line in log-log coordinates. For Euler the slope should be $\approx 1$; for midpoint $\approx 2$; for RK4 $\approx 4$. This is a beautiful experimental verification of theory — and it's what `convergenceOrder` in our `odes.ts` shared module does. We verified empirically: $1.007$ for Euler, $4.014$ for RK4, both within rounding of theory.
+</TheoremBlock>
+
+![Log-log convergence plot showing global error vs. step size for Euler (slope 1), midpoint (slope 2), and RK4 (slope 4)](/images/topics/numerical-odes/convergence-order.png)
+
+## 10. Computational Notes
+
+Some practical guidance for using ODE solvers in Python and PyTorch.
+
+**`scipy.integrate.solve_ivp`** is the standard SciPy interface. It supports several methods via the `method` argument:
+- `'RK45'` (default) — Dormand-Prince adaptive 4(5) embedded pair. Best for non-stiff problems with moderate accuracy needs ($10^{-3}$ to $10^{-9}$).
+- `'RK23'` — lower-order adaptive (2/3). Faster per step but takes more steps. Use when you only need rough accuracy.
+- `'DOP853'` — Dormand-Prince 8(5,3). Higher-order; best for very high accuracy ($10^{-9}$ or smaller) on smooth problems.
+- `'Radau'` — implicit Runge-Kutta of Radau IIA family, order 5, A-stable. Use for stiff problems.
+- `'BDF'` — implicit multistep (Backward Differentiation Formulas). Use for stiff problems with moderate accuracy needs. The standard solver in many engineering codes.
+- `'LSODA'` — automatic stiffness detection, switching between Adams and BDF. Use when you don't know if your problem is stiff.
+
+Pass `dense_output=True` to get an interpolation function $y(t)$ defined on the entire interval (not just at the solver's chosen grid points). This uses the solver's internal interpolation and is much more accurate than re-solving on a finer grid.
+
+**Initial step size estimation:** if you don't pass `first_step`, scipy estimates it via $h_0 \approx \|f(t_0, y_0)\|^{-1} \cdot \text{tol}^{1/(p+1)}$. This is a rough formula but usually good enough; the adaptive controller will refine $h$ within the first few steps.
+
+**`torchdiffeq`** is the PyTorch library for differentiable ODE solvers (Chen et al., 2018). It exposes `odeint(func, y0, t, method=..., rtol=..., atol=...)` with methods including `'dopri5'` (Dormand-Prince), `'rk4'` (fixed-step RK4), `'euler'`, and adaptive implicit methods. It supports both *direct* backpropagation through solver steps and the *adjoint* method (`odeint_adjoint`) which solves a backward-in-time ODE for the gradients — using $O(1)$ memory instead of $O(N)$ where $N$ is the number of solver steps. The adjoint method is what makes neural ODEs scalable.
+
+**`diffrax`** is the JAX equivalent (Patrick Kidger), with a richer API and support for stochastic ODEs, controlled differential equations, and PDEs via method of lines.
+
+**Diagnosing stiffness in production code:** if your explicit-method solve is taking many small steps and you suspect stiffness, compute the Jacobian eigenvalues at a few representative points along the trajectory. If the spectral radius times the typical step size exceeds the stability region radius (around 2.78 for RK4), you're hitting the stability boundary, not the accuracy boundary. Switch to an implicit method.
+
+**A common pitfall:** training a neural ODE with too-loose tolerance can introduce *biased gradients*. The adjoint method computes gradients by solving a backward ODE, and if the forward solver was inaccurate, the backward solver inherits that error. Set `rtol` and `atol` tight enough that the gradient noise from solver error is smaller than the gradient noise from the data. A good starting point: $\text{rtol} = 10^{-5}$, $\text{atol} = 10^{-7}$.
+
+## 11. Connections to ML
+
+The numerical methods of this topic are not just mathematical curiosities — they are the computational engine of several active areas of deep learning. Four connections, each substantive enough to be its own research program.
+
+<TheoremBlock type="example" number={16} title="Neural ODEs — the forward pass as an IVP">
+A **neural ODE** (Chen, Rubanova, Bettencourt and Duvenaud, 2018) defines a continuous-depth network: instead of stacking discrete layers $h_{l+1} = \sigma(W_l h_l + b_l)$, the network is parameterized as
+$$\frac{d\mathbf{h}}{dt} = f_\theta(\mathbf{h}(t), t), \qquad \mathbf{h}(0) = \mathbf{x}, \qquad \mathbf{h}(T) = \text{output},$$
+where $f_\theta$ is a neural network and $T$ is a fixed integration time (the analog of "depth"). The forward pass is *literally* an IVP solve: compute $\mathbf{h}(T)$ from $\mathbf{h}(0)$ using an adaptive ODE solver, typically Dormand-Prince RK45 (`torchdiffeq.odeint(f, h0, t=[0, T], method='dopri5')`).
+
+The backward pass is even more interesting. Naive backprop through solver steps would require storing all intermediate $\mathbf{h}(t_i)$ — memory that grows with the number of steps the adaptive solver takes. Chen et al.'s **adjoint method** instead solves a *backward-in-time* ODE for the gradients $d\mathcal{L}/d\theta$, using a result from optimal control theory (Pontryagin's maximum principle). The backward solve uses $O(1)$ memory because it only needs $\mathbf{h}(T)$ and the loss gradient at $T$ — everything else is reconstructed by integrating backwards.
+
+The choice of solver matters. `'dopri5'` (adaptive) concentrates computation in regions of rapid change in $\mathbf{h}$ — good for problems with localized features. `'rk4'` (fixed-step) is simpler and gives reproducible step counts but wastes effort on smooth regions. `'euler'` (Euler's method, fixed-step) reproduces the discrete ResNet exactly when the step size equals 1 — making explicit the "ResNet = discretized neural ODE" correspondence.
+
+Already referenced in [First-Order ODEs & Existence Theorems](/topics/first-order-odes) Section 11. Now you understand why the ODE solver theory matters: the solver's order $p$ determines the gradient accuracy of training, and the solver's stability region determines whether you can train networks with stiff dynamics at all.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={17} title="Gradient descent as forward Euler">
+Recall the **gradient flow** ODE from Topic 23:
+$$\dot{\boldsymbol\theta} = -\nabla L(\boldsymbol\theta), \qquad \boldsymbol\theta(0) = \boldsymbol\theta_0.$$
+This is the continuous-time analog of an optimizer that always moves in the steepest-descent direction. Its equilibria are the critical points of $L$, and its asymptotic stability properties (which we analyzed via Hessian eigenvalues in Topic 23) match the convergence properties of optimization methods.
+
+Now apply forward Euler with step size $\eta$:
+$$\boldsymbol\theta_{n+1} = \boldsymbol\theta_n + \eta \cdot (-\nabla L(\boldsymbol\theta_n)) = \boldsymbol\theta_n - \eta \nabla L(\boldsymbol\theta_n).$$
+This is **gradient descent** with learning rate $\eta$. Gradient descent is *literally* forward Euler applied to the gradient flow. Every theorem we proved about Euler's method applies directly:
+
+- **Local truncation error** $\tau = (\eta^2/2)\ddot{\boldsymbol\theta} = -(\eta^2/2)\nabla^2 L \cdot \nabla L$ — error per step depends on the Hessian times the gradient.
+- **Stability condition** for the test problem $\dot\theta = -\lambda \theta$ requires $\eta < 2/\lambda$. Translating: at a quadratic minimum where the loss looks like $L(\theta) \approx (1/2) \lambda (\theta - \theta^*)^2$, gradient descent is stable iff $\eta < 2/\lambda$. This is the well-known "learning rate must be less than 2/L where L is the smoothness constant" rule from the optimization literature — it's just the forward Euler stability constraint.
+- **Higher-order methods** correspond to richer optimizers. **Heavy-ball / Polyak momentum** is a discretization of the second-order ODE $\ddot\theta + \mu\dot\theta = -\nabla L$ — a damped harmonic oscillator with the gradient as a forcing term. **Nesterov's accelerated method** is also a discretization of a second-order ODE, specifically $\ddot\theta + (3/t)\dot\theta + \nabla L(\theta) = 0$ (Su, Boyd & Candès 2014) — the $3/t$ damping term is the continuous-time origin of Nesterov's accelerated $O(1/k^2)$ convergence rate, compared to plain GD's $O(1/k)$. **Adam** is more elaborate: its per-coordinate adaptive step size is closely related to adaptive step-size control in ODE solvers (though Adam adapts based on gradient *magnitudes*, not error estimates).
+
+This was already set up in [Stability & Dynamical Systems](/topics/stability-dynamics) Section 9. Now we have the full picture: the entire field of optimization is the field of numerical ODE methods applied to one specific equation — the gradient flow.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={7} title="Stiffness in training — condition number as stiffness ratio">
+A loss landscape with a poorly-conditioned Hessian — eigenvalue ratio $\lambda_{\max}/\lambda_{\min} \gg 1$ — is a *stiff* problem for gradient descent. The fast eigendirection requires a small learning rate ($\eta < 2/\lambda_{\max}$) for stability, but the slow eigendirection then takes $\sim \lambda_{\max}/\lambda_{\min}$ iterations to converge. **The condition number of the Hessian is exactly the stiffness ratio of the gradient flow.**
+
+This is why ill-conditioned losses are slow to train. Standard SGD is forward Euler — an explicit method — and inherits all of the explicit-method limitations on stiff problems. The remedies parallel those of stiff ODE solving:
+
+- **Preconditioning** (as in natural gradient, KFAC, Shampoo) reshapes the Hessian to reduce its condition number. Mathematically, this is changing variables in the gradient flow to make the system *non-stiff*. Computationally, it costs more per step (you have to invert or factor a preconditioner) but the steps can be much larger.
+- **Implicit methods** for optimization (proximal gradient, mirror descent with implicit updates) take large stable steps even on ill-conditioned losses. The cost is solving an implicit equation per step — typically a small inner optimization. On strongly convex problems, implicit gradient descent has *no* learning-rate stability constraint, just like implicit Euler.
+- **Adam and related adaptive methods** approximate per-coordinate preconditioning. Their effective stiffness ratio is the condition number after the per-coordinate rescaling, often much better than the raw Hessian's. This is why Adam works well on transformer training where the raw Hessian condition number can exceed $10^{10}$.
+
+The field of optimization is rediscovering numerical analysis lessons from the 1960s. Hairer-Wanner Vol II (the stiff-ODE bible) is, in a real sense, the textbook for designing optimizers that handle ill-conditioned losses. The ML and numerical analysis communities are slowly converging on this realization.
+</TheoremBlock>
+
+<NeuralODEExplorer client:visible />
+
+## 12. Connections & Further Reading
+
+This is the **fourth and final topic** in Track 6 — Ordinary Differential Equations. With this topic the entire ODE track is published: existence (Picard-Lindelöf), structure (matrix exponential), qualitative behavior (Lyapunov, bifurcation), and now computation (Runge-Kutta, adaptive solvers, implicit methods, convergence theory). The shared `odes.ts` utility module reaches its final form with 39 exports — 17 interfaces and 22 functions — that powered every interactive visualization across all four topics.
+
+The conceptual arc of the track: Topic 21 asked *does a solution exist?* Topic 22 asked *what does it look like for linear systems?* Topic 23 asked *how does it behave qualitatively for nonlinear systems?* Topic 24 asks *how do we actually compute it?* Each question depends on the previous ones, and each answer brings us closer to the computational reality that ML practitioners actually face.
+
+**Within formalCalculus:**
+- [First-Order ODEs & Existence Theorems](/topics/first-order-odes) — Euler's method and RK4 were introduced here as computational tools. This topic provides the full error analysis (Theorems 1 and 2), explains why RK4 is order 4, and proves convergence via the Lax equivalence theorem.
+- [Linear Systems & Matrix Exponential](/topics/linear-systems) — exact solutions $e^{At} \mathbf{y}_0$ serve as benchmarks for measuring numerical accuracy (Examples 14 and 15), and the test equation $y' = \lambda y$ is the foundation of all stability analysis (Section 5).
+- [Stability & Dynamical Systems](/topics/stability-dynamics) — numerical stability mirrors continuous-time stability. The stiffness ratio is computed from the Jacobian eigenvalues using the same tools as the linearization stability theorem; the `stiffnessDetector` function in `odes.ts` literally reuses `eigenDecomposition2x2` from Topic 22.
+- [Mean Value Theorem & Taylor Expansion](/topics/mean-value-taylor) — Taylor expansion is the fundamental engine for deriving the local truncation error of every method, including the explicit calculation $\tau_n = (h^2/2) y''(\xi_n)$ for Euler (Section 2) and the order conditions for RK4 (Section 3).
+- **Metric Spaces & Topology** *(coming soon)* — the contraction mapping theorem in general complete metric spaces is the abstract reason Newton iteration in implicit methods (Section 7) converges. It generalizes the Picard contraction from Topic 21 to a setting where the unknowns aren't functions but states.
+
+**Forward to formalml.com:**
+- [Random Walks](https://formalml.com/topics/random-walks) — discrete-time approximation of continuous diffusion processes. The convergence theory developed here (consistency, stability, Lax equivalence) is the analytical framework for understanding when discrete random walks approximate continuous SDEs and at what rate. The numerical analysis of stochastic ODEs (Euler-Maruyama, Milstein, stochastic Runge-Kutta) is a direct generalization of the deterministic theory in this topic, with extra care for the fact that Brownian increments scale like $\sqrt{h}$ rather than $h$.

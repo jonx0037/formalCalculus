@@ -28,7 +28,7 @@
     { "id": "first-order-odes", "label": "First-Order ODEs & Existence Theorems", "domain": "odes", "status": "published", "url": "/topics/first-order-odes" },
     { "id": "linear-systems", "label": "Linear Systems & Matrix Exponential", "domain": "odes", "status": "published", "url": "/topics/linear-systems" },
     { "id": "stability-dynamics", "label": "Stability & Dynamical Systems", "domain": "odes", "status": "published", "url": "/topics/stability-dynamics" },
-    { "id": "numerical-odes", "label": "Numerical Methods for ODEs", "domain": "odes", "status": "planned", "url": "/topics/numerical-odes" },
+    { "id": "numerical-odes", "label": "Numerical Methods for ODEs", "domain": "odes", "status": "published", "url": "/topics/numerical-odes" },
 
     { "id": "sigma-algebras", "label": "Sigma-Algebras & Measures", "domain": "measure-integration", "status": "planned", "url": "/topics/sigma-algebras" },
     { "id": "lebesgue-integral", "label": "The Lebesgue Integral", "domain": "measure-integration", "status": "planned", "url": "/topics/lebesgue-integral" },
