@@ -205,10 +205,14 @@ export default function VariationOfParametersExplorer() {
     [width, freeResponse, forcedResponse, totalResponse, shouldShow],
   );
 
-  // ── D3: y1(t) time series (center panel) ────────────────────
+  // ── Shared time series rendering helper ──────────────────────
 
-  const y1Ref = useD3<SVGSVGElement>(
-    (svg) => {
+  const renderTimeSeriesPanel = useCallback(
+    (
+      svg: d3.Selection<SVGSVGElement, unknown, null, undefined>,
+      yKey: 'y1' | 'y2',
+      label: string,
+    ) => {
       svg.selectAll('*').remove();
       if (width === 0) return;
 
@@ -226,14 +230,13 @@ export default function VariationOfParametersExplorer() {
 
       const tRange = preset.domain.t;
 
-      // Gather y1 values for domain
-      const allY1: number[] = [];
-      if (shouldShow('free')) allY1.push(...freeResponse.y1);
-      if (shouldShow('forced')) allY1.push(...forcedResponse.y1);
-      if (shouldShow('total')) allY1.push(...totalResponse.y1);
-      if (allY1.length === 0) allY1.push(-1, 1);
+      const allY: number[] = [];
+      if (shouldShow('free')) allY.push(...freeResponse[yKey]);
+      if (shouldShow('forced')) allY.push(...forcedResponse[yKey]);
+      if (shouldShow('total')) allY.push(...totalResponse[yKey]);
+      if (allY.length === 0) allY.push(-1, 1);
 
-      const yExt = [d3.min(allY1) ?? -1, d3.max(allY1) ?? 1] as [number, number];
+      const yExt = [d3.min(allY) ?? -1, d3.max(allY) ?? 1] as [number, number];
       const yPad = (yExt[1] - yExt[0]) * 0.15 || 1;
 
       const xScale = d3.scaleLinear().domain(tRange).range([0, innerW]);
@@ -265,9 +268,9 @@ export default function VariationOfParametersExplorer() {
         .attr('text-anchor', 'middle')
         .style('font-size', '11px')
         .style('fill', '#374151')
-        .text('y\u2081(t)');
+        .text(label);
 
-      const drawTimeSeries = (
+      const drawCurve = (
         tArr: number[],
         yArr: number[],
         color: string,
@@ -289,111 +292,30 @@ export default function VariationOfParametersExplorer() {
       };
 
       if (shouldShow('free')) {
-        drawTimeSeries(freeResponse.t, freeResponse.y1, COLORS.free, '6,3', 1.8);
+        drawCurve(freeResponse.t, freeResponse[yKey], COLORS.free, '6,3', 1.8);
       }
       if (shouldShow('forced')) {
-        drawTimeSeries(forcedResponse.t, forcedResponse.y1, COLORS.forced, '3,3', 1.8);
+        drawCurve(forcedResponse.t, forcedResponse[yKey], COLORS.forced, '3,3', 1.8);
       }
       if (shouldShow('total')) {
-        drawTimeSeries(totalResponse.t, totalResponse.y1, COLORS.total, '', 2.2);
+        drawCurve(totalResponse.t, totalResponse[yKey], COLORS.total, '', 2.2);
       }
     },
     [width, freeResponse, forcedResponse, totalResponse, shouldShow, preset],
   );
 
+  // ── D3: y1(t) time series (center panel) ────────────────────
+
+  const y1Ref = useD3<SVGSVGElement>(
+    (svg) => renderTimeSeriesPanel(svg, 'y1', 'y\u2081(t)'),
+    [renderTimeSeriesPanel],
+  );
+
   // ── D3: y2(t) time series (right panel) ─────────────────────
 
   const y2Ref = useD3<SVGSVGElement>(
-    (svg) => {
-      svg.selectAll('*').remove();
-      if (width === 0) return;
-
-      const panelW = Math.max(0, width / 3 - 10);
-      const panelH = Math.min(panelW, 320);
-      const innerW = panelW - margin.left - margin.right;
-      const innerH = panelH - margin.top - margin.bottom;
-      if (innerW <= 0 || innerH <= 0) return;
-
-      svg.attr('width', panelW).attr('height', panelH);
-
-      const g = svg
-        .append('g')
-        .attr('transform', `translate(${margin.left},${margin.top})`);
-
-      const tRange = preset.domain.t;
-
-      const allY2: number[] = [];
-      if (shouldShow('free')) allY2.push(...freeResponse.y2);
-      if (shouldShow('forced')) allY2.push(...forcedResponse.y2);
-      if (shouldShow('total')) allY2.push(...totalResponse.y2);
-      if (allY2.length === 0) allY2.push(-1, 1);
-
-      const yExt = [d3.min(allY2) ?? -1, d3.max(allY2) ?? 1] as [number, number];
-      const yPad = (yExt[1] - yExt[0]) * 0.15 || 1;
-
-      const xScale = d3.scaleLinear().domain(tRange).range([0, innerW]);
-      const yScale = d3
-        .scaleLinear()
-        .domain([yExt[0] - yPad, yExt[1] + yPad])
-        .range([innerH, 0]);
-
-      g.append('g')
-        .attr('transform', `translate(0,${innerH})`)
-        .call(d3.axisBottom(xScale).ticks(5))
-        .selectAll('text')
-        .style('font-size', '10px');
-      g.call(d3.axisLeft(yScale).ticks(5))
-        .selectAll('text')
-        .style('font-size', '10px');
-
-      g.append('text')
-        .attr('x', innerW / 2)
-        .attr('y', innerH + 32)
-        .attr('text-anchor', 'middle')
-        .style('font-size', '11px')
-        .style('fill', '#374151')
-        .text('t');
-
-      g.append('text')
-        .attr('x', innerW / 2)
-        .attr('y', -8)
-        .attr('text-anchor', 'middle')
-        .style('font-size', '11px')
-        .style('fill', '#374151')
-        .text('y\u2082(t)');
-
-      const drawTimeSeries = (
-        tArr: number[],
-        yArr: number[],
-        color: string,
-        dash: string,
-        strokeWidth: number,
-      ) => {
-        const pts = tArr.map((t, i) => ({ t, y: yArr[i] }));
-        const line = d3
-          .line<{ t: number; y: number }>()
-          .x((d) => xScale(d.t))
-          .y((d) => yScale(d.y))
-          .defined((d) => isFinite(d.y));
-        g.append('path')
-          .attr('d', line(pts))
-          .style('fill', 'none')
-          .style('stroke', color)
-          .style('stroke-width', strokeWidth)
-          .style('stroke-dasharray', dash);
-      };
-
-      if (shouldShow('free')) {
-        drawTimeSeries(freeResponse.t, freeResponse.y2, COLORS.free, '6,3', 1.8);
-      }
-      if (shouldShow('forced')) {
-        drawTimeSeries(forcedResponse.t, forcedResponse.y2, COLORS.forced, '3,3', 1.8);
-      }
-      if (shouldShow('total')) {
-        drawTimeSeries(totalResponse.t, totalResponse.y2, COLORS.total, '', 2.2);
-      }
-    },
-    [width, freeResponse, forcedResponse, totalResponse, shouldShow, preset],
+    (svg) => renderTimeSeriesPanel(svg, 'y2', 'y\u2082(t)'),
+    [renderTimeSeriesPanel],
   );
 
   // ── JSX ─────────────────────────────────────────────────────

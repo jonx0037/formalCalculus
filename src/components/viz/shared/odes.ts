@@ -517,10 +517,11 @@ export function eigenDecomposition2x2(A: Matrix2x2): EigenResult2x2 {
   const tau = A.a11 + A.a22; // trace
   const delta = A.a11 * A.a22 - A.a12 * A.a21; // determinant
   const disc = tau * tau - 4 * delta;
+  const EPS = 1e-10;
 
-  if (disc >= 0) {
-    // Real eigenvalues
-    const sqrtDisc = Math.sqrt(disc);
+  if (disc > -EPS) {
+    // Real eigenvalues (or repeated — treat |disc| < EPS as zero)
+    const sqrtDisc = disc > 0 ? Math.sqrt(disc) : 0;
     const lam1 = (tau + sqrtDisc) / 2;
     const lam2 = (tau - sqrtDisc) / 2;
 
@@ -533,14 +534,15 @@ export function eigenDecomposition2x2(A: Matrix2x2): EigenResult2x2 {
       const r3 = A.a21;
       const r4 = A.a22 - lam;
 
+      // Pick the non-zero row of (A - λI) to derive the eigenvector.
+      // Check row 2 first — more robust for defective/upper-triangular matrices.
       let v: [number, number];
-      if (Math.abs(r2) > 1e-12) {
-        v = [-r2, r1];
-      } else if (Math.abs(r4) > 1e-12) {
+      if (Math.abs(r3) > 1e-12 || Math.abs(r4) > 1e-12) {
         v = [-r4, r3];
-      } else if (Math.abs(r1) > 1e-12) {
-        v = [0, 1];
+      } else if (Math.abs(r1) > 1e-12 || Math.abs(r2) > 1e-12) {
+        v = [-r2, r1];
       } else {
+        // A - λI = 0 → λI case; any vector is an eigenvector
         v = [1, 0];
       }
 
@@ -612,8 +614,10 @@ export function classifyPhasePortrait(A: Matrix2x2): PhasePortraitClassification
       type = tau < 0 ? 'stable-spiral' : 'unstable-spiral';
     }
   } else {
-    // Repeated eigenvalue (disc ≈ 0)
-    type = tau < 0 ? 'stable-node' : tau > 0 ? 'unstable-node' : 'degenerate';
+    // Repeated eigenvalue boundary (disc ≈ 0). Classified as degenerate
+    // so it matches the lesson text and presets — the transition between
+    // node and spiral passes through a defective (degenerate) node.
+    type = 'degenerate';
   }
 
   return { type, trace: tau, determinant: delta, discriminant: disc };
@@ -750,11 +754,11 @@ function matExpSeries(
   ];
 
   // Running power (At)^k / k!
-  let term: number[][] = [[1, 0], [0, 1]]; // k=0 term = I
-  let sum: number[][] = [[1, 0], [0, 1]];
+  let term: number[][] = I.map((row) => [...row]);
+  let sum: number[][] = I.map((row) => [...row]);
 
   const partials: number[][][] | undefined = returnPartials
-    ? [[[1, 0], [0, 1]]]
+    ? [I.map((row) => [...row])]
     : undefined;
 
   for (let k = 1; k <= N; k++) {

@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import * as d3 from 'd3';
 import { useResizeObserver } from './shared/useResizeObserver';
 import { useD3 } from './shared/useD3';
@@ -31,22 +31,18 @@ export default function MatrixExponentialExplorer() {
   const [nTerms, setNTerms] = useState(MAX_N);
   const [isPlaying, setIsPlaying] = useState(false);
 
-  const playN = useRef(0);
-
   // ── Animation ─────────────────────────────────────────────
 
   useEffect(() => {
     if (!isPlaying) return;
-    playN.current = nTerms;
     const interval = setInterval(() => {
-      playN.current += 1;
-      if (playN.current > MAX_N) {
-        playN.current = MAX_N;
-        setIsPlaying(false);
-        setNTerms(MAX_N);
-        return;
-      }
-      setNTerms(playN.current);
+      setNTerms((currentN) => {
+        if (currentN >= MAX_N) {
+          setIsPlaying(false);
+          return MAX_N;
+        }
+        return currentN + 1;
+      });
     }, 300);
     return () => clearInterval(interval);
   }, [isPlaying]);
@@ -55,10 +51,8 @@ export default function MatrixExponentialExplorer() {
     if (isPlaying) {
       setIsPlaying(false);
     } else {
-      // If already at max, restart from 0
       if (nTerms >= MAX_N) {
         setNTerms(0);
-        playN.current = 0;
       }
       setIsPlaying(true);
     }

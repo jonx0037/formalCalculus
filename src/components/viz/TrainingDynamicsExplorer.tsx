@@ -114,21 +114,26 @@ export default function TrainingDynamicsExplorer() {
     return levels;
   }, [lam1, lam2, theta0]);
 
+  // ── Shared layout dimensions (avoids duplication) ───────────
+
+  const layout = useMemo(() => {
+    const leftPanelW = Math.max(0, (width * 0.55) - 4);
+    const totalH = Math.min(Math.max(width * 0.45, 280), 400);
+    const innerW = leftPanelW - margin.left - margin.right;
+    const innerH = totalH - margin.top - margin.bottom;
+    const bound = Math.max(Math.abs(theta0[0]), Math.abs(theta0[1]), 2) * 1.5;
+    return { leftPanelW, totalH, innerW, innerH, bound };
+  }, [width, theta0]);
+
   // ── Click handler for contour plot ──────────────────────────
 
   const handleContourClick = useCallback(
     (e: MouseEvent<SVGSVGElement>) => {
-      const svgEl = e.currentTarget;
-      const rect = svgEl.getBoundingClientRect();
-      const leftPanelW = Math.max(0, (width * 0.55) - 4);
-      const innerW = leftPanelW - margin.left - margin.right;
-      const totalH = Math.min(Math.max(width * 0.45, 280), 400);
-      const innerH = totalH - margin.top - margin.bottom;
+      const { innerW, innerH, bound } = layout;
       if (innerW <= 0 || innerH <= 0) return;
 
-      // Determine the plot bounds from theta0 range
-      const bound = Math.max(Math.abs(theta0[0]), Math.abs(theta0[1]), 2) * 1.5;
-
+      const svgEl = e.currentTarget;
+      const rect = svgEl.getBoundingClientRect();
       const xPx = e.clientX - rect.left - margin.left;
       const yPx = e.clientY - rect.top - margin.top;
 
@@ -147,7 +152,7 @@ export default function TrainingDynamicsExplorer() {
         ]);
       }
     },
-    [width, theta0],
+    [layout],
   );
 
   // ── D3: Contour plot (left panel) ───────────────────────────
@@ -157,10 +162,7 @@ export default function TrainingDynamicsExplorer() {
       svg.selectAll('*').remove();
       if (width === 0) return;
 
-      const leftPanelW = Math.max(0, (width * 0.55) - 4);
-      const totalH = Math.min(Math.max(width * 0.45, 280), 400);
-      const innerW = leftPanelW - margin.left - margin.right;
-      const innerH = totalH - margin.top - margin.bottom;
+      const { leftPanelW, totalH, innerW, innerH, bound } = layout;
       if (innerW <= 0 || innerH <= 0) return;
 
       svg.attr('width', leftPanelW).attr('height', totalH);
@@ -168,9 +170,6 @@ export default function TrainingDynamicsExplorer() {
       const g = svg
         .append('g')
         .attr('transform', `translate(${margin.left},${margin.top})`);
-
-      // Plot domain
-      const bound = Math.max(Math.abs(theta0[0]), Math.abs(theta0[1]), 2) * 1.5;
       const xScale = d3.scaleLinear().domain([-bound, bound]).range([0, innerW]);
       const yScale = d3.scaleLinear().domain([-bound, bound]).range([innerH, 0]);
 
