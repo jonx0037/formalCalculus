@@ -239,9 +239,9 @@ export function getBifurcationPresets(): BifurcationPreset[] {
       name: 'saddle-node',
       label: 'Saddle-Node: ẋ = μ − x²',
       type: 'saddle-node',
-      f: (y1, _y2, mu) => [
+      f: (y1, y2, mu) => [
         mu - y1 * y1,
-        -_y2,
+        -y2,
       ],
       equilibria: (mu) => {
         if (mu < 0) return [];

@@ -13,6 +13,8 @@ const TRAJECTORY_COLORS = ['#2563EB', '#DC2626', '#059669'];
 interface TrajectoryResult {
   positions: Array<[number, number]>;
   lossValues: number[];
+  /** Time or iteration values for the x-axis */
+  timeValues: number[];
   isContinuous: boolean;
 }
 
@@ -60,6 +62,7 @@ export default function TrainingStabilityExplorer() {
     (x0: number, y0: number): TrajectoryResult => {
       const positions: Array<[number, number]> = [[x0, y0]];
       const lossValues: number[] = [preset.loss(x0, y0)];
+      const timeValues: number[] = [0];
       let x = x0;
       let y = y0;
       const maxSteps = isContinuous ? 2000 : 500;
@@ -82,9 +85,11 @@ export default function TrainingStabilityExplorer() {
 
         positions.push([x, y]);
         lossValues.push(preset.loss(x, y));
+        // In continuous mode, x-axis is time = (k+1) * dt; in discrete mode, it's iteration index
+        timeValues.push(isContinuous ? (k + 1) * eta : k + 1);
       }
 
-      return { positions, lossValues, isContinuous };
+      return { positions, lossValues, timeValues, isContinuous };
     },
     [preset, learningRate, isContinuous, addNoise],
   );
@@ -228,10 +233,11 @@ export default function TrainingStabilityExplorer() {
         .append('g').attr('transform', `translate(${margin.left},${margin.top})`);
 
       const allLoss = trajectories.flatMap((t) => t.lossValues.filter(isFinite));
-      const maxIter = Math.max(...trajectories.map((t) => t.lossValues.length));
+      const allTime = trajectories.flatMap((t) => t.timeValues.filter(isFinite));
+      const maxTime = Math.max(...allTime, 1);
       const maxLoss = Math.max(...allLoss, 0.01);
 
-      const xScale = d3.scaleLinear().domain([0, maxIter]).range([0, innerW]);
+      const xScale = d3.scaleLinear().domain([0, maxTime]).range([0, innerW]);
       const yScale = d3.scaleLinear().domain([0, maxLoss * 1.1]).range([innerH, 0]);
 
       g.append('g').attr('transform', `translate(0,${innerH})`).call(d3.axisBottom(xScale).ticks(5))
@@ -252,9 +258,9 @@ export default function TrainingStabilityExplorer() {
         .defined((d) => isFinite(d[1]));
 
       for (let i = 0; i < trajectories.length; i++) {
-        const { lossValues } = trajectories[i];
+        const { lossValues, timeValues } = trajectories[i];
         const color = TRAJECTORY_COLORS[i % TRAJECTORY_COLORS.length];
-        const pts: [number, number][] = lossValues.map((v, j) => [j, v]);
+        const pts: [number, number][] = lossValues.map((v, j) => [timeValues[j], v]);
 
         g.append('path').datum(pts).attr('d', lineGen)
           .style('fill', 'none').style('stroke', color)
