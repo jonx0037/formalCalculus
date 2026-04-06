@@ -429,7 +429,7 @@ The loss decreases monotonically along the flow — the continuous-time version 
 
 ### 9.2 Neural ODEs
 
-Chen et al. (2018) observed that a residual network $h_{t+1} = h_t + f_\theta(h_t, t)$ (where $t$ indexes layers, not time) is the Euler discretization of $\dot{h}(t) = f_\theta(h(t), t)$. Replacing discrete layers with the continuous ODE yields a **neural ODE**: the forward pass solves the IVP $\dot{h} = f_\theta(h, t)$, $h(0) = x$ using a black-box ODE solver (Runge-Kutta, adaptive stepping — **Numerical Methods for ODEs** *(coming soon)*).
+Chen et al. (2018) observed that a residual network $h_{t+1} = h_t + f_\theta(h_t, t)$ (where $t$ indexes layers, not time) is the Euler discretization of $\dot{h}(t) = f_\theta(h(t), t)$. Replacing discrete layers with the continuous ODE yields a **neural ODE**: the forward pass solves the IVP $\dot{h} = f_\theta(h, t)$, $h(0) = x$ using a black-box ODE solver (Runge-Kutta, adaptive stepping — see [Numerical Methods for ODEs](/topics/numerical-odes)).
 
 The Picard-Lindelöf theorem guarantees the forward pass has a unique solution when $f_\theta$ is Lipschitz in $h$, which holds when the network weights are bounded. Memory cost is $O(1)$ regardless of depth (the ODE solver stores only the current state), whereas a residual network with $L$ layers incurs $O(L)$ memory cost.
 
@@ -463,7 +463,7 @@ The Picard iteration $y_{n+1} = T(y_n)$ converges to a fixed point of the operat
 
 ## 11. Connections & Further Reading
 
-This is the **first of four topics** in the Ordinary Differential Equations track. The track progresses from first-order scalar equations (this topic) to systems and the matrix exponential (**Linear Systems & Matrix Exponential** *(coming soon)*), to qualitative analysis of equilibria and stability ([Stability & Dynamical Systems](/topics/stability-dynamics)), and finally to numerical methods (**Numerical Methods for ODEs** *(coming soon)*). The thread connecting them all is the interplay between *existence* (does a solution exist?), *structure* (what does the solution look like?), and *computation* (how do we find it?).
+This is the **first of four topics** in the Ordinary Differential Equations track. The track progresses from first-order scalar equations (this topic) to systems and the matrix exponential ([Linear Systems & Matrix Exponential](/topics/linear-systems)), to qualitative analysis of equilibria and stability ([Stability & Dynamical Systems](/topics/stability-dynamics)), and finally to numerical methods ([Numerical Methods for ODEs](/topics/numerical-odes)). The thread connecting them all is the interplay between *existence* (does a solution exist?), *structure* (what does the solution look like?), and *computation* (how do we find it?).
 
 **Prerequisites used in this topic:**
 
@@ -478,5 +478,5 @@ This is the **first of four topics** in the Ordinary Differential Equations trac
 
 - [**Linear Systems & Matrix Exponential**](/topics/linear-systems) — systems $\mathbf{y}' = A\mathbf{y}$ generalize scalar linear equations; the matrix exponential $e^{At}$ extends the scalar solution $e^{at}$
 - [Stability & Dynamical Systems](/topics/stability-dynamics) — phase portraits and Lyapunov stability classify the long-time behavior near equilibria
-- **Numerical Methods for ODEs** *(coming soon)* — Euler's method is the simplest discretization; RK4 and adaptive methods are the workhorses
+- [Numerical Methods for ODEs](/topics/numerical-odes) — Euler's method is the simplest discretization; RK4 and adaptive methods are the workhorses
 - **Metric Spaces & Topology** *(coming soon)* — the contraction mapping theorem in general complete metric spaces abstracts the pattern from this topic and the IFT
