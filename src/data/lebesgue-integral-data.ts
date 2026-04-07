@@ -63,9 +63,23 @@ export interface FubiniScenario {
   description: string;
   /** The function f: [0,1]^2 → ℝ. */
   f: (x: number, y: number) => number;
-  /** ∫∫ f dx dy — integrate x first, then y. null if it does not exist. */
+  /**
+   * ∫₀¹ (∫₀¹ f(x, y) dy) dx — innermost differential is dy, so y is integrated
+   * first (for each fixed x) and then x. Written ∫∫ f dy dx in the inner-first
+   * convention. null if the integral does not exist.
+   *
+   * The field is named XY because x is the *outer* variable. This matches the
+   * label "∫∫ f dy dx" in the FubiniProductIntegralExplorer UI.
+   */
   iteratedXY: number | null;
-  /** ∫∫ f dy dx — integrate y first, then x. null if it does not exist. */
+  /**
+   * ∫₀¹ (∫₀¹ f(x, y) dx) dy — innermost differential is dx, so x is integrated
+   * first (for each fixed y) and then y. Written ∫∫ f dx dy in the inner-first
+   * convention. null if the integral does not exist.
+   *
+   * The field is named YX because y is the *outer* variable. This matches the
+   * label "∫∫ f dx dy" in the FubiniProductIntegralExplorer UI.
+   */
   iteratedYX: number | null;
   /** ∫ f d(λ × λ) — the product integral. null if f is not integrable in |·|. */
   productIntegral: number | null;
@@ -231,7 +245,11 @@ export function getMonotoneSequence(
         'The integrals climb from a small value toward 2 = ∫ f.',
       fn,
       limit: f,
-      dominator: null, // f itself is the supremum but is "dominator-free" in the usual sense
+      // f itself is an integrable dominator: f_n ≤ f pointwise (by construction
+      // of min(f, n) ≤ f) and ∫ f = 2 < ∞ on [0, 1], so DCT applies in addition
+      // to MCT. The MCT viz uses this scenario for its monotone-convergence
+      // framing, but downstream consumers can rely on dctApplies = true.
+      dominator: f,
       integralOfFn: (n) => {
         // ∫₀¹ min(1/√x, n) dx = (analytical) integrate min(1/√x, n) over [0, 1]:
         //   for x ∈ [0, 1/n²] the integrand is n; for x ∈ [1/n², 1] it is 1/√x.
@@ -242,7 +260,7 @@ export function getMonotoneSequence(
       },
       integralOfLimit,
       domain: [0, 1],
-      dctApplies: false,
+      dctApplies: true,
     };
   }
 
@@ -313,11 +331,17 @@ export function getMonotoneSequence(
  *
  * Three scenarios:
  *
- *  - 'riemann-lebesgue' (DCT succeeds):
- *      f_n(x) = sin(nx) / (1 + x²) on [0, 20]
+ *  - 'shrinking-sine' (DCT succeeds):
+ *      f_n(x) = sin(x/n) / (1 + x²) on [0, 20]
  *      g(x)   = 1 / (1 + x²)        — integrable, |f_n| ≤ g
- *      limit  f(x) = 0
- *      ∫ f_n → 0 by the Riemann-Lebesgue lemma.
+ *      limit  f(x) = 0  (since sin(x/n) → sin(0) = 0 pointwise)
+ *      ∫ f_n → 0 by DCT.
+ *
+ *      NOTE: an earlier draft used f_n(x) = sin(nx)/(1 + x²), but that sequence
+ *      does NOT converge pointwise as n → ∞ — sin(nx) oscillates forever — so
+ *      DCT does not apply to it. The integrals still go to 0, but by the
+ *      Riemann-Lebesgue lemma rather than DCT. This scenario uses sin(x/n)
+ *      which actually satisfies the DCT pointwise-convergence hypothesis.
  *
  *  - 'cosine-decay' (DCT succeeds):
  *      f_n(x) = cos(x/n) · e^(-x) on [0, 20]
@@ -342,18 +366,19 @@ export function getMonotoneSequence(
  *      ∫ f_n = 1 for every n, so ∫ f_n ↛ ∫ f = 0.
  */
 export function getDCTScenario(
-  scenario: 'riemann-lebesgue' | 'cosine-decay' | 'no-dominator',
+  scenario: 'shrinking-sine' | 'cosine-decay' | 'no-dominator',
 ): ConvergenceSequence {
-  if (scenario === 'riemann-lebesgue') {
-    const fn = (x: number, n: number) => Math.sin(n * x) / (1 + x * x);
+  if (scenario === 'shrinking-sine') {
+    const fn = (x: number, n: number) => Math.sin(x / n) / (1 + x * x);
     const g = (x: number) => 1 / (1 + x * x);
     return {
-      name: 'riemann-lebesgue',
+      name: 'shrinking-sine',
       description:
-        'f_n(x) = sin(nx) / (1 + x²). The oscillation frequency rises with n. ' +
-        'Pointwise limit is 0 (the oscillations cancel as n → ∞). ' +
-        'Dominator g(x) = 1 / (1 + x²) is integrable. DCT applies, and ' +
-        '∫ f_n → 0 = ∫ f by the Riemann-Lebesgue lemma.',
+        'f_n(x) = sin(x/n) / (1 + x²). As n → ∞ the argument x/n shrinks toward 0, ' +
+        'so sin(x/n) → sin(0) = 0 and f_n → 0 pointwise (not by oscillation cancellation, ' +
+        'but because the argument itself collapses). Dominator g(x) = 1 / (1 + x²) is ' +
+        'integrable on [0, ∞) with ∫ g = π/2, and |sin(x/n)| ≤ 1 gives |f_n| ≤ g. ' +
+        'DCT applies, and ∫ f_n → 0 = ∫ f.',
       fn,
       limit: () => 0,
       dominator: g,

@@ -16,12 +16,12 @@ const BAR_COLOR = '#4F46E5'; // indigo bars for integral history
 const BAR_LIMIT_COLOR = '#DC2626'; // red dashed line for ∫ f
 
 interface ScenarioOption {
-  id: 'riemann-lebesgue' | 'cosine-decay' | 'no-dominator';
+  id: 'shrinking-sine' | 'cosine-decay' | 'no-dominator';
   label: string;
 }
 
 const SCENARIOS: ScenarioOption[] = [
-  { id: 'riemann-lebesgue', label: 'DCT succeeds: sin(nx) / (1 + x²)' },
+  { id: 'shrinking-sine', label: 'DCT succeeds: sin(x/n) / (1 + x²)' },
   { id: 'cosine-decay', label: 'DCT succeeds: cos(x/n) · e^(−x)' },
   { id: 'no-dominator', label: 'DCT fails: spike sequence n · 1_{[0, 1/n]}' },
 ];
@@ -112,12 +112,22 @@ export default function DominatedConvergenceExplorer() {
     return false;
   }, [curve]);
 
-  // y-domain for the integral-history bar chart.
-  const integralYMax = useMemo(() => {
-    let m = Math.abs(scenario.integralOfLimit);
-    for (const { value } of integralHistory)
-      if (Number.isFinite(value) && Math.abs(value) > m) m = Math.abs(value);
-    return Math.max(m * 1.15, 0.5);
+  // y-domain for the integral-history bar chart. Includes 0 as a baseline and
+  // expands to whatever extreme values the integrals actually take — bars are
+  // drawn relative to y=0 so negative integrals (e.g. signed-integrand sequences)
+  // render correctly as downward bars instead of being silently clamped to 0.
+  const integralYExtent = useMemo<[number, number]>(() => {
+    let lo = Math.min(0, scenario.integralOfLimit);
+    let hi = Math.max(0, scenario.integralOfLimit);
+    for (const { value } of integralHistory) {
+      if (Number.isFinite(value)) {
+        if (value < lo) lo = value;
+        if (value > hi) hi = value;
+      }
+    }
+    const range = hi - lo;
+    const pad = Math.max(range * 0.12, 0.05);
+    return [lo - pad, hi + pad];
   }, [integralHistory, scenario.integralOfLimit]);
 
   // ── Render via useD3 ──────────────────────────────────────
@@ -316,8 +326,9 @@ export default function DominatedConvergenceExplorer() {
           .padding(0.18);
         const yScale = d3
           .scaleLinear()
-          .domain([0, integralYMax])
+          .domain(integralYExtent)
           .range([innerH, 0]);
+        const baselineY = yScale(0);
 
         g.append('text')
           .attr('x', innerW / 2)
@@ -344,20 +355,31 @@ export default function DominatedConvergenceExplorer() {
           .selectAll('text')
           .style('font-size', '9px');
 
-        // Bars
+        // Bars — drawn relative to the y=0 baseline so negative integrals
+        // render as downward bars rather than being clamped to 0.
         g.selectAll('rect.history-bar')
           .data(integralHistory)
           .enter()
           .append('rect')
           .attr('class', 'history-bar')
           .attr('x', (d) => xScale(d.k) ?? 0)
-          .attr('y', (d) => yScale(Math.max(0, d.value)))
+          .attr('y', (d) => Math.min(baselineY, yScale(d.value)))
           .attr('width', xScale.bandwidth())
-          .attr('height', (d) => Math.max(0, yScale(0) - yScale(Math.max(0, d.value))))
+          .attr('height', (d) => Math.abs(yScale(d.value) - baselineY))
           .style('fill', (d) => (d.k <= n ? BAR_COLOR : 'var(--color-surface-alt)'))
           .style('fill-opacity', (d) => (d.k <= n ? 0.85 : 0.35))
           .style('stroke', (d) => (d.k <= n ? BAR_COLOR : 'var(--color-border)'))
           .style('stroke-width', 0.6);
+
+        // y=0 baseline (subtle grey line)
+        g.append('line')
+          .attr('x1', 0)
+          .attr('x2', innerW)
+          .attr('y1', baselineY)
+          .attr('y2', baselineY)
+          .style('stroke', 'var(--color-text-muted)')
+          .style('stroke-width', 0.5)
+          .style('opacity', 0.4);
 
         // Dashed horizontal line at the limit value ∫ f
         g.append('line')
@@ -389,7 +411,7 @@ export default function DominatedConvergenceExplorer() {
       integralHistory,
       yMax,
       hasNegative,
-      integralYMax,
+      integralYExtent,
       totalWidth,
       totalHeight,
       panelW,

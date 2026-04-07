@@ -523,7 +523,7 @@ We need a dominator. Note that $|\sin(x/n)| \leq 1$ for every $x$ and $n$, so
 $$|f_n(x)| \;=\; \frac{|\sin(x/n)|}{x^2 + 1} \;\leq\; \frac{1}{x^2 + 1}.$$
 Set $g(x) = 1 / (x^2 + 1)$. Then $\int_0^\infty g(x) \, d\lambda = [\arctan(x)]_0^\infty = \pi/2 < \infty$, so $g$ is integrable. DCT applies, and
 $$\lim_{n \to \infty} \int_0^\infty \frac{\sin(x/n)}{x^2 + 1} \, d\lambda \;=\; \int_0^\infty 0 \, d\lambda \;=\; 0.$$
-The same computation works for $\int_0^\infty \sin(nx) / (x^2 + 1) \, d\lambda \to 0$ (the Riemann-Lebesgue Lemma direction we use in the flagship viz). The dominator $1/(x^2 + 1)$ is the same in both cases.
+This is the same sequence the flagship viz in this section uses. (Note: the related sequence $f_n(x) = \sin(nx)/(x^2 + 1)$ with *high-frequency* oscillation also has $\int f_n \to 0$, but for a different reason — the Riemann-Lebesgue lemma rather than DCT, since $\sin(nx)$ does not converge pointwise. Both reach the same conclusion via different theorems.)
 </TheoremBlock>
 
 <TheoremBlock type="example" number={10} title="DCT justifies differentiation under the integral sign">
@@ -611,7 +611,7 @@ Tonelli is the "non-negative" half of Fubini-Tonelli. Because $f \geq 0$, all th
 Let $(X, \mathcal{F}, \mu)$ and $(Y, \mathcal{G}, \nu)$ be $\sigma$-finite measure spaces, and let $f: X \times Y \to \mathbb{R}$ be measurable with respect to $\mathcal{F} \otimes \mathcal{G}$. If
 $$\int_{X \times Y} |f| \, d(\mu \times \nu) \;<\; \infty$$
 ($f$ is integrable with respect to the product measure), then $f \in L^1(X \times Y, \mu \times \nu)$, the iterated integrals exist for $\mu$-a.e. $x$ (and $\nu$-a.e. $y$), and
-$$\int_{X \times Y} f \, d(\mu \times \nu) \;=\; \int_X \left( \int_Y f(x, y) \, d\nu(y) \right) d\mu(x) \;=\; \int_Y \left( \int_X f(x, y) \, d\mu(x) \right) d\mu(y).$$
+$$\int_{X \times Y} f \, d(\mu \times \nu) \;=\; \int_X \left( \int_Y f(x, y) \, d\nu(y) \right) d\mu(x) \;=\; \int_Y \left( \int_X f(x, y) \, d\mu(x) \right) d\nu(y).$$
 </TheoremBlock>
 
 <TheoremBlock type="proof">

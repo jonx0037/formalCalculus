@@ -64,8 +64,9 @@ export default function FubiniProductIntegralExplorer() {
     return cells;
   }, [scenario]);
 
-  // For the slice plot: x ↦ ∫₀¹ f(x, y) dy, sampled at 60 x-values via Simpson on
-  // a 50-point y-grid. Cheap and good enough for the visual story.
+  // For the slice plot: x ↦ ∫₀¹ f(x, y) dy, sampled at 60 x-values via the
+  // midpoint Riemann rule on a 50-point y-grid (sample at (j+0.5)/N_Y, sum,
+  // multiply by step size). Cheap and good enough for the visual story.
   const sliceData = useMemo(() => {
     const N_X = 60;
     const N_Y = 50;
