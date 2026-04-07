@@ -1,0 +1,722 @@
+---
+title: "Sigma-Algebras & Measures"
+subtitle: "Why not every set is measurable, and how the right framework for 'size' unlocks rigorous probability — from Borel sets to Lebesgue measure to the mathematical language that makes p(x) mean something precise."
+status: "published"
+difficulty: "advanced"
+prerequisites:
+  - "completeness-compactness"
+  - "riemann-integral"
+tags:
+  - "calculus"
+  - "measure-theory"
+  - "sigma-algebras"
+  - "lebesgue-measure"
+  - "borel-sets"
+  - "measurable-functions"
+  - "null-sets"
+  - "almost-everywhere"
+domain: "measure-integration"
+videoId: null
+notebookPath: "notebooks/sigma-algebras/25_sigma_algebras.ipynb"
+githubUrl: "https://github.com/jonx0037/formalCalculus/blob/main/src/content/topics/sigma-algebras.mdx"
+datePublished: 2026-04-06
+estimatedReadTime: 45
+abstract: "Measure theory is where analysis leaves the realm of pictures and becomes structural. The Riemann integral fails on important functions — the indicator of the rationals on [0,1] has no Riemann integral at all. To build a more powerful integral theory, we first need a more powerful notion of 'size.' A sigma-algebra tells us which sets we are allowed to measure; a measure assigns a non-negative number to each of those sets, respecting countable additivity. The Lebesgue measure on ℝ extends the intuitive notion of length to a far richer collection of sets than intervals — but the Vitali construction shows that not every subset of ℝ can be assigned a consistent measure. The measurable functions with respect to a sigma-algebra are precisely the functions for which integration will be defined. These concepts are the mathematical language of probability: a probability space is a measure space with total measure 1, and every density function, expectation, and convergence theorem in ML rests on this foundation."
+formalmlConnections:
+  - topic: "probability-spaces"
+    site: "formalml"
+    relationship: "A probability space (Ω, F, P) is a measure space with P(Ω) = 1. Sigma-algebras formalize observable events; filtrations model information flow."
+  - topic: "gradient-descent"
+    site: "formalml"
+    relationship: "The set of initial conditions that converge to saddle points has Lebesgue measure zero — 'gradient descent avoids saddle points with probability 1' is a measure-theoretic statement."
+  - topic: "normalizing-flows"
+    site: "formalml"
+    relationship: "Normalizing flows are pushforward measures: T*μ_X = μ_Y. The change-of-variables formula for densities is a Radon-Nikodym derivative of the pushforward."
+  - topic: "concentration-inequalities"
+    site: "formalml"
+    relationship: "Markov, Chebyshev, Hoeffding — all are bounds on the measure of tail sets P(|X - μ| > t)."
+connections:
+  - topic: "completeness-compactness"
+    relationship: "Completeness of ℝ powers the closure-under-countable-operations arguments that define sigma-algebras. The Cantor set's compactness and the uncountability of ℝ from Topic 3 are reused throughout this topic."
+  - topic: "riemann-integral"
+    relationship: "The Riemann integral's limitations — and the explicit failure on the Dirichlet function — are the entry point for the entire measure-theoretic story. Riemann-integrable functions are a strict subclass of Lebesgue-integrable functions."
+  - topic: "series-convergence"
+    relationship: "Countable additivity is defined via convergent series of measures, and the first Borel-Cantelli lemma is a series convergence test recast as a measure-theoretic statement about tail events."
+references:
+  - type: "book"
+    title: "Real Analysis"
+    authors: "Royden, H. L. & Fitzpatrick, P. M."
+    year: 2010
+    note: "Fourth edition. Chapters 2–3 cover sigma-algebras, Lebesgue measure, and Carathéodory's extension theorem with the same proof structure used here."
+  - type: "book"
+    title: "Real Analysis: Modern Techniques and Their Applications"
+    authors: "Folland, G. B."
+    year: 1999
+    note: "Second edition. Chapters 1–2 are the standard graduate-level reference for measure-theoretic foundations. The Vitali construction proof in Section 8 follows Folland's presentation."
+  - type: "book"
+    title: "An Introduction to Measure Theory"
+    authors: "Tao, T."
+    year: 2011
+    note: "Free PDF, excellent for self-study. Chapters 1–2 cover Lebesgue measure constructively with extensive geometric intuition."
+  - type: "book"
+    title: "Probability and Measure"
+    authors: "Billingsley, P."
+    year: 1995
+    note: "Third edition. Chapter 1 connects measure theory directly to probability — the bridge to formalml.com that this topic builds toward."
+---
+
+import TheoremBlock from '../../components/ui/TheoremBlock.astro';
+import RiemannVsLebesgueExplorer from '../../components/viz/RiemannVsLebesgueExplorer.tsx';
+import CantorSetExplorer from '../../components/viz/CantorSetExplorer.tsx';
+import OuterMeasureExplorer from '../../components/viz/OuterMeasureExplorer.tsx';
+import SimpleFunctionApproximator from '../../components/viz/SimpleFunctionApproximator.tsx';
+
+## 1. Why the Riemann Integral Isn't Enough
+
+If this topic feels more abstract than the previous ones, that's the subject matter, not your mathematical maturity — measure theory is where analysis becomes structural. Every prior topic in this curriculum has been geometric: epsilon-delta limits live near a point, derivatives are slopes, integrals are areas, vector fields are arrows, phase portraits are trajectories. Measure theory has none of those pictures. A sigma-algebra is a *family of sets*, and a measure is a *function on that family*. There is no picture of "the Borel sigma-algebra on $\mathbb{R}$" — it is an uncountable collection of subsets that we can describe but never see.
+
+That's the bad news. The good news is that this abstract framework is what unlocks rigorous probability, modern analysis, and most of the mathematical machinery that machine learning silently depends on. By the end of this topic you'll understand exactly what people mean when they write $p(x) \, dx$ for a probability density, why "with probability 1" is more than a figure of speech, and why the Riemann integral you learned in calculus is not the right tool for any serious work in probability or functional analysis.
+
+We'll motivate the framework with three puzzles — each one a question the Riemann integral cannot answer.
+
+### Puzzle 1: The Dirichlet function
+
+Define $\mathbf{1}_\mathbb{Q}: [0, 1] \to \{0, 1\}$ by
+$$\mathbf{1}_\mathbb{Q}(x) = \begin{cases} 1 & \text{if } x \in \mathbb{Q}, \\ 0 & \text{otherwise.} \end{cases}$$
+
+This is the indicator function of the rationals. Try to integrate it on $[0, 1]$ via Riemann sums and you immediately hit a wall.
+
+<TheoremBlock type="example" number={1} title="The Dirichlet function has no Riemann integral">
+Let $P = \{0 = x_0 < x_1 < \cdots < x_n = 1\}$ be any partition of $[0, 1]$. On every subinterval $[x_{i-1}, x_i]$ — no matter how small — we can find both a rational point and an irrational point. So
+$$\sup_{x \in [x_{i-1}, x_i]} \mathbf{1}_\mathbb{Q}(x) = 1, \quad \inf_{x \in [x_{i-1}, x_i]} \mathbf{1}_\mathbb{Q}(x) = 0.$$
+
+Therefore the upper Darboux sum is $U(\mathbf{1}_\mathbb{Q}, P) = \sum_i 1 \cdot (x_i - x_{i-1}) = 1$ and the lower sum is $L(\mathbf{1}_\mathbb{Q}, P) = 0$, regardless of the partition. The Riemann integral exists only when $\sup_P L = \inf_P U$, but here the sup is $0$ and the inf is $1$. The Riemann integral does not exist.
+</TheoremBlock>
+
+But our intuition is screaming that the integral *should* be $0$. The rationals are countable; the irrationals are uncountable. Almost every point in $[0, 1]$ is irrational, so $\mathbf{1}_\mathbb{Q}$ is "almost everywhere zero." A good theory of integration should recognize that. Measure theory will let us make "the rationals are negligible" a precise statement: $\mathbb{Q} \cap [0, 1]$ has Lebesgue measure zero, so $\int \mathbf{1}_\mathbb{Q} \, d\lambda = 0$ in the Lebesgue sense.
+
+### Puzzle 2: The Vitali impossibility
+
+Suppose we want to assign a "length" $\mu(A)$ to *every* subset $A \subseteq [0, 1]$. We'd want this length function to satisfy two reasonable properties:
+
+1. **Translation-invariance**: $\mu(A + t) = \mu(A)$ for any $t$ — sliding a set sideways doesn't change its length.
+2. **Countable additivity**: $\mu(\bigsqcup_n A_n) = \sum_n \mu(A_n)$ for any countable collection of disjoint sets.
+
+These look harmless. The shocking fact, due to Vitali in 1905, is that **no such function exists** — at least not one defined on every subset. We will prove this in Section 8: using the axiom of choice, we can construct a subset $V \subset [0, 1]$ to which no consistent length can be assigned. The resolution is sobering: we don't measure *all* subsets. We measure only those in a designated collection — a *sigma-algebra*. Choosing the right sigma-algebra is the central design choice of measure theory.
+
+### Puzzle 3: The ML density puzzle
+
+When you write $p(x) = \frac{1}{\sqrt{2\pi}} e^{-x^2/2}$ for the standard normal density, what does this *mean* operationally? The continuous random variable $X$ takes any specific value $x$ with probability zero — $P(X = x) = 0$ for every $x \in \mathbb{R}$. So $p(x)$ is not a probability. What is it?
+
+The answer is that $p(x)$ is a *Radon-Nikodym derivative*: it is the rate at which probability mass accumulates per unit Lebesgue measure. The expression "$p(x) \, dx$" means $\frac{dP}{d\lambda} \cdot d\lambda$, where $P$ is the probability measure and $\lambda$ is Lebesgue measure. Without measure theory, "$p(x)$" is a notational convenience with no operational content; with it, the relationship between $P$ and $\lambda$ becomes precise. This connection is the entry point to the formalml.com topic on <a href="https://formalml.com/topics/probability-spaces" class="formalml-badge" target="_blank" rel="noopener">Probability Spaces</a>.
+
+These three puzzles all point to the same need: a framework where "size" is defined on a controlled family of sets, where countable operations behave well, and where the limitations of the Riemann integral can be transcended. That framework is built in the next eleven sections.
+
+![Three integration scenarios: smooth function (Riemann and Lebesgue agree), oscillatory function (both work but Lebesgue is natural), Dirichlet-like function (Riemann fails)](/images/topics/sigma-algebras/riemann-vs-lebesgue.png)
+
+<RiemannVsLebesgueExplorer client:visible />
+
+## 2. Sigma-Algebras
+
+A *sigma-algebra* is a family of subsets of a fixed ambient set $\Omega$ that is closed under complement, countable union, and contains $\Omega$ itself. That's it — three axioms. But these three axioms have surprisingly deep consequences, and choosing the right sigma-algebra is the central modeling decision of measure theory.
+
+<TheoremBlock type="definition" number={1} title="Sigma-algebra (σ-algebra)">
+Let $\Omega$ be a non-empty set. A **sigma-algebra** on $\Omega$ is a collection $\mathcal{F} \subseteq \mathcal{P}(\Omega)$ of subsets of $\Omega$ satisfying:
+
+1. $\Omega \in \mathcal{F}$.
+2. **Closure under complement.** If $A \in \mathcal{F}$, then $A^c = \Omega \setminus A \in \mathcal{F}$.
+3. **Closure under countable union.** If $A_1, A_2, A_3, \ldots$ is a countable sequence in $\mathcal{F}$, then $\bigcup_{n=1}^\infty A_n \in \mathcal{F}$.
+
+The pair $(\Omega, \mathcal{F})$ is called a **measurable space**. Members of $\mathcal{F}$ are called **measurable sets**.
+
+A few easy consequences fall out. Since $\Omega \in \mathcal{F}$ and $\mathcal{F}$ is closed under complement, $\emptyset = \Omega^c \in \mathcal{F}$. Closure under countable union plus complement gives closure under countable intersection (de Morgan). And since the union of a finite number of sets is a special case of a countable union (pad with $\emptyset$), $\mathcal{F}$ is also closed under finite unions and finite intersections.
+</TheoremBlock>
+
+The simplest examples are at the two extremes: the smallest possible sigma-algebra and the largest possible one.
+
+<TheoremBlock type="example" number={2} title="The trivial sigma-algebra">
+For any set $\Omega$, the collection $\{\emptyset, \Omega\}$ is a sigma-algebra — the smallest one possible. Closure under complement is immediate ($\emptyset^c = \Omega$ and vice versa), and any countable union of these two sets is again one of these two sets. This sigma-algebra "knows" only whether a point is in $\Omega$ or not — it carries no further information.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={3} title="The power set">
+The full power set $\mathcal{P}(\Omega)$ is a sigma-algebra — the largest one possible. It contains every subset of $\Omega$ and is trivially closed under all set operations. When $\Omega$ is countable, $\mathcal{P}(\Omega)$ is the only sigma-algebra we ever use. But when $\Omega = \mathbb{R}$, we will see that $\mathcal{P}(\mathbb{R})$ is *too big* — it contains pathological sets that no consistent length function can measure.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={4} title="A finite sigma-algebra from a partition">
+Take $\Omega = \{1, 2, 3, 4\}$ and consider the partition $\{1, 2\}$ and $\{3, 4\}$. The sigma-algebra **generated by** this partition is
+$$\mathcal{F} = \{\emptyset, \{1, 2\}, \{3, 4\}, \{1, 2, 3, 4\}\}.$$
+
+This collection is closed under complement (the complement of $\{1, 2\}$ is $\{3, 4\}$) and under union (any union of the four sets is again in the four sets). Note that $\{1\}$ is *not* in $\mathcal{F}$ — this sigma-algebra cannot distinguish $1$ from $2$. It encodes precisely the information "which side of the partition does this point belong to?" and nothing more.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={1} title="Sigma-algebras as 'levels of information'">
+The previous example hints at an interpretation that becomes essential in probability theory: a sigma-algebra is an abstract description of *what information is available*. A coarser sigma-algebra (fewer sets) corresponds to less information; a finer sigma-algebra (more sets) corresponds to more information. In the example above, $\mathcal{F}$ knows only "is this point in $\{1, 2\}$ or in $\{3, 4\}$?" but not "is this point exactly $1$?" In probability, a *filtration* — a nested sequence of sigma-algebras $\mathcal{F}_1 \subseteq \mathcal{F}_2 \subseteq \cdots$ — models information being revealed over time. This is the foundation of stochastic processes and the source of every "conditional expectation given $\mathcal{F}_t$" in mathematical finance and reinforcement learning.
+</TheoremBlock>
+
+In practice, we rarely write down a sigma-algebra by listing its members. We specify a smaller collection of "interesting" sets and then close it up under the sigma-algebra axioms.
+
+<TheoremBlock type="definition" number={2} title="Generated sigma-algebra σ(C)">
+Let $\mathcal{C} \subseteq \mathcal{P}(\Omega)$ be any collection of subsets of $\Omega$. The **sigma-algebra generated by $\mathcal{C}$**, written $\sigma(\mathcal{C})$, is the smallest sigma-algebra on $\Omega$ that contains $\mathcal{C}$. Equivalently, it is the intersection of all sigma-algebras containing $\mathcal{C}$:
+$$\sigma(\mathcal{C}) = \bigcap \{\mathcal{F} : \mathcal{F} \text{ is a sigma-algebra on } \Omega \text{ with } \mathcal{C} \subseteq \mathcal{F}\}.$$
+
+This intersection is non-empty (the power set $\mathcal{P}(\Omega)$ always works) and is itself a sigma-algebra (the intersection of any family of sigma-algebras is a sigma-algebra — check the axioms). So $\sigma(\mathcal{C})$ is well-defined.
+</TheoremBlock>
+
+The most important generated sigma-algebra in all of analysis is the Borel sigma-algebra on the real line.
+
+<TheoremBlock type="definition" number={3} title="The Borel sigma-algebra B(ℝ)">
+The **Borel sigma-algebra** on $\mathbb{R}$, denoted $\mathcal{B}(\mathbb{R})$, is the sigma-algebra generated by the collection of all open intervals:
+$$\mathcal{B}(\mathbb{R}) = \sigma\left(\{(a, b) : a < b \in \mathbb{R}\}\right).$$
+
+Members of $\mathcal{B}(\mathbb{R})$ are called **Borel sets**. The collection $\mathcal{B}(\mathbb{R})$ contains every open set (each is a countable union of open intervals), every closed set (complements of open sets), every countable union of closed sets ($F_\sigma$ sets), every countable intersection of open sets ($G_\delta$ sets), and so on through a transfinite hierarchy. In short: every "reasonable" subset of $\mathbb{R}$ that you would write down without using the axiom of choice is Borel.
+
+Equivalently, $\mathcal{B}(\mathbb{R})$ can be generated by any of the following: all open sets, all closed sets, all half-open intervals $(a, b]$, all rays $(-\infty, b]$, all rationals as singletons. The choice of generator doesn't matter — the resulting sigma-algebra is the same.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={2} title="Why 'countable' and not 'finite' additivity">
+The choice of *countable* (rather than finite) closure in the sigma-algebra axioms is the central technical decision of measure theory. With only finite closure, you get an *algebra* of sets — adequate for classical probability of dice and cards, but too weak for analysis. Countable closure is what makes limits behave correctly. For example, the set $\mathbb{Q} \cap [0, 1]$ is the *countable* union of singletons $\{q\}$ for $q$ rational; in the Borel sigma-algebra it is automatically measurable, and its measure is the countable sum $\sum_q \lambda(\{q\}) = 0$. With only finite additivity, this argument fails — the rationals would slip through the cracks. Countable additivity is exactly the right strength to make a.e. arguments, dominated convergence, and Fubini's theorem all work.
+</TheoremBlock>
+
+## 3. Measures
+
+A sigma-algebra tells us *which* sets we are allowed to measure. A measure tells us *what number* to assign to each one.
+
+<TheoremBlock type="definition" number={4} title="Measure on a measurable space">
+Let $(\Omega, \mathcal{F})$ be a measurable space. A **measure** on $(\Omega, \mathcal{F})$ is a function $\mu: \mathcal{F} \to [0, \infty]$ satisfying:
+
+1. **Non-negativity.** $\mu(A) \geq 0$ for all $A \in \mathcal{F}$.
+2. **Empty set has measure zero.** $\mu(\emptyset) = 0$.
+3. **Countable additivity.** For any countable sequence of *pairwise disjoint* sets $A_1, A_2, \ldots \in \mathcal{F}$,
+$$\mu\left(\bigcup_{n=1}^\infty A_n\right) = \sum_{n=1}^\infty \mu(A_n).$$
+
+The triple $(\Omega, \mathcal{F}, \mu)$ is called a **measure space**. When $\mu(\Omega) = 1$, the triple is a **probability space** and $\mu$ is a **probability measure** — usually denoted $P$ or $\mathbb{P}$.
+
+Note that measures take values in the *extended* non-negative reals $[0, \infty]$ — sets of infinite measure are allowed, and their arithmetic obeys the conventions $a + \infty = \infty$ for $a \geq 0$ and $0 \cdot \infty = 0$ (the latter is a convention, not a theorem, but it makes integrals of functions on null sets behave correctly).
+</TheoremBlock>
+
+The three axioms force a number of properties to hold automatically — properties that mirror the geometric intuition of "area" or "length" in the real line. Together they form the toolkit you'll use whenever you work with measures.
+
+<TheoremBlock type="theorem" number={1} title="Basic properties of measures">
+Let $(\Omega, \mathcal{F}, \mu)$ be a measure space. Then for all measurable sets $A, B, A_n \in \mathcal{F}$:
+
+1. **Monotonicity.** If $A \subseteq B$ then $\mu(A) \leq \mu(B)$.
+2. **Subadditivity.** $\mu\left(\bigcup_{n=1}^\infty A_n\right) \leq \sum_{n=1}^\infty \mu(A_n)$ (no disjointness required).
+3. **Continuity from below.** If $A_1 \subseteq A_2 \subseteq \cdots$ is an increasing sequence with union $A = \bigcup_n A_n$, then $\mu(A_n) \to \mu(A)$ as $n \to \infty$.
+4. **Continuity from above.** If $A_1 \supseteq A_2 \supseteq \cdots$ is a decreasing sequence with intersection $A = \bigcap_n A_n$, and $\mu(A_1) < \infty$, then $\mu(A_n) \to \mu(A)$ as $n \to \infty$.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+**Monotonicity (1).** Write $B = A \sqcup (B \setminus A)$ as a disjoint union. Both $A$ and $B \setminus A = B \cap A^c$ are measurable. By countable additivity (with all but two terms equal to $\emptyset$),
+$$\mu(B) = \mu(A) + \mu(B \setminus A) \geq \mu(A),$$
+since $\mu(B \setminus A) \geq 0$.
+
+**Continuity from below (3).** Define a *disjointified* sequence:
+$$B_1 = A_1, \quad B_2 = A_2 \setminus A_1, \quad B_n = A_n \setminus A_{n-1} \text{ for } n \geq 2.$$
+Each $B_n$ is measurable (difference of measurable sets), the $B_n$ are pairwise disjoint, and
+$$\bigcup_{k=1}^n B_k = A_n, \qquad \bigcup_{k=1}^\infty B_k = \bigcup_{k=1}^\infty A_k = A.$$
+
+By countable additivity applied to the disjoint $B_k$,
+$$\mu(A) = \sum_{k=1}^\infty \mu(B_k) = \lim_{n \to \infty} \sum_{k=1}^n \mu(B_k) = \lim_{n \to \infty} \mu(A_n),$$
+where the second equality is the definition of an infinite series and the third equality is finite additivity ($A_n$ is the disjoint union of $B_1, \ldots, B_n$).
+
+**Subadditivity (2).** Disjointify as in (3): let $B_1 = A_1$ and $B_n = A_n \setminus (A_1 \cup \cdots \cup A_{n-1})$ for $n \geq 2$. Then $B_n \subseteq A_n$ (so $\mu(B_n) \leq \mu(A_n)$ by monotonicity), the $B_n$ are pairwise disjoint, and $\bigcup B_n = \bigcup A_n$. Countable additivity gives
+$$\mu\left(\bigcup_{n} A_n\right) = \mu\left(\bigcup_{n} B_n\right) = \sum_{n} \mu(B_n) \leq \sum_{n} \mu(A_n).$$
+
+**Continuity from above (4).** This reduces to (3) by taking complements relative to $A_1$. The hypothesis $\mu(A_1) < \infty$ is essential — see Royden §17.4 for the cautionary counter-example without finiteness.
+</TheoremBlock>
+
+Now for the canonical examples. These three measures are the workhorses of probability and analysis.
+
+<TheoremBlock type="example" number={5} title="Counting measure on ℕ">
+Let $\Omega = \mathbb{N}$ and $\mathcal{F} = \mathcal{P}(\mathbb{N})$ (every subset is measurable, since $\mathbb{N}$ is countable). Define
+$$\mu(A) = |A|, \quad \text{the number of elements of } A,$$
+where $|A| = \infty$ if $A$ is infinite. This is the **counting measure**. It satisfies all three axioms: $\mu(\emptyset) = 0$, $\mu(A) \geq 0$, and the cardinality of a countable disjoint union is the sum of cardinalities. The counting measure is the foundation of discrete probability — every "$P(X = k)$" is integration against the counting measure.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={6} title="Dirac measure δₐ">
+Fix a point $a \in \Omega$. The **Dirac measure at $a$** is
+$$\delta_a(A) = \begin{cases} 1 & \text{if } a \in A, \\ 0 & \text{otherwise.} \end{cases}$$
+
+This is a probability measure ($\delta_a(\Omega) = 1$, since $a \in \Omega$). Countable additivity holds because $a$ belongs to at most one set in any disjoint collection. Dirac measures are the building blocks of point masses in probability and the simplest non-trivial example of a *singular* measure with respect to Lebesgue measure on $\mathbb{R}$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={7} title="Lebesgue measure on [0,1] (preview)">
+On the measurable space $([0, 1], \mathcal{B}([0, 1]))$, there exists a unique measure $\lambda$ such that $\lambda([a, b]) = b - a$ for every interval $[a, b] \subseteq [0, 1]$. This is the **Lebesgue measure** on the unit interval, and constructing it rigorously is the work of Section 4 (we will need Carathéodory's extension theorem). For now, observe that $\lambda([0, 1]) = 1$, so $([0, 1], \mathcal{B}([0, 1]), \lambda)$ is a probability space — the *uniform distribution* on the unit interval.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={3} title="Sigma-finite vs. finite measures">
+A measure $\mu$ on $(\Omega, \mathcal{F})$ is **finite** if $\mu(\Omega) < \infty$ and **sigma-finite** if $\Omega$ can be written as a countable union $\Omega = \bigcup_n \Omega_n$ with $\mu(\Omega_n) < \infty$ for every $n$. Probability measures are finite. Lebesgue measure on $\mathbb{R}$ is *not* finite ($\lambda(\mathbb{R}) = \infty$) but is sigma-finite — write $\mathbb{R} = \bigcup_n [-n, n]$. Most theorems we care about (Fubini, Radon-Nikodym) assume sigma-finiteness; the non-sigma-finite case is where measure theory gets pathological. Throughout this topic, every measure is sigma-finite unless we explicitly say otherwise.
+</TheoremBlock>
+
+## 4. Lebesgue Measure on ℝ
+
+We now construct the most important measure on the real line: the one that extends our intuitive notion of "length." The construction is due to Lebesgue (1902) and Carathéodory (1914), and it proceeds in three stages: first define an **outer measure** on every subset of $\mathbb{R}$, then identify which subsets are **measurable** under that outer measure, and finally restrict to the measurable subsets to get a genuine countably additive measure.
+
+<TheoremBlock type="definition" number={5} title="Lebesgue outer measure λ*(A)">
+For any subset $A \subseteq \mathbb{R}$, the **Lebesgue outer measure** of $A$ is
+$$\lambda^*(A) \;=\; \inf\left\{\sum_{k=1}^\infty (b_k - a_k) \;:\; A \subseteq \bigcup_{k=1}^\infty (a_k, b_k)\right\}.$$
+
+The infimum is taken over all countable covers of $A$ by open intervals, and the value is the total length of the cover. Outer measure is defined for *every* subset of $\mathbb{R}$ — but as we will see, $\lambda^*$ alone is not countably additive on the full power set, so we need to restrict.
+
+Some basic properties drop out immediately: $\lambda^*(\emptyset) = 0$ (use the empty cover), $\lambda^*$ is monotone ($A \subseteq B \Rightarrow \lambda^*(A) \leq \lambda^*(B)$), $\lambda^*$ is translation-invariant ($\lambda^*(A + t) = \lambda^*(A)$ — translating a cover gives a cover of the translate with the same total length), and $\lambda^*$ is *countably subadditive* ($\lambda^*(\bigcup_n A_n) \leq \sum_n \lambda^*(A_n)$). What we don't yet have is countable *additivity* on disjoint sets — and that requires choosing the right sigma-algebra to restrict to.
+</TheoremBlock>
+
+The crucial insight is Carathéodory's: a set $A$ is "well-behaved" with respect to $\lambda^*$ if it cleanly splits any other set $E$ into two pieces whose outer measures add up.
+
+<TheoremBlock type="theorem" number={2} title="Carathéodory's extension theorem (statement)">
+A set $A \subseteq \mathbb{R}$ is **Carathéodory-measurable** (with respect to $\lambda^*$) if for every test set $E \subseteq \mathbb{R}$,
+$$\lambda^*(E) \;=\; \lambda^*(E \cap A) + \lambda^*(E \cap A^c).$$
+
+Let $\mathcal{L}(\mathbb{R})$ denote the collection of all such measurable sets. Then:
+
+1. $\mathcal{L}(\mathbb{R})$ is a sigma-algebra containing every Borel set: $\mathcal{B}(\mathbb{R}) \subseteq \mathcal{L}(\mathbb{R})$.
+2. The restriction $\lambda = \lambda^*|_{\mathcal{L}(\mathbb{R})}$ is a *countably additive* measure on $\mathcal{L}(\mathbb{R})$.
+3. $\lambda([a, b]) = b - a$ for every interval, recovering the geometric notion of length.
+
+This restriction $\lambda$ is the **Lebesgue measure** on $\mathbb{R}$, and $\mathcal{L}(\mathbb{R})$ is the **Lebesgue sigma-algebra**.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+The full proof is long — about ten pages in Royden — and we will not reproduce it here. The structural ingredients are:
+
+- $\mathcal{L}(\mathbb{R})$ contains $\emptyset$ (trivially) and is closed under complement (the Carathéodory criterion is symmetric in $A$ and $A^c$).
+- Closure under finite union follows from a careful inclusion-exclusion argument on the criterion.
+- Closure under *countable* union uses both subadditivity of $\lambda^*$ and continuity arguments to upgrade finite unions to countable.
+- The fact that $\lambda^*$ is countably additive on $\mathcal{L}(\mathbb{R})$ — the punchline — uses subadditivity in one direction and the Carathéodory criterion applied to disjoint sets in the other.
+- The inclusion $\mathcal{B}(\mathbb{R}) \subseteq \mathcal{L}(\mathbb{R})$ comes from showing every interval is Carathéodory-measurable, then using closure under countable operations to extend to all Borel sets.
+
+For the complete argument, see Royden §2.4 or Folland §1.4. The takeaway for this topic is that $\mathcal{L}(\mathbb{R})$ is a *strictly larger* sigma-algebra than $\mathcal{B}(\mathbb{R})$ — every Borel set is Lebesgue-measurable, but there exist Lebesgue-measurable sets that are not Borel (their existence requires the axiom of choice). Both are smaller than $\mathcal{P}(\mathbb{R})$, which contains the non-measurable Vitali set we will construct in Section 8.
+</TheoremBlock>
+
+<TheoremBlock type="definition" number={6} title="Lebesgue measurable set">
+A set $A \subseteq \mathbb{R}$ is **Lebesgue-measurable** if it satisfies the Carathéodory criterion: for every $E \subseteq \mathbb{R}$,
+$$\lambda^*(E) = \lambda^*(E \cap A) + \lambda^*(E \cap A^c).$$
+The collection of all such sets is the Lebesgue sigma-algebra $\mathcal{L}(\mathbb{R})$, and $\lambda = \lambda^*|_{\mathcal{L}(\mathbb{R})}$ is the Lebesgue measure on $\mathbb{R}$.
+</TheoremBlock>
+
+The next theorem captures the key invariance property — Lebesgue measure does not see translations. We give the full proof because it illustrates exactly how Carathéodory measurability propagates from $\lambda^*$ to $\lambda$.
+
+<TheoremBlock type="theorem" number={3} title="Translation-invariance of Lebesgue measure">
+For every $A \in \mathcal{L}(\mathbb{R})$ and every $t \in \mathbb{R}$, the translate $A + t = \{a + t : a \in A\}$ is also Lebesgue-measurable, and
+$$\lambda(A + t) = \lambda(A).$$
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+We split the proof into two parts: first that $\lambda^*$ is translation-invariant on every subset of $\mathbb{R}$, then that $\mathcal{L}(\mathbb{R})$ is closed under translation.
+
+**Step 1: $\lambda^*(A + t) = \lambda^*(A)$ for every $A \subseteq \mathbb{R}$.**
+
+Let $\{(a_k, b_k)\}_{k=1}^\infty$ be any countable open cover of $A$. Then $\{(a_k + t, b_k + t)\}_{k=1}^\infty$ is a countable open cover of $A + t$ with the same total length:
+$$\sum_{k=1}^\infty ((b_k + t) - (a_k + t)) = \sum_{k=1}^\infty (b_k - a_k).$$
+
+Taking the infimum over all covers of $A$ on the left and noting that every cover of $A$ produces a cover of $A + t$ of equal length (and vice versa, by translating by $-t$), we get $\lambda^*(A + t) = \lambda^*(A)$. So $\lambda^*$ is translation-invariant on the full power set.
+
+**Step 2: If $A \in \mathcal{L}(\mathbb{R})$, then $A + t \in \mathcal{L}(\mathbb{R})$.**
+
+We must show that $A + t$ satisfies the Carathéodory criterion: for every $E \subseteq \mathbb{R}$,
+$$\lambda^*(E) = \lambda^*(E \cap (A + t)) + \lambda^*(E \cap (A + t)^c).$$
+
+Apply Step 1 to translate $E$ by $-t$:
+$$\lambda^*(E) = \lambda^*(E - t).$$
+
+Now $E - t$ can be split using the measurability of $A$ (which we are given):
+$$\lambda^*(E - t) = \lambda^*((E - t) \cap A) + \lambda^*((E - t) \cap A^c).$$
+
+We translate each piece on the right side back by $+t$. Note that $(E - t) \cap A$ translated by $+t$ gives $E \cap (A + t)$, and $(E - t) \cap A^c$ translated by $+t$ gives $E \cap (A + t)^c$. By Step 1 again, translation does not change outer measure:
+$$\lambda^*((E - t) \cap A) = \lambda^*(E \cap (A + t)),$$
+$$\lambda^*((E - t) \cap A^c) = \lambda^*(E \cap (A + t)^c).$$
+
+Substituting back:
+$$\lambda^*(E) = \lambda^*(E \cap (A + t)) + \lambda^*(E \cap (A + t)^c).$$
+
+This is exactly the Carathéodory criterion for $A + t$, so $A + t \in \mathcal{L}(\mathbb{R})$. Step 1 then gives $\lambda(A + t) = \lambda^*(A + t) = \lambda^*(A) = \lambda(A)$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={8} title="λ([a,b]) = b - a — recovering interval length">
+Let $[a, b] \subset \mathbb{R}$ with $a < b$. The interval is open-cover-able by $(a - \varepsilon, b + \varepsilon)$ for any $\varepsilon > 0$, so $\lambda^*([a, b]) \leq (b - a) + 2\varepsilon$. Taking $\varepsilon \to 0$ gives $\lambda^*([a, b]) \leq b - a$. The reverse inequality $\lambda^*([a, b]) \geq b - a$ is the *non-trivial* direction — it requires showing that no countable open cover of $[a, b]$ can have total length less than $b - a$. The argument uses the Heine-Borel theorem (compactness of $[a, b]$, from Topic 3) to extract a finite sub-cover, then a clean overlapping-intervals argument to bound the total length below by $b - a$. Combined with the fact that $[a, b]$ is Borel and hence Lebesgue-measurable, we get $\lambda([a, b]) = b - a$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={9} title="λ(ℚ ∩ [0,1]) = 0 — the rationals have measure zero">
+The rationals in $[0, 1]$ form a countable set: $\mathbb{Q} \cap [0, 1] = \{q_1, q_2, q_3, \ldots\}$. For any $\varepsilon > 0$, cover the $n$-th rational $q_n$ by the open interval $(q_n - \varepsilon/2^{n+1}, q_n + \varepsilon/2^{n+1})$, which has length $\varepsilon/2^n$. The total length of this cover is
+$$\sum_{n=1}^\infty \frac{\varepsilon}{2^n} = \varepsilon.$$
+
+So $\lambda^*(\mathbb{Q} \cap [0, 1]) \leq \varepsilon$ for every $\varepsilon > 0$, hence $\lambda^*(\mathbb{Q} \cap [0, 1]) = 0$. Since $\mathbb{Q} \cap [0, 1]$ is Borel (a countable union of singletons), it is Lebesgue-measurable, so $\lambda(\mathbb{Q} \cap [0, 1]) = 0$.
+
+This is the precise statement of "the rationals are negligible." Combined with $\lambda([0, 1]) = 1$, we get that the irrationals in $[0, 1]$ have measure $1$ — almost every point in the unit interval is irrational. The Dirichlet function $\mathbf{1}_\mathbb{Q}$ is therefore zero almost everywhere with respect to Lebesgue measure, and its Lebesgue integral is $0$ — exactly what our intuition wanted in Section 1.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={4} title="Lebesgue measure extends the Riemann integral">
+A bounded function $f: [a, b] \to \mathbb{R}$ is Riemann-integrable if and only if its set of discontinuities has Lebesgue measure zero (Lebesgue's criterion for Riemann integrability). For every Riemann-integrable $f$, the Lebesgue integral exists and equals the Riemann integral. So Lebesgue integration is a *strict extension* of Riemann integration — it agrees with the old theory wherever the old theory applies, and assigns sensible values in many cases where the old theory fails (like the Dirichlet function).
+</TheoremBlock>
+
+![Outer measure covering: progressively refined interval covers of [0.3, 0.7]](/images/topics/sigma-algebras/outer-measure-covering.png)
+
+<OuterMeasureExplorer client:visible />
+
+## 5. The Cantor Set and Measure-Zero Surprises
+
+The Cantor set is the single most important example in measure theory. It demonstrates that a set can be uncountable, closed, totally disconnected, *and* have Lebesgue measure zero — four properties that look incompatible until you see them coexist. The Cantor set is also the canonical example of a "fractal" — its construction predates Mandelbrot by seventy years.
+
+<TheoremBlock type="definition" number={7} title="The Cantor middle-thirds set C">
+Define a sequence of sets recursively. Start with $C_0 = [0, 1]$. To form $C_{n+1}$, remove the open middle third of every interval in $C_n$:
+$$C_1 = [0, 1/3] \cup [2/3, 1],$$
+$$C_2 = [0, 1/9] \cup [2/9, 3/9] \cup [6/9, 7/9] \cup [8/9, 1],$$
+and so on. The **Cantor set** is the intersection
+$$C = \bigcap_{n=0}^\infty C_n.$$
+
+After $n$ iterations, $C_n$ is a disjoint union of $2^n$ intervals each of length $(1/3)^n$, so the total length of $C_n$ is $(2/3)^n$. As $n \to \infty$, this length tends to zero — but the intersection $C$ is nevertheless non-empty and, as we will prove, uncountable.
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={4} title="The Cantor set is uncountable and has Lebesgue measure zero">
+The Cantor set $C$ is a closed subset of $[0, 1]$ that is:
+
+1. **Uncountable** — there is a bijection $C \leftrightarrow \{0, 1\}^\mathbb{N}$, so $|C| = 2^{\aleph_0} = $ continuum.
+2. **Of Lebesgue measure zero** — $\lambda(C) = 0$.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+**Measure zero.** Since each $C_n$ has Lebesgue measure $(2/3)^n$ and $C \subseteq C_n$ for every $n$, monotonicity of $\lambda$ gives
+$$0 \leq \lambda(C) \leq \lambda(C_n) = (2/3)^n.$$
+
+Since $(2/3)^n \to 0$ as $n \to \infty$, the squeeze gives $\lambda(C) = 0$.
+
+**Uncountability.** We use the *ternary expansion* characterization of $C$. Every $x \in [0, 1]$ has a base-3 (ternary) expansion
+$$x = 0.d_1 d_2 d_3 \ldots_{(3)} = \sum_{k=1}^\infty \frac{d_k}{3^k}, \quad d_k \in \{0, 1, 2\}.$$
+
+The ternary expansion is unique except at terminating expansions, where the same number has two representations (analogous to $0.999\ldots = 1$ in base 10). For terminating expansions we adopt the convention that ends in all $2$'s when possible — this resolves the ambiguity.
+
+The middle third $(1/3, 2/3)$ removed at step $1$ is precisely the set of $x$ whose ternary expansion has $d_1 = 1$ (and $d_1 = 1$ cannot be replaced by ending in $0\overline{2}$ for any of these — the boundary points $1/3$ and $2/3$ themselves have alternative expansions with $d_1 \in \{0, 2\}$). So $C_1$ consists of points with $d_1 \in \{0, 2\}$. By induction, $C_n$ consists of points whose first $n$ ternary digits are all in $\{0, 2\}$. Therefore
+$$C = \{x \in [0, 1] : x \text{ has a ternary expansion with all digits } d_k \in \{0, 2\}\}.$$
+
+The map $\phi: C \to \{0, 1\}^\mathbb{N}$ defined by sending $0.d_1 d_2 \ldots_{(3)}$ to the binary sequence $(d_1/2, d_2/2, d_3/2, \ldots)$ is a bijection. (It is well-defined and injective by the uniqueness of the chosen ternary expansion; it is surjective because every binary sequence corresponds to a valid ternary string in $\{0, 2\}^\mathbb{N}$.)
+
+By Cantor's diagonal argument (Topic 3), $\{0, 1\}^\mathbb{N}$ is uncountable, with cardinality $2^{\aleph_0}$ — the cardinality of the continuum. Therefore $|C| = 2^{\aleph_0}$, and $C$ is uncountable.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={10} title="Fat Cantor sets with positive measure">
+The standard middle-thirds Cantor set has measure zero because we remove a constant fraction $1/3$ at every step. If instead we remove a *shrinking* fraction at each step, we get a Cantor-like set with positive measure. Specifically, at step $k \geq 1$, remove a centered interval of length $1/4^k$ from each of the $2^{k-1}$ remaining intervals. The total length removed is
+$$\sum_{k=1}^\infty 2^{k-1} \cdot \frac{1}{4^k} \;=\; \sum_{k=1}^\infty \frac{1}{2^{k+1}} \;=\; \frac{1}{2}.$$
+
+So the limiting set, the **Smith-Volterra-Cantor set** (or "fat Cantor set"), has Lebesgue measure $1 - 1/2 = 1/2$. It is closed, nowhere dense, and uncountable — exactly like the standard Cantor set — but it has *positive* measure. This shows that "Cantor-like" does not imply "measure zero": uncountability and measure zero are independent properties, and the standard middle-thirds set is a particular case where they happen to coincide.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={5} title="The Cantor set is compact and totally disconnected">
+$C$ is closed (it is the intersection of closed sets $C_n$) and bounded (a subset of $[0, 1]$), so by Heine-Borel from Topic 3, $C$ is **compact**. It is also **totally disconnected**: between any two distinct points $x, y \in C$ there is a deleted middle interval at some stage of the construction, so the connected components of $C$ are single points. A non-empty compact totally disconnected metric space without isolated points is called a **Cantor space**, and the Cantor set is the prototype. (Every two such spaces are homeomorphic — the Cantor set is, up to homeomorphism, *the* Cantor space.)
+</TheoremBlock>
+
+![Cantor set construction: iterations 0, 3, 6, 10 of the middle-thirds set](/images/topics/sigma-algebras/cantor-construction.png)
+
+<CantorSetExplorer client:visible />
+
+## 6. Measurable Functions
+
+Measurable functions are the class of functions for which the Lebesgue integral will be defined. The definition is suspiciously simple: a function is measurable if the preimage of every Borel set is measurable.
+
+<TheoremBlock type="definition" number={8} title="Measurable function">
+Let $(\Omega, \mathcal{F})$ be a measurable space. A function $f: \Omega \to \mathbb{R}$ is **$\mathcal{F}$-measurable** (or just **measurable** when the sigma-algebra is clear from context) if for every Borel set $B \in \mathcal{B}(\mathbb{R})$,
+$$f^{-1}(B) = \{\omega \in \Omega : f(\omega) \in B\} \in \mathcal{F}.$$
+
+Equivalently — and this is usually how you check it in practice — $f$ is measurable if and only if $f^{-1}((-\infty, t]) \in \mathcal{F}$ for every $t \in \mathbb{R}$. The "if" direction follows from the fact that the half-rays $\{(-\infty, t] : t \in \mathbb{R}\}$ generate $\mathcal{B}(\mathbb{R})$, and preimages commute with countable set operations.
+</TheoremBlock>
+
+The two universal examples are the continuous functions and the indicator functions.
+
+<TheoremBlock type="example" number={11} title="Continuous functions are Borel-measurable">
+If $f: \mathbb{R} \to \mathbb{R}$ is continuous and $U \subseteq \mathbb{R}$ is open, then $f^{-1}(U)$ is open, hence Borel, hence Lebesgue-measurable. Since the open sets generate $\mathcal{B}(\mathbb{R})$ and preimages preserve countable set operations, $f^{-1}(B) \in \mathcal{B}(\mathbb{R})$ for every Borel $B$. So every continuous function is Borel-measurable. This is why the integral of a continuous function on a compact interval — the bread and butter of single-variable calculus — is just a special case of the Lebesgue integral.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={12} title="The Dirichlet function is Borel-measurable">
+The indicator $\mathbf{1}_\mathbb{Q}: [0, 1] \to \{0, 1\}$ takes only two values, so its preimage of any Borel set $B$ is one of $\emptyset$, $\mathbb{Q} \cap [0, 1]$, $[0, 1] \setminus \mathbb{Q}$, or $[0, 1]$, depending on which of $0$ and $1$ lie in $B$. All four sets are Borel ($\mathbb{Q} \cap [0, 1]$ is a countable union of singletons), so $\mathbf{1}_\mathbb{Q}$ is Borel-measurable. Combined with our earlier observation that $\lambda(\mathbb{Q} \cap [0, 1]) = 0$, this is the foundation for showing $\int \mathbf{1}_\mathbb{Q} \, d\lambda = 0$ — once we have built the integral in Topic 26.
+</TheoremBlock>
+
+The Lebesgue integral of a measurable function is built up in two steps. First we define the integral for "simple functions" — finite linear combinations of indicators — and then we extend to general non-negative measurable functions by approximating from below.
+
+<TheoremBlock type="definition" number={9} title="Simple function">
+A measurable function $s: \Omega \to \mathbb{R}$ is **simple** if it takes only finitely many values. Equivalently, $s$ has a representation
+$$s = \sum_{k=1}^n c_k \cdot \mathbf{1}_{A_k}$$
+where $c_1, \ldots, c_n$ are distinct real numbers and $A_1, \ldots, A_n$ is a finite measurable partition of $\Omega$ (each $A_k$ is measurable, the $A_k$ are pairwise disjoint, and $\Omega = \bigsqcup_k A_k$). The integral of a non-negative simple function with respect to a measure $\mu$ is defined to be
+$$\int s \, d\mu = \sum_{k=1}^n c_k \cdot \mu(A_k).$$
+
+(With the convention $0 \cdot \infty = 0$, this is well-defined even when some $c_k = 0$ but $\mu(A_k) = \infty$.)
+</TheoremBlock>
+
+The next theorem is the engine of Lebesgue integration: every non-negative measurable function is the pointwise limit of an *increasing* sequence of simple functions. Once you have this, the integral of a general non-negative measurable function can be defined as the limit of the integrals of the approximating simple functions.
+
+<TheoremBlock type="theorem" number={5} title="Simple function approximation (dyadic construction)">
+Let $f: \Omega \to [0, \infty]$ be a non-negative measurable function. Then there exists a sequence $(s_n)_{n=1}^\infty$ of non-negative simple measurable functions such that:
+
+1. $s_1 \leq s_2 \leq s_3 \leq \cdots$ (the sequence is monotone increasing).
+2. $s_n(\omega) \to f(\omega)$ for every $\omega \in \Omega$.
+3. The convergence is uniform on every set where $f$ is bounded.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+We construct $s_n$ explicitly via dyadic slicing of the *range*. For each $n \geq 1$, partition the interval $[0, n)$ into $n \cdot 2^n$ dyadic subintervals of length $2^{-n}$:
+$$[0, 2^{-n}), \quad [2^{-n}, 2 \cdot 2^{-n}), \quad \ldots, \quad [(n \cdot 2^n - 1) \cdot 2^{-n}, n \cdot 2^n \cdot 2^{-n}) = [(n - 2^{-n}), n).$$
+
+Define
+$$s_n(\omega) = \begin{cases} k \cdot 2^{-n} & \text{if } k \cdot 2^{-n} \leq f(\omega) < (k + 1) \cdot 2^{-n} \text{ for some } k = 0, 1, \ldots, n \cdot 2^n - 1, \\ n & \text{if } f(\omega) \geq n. \end{cases}$$
+
+Each $s_n$ is a finite sum of step values times indicators of preimage sets, so it is a simple function. Each preimage set $\{f \in [k \cdot 2^{-n}, (k+1) \cdot 2^{-n})\}$ is measurable (preimage of a Borel set under a measurable function), so $s_n$ is measurable.
+
+**Monotonicity ($s_n \leq s_{n+1}$).** Suppose $s_n(\omega) = k \cdot 2^{-n}$ for some $k < n \cdot 2^n$. Then $f(\omega) \in [k \cdot 2^{-n}, (k+1) \cdot 2^{-n})$. The next-finer dyadic partition splits this interval in half: $f(\omega)$ lies in either $[2k \cdot 2^{-(n+1)}, (2k + 1) \cdot 2^{-(n+1)})$ or $[(2k + 1) \cdot 2^{-(n+1)}, (2k + 2) \cdot 2^{-(n+1)})$. In the first case $s_{n+1}(\omega) = 2k \cdot 2^{-(n+1)} = k \cdot 2^{-n} = s_n(\omega)$. In the second case $s_{n+1}(\omega) = (2k + 1) \cdot 2^{-(n+1)} > s_n(\omega)$. Either way $s_n(\omega) \leq s_{n+1}(\omega)$. The case where $s_n(\omega) = n$ (the "cap") is handled similarly: increasing $n$ either keeps $s_n$ at the cap or moves it into a finer dyadic level above $n$.
+
+**Pointwise convergence ($s_n(\omega) \to f(\omega)$).** Fix $\omega$. If $f(\omega) < \infty$, choose $n_0$ so large that $n_0 > f(\omega)$. For all $n \geq n_0$, $f(\omega) \in [k_n \cdot 2^{-n}, (k_n + 1) \cdot 2^{-n})$ for some $k_n$ in the dyadic partition, so
+$$s_n(\omega) = k_n \cdot 2^{-n} \in [f(\omega) - 2^{-n}, f(\omega)].$$
+
+Hence $|f(\omega) - s_n(\omega)| < 2^{-n} \to 0$. If $f(\omega) = \infty$, then $f(\omega) > n$ for every $n$, so $s_n(\omega) = n \to \infty = f(\omega)$.
+
+**Uniform convergence on bounded sets.** If $|f| \leq M$ on a set $E \subseteq \Omega$, then for $n > M$ we have $f(\omega) < n$ for all $\omega \in E$, and the bound $|f(\omega) - s_n(\omega)| < 2^{-n}$ holds uniformly in $\omega \in E$. So $s_n \to f$ uniformly on $E$.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={6} title="Simple function approximation partitions the range">
+Theorem 5 is the constructive heart of Lebesgue integration. Notice what it does: it slices the *range* of $f$ into dyadic levels and uses the *preimages* of those levels as the building blocks for simple functions. This is the exact opposite of the Riemann strategy, which slices the *domain* into uniform subintervals. The Riemann approach fails on the Dirichlet function because no domain partition can separate rationals from irrationals; the Lebesgue approach succeeds because the *range* of $\mathbf{1}_\mathbb{Q}$ has only two values and their preimages ($\mathbb{Q} \cap [0, 1]$ and its complement) are both Borel-measurable. The "partition the range" insight is the single most important conceptual move in measure theory, and it is what makes the Lebesgue integral strictly more powerful than the Riemann integral.
+</TheoremBlock>
+
+![Simple function approximation: dyadic staircases at 4, 16, and 64 levels converging to the target function](/images/topics/sigma-algebras/simple-function-approximation.png)
+
+<SimpleFunctionApproximator client:visible />
+
+## 7. Null Sets and "Almost Everywhere"
+
+Once we have measures, we can make precise the language of "ignoring negligible sets" — the language of statements that hold "almost everywhere" or "with probability 1." This is the vocabulary every probability theorem uses.
+
+<TheoremBlock type="definition" number={10} title="Null set (measure-zero set)">
+Let $(\Omega, \mathcal{F}, \mu)$ be a measure space. A set $N \in \mathcal{F}$ is a **null set** (or **$\mu$-null set**) if $\mu(N) = 0$. Examples on $(\mathbb{R}, \mathcal{B}(\mathbb{R}), \lambda)$: every singleton $\{x\}$, every countable set (such as $\mathbb{Q}$), and the Cantor set $C$.
+</TheoremBlock>
+
+<TheoremBlock type="definition" number={11} title="Almost everywhere (a.e.)">
+A property $P(\omega)$ is said to hold **almost everywhere** with respect to $\mu$ — written **$\mu$-a.e.** or simply **a.e.** when the measure is clear — if the set of $\omega$ for which $P(\omega)$ fails is contained in a null set:
+$$\mu(\{\omega \in \Omega : P(\omega) \text{ does not hold}\}) = 0.$$
+
+In probability, where $\mu = P$ is a probability measure, "almost everywhere" is usually called **almost surely**, abbreviated **a.s.** or "**with probability $1$**." When you read "the gradient flow converges to a critical point with probability 1," the "with probability 1" is the measure-theoretic statement that the bad set has Lebesgue measure zero.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={13} title="The Dirichlet function is zero almost everywhere">
+On $([0, 1], \mathcal{B}([0, 1]), \lambda)$ the rationals form a null set ($\lambda(\mathbb{Q} \cap [0, 1]) = 0$, by Example 9). So
+$$\mathbf{1}_\mathbb{Q}(x) = 0 \text{ for almost every } x \in [0, 1],$$
+and the *almost-everywhere equivalence class* of $\mathbf{1}_\mathbb{Q}$ is the same as that of the constant zero function. Once we have the Lebesgue integral, this will give $\int_0^1 \mathbf{1}_\mathbb{Q} \, d\lambda = 0$ — exactly the answer our intuition demanded back in Section 1.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={14} title="The Cantor function (devil's staircase)">
+There exists a function $\phi: [0, 1] \to [0, 1]$, called the **Cantor function** or *devil's staircase*, with the following remarkable properties:
+
+1. $\phi$ is continuous.
+2. $\phi$ is non-decreasing, with $\phi(0) = 0$ and $\phi(1) = 1$.
+3. $\phi$ is differentiable almost everywhere with $\phi'(x) = 0$ a.e.
+
+The construction is iterative: $\phi$ is constant on every "removed middle third" of the Cantor set construction (taking the value $1/2$ on $(1/3, 2/3)$, the values $1/4$ and $3/4$ on the next two removed middles, and so on). On the Cantor set itself, $\phi$ is defined by a base-$3$-to-base-$2$ digit substitution.
+
+The "missing increase" paradox is striking: $\phi$ goes from $0$ to $1$ continuously, yet its derivative is $0$ almost everywhere. All of the "increase" happens on the Cantor set $C$, which has measure zero. The fundamental theorem of calculus *fails* for $\phi$:
+$$\phi(1) - \phi(0) = 1 \;\neq\; 0 \;=\; \int_0^1 \phi'(x) \, dx.$$
+
+The FTC requires absolute continuity, and the Cantor function is the canonical example of a continuous, non-decreasing function that is *not* absolutely continuous. This is exactly the kind of pathology that motivates measure theory — the Riemann picture cannot detect the difference, but the measure-theoretic picture can.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={7} title="'Almost everywhere' is relative to a measure">
+The property "$\mu$-almost everywhere" depends entirely on which measure $\mu$ you have in mind. The set $\{1\} \subset \mathbb{R}$ has Lebesgue measure zero (so $\mathbf{1}_{\{1\}} = 0$ Lebesgue-a.e.), but it has counting measure $1$ (so $\mathbf{1}_{\{1\}} \neq 0$ counting-a.e.). When you read or write "a.e." in measure theory, always know which measure you mean — switching measures changes which sets are negligible.
+</TheoremBlock>
+
+<TheoremBlock type="definition" number={12} title="Complete measure">
+A measure $\mu$ on $(\Omega, \mathcal{F})$ is **complete** if every subset of every null set is itself measurable (and therefore also has measure zero). Equivalently, if $N \in \mathcal{F}$ with $\mu(N) = 0$ and $A \subseteq N$, then $A \in \mathcal{F}$. A measure is *incomplete* if there exists a null set $N$ with a non-measurable subset.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={8} title="Borel vs. Lebesgue — completeness via completion">
+The Borel sigma-algebra $\mathcal{B}(\mathbb{R})$ is *not* complete: there exist subsets of the Cantor set $C$ that are not Borel (for cardinality reasons — the Cantor set has $|C| = 2^{\aleph_0}$ subsets, but $|\mathcal{B}(\mathbb{R})| = 2^{\aleph_0}$ as well, so most subsets of $C$ are not Borel). The **Lebesgue sigma-algebra** $\mathcal{L}(\mathbb{R})$ is the *completion* of $\mathcal{B}(\mathbb{R})$ with respect to Lebesgue measure: it contains every Borel set plus every subset of every Lebesgue-null set. Lebesgue measure $\lambda$, restricted to $\mathcal{L}(\mathbb{R})$, is complete by construction. In practice, completeness rarely matters for theorems we care about (the dominated convergence theorem doesn't require it), but it eliminates pathological "this set is null but its subsets aren't measurable" annoyances.
+</TheoremBlock>
+
+![The Cantor function (devil's staircase): continuous, non-decreasing, derivative zero almost everywhere](/images/topics/sigma-algebras/null-set-density.png)
+
+## 8. Non-Measurable Sets — The Vitali Construction
+
+We have spent six sections building Lebesgue measure on a carefully chosen sigma-algebra. We can now answer the question that started this topic: *why* do we need to restrict to a sigma-algebra at all? Why not just measure every subset of $\mathbb{R}$?
+
+The answer is the Vitali construction. Using the axiom of choice, we can build a subset $V \subset [0, 1]$ to which no consistent length can be assigned — assuming "consistent" means translation-invariant and countably additive. This is one of the most important (and most disquieting) results in classical analysis.
+
+<TheoremBlock type="theorem" number={6} title="Existence of a non-Lebesgue-measurable set (Vitali, 1905)">
+There exists a subset $V \subseteq [0, 1]$ such that $V \notin \mathcal{L}(\mathbb{R})$. That is, $V$ is not Lebesgue-measurable.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+Define an equivalence relation $\sim$ on $[0, 1]$ by
+$$x \sim y \iff x - y \in \mathbb{Q}.$$
+
+This is reflexive ($x - x = 0 \in \mathbb{Q}$), symmetric ($y - x = -(x - y) \in \mathbb{Q}$ iff $x - y \in \mathbb{Q}$), and transitive ($x - y, y - z \in \mathbb{Q} \Rightarrow x - z = (x - y) + (y - z) \in \mathbb{Q}$). So $\sim$ partitions $[0, 1]$ into equivalence classes — each class is the intersection $[0, 1] \cap (\mathbb{Q} + r)$ for some real number $r$, which is countably infinite (uncountably many distinct classes).
+
+By the **axiom of choice**, we can select exactly one representative from each equivalence class. Let $V \subset [0, 1]$ be the resulting set of representatives.
+
+We claim $V$ is not Lebesgue-measurable. Suppose for contradiction that it is, with measure $\lambda(V) = m \geq 0$.
+
+Enumerate the rationals in $[-1, 1]$ as $\mathbb{Q} \cap [-1, 1] = \{q_1, q_2, q_3, \ldots\}$ (a countable set). Consider the translates $V + q_n$ for $n = 1, 2, 3, \ldots$. We make two observations.
+
+**Disjointness.** Suppose $x \in (V + q_m) \cap (V + q_n)$ for some $m \neq n$. Then $x = v + q_m = v' + q_n$ for some $v, v' \in V$, so $v - v' = q_n - q_m \in \mathbb{Q}$, meaning $v \sim v'$. But $V$ contains exactly one representative of each equivalence class, so $v = v'$, which gives $q_m = q_n$, contradicting $m \neq n$. Hence the translates $V + q_n$ are pairwise disjoint.
+
+**Coverage.** For any $x \in [0, 1]$, the equivalence class $[x]$ has a representative $v \in V$. Then $x = v + (x - v)$, where $x - v \in [-1, 1] \cap \mathbb{Q}$. So $x - v = q_n$ for some $n$, and $x \in V + q_n$. Hence
+$$[0, 1] \subseteq \bigcup_{n=1}^\infty (V + q_n) \subseteq [-1, 2].$$
+
+By countable additivity (the translates are disjoint and measurable, since $V$ is assumed measurable and Lebesgue measure is translation-invariant by Theorem 3),
+$$\lambda\left(\bigcup_n (V + q_n)\right) = \sum_{n=1}^\infty \lambda(V + q_n) = \sum_{n=1}^\infty m.$$
+
+By monotonicity,
+$$1 = \lambda([0, 1]) \leq \sum_{n=1}^\infty m \leq \lambda([-1, 2]) = 3.$$
+
+Now examine the cases:
+
+- If $m = 0$, the sum $\sum_n m = 0$, contradicting $\sum_n m \geq 1$.
+- If $m > 0$, the sum $\sum_n m = \infty$, contradicting $\sum_n m \leq 3$.
+
+Either way we have a contradiction. So our assumption that $V$ is measurable was false: $V \notin \mathcal{L}(\mathbb{R})$.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={9} title="The axiom of choice is essential — Solovay (1970)">
+The Vitali construction critically depends on the axiom of choice — without it, we cannot "select one representative from each equivalence class." This raises a natural question: is the existence of non-measurable sets a *theorem* of ZFC, or is it an artifact of the axiom of choice? The answer, due to Solovay (1970), is striking: there exists a model of Zermelo-Fraenkel set theory (without choice, but with a weaker axiom of "dependent choice") in which **every subset of $\mathbb{R}$ is Lebesgue-measurable**. So non-measurable sets are not a feature of the real line itself — they are a consequence of the strong choice principle that mathematicians have collectively decided to adopt. In a universe without the full axiom of choice, the entire Vitali pathology vanishes, and Lebesgue measure extends to every subset.
+
+The pragmatic upshot: in everything we do in measure theory and probability, we work with the axiom of choice, accept that non-measurable sets exist, and quietly restrict all our attention to the Borel or Lebesgue sigma-algebra. The non-measurable sets are out there, but the theorems we care about never need them.
+</TheoremBlock>
+
+![Vitali construction: equivalence classes under rational translation, then a translation-invariance contradiction](/images/topics/sigma-algebras/vitali-construction.png)
+
+## 9. Product Measures (Preview)
+
+To integrate functions of two or more variables, we need to combine measures on different spaces into a product measure on the Cartesian product. The full theory — including Fubini's theorem, which lets us compute double integrals as iterated integrals — belongs to Topic 26 (The Lebesgue Integral). Here we lay the foundation.
+
+<TheoremBlock type="definition" number={13} title="Product sigma-algebra">
+Let $(\Omega_1, \mathcal{F}_1)$ and $(\Omega_2, \mathcal{F}_2)$ be measurable spaces. The **product sigma-algebra** on $\Omega_1 \times \Omega_2$, denoted $\mathcal{F}_1 \otimes \mathcal{F}_2$, is the sigma-algebra generated by all "rectangles" $A_1 \times A_2$ with $A_1 \in \mathcal{F}_1$ and $A_2 \in \mathcal{F}_2$:
+$$\mathcal{F}_1 \otimes \mathcal{F}_2 = \sigma\left(\{A_1 \times A_2 : A_1 \in \mathcal{F}_1, A_2 \in \mathcal{F}_2\}\right).$$
+</TheoremBlock>
+
+<TheoremBlock type="example" number={15} title="The Borel sigma-algebra on ℝ² is the product of two copies of B(ℝ)">
+On the plane $\mathbb{R}^2 = \mathbb{R} \times \mathbb{R}$, the Borel sigma-algebra $\mathcal{B}(\mathbb{R}^2)$ generated by all open sets equals the product sigma-algebra $\mathcal{B}(\mathbb{R}) \otimes \mathcal{B}(\mathbb{R})$. This is because every open set in $\mathbb{R}^2$ can be written as a countable union of open rectangles $(a_1, b_1) \times (a_2, b_2)$, and conversely every open rectangle is open in $\mathbb{R}^2$. So the two ways of building "Borel sets in the plane" — directly from the topology, or as a product of one-dimensional Borel sigma-algebras — give the same answer. The same holds in arbitrary dimension: $\mathcal{B}(\mathbb{R}^n) = \mathcal{B}(\mathbb{R})^{\otimes n}$.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={10} title="Joint distributions as product measures">
+In probability theory, if $X$ and $Y$ are independent random variables on a probability space $(\Omega, \mathcal{F}, P)$, then their **joint distribution** is the product measure $P_X \otimes P_Y$ on $(\mathbb{R}^2, \mathcal{B}(\mathbb{R}^2))$. The product structure is the formal definition of independence: for any Borel sets $A, B \subseteq \mathbb{R}$,
+$$P(X \in A, Y \in B) = P_X(A) \cdot P_Y(B).$$
+
+This is the measure-theoretic foundation of every "i.i.d." assumption in machine learning. When you train a model on data points $(x_i, y_i)$ assumed i.i.d. from a distribution, you are implicitly working with a product measure over the data space.
+</TheoremBlock>
+
+## 10. Computational Notes
+
+Measure theory is a foundational subject — most of what we have covered is non-computational. But the framework has direct algorithmic counterparts in scientific Python that practitioners use every day, often without realizing they are doing measure theory.
+
+**Monte Carlo estimation of Lebesgue measure.** For a Borel set $A \subseteq [0, 1]$, the Lebesgue measure $\lambda(A)$ can be estimated by sampling $N$ independent uniform points $X_1, \ldots, X_N \sim \text{Uniform}[0, 1]$ and computing
+$$\hat{\lambda}_N(A) = \frac{1}{N} \sum_{i=1}^N \mathbf{1}_A(X_i).$$
+
+By the strong law of large numbers, $\hat{\lambda}_N(A) \to \lambda(A)$ almost surely as $N \to \infty$. The central limit theorem gives the convergence rate: the standard error is $\sqrt{\lambda(A)(1 - \lambda(A))/N} = O(N^{-1/2})$. This is exactly the same rate as Monte Carlo integration of any bounded function — measure estimation is integration of an indicator function.
+
+**`scipy.stats` is measure theory in disguise.** Every distribution object in `scipy.stats` is, mathematically, a probability measure on $(\mathbb{R}, \mathcal{B}(\mathbb{R}))$. The `.pdf()` method returns the Radon-Nikodym derivative of the distribution with respect to Lebesgue measure (when the distribution is absolutely continuous). The `.cdf()` method returns the measure of the half-line $(-\infty, x]$:
+```python
+from scipy.stats import norm
+norm.cdf(1.96) - norm.cdf(-1.96)  # ≈ 0.95
+```
+This is the measure-theoretic statement $P(\{X \in [-1.96, 1.96]\}) \approx 0.95$ where $P$ is the standard normal measure.
+
+**Empirical measures in PyTorch.** The empirical measure of a finite sample $\{x_1, \ldots, x_N\}$ is
+$$\hat{\mu}_N = \frac{1}{N} \sum_{i=1}^N \delta_{x_i},$$
+where each $\delta_{x_i}$ is the Dirac measure at $x_i$. This is a probability measure on $\mathbb{R}^d$ that puts mass $1/N$ at each sample point and zero elsewhere. Empirical risk minimization — the workhorse of supervised learning — is precisely the minimization of $\int L(\hat{f}, x) \, d\hat{\mu}_N(x)$ over a hypothesis class $\hat{f}$. The fact that this approximates the true population risk $\int L(\hat{f}, x) \, d\mu(x)$ is the **Glivenko-Cantelli theorem**, a measure-theoretic statement we will see in Section 11.
+
+**Numerical pitfall: floating-point measure-zero detection.** Measure-zero properties are *asymptotic* and inherently invisible to finite-precision arithmetic. A floating-point random sample from any continuous distribution will, with probability one, never land on any specific countable set — but a finite sample of size $10^6$ contains exactly $10^6$ points, all rational (every IEEE-754 double is rational). The "set of irrationals" is mathematically well-defined and has measure $1$ on $[0, 1]$, but no Python program can ever directly check whether a sampled $x$ is in it. Measure-zero subtleties live in the limits, not in the sampled data.
+
+<TheoremBlock type="example" number={16} title="Monte Carlo estimation of λ([0.3, 0.7])">
+We want to estimate the measure of $A = [0.3, 0.7]$, which we know is $\lambda(A) = 0.4$.
+
+```python
+import numpy as np
+N = 10**6
+samples = np.random.uniform(0, 1, N)
+estimate = np.mean((samples >= 0.3) & (samples <= 0.7))
+print(estimate)  # ≈ 0.4000
+```
+
+Running this with $N = 10^6$ gives an estimate within $\pm 0.001$ of the true value, consistent with the predicted standard error $\sqrt{0.4 \cdot 0.6 / 10^6} \approx 0.0005$. As $N$ grows, the empirical proportion converges to the true Lebesgue measure — this is Glivenko-Cantelli in its most elementary form.
+</TheoremBlock>
+
+## 11. Connections to ML
+
+Measure theory is the mathematical language of probability, and probability is the mathematical language of machine learning. Here are five connections, each substantial enough to be its own research thread.
+
+**Probability densities as Radon-Nikodym derivatives.** When you write $p(x)$ for the density of a continuous random variable, you are writing a Radon-Nikodym derivative: $p(x) = \frac{dP}{d\lambda}(x)$, where $P$ is the probability measure and $\lambda$ is Lebesgue measure on $\mathbb{R}$. This is what makes $p(x) \, dx$ a meaningful expression — it represents the differential measure $dP = p(x) \, d\lambda$. Discrete distributions don't have densities with respect to Lebesgue measure (they live on a measure-zero set of points); they have densities with respect to the *counting* measure on the support. Any time you mix continuous and discrete components — a Bernoulli mixture model, a quantized neural network — you are working with two different reference measures simultaneously, and the Radon-Nikodym formalism keeps the bookkeeping straight.
+
+**The manifold hypothesis.** Real-world data — natural images, text embeddings, audio spectrograms — does not fill its ambient space uniformly. It concentrates on or near a low-dimensional **manifold** $\mathcal{M} \subset \mathbb{R}^d$, where $\dim \mathcal{M} \ll d$. From a measure-theoretic standpoint, this means the data distribution is *singular* with respect to the $d$-dimensional Lebesgue measure $\lambda^d$: the support has measure zero in $\mathbb{R}^d$. Generative models that try to fit a density $p(x)$ via maximum likelihood will fail catastrophically on truly singular distributions — there is no density to fit. The remedies (denoising score matching, normalizing flows with explicit Jacobians, diffusion models that add noise to lift the data off the manifold) are all about constructing measures whose Radon-Nikodym derivative with respect to $\lambda^d$ is well-defined. Forward link: <a href="https://formalml.com/topics/normalizing-flows" class="formalml-badge" target="_blank" rel="noopener">Normalizing Flows</a>.
+
+**Empirical risk minimization as measure convergence.** Training a model on $N$ data points $(x_1, \ldots, x_N)$ replaces the true population measure $\mu$ with the empirical measure $\hat{\mu}_N = \frac{1}{N} \sum_i \delta_{x_i}$. The **Glivenko-Cantelli theorem** says that for measures on $\mathbb{R}$, $\hat{\mu}_N$ converges to $\mu$ uniformly over half-lines: $\sup_t |\hat{F}_N(t) - F(t)| \to 0$ almost surely, where $F$ is the true CDF. More general versions (Vapnik-Chervonenkis, Rademacher complexity) extend this to arbitrary classes of measurable sets and functions, giving us the *generalization bounds* that explain why training on finite data can produce models that work on unseen data. All of these bounds are measure-theoretic in nature.
+
+**Importance sampling and change of measure.** To estimate $\mathbb{E}_P[f(X)]$ when sampling from $P$ is hard, we can sample from a different (easier) measure $Q$ and reweight:
+$$\mathbb{E}_P[f(X)] = \mathbb{E}_Q\left[f(X) \cdot \frac{dP}{dQ}(X)\right].$$
+
+The ratio $dP/dQ$ is a Radon-Nikodym derivative, and it exists exactly when $P$ is absolutely continuous with respect to $Q$ — i.e., when $Q(A) = 0$ implies $P(A) = 0$ for every measurable $A$. Importance sampling underlies off-policy reinforcement learning, sequential Monte Carlo, and many variance-reduction tricks in deep learning. Forward link: <a href="https://formalml.com/topics/concentration-inequalities" class="formalml-badge" target="_blank" rel="noopener">Concentration Inequalities</a>.
+
+**"With probability 1" statements and gradient descent.** The result that "stochastic gradient descent avoids saddle points with probability 1" (Lee, Simchowitz, Jordan, Recht, 2016 and follow-ups) is a measure-theoretic statement about the set of bad initial conditions in $\mathbb{R}^d$. The set of initialization vectors $\theta_0$ from which gradient descent with random perturbation converges to a strict saddle point is a closed set with Lebesgue measure zero — a meager exceptional set in the parameter space. So almost every initialization leads to a local minimum, which is why SGD works on non-convex losses despite their abundance of saddle points. The argument uses center-stable manifold theory, but the *statement* is pure measure theory. Forward link: <a href="https://formalml.com/topics/gradient-descent" class="formalml-badge" target="_blank" rel="noopener">Gradient Descent</a>.
+
+The next theorem is the workhorse for "with probability 1" statements in convergence theory. It's a series convergence test recast as a measure-theoretic statement about tail events — the bridge between Topic 18 (Series Convergence & Tests) and probability theory.
+
+<TheoremBlock type="theorem" number={7} title="Borel-Cantelli lemma (first form)">
+Let $(\Omega, \mathcal{F}, \mu)$ be a measure space and let $(E_n)_{n=1}^\infty$ be a sequence of measurable sets with
+$$\sum_{n=1}^\infty \mu(E_n) < \infty.$$
+
+Then $\mu$-almost every $\omega \in \Omega$ belongs to only *finitely many* of the $E_n$. Formally,
+$$\mu\left(\limsup_{n \to \infty} E_n\right) = \mu\left(\bigcap_{N=1}^\infty \bigcup_{n=N}^\infty E_n\right) = 0.$$
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+Let $A = \limsup_n E_n = \bigcap_{N \geq 1} \bigcup_{n \geq N} E_n$. The set $A$ is the collection of $\omega$ that belong to $E_n$ for infinitely many indices $n$ — every $\omega \in A$ is in some $E_n$ for arbitrarily large $n$. We must show $\mu(A) = 0$.
+
+For every $N \geq 1$, the definition of $A$ as an intersection gives
+$$A \subseteq \bigcup_{n=N}^\infty E_n.$$
+
+By monotonicity (Theorem 1.1) and countable subadditivity (Theorem 1.2),
+$$\mu(A) \leq \mu\left(\bigcup_{n=N}^\infty E_n\right) \leq \sum_{n=N}^\infty \mu(E_n).$$
+
+The right-hand side is the *tail* of the convergent series $\sum_{n=1}^\infty \mu(E_n)$. Since the full series converges, its tails tend to zero:
+$$\sum_{n=N}^\infty \mu(E_n) \to 0 \quad \text{as } N \to \infty.$$
+
+So $\mu(A) \leq 0$. Combined with $\mu(A) \geq 0$, we get $\mu(A) = 0$.
+</TheoremBlock>
+
+The second form (which we will use without proof) reverses the implication when independence is assumed: if the $E_n$ are mutually independent and $\sum_n P(E_n) = \infty$, then $P(\limsup E_n) = 1$ — almost every $\omega$ belongs to *infinitely many* of the $E_n$. Together, the two forms give a complete dichotomy for tail events: either $\sum P(E_n) < \infty$ and a.e. point is in finitely many sets, or (under independence) $\sum P(E_n) = \infty$ and a.e. point is in infinitely many sets. This is the foundation for nearly every "with probability 1" theorem in the theory of stochastic processes and ML convergence.
+
+![Borel-Cantelli: convergent vs divergent series of measures, and the resulting almost-everywhere behavior](/images/topics/sigma-algebras/borel-cantelli.png)
+
+<TheoremBlock type="example" number={17} title="Empirical measure convergence — Glivenko-Cantelli">
+Sample $X_1, X_2, \ldots, X_N$ i.i.d. from the standard normal distribution. The **empirical CDF** is
+$$\hat{F}_N(t) = \frac{1}{N} \sum_{i=1}^N \mathbf{1}_{X_i \leq t}.$$
+
+This is the cumulative distribution function of the empirical measure $\hat{\mu}_N = \frac{1}{N} \sum_i \delta_{X_i}$. As $N$ grows, $\hat{F}_N$ converges to the true CDF $F(t) = \Phi(t) = \int_{-\infty}^t \frac{1}{\sqrt{2\pi}} e^{-s^2/2} ds$ pointwise (by the law of large numbers) and in fact uniformly in $t$ (by the Glivenko-Cantelli theorem):
+$$\sup_{t \in \mathbb{R}} |\hat{F}_N(t) - F(t)| \to 0 \quad \text{almost surely as } N \to \infty.$$
+
+The Kolmogorov-Smirnov distance $D_N = \sup_t |\hat{F}_N(t) - F(t)|$ shrinks like $1/\sqrt{N}$, with the precise distributional behavior given by the Kolmogorov distribution. This is the rigorous statement that "training data converges to the true distribution as the sample size grows" — every empirical-risk-minimization argument in supervised learning depends on it.
+</TheoremBlock>
+
+![Four measures on ℝ: Dirac delta, Gaussian density, mixture, and an empirical measure on 15 sample points](/images/topics/sigma-algebras/ml-connections.png)
+
+![Empirical CDF convergence at N = 10, 100, 1000, 10000 samples — Glivenko-Cantelli in action](/images/topics/sigma-algebras/empirical-measure-convergence.png)
+
+## 12. Connections & Further Reading
+
+This is the **first topic** in Track 7 — Measure & Integration — and the first **advanced** topic in formalCalculus. It builds the framework that the next three topics in the track will populate: the Lebesgue integral (Topic 26) is built from simple functions and measures defined here; $L^p$ spaces (Topic 27) are equivalence classes of measurable functions identified up to a.e.-equality; the Radon-Nikodym theorem (Topic 28) characterizes when one measure has a density with respect to another. Without the sigma-algebra and measure framework constructed in this topic, none of the next three topics has a foundation to stand on.
+
+The topic is also a bridge from classical calculus to modern probability. The measure-theoretic vocabulary built here — sigma-algebras as families of events, measures as probability assignments, measurable functions as random variables, "almost everywhere" as "with probability 1" — is exactly the vocabulary of probability theory. Every theorem in <a href="https://formalml.com/topics/probability-spaces" class="formalml-badge" target="_blank" rel="noopener">Probability Spaces</a> on formalml.com starts from a measure space.
+
+**Within formalCalculus:**
+- [Completeness & Compactness](/topics/completeness-compactness) — Completeness of $\mathbb{R}$ powers the closure-under-countable-operations arguments behind the Borel sigma-algebra (Section 2). Compactness of $[a, b]$ via Heine-Borel is the engine behind $\lambda([a, b]) = b - a$ in Section 4. The uncountability of $\mathbb{R}$ from Topic 3, together with the axiom of choice, is what makes the Vitali construction work in Section 8.
+- [The Riemann Integral & FTC](/topics/riemann-integral) — The Riemann integral's failure on the Dirichlet function (Section 1) is the entire motivation for measure theory. Every Riemann-integrable function is Lebesgue-integrable, and the integrals agree (Remark 4) — so the new theory is a strict extension of the old.
+- [Series Convergence & Tests](/topics/series-convergence) — Countable additivity is defined via convergent series of measures (Definition 4), and the first Borel-Cantelli lemma (Theorem 7) is a series convergence test recast as a measure-theoretic statement about tail events.
+
+**Successor topics within formalCalculus** *(coming soon)*:
+- **The Lebesgue Integral** — builds the integral $\int f \, d\mu$ for non-negative measurable $f$ as the supremum of integrals of approximating simple functions, then extends to general measurable functions via $f = f^+ - f^-$. Proves the dominated convergence theorem and Fubini's theorem.
+- **$L^p$ Spaces** — Banach spaces of measurable functions where $\|f\|_p = (\int |f|^p \, d\mu)^{1/p} < \infty$. Equivalence classes under a.e.-equality (the "null set" concept from Section 7 is essential).
+- **Radon-Nikodym & Probability Densities** — when one measure $\nu$ has a density $f = d\nu/d\mu$ with respect to another measure $\mu$. Characterizes absolute continuity. The bridge from measure theory to densities, conditional expectation, and Bayesian inference.
+
+**Forward to formalml.com:**
+- <a href="https://formalml.com/topics/probability-spaces" class="formalml-badge" target="_blank" rel="noopener">Probability Spaces</a> — A probability space $(\Omega, \mathcal{F}, P)$ is exactly a measure space with $P(\Omega) = 1$. Sigma-algebras formalize observable events; filtrations $(\mathcal{F}_t)$ model information flow in stochastic processes. Random variables are measurable functions $\Omega \to \mathbb{R}$. Independence is product measure structure.
+- <a href="https://formalml.com/topics/gradient-descent" class="formalml-badge" target="_blank" rel="noopener">Gradient Descent</a> — "SGD avoids saddle points with probability 1" is a statement about Lebesgue measure on initialization space. The set of bad initial conditions has measure zero in $\mathbb{R}^d$, so the algorithm succeeds for almost every starting point.
+- <a href="https://formalml.com/topics/normalizing-flows" class="formalml-badge" target="_blank" rel="noopener">Normalizing Flows</a> — Pushforward measures: a flow $T: \mathbb{R}^d \to \mathbb{R}^d$ transforms a base measure $\mu_X$ into $\mu_Y = T_* \mu_X$ via change of variables. The change-of-variables formula for densities is a Radon-Nikodym computation on the pushforward.
+- <a href="https://formalml.com/topics/concentration-inequalities" class="formalml-badge" target="_blank" rel="noopener">Concentration Inequalities</a> — Markov, Chebyshev, Hoeffding, Bernstein: all are upper bounds on the measure $P(\{|X - \mathbb{E}[X]| > t\})$ of a tail set. Every concentration result is a statement about how much measure can lie far from the mean.

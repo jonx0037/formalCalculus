@@ -61,9 +61,10 @@ export const tracks: Track[] = [
     title: 'Measure & Integration',
     description: 'Sigma-algebras, Lebesgue integral, Lp spaces — the rigorous foundation of probability.',
     domain: 'measure-integration',
-    published: [],
-    planned: [
+    published: [
       'Sigma-Algebras & Measures',
+    ],
+    planned: [
       'The Lebesgue Integral',
       'Lp Spaces',
       'Radon-Nikodym & Probability Densities',
