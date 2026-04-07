@@ -206,7 +206,7 @@ export default function CantorSetExplorer() {
       <p className="text-xs italic" style={{ color: 'var(--color-text-muted)' }}>
         {fat
           ? `Smith-Volterra-Cantor set: at step k, remove a middle interval of length 1/4ᵏ from every remaining interval. The total removed length is Σ 2ᵏ⁻¹ · (1/4)ᵏ = 1/2, so the limiting set has Lebesgue measure 1/2 — uncountable, nowhere dense, and yet positive-measure. This is the canonical demonstration that "Cantor-like" does not imply "measure zero."`
-          : `Standard middle-thirds set: at every step, remove the open middle 1/3 of each remaining interval. After ${iteration} iterations, the total length is (2/3)^${iteration} = ${fmt(lastIter.totalLength)}. The limit is the empty interval — total length 0 — yet the set still contains uncountably many points (every ternary expansion in {0, 2}^ℕ).`}
+          : `Standard middle-thirds set: at every step, remove the open middle 1/3 of each remaining interval. After ${iteration} iterations, the total length is (2/3)^${iteration} = ${fmt(lastIter.totalLength)}. The limiting set is non-empty and uncountable — every ternary expansion in {0, 2}^ℕ gives a point in C — yet it has total length 0.`}
       </p>
     </div>
   );

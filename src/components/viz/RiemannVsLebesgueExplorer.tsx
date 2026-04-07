@@ -181,6 +181,9 @@ export default function RiemannVsLebesgueExplorer() {
       .attr('height', innerH);
     const plot = g.append('g').attr('clip-path', 'url(#riemann-clip)');
 
+    // Positive-height bars (from 0 up to f(sample)). For negative heights we
+    // render nothing here and let the `.barNeg` pass draw them below the axis —
+    // otherwise a single negative sample would get double-rendered.
     plot
       .selectAll('rect.bar')
       .data(riemann.subintervals)
@@ -192,15 +195,15 @@ export default function RiemannVsLebesgueExplorer() {
       .attr('width', (d) => Math.max(0, xScale(d.b) - xScale(d.a) - 0.5))
       .attr('height', (_d, i) => {
         const h = riemann.heights[i];
-        if (h >= 0) return Math.abs(yScale(0) - yScale(h));
-        return Math.abs(yScale(h) - yScale(0));
+        return h >= 0 ? Math.abs(yScale(0) - yScale(h)) : 0;
       })
       .style('fill', RIEMANN_COLOR)
       .style('fill-opacity', 0.35)
       .style('stroke', RIEMANN_COLOR)
       .style('stroke-width', 0.6);
 
-    // For negative-height regions, draw the bar below the axis
+    // Negative-height bars (from the axis down to f(sample)). Rendered with
+    // reduced opacity so the axis remains visible.
     plot
       .selectAll('rect.barNeg')
       .data(riemann.subintervals)
@@ -309,9 +312,15 @@ export default function RiemannVsLebesgueExplorer() {
     const plot = g.append('g').attr('clip-path', 'url(#lebesgue-clip)');
 
     // Horizontal range bands
+    // For each range band [y_k, y_{k+1}), the contribution to the Lebesgue
+    // lower sum is y_k · λ(preimage_k). We visualize that contribution as a
+    // rectangle of height y_k over the preimage set — matching what the
+    // `SimpleFunctionApproximator` component renders and keeping the visual
+    // area consistent with the numerical sum shown in the readout.
     for (let k = 0; k < lebesgue.levels.length - 1; k++) {
       const yLow = lebesgue.levels[k];
-      const yHigh = lebesgue.levels[k + 1];
+      // Horizontal grid line at the lower edge of the band — makes the
+      // range partition itself visible even when the preimage is empty.
       plot
         .append('line')
         .attr('x1', 0)
@@ -322,38 +331,35 @@ export default function RiemannVsLebesgueExplorer() {
         .style('stroke-width', 0.4)
         .style('stroke-opacity', 0.4);
 
-      // Preimage shading for this band: a vertical column over each preimage
-      // interval, from y=0 up to yHigh (so the area = y_k · λ(preimage_k)
-      // is visually represented as a Lebesgue "rectangle" with horizontal extent
-      // = the preimage union and vertical extent = the level value).
+      // Skip non-positive levels — the lower sum takes the band's lower edge
+      // as its rectangle height, and negative heights would draw off-axis.
+      if (yLow <= 0) continue;
+
       const intervals = lebesgue.preimageSets[k];
-      const yTop = Math.max(0, yLow);
-      const yBottom = 0;
       for (const iv of intervals) {
+        // Lebesgue lower-sum rectangle: height y_k, width λ(preimage_k).
         plot
           .append('rect')
           .attr('x', xScale(iv.a))
-          .attr('y', yScale(yHigh))
+          .attr('y', yScale(yLow))
           .attr('width', Math.max(0.5, xScale(iv.b) - xScale(iv.a)))
-          .attr('height', Math.abs(yScale(yLow) - yScale(yHigh)))
+          .attr('height', Math.abs(yScale(0) - yScale(yLow)))
           .style('fill', PREIMAGE_FILL)
-          .style('fill-opacity', 0.85)
+          .style('fill-opacity', 0.35)
           .style('stroke', LEBESGUE_COLOR)
           .style('stroke-width', 0.3)
           .style('stroke-opacity', 0.7);
         // Underline the preimage interval on the x-axis to make the
-        // "pulled-back set" visible even when the band is thin.
+        // "pulled-back set" visible even when the rectangle is thin.
         plot
           .append('line')
           .attr('x1', xScale(iv.a))
           .attr('x2', xScale(iv.b))
-          .attr('y1', yScale(yBottom) + 1)
-          .attr('y2', yScale(yBottom) + 1)
+          .attr('y1', yScale(0) + 1)
+          .attr('y2', yScale(0) + 1)
           .style('stroke', LEBESGUE_COLOR)
           .style('stroke-width', 2)
           .style('stroke-opacity', 0.6);
-        // Also mark yTop unused for negative ranges (kept for symmetry)
-        void yTop;
       }
     }
 

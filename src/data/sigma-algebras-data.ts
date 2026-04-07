@@ -193,20 +193,29 @@ export function getOuterMeasureCover(
   const exactMeasure = targetSet.reduce((sum, iv) => sum + (iv.b - iv.a), 0);
 
   // Strategy: split the target's enveloping span into nIntervals equal sub-spans
-  // and pad each one outward by an epsilon that shrinks with nIntervals. This
-  // gives a smooth, monotone "infimum approach" effect as the slider moves up.
+  // and pad each one outward by an epsilon that shrinks faster than 1/n. With
+  // epsilon ~ 1/n² the total cover length = span + 2n·epsilon ≈ span + O(1/n),
+  // which monotonically approaches the exact measure as n grows — the
+  // pedagogical point of the infimum visualization.
   const targetMin = Math.min(...targetSet.map((iv) => iv.a));
   const targetMax = Math.max(...targetSet.map((iv) => iv.b));
   const span = targetMax - targetMin;
 
-  // Padding shrinks roughly as 1/n, so total cover length ≈ exact + 2·pad
-  const epsilon = (0.4 * span) / nIntervals;
+  // Padding shrinks as 1/n², so total cover length = span + 2n·(0.4·span/n²)
+  // = span · (1 + 0.8/n) → span as n → ∞.
+  const epsilon = (0.4 * span) / (nIntervals * nIntervals);
 
   const cover: MeasureInterval[] = [];
   for (let i = 0; i < nIntervals; i++) {
-    const a = targetMin + (i / nIntervals) * span - epsilon;
-    const b = targetMin + ((i + 1) / nIntervals) * span + epsilon;
-    cover.push({ a, b });
+    const rawA = targetMin + (i / nIntervals) * span - epsilon;
+    const rawB = targetMin + ((i + 1) / nIntervals) * span + epsilon;
+    // Clamp to [0, 1] so downstream viz never renders off-canvas. Skip
+    // degenerate intervals that collapse to a point after clamping.
+    const a = Math.max(0, rawA);
+    const b = Math.min(1, rawB);
+    if (a < b) {
+      cover.push({ a, b });
+    }
   }
 
   // Cover length = sum of widths (overlaps are intentional — this is an
@@ -244,6 +253,18 @@ export function getSimpleFunctionApproximation(
 ): SimpleFunctionApproximation {
   const numSteps = Math.pow(2, nLevels);
   const step = maxVal / numSteps;
+
+  // Guard against degenerate configurations that would produce NaN/Infinity
+  // downstream: maxVal ≤ 0, non-finite step, or step ≤ 0. Return a zero simple
+  // function in those cases so consumers can render an empty state gracefully.
+  if (maxVal <= 0 || !Number.isFinite(step) || step <= 0) {
+    return {
+      steps: [],
+      integralApprox: 0,
+      integralExact: exactIntegral,
+      nLevels,
+    };
+  }
 
   // Group consecutive x-samples that fall on the same dyadic level.
   // Each group becomes one MeasureInterval inside the preimage set for that level.

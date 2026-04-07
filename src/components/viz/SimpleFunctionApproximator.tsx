@@ -326,7 +326,8 @@ export default function SimpleFunctionApproximator() {
             color: partitionMode === 'range' ? SIMPLE_COLOR : RIEMANN_COLOR,
           }}
         >
-          Σ c_k · λ(A_k) = {approxValue.toFixed(5)}
+          {partitionMode === 'range' ? 'Σ c_k · λ(A_k)' : 'Riemann sum'} ={' '}
+          {approxValue.toFixed(5)}
         </span>
         <span>
           Exact integral:{' '}

@@ -98,9 +98,23 @@ export default function OuterMeasureExplorer() {
         const a = Math.max(iv.a, DEFAULT_TARGET[0].a);
         const b = Math.min(iv.b, DEFAULT_TARGET[0].b);
         if (a >= b) {
-          // No overlap with target; collapse to a tiny interval at the original center
+          // No overlap with target; collapse to a tiny interval at the
+          // original center, clamped to [0, 1] while preserving a minimum
+          // visible width. This prevents off-canvas rendering when a cover
+          // interval has drifted outside the [0, 1] viewport.
           const center = (iv.a + iv.b) / 2;
-          return { a: center - eps, b: center + eps };
+          const minWidth = Math.min(2 * eps, 1);
+          let fallbackA = center - minWidth / 2;
+          let fallbackB = center + minWidth / 2;
+          if (fallbackA < 0) {
+            fallbackB = Math.min(1, fallbackB - fallbackA);
+            fallbackA = 0;
+          }
+          if (fallbackB > 1) {
+            fallbackA = Math.max(0, fallbackA - (fallbackB - 1));
+            fallbackB = 1;
+          }
+          return { a: fallbackA, b: fallbackB };
         }
         return { a: Math.max(0, a - eps), b: Math.min(1, b + eps) };
       });
@@ -350,10 +364,12 @@ export default function OuterMeasureExplorer() {
       </div>
 
       <p className="text-xs italic" style={{ color: 'var(--color-text-muted)' }}>
-        Drag the endpoints (or the bar bodies) to reshape the cover. The
-        Lebesgue outer measure λ*(A) is the <em>infimum</em> of the total cover
-        length over all countable open covers — so the cover length is always{' '}
-        <em>at least</em> λ(A) = 0.4. As you tighten the cover, the gap shrinks
+        Drag the endpoints (or the bar bodies) to reshape the intervals. The
+        Lebesgue outer measure λ*(A) is the <em>infimum</em> of the total length
+        over all countable open covers of A — so <em>when the intervals cover
+        A</em>, their total length is at least λ(A) = 0.4. If you drag them so
+        they no longer cover A, that lower bound no longer applies to the
+        current arrangement. As you tighten a valid cover, the gap shrinks
         toward zero. Try "Optimize cover" to snap to a near-optimal arrangement.
       </p>
     </div>
