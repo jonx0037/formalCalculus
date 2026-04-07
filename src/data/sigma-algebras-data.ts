@@ -8,19 +8,27 @@
  *  - Dyadic simple-function approximation of a non-negative target function
  *  - Riemann vs. Lebesgue partitioning of the same function
  *
- * Topic 25 is the first topic in Track 7 (Measure & Integration) and
- * intentionally creates no shared utility module — the decision to introduce
- * a `measure.ts` shared module is deferred to Topic 26 (Lebesgue Integral),
- * when cross-topic reuse will justify the abstraction.
+ * Some symbols (MeasureInterval, SimpleFunctionStep, SimpleFunctionApproximation,
+ * getSimpleFunctionApproximation) were migrated to the shared measure.ts module
+ * by Topic 26 (lebesgue-integral). They are re-exported below for backward
+ * compatibility with this file's existing consumers.
  */
 
-// ── Interfaces ─────────────────────────────────────────────
+// Re-export migrated symbols for backward compatibility with Topic 25's viz components.
+// These now live in the shared measure.ts module created by Topic 26.
+export type {
+  MeasureInterval,
+  SimpleFunctionStep,
+  SimpleFunctionApproximation,
+} from '../components/viz/shared/measure';
+export { getSimpleFunctionApproximation } from '../components/viz/shared/measure';
 
-/** A closed interval [a, b] on the real line. */
-export interface MeasureInterval {
-  a: number;
-  b: number;
-}
+// We import MeasureInterval as a value-type below for use in this module's
+// non-migrated interfaces (CantorIteration, OuterMeasureCover, RiemannPartition,
+// LebesguePartition).
+import type { MeasureInterval } from '../components/viz/shared/measure';
+
+// ── Interfaces ─────────────────────────────────────────────
 
 /** One iteration of the Cantor set construction. */
 export interface CantorIteration {
@@ -36,27 +44,6 @@ export interface OuterMeasureCover {
   cover: MeasureInterval[];
   coverLength: number;
   exactMeasure: number;
-}
-
-/** A single step of a simple function: s = c_k on the measurable set A_k. */
-export interface SimpleFunctionStep {
-  /** The constant value c_k that the simple function takes on A_k. */
-  level: number;
-  /** A_k — the measurable set where s = c_k, as a finite union of intervals. */
-  preimageSet: MeasureInterval[];
-  /** λ(A_k) — the Lebesgue measure of the preimage set. */
-  measure: number;
-}
-
-/** A dyadic simple-function approximation s = Σ c_k · 1_{A_k} of a target f. */
-export interface SimpleFunctionApproximation {
-  steps: SimpleFunctionStep[];
-  /** Σ c_k · λ(A_k) — the integral of the simple function. */
-  integralApprox: number;
-  /** The exact integral of the target function (when known) or NaN. */
-  integralExact: number;
-  /** Number of dyadic levels used (so 2^nLevels actual steps). */
-  nLevels: number;
 }
 
 /** Riemann partition data: domain-slicing of [0, 1]. */
@@ -223,103 +210,6 @@ export function getOuterMeasureCover(
   const coverLength = cover.reduce((sum, iv) => sum + (iv.b - iv.a), 0);
 
   return { targetSet, cover, coverLength, exactMeasure };
-}
-
-// ── Dyadic simple-function approximation ───────────────────
-
-/**
- * Build the dyadic simple-function approximation s_n of a non-negative target f
- * on [0, 1]. The construction (Theorem 5 in Topic 25) partitions the *range*
- * [0, maxVal] into 2^nLevels levels of width step = maxVal / 2^nLevels and sets
- *
- *   s_n(x) = floor(f(x) / step) · step,   clipped to [0, maxVal − step].
- *
- * The preimage sets A_k = { x : s_n(x) = c_k } are finite unions of intervals,
- * recovered by sampling [0, 1] at high resolution and grouping consecutive
- * x-values whose s_n value is the same.
- *
- * @param f — the target function (assumed non-negative on [0, 1]).
- * @param nLevels — number of dyadic levels to use (so 2^nLevels actual levels).
- * @param maxVal — upper bound of the value range to slice.
- * @param exactIntegral — closed-form integral on [0, 1], or NaN if unknown.
- * @param resolution — x-axis sampling resolution for preimage detection.
- */
-export function getSimpleFunctionApproximation(
-  f: (x: number) => number,
-  nLevels: number,
-  maxVal: number,
-  exactIntegral: number = NaN,
-  resolution: number = 2000,
-): SimpleFunctionApproximation {
-  const numSteps = Math.pow(2, nLevels);
-  const step = maxVal / numSteps;
-
-  // Guard against degenerate configurations that would produce NaN/Infinity
-  // downstream: maxVal ≤ 0, non-finite step, or step ≤ 0. Return a zero simple
-  // function in those cases so consumers can render an empty state gracefully.
-  if (maxVal <= 0 || !Number.isFinite(step) || step <= 0) {
-    return {
-      steps: [],
-      integralApprox: 0,
-      integralExact: exactIntegral,
-      nLevels,
-    };
-  }
-
-  // Group consecutive x-samples that fall on the same dyadic level.
-  // Each group becomes one MeasureInterval inside the preimage set for that level.
-  const stepsByLevel: Map<number, MeasureInterval[]> = new Map();
-
-  let prevLevel = -1;
-  let groupStart = 0;
-  for (let i = 0; i <= resolution; i++) {
-    const x = i / resolution;
-    const fx = f(x);
-    const rawLevel = Math.floor(fx / step);
-    const clampedLevel = Math.max(0, Math.min(rawLevel, numSteps - 1));
-
-    if (clampedLevel !== prevLevel) {
-      // Close out the previous group (if any)
-      if (prevLevel >= 0) {
-        const groupEnd = (i - 1) / resolution;
-        const list = stepsByLevel.get(prevLevel) ?? [];
-        list.push({ a: groupStart, b: groupEnd });
-        stepsByLevel.set(prevLevel, list);
-      }
-      groupStart = x;
-      prevLevel = clampedLevel;
-    }
-  }
-  // Final group
-  if (prevLevel >= 0) {
-    const list = stepsByLevel.get(prevLevel) ?? [];
-    list.push({ a: groupStart, b: 1 });
-    stepsByLevel.set(prevLevel, list);
-  }
-
-  // Assemble SimpleFunctionStep array, sorted by level value
-  const sortedLevels = Array.from(stepsByLevel.keys()).sort((a, b) => a - b);
-  const steps: SimpleFunctionStep[] = sortedLevels.map((levelIdx) => {
-    const preimageSet = stepsByLevel.get(levelIdx) ?? [];
-    const measure = preimageSet.reduce((sum, iv) => sum + (iv.b - iv.a), 0);
-    return {
-      level: levelIdx * step,
-      preimageSet,
-      measure,
-    };
-  });
-
-  const integralApprox = steps.reduce(
-    (sum, s) => sum + s.level * s.measure,
-    0,
-  );
-
-  return {
-    steps,
-    integralApprox,
-    integralExact: exactIntegral,
-    nLevels,
-  };
 }
 
 // ── Riemann partition ──────────────────────────────────────
