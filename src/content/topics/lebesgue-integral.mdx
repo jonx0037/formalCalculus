@@ -66,12 +66,9 @@ references:
 
 import TheoremBlock from '../../components/ui/TheoremBlock.astro';
 import DominatedConvergenceExplorer from '../../components/viz/DominatedConvergenceExplorer.tsx';
-
-{/* Viz components landing in Commit 5:
-    - LebesgueIntegralBuilder        (Section 3)
-    - MonotoneConvergenceExplorer    (Section 5)
-    - FubiniProductIntegralExplorer  (Section 9)
-*/}
+import LebesgueIntegralBuilder from '../../components/viz/LebesgueIntegralBuilder.tsx';
+import MonotoneConvergenceExplorer from '../../components/viz/MonotoneConvergenceExplorer.tsx';
+import FubiniProductIntegralExplorer from '../../components/viz/FubiniProductIntegralExplorer.tsx';
 
 ## 1. Three Puzzles the Lebesgue Integral Solves
 
@@ -252,7 +249,7 @@ Markov's inequality looks innocent — three lines of proof, no clever tricks �
 
 The interactive viz below makes the supremum construction concrete. As you increase the dyadic refinement level, the simple-function staircase climbs upward toward $f$ and the integral climbs upward toward $\int f \, d\mu$. The supremum is the limit of this climbing process — it is what the construction computes in the limit, not a single staircase you can draw on the page.
 
-{/* TODO(Commit 5): <LebesgueIntegralBuilder client:visible /> */}
+<LebesgueIntegralBuilder client:visible />
 
 ## 4. The Integral for General Measurable Functions
 
@@ -340,7 +337,7 @@ $$\int f \, d\mu \;=\; \lim_{n \to \infty} \int f_n \, d\mu.$$
 
 The interactive viz below shows three monotone-convergence sequence types — truncation $f_n = \min(f, n)$, expanding support $f_n = f \cdot \mathbf{1}_{[-n, n]}$, and the dyadic simple-function staircase — and the corresponding integral values climbing toward the limit. Try each and see how the bar chart of $\int f_1, \int f_2, \ldots$ converges to $\int f$ from below.
 
-{/* TODO(Commit 5): <MonotoneConvergenceExplorer client:visible /> */}
+<MonotoneConvergenceExplorer client:visible />
 
 The proof is the most technically demanding piece of this topic and is worth working through carefully. It is also the prototype for every other "limit and integral commute" argument we'll see.
 
@@ -659,7 +656,7 @@ The measure-theoretic Fubini theorem (Theorem 9) is the generalization of the Ri
 
 The interactive viz below lets you choose a function on $[0, 1]^2$ and see all three integrals — both iterated orderings and the product integral — computed simultaneously. For the smooth and separable cases, all three agree. For the pathological case from Example 11, the iterated integrals disagree visibly.
 
-{/* TODO(Commit 5): <FubiniProductIntegralExplorer client:visible /> */}
+<FubiniProductIntegralExplorer client:visible />
 
 ![Three-panel Fubini iterated: heatmap of f(x,y), slice plot, and final integral values](/images/topics/lebesgue-integral/fubini-iterated.png)
 
