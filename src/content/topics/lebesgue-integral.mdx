@@ -65,9 +65,9 @@ references:
 ---
 
 import TheoremBlock from '../../components/ui/TheoremBlock.astro';
+import DominatedConvergenceExplorer from '../../components/viz/DominatedConvergenceExplorer.tsx';
 
-{/* Viz components are imported in Commits 4 and 5:
-    - DominatedConvergenceExplorer (Section 7, flagship)
+{/* Viz components landing in Commit 5:
     - LebesgueIntegralBuilder        (Section 3)
     - MonotoneConvergenceExplorer    (Section 5)
     - FubiniProductIntegralExplorer  (Section 9)
@@ -481,7 +481,7 @@ Equivalently, $\lim_n \int f_n \, d\mu = \int \lim_n f_n \, d\mu$ — limits and
 
 The flagship visualization for this topic is below. It contrasts two scenarios where DCT applies (sequences that have an integrable dominator and whose integrals do converge to the integral of the limit) with one scenario where DCT does not apply (the spike sequence from Example 1, which has no integrable dominator and whose integrals do not converge). Toggle between scenarios and watch the integral history bar chart on the right; the contrast is the conceptual heart of DCT.
 
-{/* TODO(Commit 4): <DominatedConvergenceExplorer client:visible /> */}
+<DominatedConvergenceExplorer client:visible />
 
 The proof uses a slick double-application of Fatou's Lemma — once to a pair of non-negative sequences manufactured from $f_n$ and the dominator $g$.
 
