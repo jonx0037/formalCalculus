@@ -63,9 +63,9 @@ export const tracks: Track[] = [
     domain: 'measure-integration',
     published: [
       'Sigma-Algebras & Measures',
+      'The Lebesgue Integral',
     ],
     planned: [
-      'The Lebesgue Integral',
       'Lp Spaces',
       'Radon-Nikodym & Probability Densities',
     ],
