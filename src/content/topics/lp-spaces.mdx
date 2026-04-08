@@ -71,6 +71,10 @@ references:
 ---
 
 import TheoremBlock from '../../components/ui/TheoremBlock.astro';
+import HolderMinkowskiExplorer from '../../components/viz/HolderMinkowskiExplorer.tsx';
+import LpBallExplorer from '../../components/viz/LpBallExplorer.tsx';
+import LpNormExplorer from '../../components/viz/LpNormExplorer.tsx';
+import RieszFischerExplorer from '../../components/viz/RieszFischerExplorer.tsx';
 
 ## 1. Three Puzzles $L^p$ Spaces Solve
 
@@ -165,6 +169,10 @@ We will write $f \in L^p$ throughout this topic when we technically mean $[f] \i
 The quotient by a.e.-equivalence is not optional. Without it, the seminorm $\|\cdot\|_p$ is *not* a norm, the functional $f \mapsto \|f\|_p$ does *not* separate points, and the metric $d(f, g) = \|f - g\|_p$ is *not* a metric — two distinct functions can be at distance zero. None of the geometric constructions we want — open balls, convergence in norm, completeness, orthogonal projection — make sense in a seminormed space, because the topology is not Hausdorff. The quotient promotes the seminorm to a norm by collapsing every equivalence class to a single point, and that single move makes the entire theory of $L^p$ spaces possible.
 
 </TheoremBlock>
+
+The interactive viz below makes the dependence of $\|f\|_p$ on $p$ concrete: pick a function from the dropdown, slide $p$, and watch how the integrand $|f(x)|^p$ redistributes mass as $p$ changes. For large $p$ the mass concentrates where $|f|$ is largest, and the norm approaches the essential supremum.
+
+<LpNormExplorer client:visible />
 
 ## 3. Jensen's Inequality
 
@@ -342,7 +350,7 @@ The inequality holds with a ratio of about $0.974$ — close to equality but not
 
 </TheoremBlock>
 
-{/* HolderMinkowskiExplorer wired in Task 10 */}
+<HolderMinkowskiExplorer client:visible />
 
 <TheoremBlock type="remark" number={4} title="When does Hölder hold with equality?">
 
@@ -452,7 +460,7 @@ But "normed vector space" is not yet enough for the geometric reasoning we want.
 
 Before we get there, let us look at what these norms actually *mean* geometrically. The unit ball of an $L^p$ norm — the set of vectors with norm at most $1$ — is a shape that depends in a striking way on $p$. At $p = 1$ the ball is a diamond (or, in higher dimensions, a cross-polytope); at $p = 2$ it is a sphere; at $p = \infty$ it is a cube. The shape morphs continuously between these extremes as $p$ varies, and the morphing is the visual core of the entire theory of $L^p$ regularization in machine learning. The flagship explorer below lets you slide $p$ and watch the unit ball change shape — pay particular attention to the corners that appear at $p = 1$ and disappear at $p > 1$, because those corners are exactly the geometric reason that $L^1$ regularization (Lasso) produces sparse solutions and $L^2$ regularization (Ridge) does not.
 
-{/* LpBallExplorer (flagship) wired in Task 10 */}
+<LpBallExplorer client:visible />
 
 <TheoremBlock type="remark" number={6} title="The quotient promotes a seminorm to a norm">
 
@@ -566,7 +574,7 @@ Numerically, $\|f_n - \mathbf{1}_{[0, 1]}\|_2$ decays rapidly: at $n = 10$ it is
 
 </TheoremBlock>
 
-{/* RieszFischerExplorer wired in Task 10 */}
+<RieszFischerExplorer client:visible />
 
 <TheoremBlock type="remark" number={7} title="Why completeness matters for ML — and the $p = \infty$ case">
 
