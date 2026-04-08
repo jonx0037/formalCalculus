@@ -3,6 +3,7 @@ import * as d3 from 'd3';
 import { useResizeObserver } from './shared/useResizeObserver';
 import { useD3 } from './shared/useD3';
 import { computeLpNorm } from './shared/measure';
+import { sampleCurve, finiteYMax } from './shared/plotting';
 import { getLpNormCurve } from '../../data/lp-spaces-data';
 
 // ── Constants ─────────────────────────────────────────────────
@@ -78,27 +79,19 @@ export default function LpNormExplorer() {
 
   // ── Curves ────────────────────────────────────────────────
 
-  const fCurve = useMemo(() => {
-    const N = 250;
-    const [a, b] = preset.domain;
-    const pts: Array<[number, number]> = [];
-    for (let i = 0; i < N; i++) {
-      const x = a + (i / (N - 1)) * (b - a);
-      pts.push([x, Math.abs(preset.f(x))]);
-    }
-    return pts;
-  }, [preset]);
+  const fCurve = useMemo(
+    () => sampleCurve((x) => Math.abs(preset.f(x)), preset.domain),
+    [preset],
+  );
 
-  const fPowerCurve = useMemo(() => {
-    const N = 250;
-    const [a, b] = preset.domain;
-    const pts: Array<[number, number]> = [];
-    for (let i = 0; i < N; i++) {
-      const x = a + (i / (N - 1)) * (b - a);
-      pts.push([x, Math.pow(Math.abs(preset.f(x)), p)]);
-    }
-    return pts;
-  }, [preset, p]);
+  const fPowerCurve = useMemo(
+    () =>
+      sampleCurve(
+        (x) => Math.pow(Math.abs(preset.f(x)), p),
+        preset.domain,
+      ),
+    [preset, p],
+  );
 
   // The norm curve p ↦ ||f||_p — memoized per preset since p sweeps it.
   const normCurve = useMemo(
@@ -113,12 +106,10 @@ export default function LpNormExplorer() {
   );
 
   // y-axis maxima
-  const fyMax = useMemo(() => {
-    let m = 0;
-    for (const [, y] of fCurve) if (Number.isFinite(y) && y > m) m = y;
-    for (const [, y] of fPowerCurve) if (Number.isFinite(y) && y > m) m = y;
-    return Math.max(m * 1.15, 0.2);
-  }, [fCurve, fPowerCurve]);
+  const fyMax = useMemo(
+    () => finiteYMax([fCurve, fPowerCurve]),
+    [fCurve, fPowerCurve],
+  );
 
   const normYMax = useMemo(() => {
     let m = 0;

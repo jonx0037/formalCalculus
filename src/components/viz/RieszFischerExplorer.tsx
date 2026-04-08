@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import * as d3 from 'd3';
 import { useResizeObserver } from './shared/useResizeObserver';
 import { useD3 } from './shared/useD3';
+import { sampleCurve, finiteYMax } from './shared/plotting';
 import {
   getCauchySequence,
   type CauchySequenceData,
@@ -62,27 +63,15 @@ export default function RieszFischerExplorer() {
 
   // ── Curves ────────────────────────────────────────────────
 
-  const fnCurve = useMemo(() => {
-    const N = 250;
-    const [a, b] = scenario.domain;
-    const pts: Array<[number, number]> = [];
-    for (let i = 0; i < N; i++) {
-      const x = a + (i / (N - 1)) * (b - a);
-      pts.push([x, scenario.fn(x, n)]);
-    }
-    return pts;
-  }, [scenario, n]);
+  const fnCurve = useMemo(
+    () => sampleCurve((x) => scenario.fn(x, n), scenario.domain),
+    [scenario, n],
+  );
 
-  const limitCurve = useMemo(() => {
-    const N = 250;
-    const [a, b] = scenario.domain;
-    const pts: Array<[number, number]> = [];
-    for (let i = 0; i < N; i++) {
-      const x = a + (i / (N - 1)) * (b - a);
-      pts.push([x, scenario.limit(x)]);
-    }
-    return pts;
-  }, [scenario]);
+  const limitCurve = useMemo(
+    () => sampleCurve(scenario.limit, scenario.domain),
+    [scenario],
+  );
 
   // Norm-difference history: ||f_k - f||_p for k = 1..N_MAX.
   // Memoized per (scenario, p) — independent of n, so the bar chart shows
@@ -92,13 +81,12 @@ export default function RieszFischerExplorer() {
     return ks.map((k) => ({ k, value: scenario.normDifference(k, p) }));
   }, [scenario, p]);
 
-  // y-axis maxima
-  const yMax = useMemo(() => {
-    let m = 0;
-    for (const [, y] of fnCurve) if (Number.isFinite(y) && y > m) m = y;
-    for (const [, y] of limitCurve) if (Number.isFinite(y) && y > m) m = y;
-    return Math.max(m * 1.15, 0.5);
-  }, [fnCurve, limitCurve]);
+  // y-axis maxima. Use a higher floor (0.5) than the shared default because
+  // the Riesz–Fischer sequences converge to indicators with nominal height 1.
+  const yMax = useMemo(
+    () => finiteYMax([fnCurve, limitCurve], 0.5),
+    [fnCurve, limitCurve],
+  );
 
   const histYMax = useMemo(() => {
     let m = 0;

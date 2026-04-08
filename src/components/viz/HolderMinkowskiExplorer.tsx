@@ -3,6 +3,7 @@ import * as d3 from 'd3';
 import { useResizeObserver } from './shared/useResizeObserver';
 import { useD3 } from './shared/useD3';
 import { checkHolder, checkMinkowski } from './shared/measure';
+import { sampleCurve, finiteYMax } from './shared/plotting';
 import {
   getHolderScenario,
   type HolderScenario,
@@ -23,7 +24,8 @@ interface ScenarioOption {
 
 const SCENARIOS: ScenarioOption[] = [
   { id: 'sin-x2', label: 'sin(πx) and x²' },
-  { id: 'power-pair', label: 'x^(1/3) and x^(1/6) — near equality' },
+  { id: 'power-pair', label: 'x^(1/3) and x^(1/6) — near equality (strict)' },
+  { id: 'power-pair-sharp', label: 'x^(1/3) and x^(2/3) — sharp (ratio = 1)' },
   { id: 'indicators', label: 'Overlapping indicators' },
   { id: 'exp-cos', label: 'eˣ−1 and cos(πx/2)' },
 ];
@@ -60,42 +62,28 @@ export default function HolderMinkowskiExplorer() {
 
   // ── Function curves ───────────────────────────────────────
 
-  const fCurve = useMemo(() => {
-    const N = 250;
-    const [a, b] = scenario.domain;
-    const pts: Array<[number, number]> = [];
-    for (let i = 0; i < N; i++) {
-      const x = a + (i / (N - 1)) * (b - a);
-      pts.push([x, Math.abs(scenario.f(x))]);
-    }
-    return pts;
-  }, [scenario]);
+  const fCurve = useMemo(
+    () => sampleCurve((x) => Math.abs(scenario.f(x)), scenario.domain),
+    [scenario],
+  );
 
-  const gCurve = useMemo(() => {
-    const N = 250;
-    const [a, b] = scenario.domain;
-    const pts: Array<[number, number]> = [];
-    for (let i = 0; i < N; i++) {
-      const x = a + (i / (N - 1)) * (b - a);
-      pts.push([x, Math.abs(scenario.g(x))]);
-    }
-    return pts;
-  }, [scenario]);
+  const gCurve = useMemo(
+    () => sampleCurve((x) => Math.abs(scenario.g(x)), scenario.domain),
+    [scenario],
+  );
 
   // Either |f·g| (Hölder mode) or |f + g| (Minkowski mode).
-  const productCurve = useMemo(() => {
-    const N = 250;
-    const [a, b] = scenario.domain;
-    const pts: Array<[number, number]> = [];
-    for (let i = 0; i < N; i++) {
-      const x = a + (i / (N - 1)) * (b - a);
-      const y = showMinkowski
-        ? Math.abs(scenario.f(x) + scenario.g(x))
-        : Math.abs(scenario.f(x) * scenario.g(x));
-      pts.push([x, y]);
-    }
-    return pts;
-  }, [scenario, showMinkowski]);
+  const productCurve = useMemo(
+    () =>
+      sampleCurve(
+        (x) =>
+          showMinkowski
+            ? Math.abs(scenario.f(x) + scenario.g(x))
+            : Math.abs(scenario.f(x) * scenario.g(x)),
+        scenario.domain,
+      ),
+    [scenario, showMinkowski],
+  );
 
   // ── Inequality computation (memoized) ─────────────────────
 
@@ -114,13 +102,10 @@ export default function HolderMinkowskiExplorer() {
   const ratio = rhs > 0 ? lhs / rhs : 0;
 
   // y-axis max for the left panel
-  const yMax = useMemo(() => {
-    let m = 0;
-    for (const [, y] of fCurve) if (Number.isFinite(y) && y > m) m = y;
-    for (const [, y] of gCurve) if (Number.isFinite(y) && y > m) m = y;
-    for (const [, y] of productCurve) if (Number.isFinite(y) && y > m) m = y;
-    return Math.max(m * 1.15, 0.2);
-  }, [fCurve, gCurve, productCurve]);
+  const yMax = useMemo(
+    () => finiteYMax([fCurve, gCurve, productCurve]),
+    [fCurve, gCurve, productCurve],
+  );
 
   // ── D3 render ─────────────────────────────────────────────
 
