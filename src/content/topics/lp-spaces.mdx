@@ -1,0 +1,75 @@
+---
+title: "Lp Spaces"
+subtitle: "Function spaces with norms — from Hölder and Minkowski inequalities through Riesz-Fischer completeness to the geometric engine of regression, regularization, and modern function-space learning."
+status: "published"
+difficulty: "advanced"
+prerequisites:
+  - "lebesgue-integral"
+tags:
+  - "calculus"
+  - "measure-theory"
+  - "lp-spaces"
+  - "banach-spaces"
+  - "holder-inequality"
+  - "minkowski-inequality"
+  - "riesz-fischer"
+  - "hilbert-space"
+  - "completeness"
+domain: "measure-integration"
+videoId: null
+notebookPath: "notebooks/lp-spaces/27_lp_spaces.ipynb"
+githubUrl: "https://github.com/jonx0037/formalCalculus/blob/main/src/content/topics/lp-spaces.mdx"
+datePublished: 2026-04-07
+estimatedReadTime: 50
+abstract: "Lp spaces are where functions become geometry. The Lebesgue integral from Topic 26 lets us integrate individual functions; Lp spaces organize those functions into vector spaces with norms, turning questions about function approximation into questions about distances and projections. We define the Lp norm, prove the three fundamental inequalities (Jensen, Hölder, Minkowski), and then prove the Riesz-Fischer theorem: Lp is complete, meaning every Cauchy sequence converges — using the Dominated Convergence Theorem from Topic 26 as the key tool. Completeness is what makes Lp spaces Banach spaces, and L2 a Hilbert space. The geometry of the Lp unit ball — diamond at p=1, circle at p=2, square at p=∞ — directly explains why L1 regularization produces sparsity and L2 regularization produces smoothness. Least-squares regression is an L2 projection. Fourier neural operators live in L2. Score matching minimizes an L2 distance between log-density gradients. This topic builds the function-space geometry that machine learning assumes you already have."
+formalmlConnections:
+  - topic: "regression"
+    site: "formalml"
+    relationship: "Least-squares regression minimizes ||y - Xβ||₂², which is an L² norm. The existence and uniqueness of the minimizer follows from L² projection onto a closed subspace — the projection theorem previewed in Section 9."
+  - topic: "fourier-neural-operators"
+    site: "formalml"
+    relationship: "Fourier neural operators learn mappings between L²(ℝᵈ) spaces. The completeness (Riesz-Fischer) and inner product structure of L² are prerequisites for their well-definedness."
+  - topic: "score-matching"
+    site: "formalml"
+    relationship: "Score matching minimizes ∫||∇ log p_θ - ∇ log p_data||² dx, an L² norm of gradient differences. Well-definedness requires ∇ log p ∈ L²."
+  - topic: "wasserstein-distances"
+    site: "formalml"
+    relationship: "The Kantorovich dual formulation of Wasserstein-p distances uses (Lp)* = Lq duality. The constraint set is described using Lp norms."
+  - topic: "kernel-methods"
+    site: "formalml"
+    relationship: "Reproducing kernel Hilbert spaces (RKHS) are subspaces of L². Kernel evaluations are inner products in L², and the representer theorem uses L² completeness."
+connections:
+  - topic: "lebesgue-integral"
+    relationship: "The Lp norm ||f||_p = (∫|f|^p dμ)^(1/p) is defined via the Lebesgue integral. The Riesz-Fischer completeness proof uses the Dominated Convergence Theorem from Topic 26 as the key tool."
+  - topic: "sigma-algebras"
+    relationship: "Measurable functions and the a.e.-equivalence relation are inherited from the measure-theoretic framework in Topic 25. Lp spaces are quotients of the measurable functions by a.e.-equivalence."
+  - topic: "completeness-compactness"
+    relationship: "The Riesz-Fischer proof extracts a convergent subsequence from a Cauchy sequence — the same technique as Bolzano-Weierstrass from Topic 3, now applied in function space."
+  - topic: "fourier-series"
+    relationship: "L² convergence of Fourier series is the statement that partial Fourier sums converge in the L² norm — not pointwise, but in the function-space distance defined here."
+references:
+  - type: "book"
+    title: "Real Analysis"
+    authors: "Royden, H. L. & Fitzpatrick, P. M."
+    year: 2010
+    note: "Fourth edition. Chapter 7 (Lp spaces on ℝ) and Chapter 19 (general measure spaces). Closest to our exposition order."
+  - type: "book"
+    title: "Real Analysis: Modern Techniques and Their Applications"
+    authors: "Folland, G. B."
+    year: 1999
+    note: "Second edition. Chapter 6 (Lp spaces). Concise treatment of Hölder, Minkowski, completeness, and duality."
+  - type: "book"
+    title: "Functional Analysis, Sobolev Spaces and Partial Differential Equations"
+    authors: "Brezis, H."
+    year: 2011
+    note: "Chapter 4 (Lp spaces). Excellent for the density results and dual space characterization."
+  - type: "book"
+    title: "Real Analysis: Measure Theory, Integration, and Hilbert Spaces"
+    authors: "Stein, E. M. & Shakarchi, R."
+    year: 2005
+    note: "Chapter 2. Elegant treatment connecting Lp to Hilbert space theory."
+---
+
+import TheoremBlock from '../../components/ui/TheoremBlock.astro';
+
+This topic is under construction. Sections 1–13 will appear in subsequent commits.
