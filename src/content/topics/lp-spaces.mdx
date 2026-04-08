@@ -354,7 +354,11 @@ The inequality holds with a ratio of about $0.974$ — close to equality but not
 
 <TheoremBlock type="remark" number={4} title="When does Hölder hold with equality?">
 
-Tracing through the proof, equality in Hölder is equivalent to equality in the Young's-inequality step at $\mu$-almost every point, which (Proposition 1) requires $|\tilde f|^p = |\tilde g|^q$ almost everywhere. Un-normalizing, this becomes: there exist constants $\alpha, \beta \geq 0$, not both zero, such that $\alpha |f|^p = \beta |g|^q$ a.e. Functions of this form — where $|f|^p$ and $|g|^q$ are proportional — are called **conjugate pairs**. The "power-pair" preset in the explorer above is a conjugate pair: $|x^{1/3}|^3 = x = |x^{1/6}|^6 \cdot \text{const}$ on $[0, 1]$, which makes the Hölder ratio close to $1$. Sharp Hölder pairs are the same kind of object as eigenvalue–eigenvector pairs in a finite-dimensional inner product space: they expose the "tightness directions" of the inequality.
+Tracing through the proof, equality in Hölder is equivalent to equality in the Young's-inequality step at $\mu$-almost every point, which (Proposition 1) requires $|\tilde f|^p = |\tilde g|^q$ almost everywhere. Un-normalizing, this becomes: there exist constants $\alpha, \beta \geq 0$, not both zero, such that $\alpha |f|^p = \beta |g|^q$ a.e. Functions of this form — where $|f|^p$ and $|g|^q$ are proportional — are called **conjugate pairs**.
+
+The sharpness condition is surprisingly fragile: it is *not* enough for $f$ and $g$ to "look similar." Consider $f(x) = x^{1/3}$ and $g(x) = x^{1/6}$ on $[0, 1]$ with $p = 3$, $q = 3/2$ (the "power-pair" preset in the explorer above). The powers look naturally matched, but the pointwise check fails: $|f|^p = x$ while $|g|^q = (x^{1/6})^{3/2} = x^{1/4}$, so $|f|^p$ and $|g|^q$ differ by a factor of $x^{3/4}$ — they are not proportional, and the Hölder ratio sits at about $0.9747$ rather than $1$.
+
+To *actually* get equality at $p = 3$, $q = 3/2$, we need $|f|^p \propto |g|^q$. The simplest way: take $f = x^{\alpha}$ and $g = x^{\beta}$ with $\alpha p = \beta q$, so $3\alpha = (3/2)\beta$, so $\beta = 2\alpha$. Choosing $\alpha = 1/3$ gives $g = x^{2/3}$, and now $|f|^p = x = |g|^q$ exactly. This is the "power-pair-sharp" preset in the explorer — flip to it and the ratio snaps to $1$ to within quadrature precision. Sharp Hölder pairs are the analogue of eigenvalue–eigenvector pairs in a finite-dimensional inner product space: they expose the "tightness directions" of the inequality.
 
 </TheoremBlock>
 

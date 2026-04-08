@@ -104,25 +104,29 @@ export interface CauchySequenceData {
 export function getLpBallPoints(p: number, nPoints: number = 360): LpBallData {
   if (!Number.isFinite(p)) {
     // p = ∞: the unit ball is the square [-1, 1]^2.
-    // Generate the boundary as 4 segments × (nPoints / 4) samples each so
-    // downstream consumers see roughly the same point count as finite-p balls.
+    // Generate the boundary as 4 segments × perSide samples each. Using
+    // `t = i / (perSide - 1)` with `i < perSide` means each edge starts AT
+    // its first corner and ends AT its second corner — so adjacent edges
+    // share corners (e.g. top ends at (-1, 1), left starts at (-1, 1)).
+    // curveLinearClosed is happy with the zero-length repeat; the important
+    // thing is that the square's four corners are never "cut" by a chord.
     const perSide = Math.max(2, Math.floor(nPoints / 4));
     const boundary: Array<{ x: number; y: number }> = [];
     for (let i = 0; i < perSide; i++) {
-      const t = i / perSide;
+      const t = i / (perSide - 1);
       boundary.push({ x: 1 - 2 * t, y: 1 }); // top edge: (1,1) → (-1,1)
     }
     for (let i = 0; i < perSide; i++) {
-      const t = i / perSide;
-      boundary.push({ x: -1, y: 1 - 2 * t }); // left edge
+      const t = i / (perSide - 1);
+      boundary.push({ x: -1, y: 1 - 2 * t }); // left edge: (-1,1) → (-1,-1)
     }
     for (let i = 0; i < perSide; i++) {
-      const t = i / perSide;
-      boundary.push({ x: -1 + 2 * t, y: -1 }); // bottom edge
+      const t = i / (perSide - 1);
+      boundary.push({ x: -1 + 2 * t, y: -1 }); // bottom edge: (-1,-1) → (1,-1)
     }
     for (let i = 0; i < perSide; i++) {
-      const t = i / perSide;
-      boundary.push({ x: 1, y: -1 + 2 * t }); // right edge
+      const t = i / (perSide - 1);
+      boundary.push({ x: 1, y: -1 + 2 * t }); // right edge: (1,-1) → (1,1)
     }
     return { p, boundary, area: 4, shapeName: 'square' };
   }
@@ -155,14 +159,21 @@ export function getLpBallPoints(p: number, nPoints: number = 360): LpBallData {
 // ── Hölder/Minkowski scenarios ─────────────────────────────
 
 /**
- * Get a preset Hölder/Minkowski scenario by id. The four presets cover:
+ * Get a preset Hölder/Minkowski scenario by id. The five presets cover:
  *
- *  - 'sin-x2'      → strict inequality (most natural Hölder example)
- *  - 'power-pair'  → near-equality case (matches notebook Cell 6 / brief Example 5)
- *  - 'indicators'  → both functions are simple step functions
- *  - 'exp-cos'     → smooth non-trivial pair
+ *  - 'sin-x2'           → strict inequality (most natural Hölder example)
+ *  - 'power-pair'       → near-equality but NOT sharp (matches brief Example 5)
+ *  - 'power-pair-sharp' → genuine conjugate pair, ratio = 1 exactly at p = 3
+ *  - 'indicators'       → both functions are simple step functions
+ *  - 'exp-cos'          → smooth non-trivial pair
  *
  * Unknown ids fall back to 'sin-x2'.
+ *
+ * The distinction between 'power-pair' and 'power-pair-sharp' is pedagogically
+ * important: a "nicely matched" pair of powers (x^(1/3) and x^(1/6)) is NOT
+ * automatically a Hölder conjugate pair, because the equality condition
+ * requires |f|^p ∝ |g|^q pointwise, not just "both powers of x." The sharp
+ * case requires β = 2α when p = 3, q = 3/2 — so g = x^(2/3), not x^(1/6).
  */
 export function getHolderScenario(scenarioId: string): HolderScenario {
   switch (scenarioId) {
@@ -175,7 +186,18 @@ export function getHolderScenario(scenarioId: string): HolderScenario {
         gLabel: 'x^{1/6}',
         domain: [0, 1],
         description:
-          'A power-function pair tuned so the Hölder bound is nearly sharp at p = 3.',
+          'Two power functions — close but NOT a Hölder conjugate pair. At p = 3, ratio ≈ 0.9747 (strict inequality).',
+      };
+    case 'power-pair-sharp':
+      return {
+        name: 'power-pair-sharp',
+        f: (x) => Math.pow(Math.max(x, 0), 1 / 3),
+        g: (x) => Math.pow(Math.max(x, 0), 2 / 3),
+        fLabel: 'x^{1/3}',
+        gLabel: 'x^{2/3}',
+        domain: [0, 1],
+        description:
+          'A genuine Hölder conjugate pair at p = 3, q = 3/2: |f|^p = x = |g|^q pointwise, so ratio = 1 exactly.',
       };
     case 'indicators':
       return {
