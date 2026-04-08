@@ -379,7 +379,7 @@ export default function RieszFischerExplorer() {
             value={p}
             onChange={(e) => setP(parseFloat(e.target.value))}
             className="w-32"
-            aria-label="Lp exponent p"
+            aria-label="Riesz-Fischer: Lp exponent p"
           />
         </label>
       </div>

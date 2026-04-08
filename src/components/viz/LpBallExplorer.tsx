@@ -221,7 +221,7 @@ export default function LpBallExplorer() {
               setPlaying(false);
             }}
             className="w-40"
-            aria-label="Lp exponent p"
+            aria-label="Lp ball: exponent p"
           />
         </label>
 

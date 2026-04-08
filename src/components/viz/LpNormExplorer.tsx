@@ -375,7 +375,7 @@ export default function LpNormExplorer() {
             value={p}
             onChange={(e) => setP(parseFloat(e.target.value))}
             className="w-40"
-            aria-label="Lp exponent p"
+            aria-label="Lp norm: exponent p"
           />
         </label>
       </div>
