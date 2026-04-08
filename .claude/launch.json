@@ -3,14 +3,14 @@
   "configurations": [
     {
       "name": "Astro Dev",
-      "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["dev"],
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "source ~/.nvm/nvm.sh && nvm use 24 > /dev/null && pnpm dev"],
       "port": 4321
     },
     {
       "name": "Astro Preview",
-      "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["preview"],
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "source ~/.nvm/nvm.sh && nvm use 24 > /dev/null && pnpm preview"],
       "port": 4321
     }
   ]
