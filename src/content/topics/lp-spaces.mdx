@@ -1,0 +1,854 @@
+---
+title: "Lp Spaces"
+subtitle: "Function spaces with norms — from Hölder and Minkowski inequalities through Riesz-Fischer completeness to the geometric engine of regression, regularization, and modern function-space learning."
+status: "published"
+difficulty: "advanced"
+prerequisites:
+  - "lebesgue-integral"
+tags:
+  - "calculus"
+  - "measure-theory"
+  - "lp-spaces"
+  - "banach-spaces"
+  - "holder-inequality"
+  - "minkowski-inequality"
+  - "riesz-fischer"
+  - "hilbert-space"
+  - "completeness"
+domain: "measure-integration"
+videoId: null
+notebookPath: "notebooks/lp-spaces/27_lp_spaces.ipynb"
+githubUrl: "https://github.com/jonx0037/formalCalculus/blob/main/src/content/topics/lp-spaces.mdx"
+datePublished: 2026-04-07
+estimatedReadTime: 50
+abstract: "Lp spaces are where functions become geometry. The Lebesgue integral from Topic 26 lets us integrate individual functions; Lp spaces organize those functions into vector spaces with norms, turning questions about function approximation into questions about distances and projections. We define the Lp norm, prove the three fundamental inequalities (Jensen, Hölder, Minkowski), and then prove the Riesz-Fischer theorem: Lp is complete, meaning every Cauchy sequence converges — using the Dominated Convergence Theorem from Topic 26 as the key tool. Completeness is what makes Lp spaces Banach spaces, and L2 a Hilbert space. The geometry of the Lp unit ball — diamond at p=1, circle at p=2, square at p=∞ — directly explains why L1 regularization produces sparsity and L2 regularization produces smoothness. Least-squares regression is an L2 projection. Fourier neural operators live in L2. Score matching minimizes an L2 distance between log-density gradients. This topic builds the function-space geometry that machine learning assumes you already have."
+formalmlConnections:
+  - topic: "regression"
+    site: "formalml"
+    relationship: "Least-squares regression minimizes ||y - Xβ||₂², which is an L² norm. The existence and uniqueness of the minimizer follows from L² projection onto a closed subspace — the projection theorem previewed in Section 9."
+  - topic: "fourier-neural-operators"
+    site: "formalml"
+    relationship: "Fourier neural operators learn mappings between L²(ℝᵈ) spaces. The completeness (Riesz-Fischer) and inner product structure of L² are prerequisites for their well-definedness."
+  - topic: "score-matching"
+    site: "formalml"
+    relationship: "Score matching minimizes ∫||∇ log p_θ - ∇ log p_data||² dx, an L² norm of gradient differences. Well-definedness requires ∇ log p ∈ L²."
+  - topic: "wasserstein-distances"
+    site: "formalml"
+    relationship: "The Kantorovich dual formulation of Wasserstein-p distances uses (Lp)* = Lq duality. The constraint set is described using Lp norms."
+  - topic: "kernel-methods"
+    site: "formalml"
+    relationship: "Reproducing kernel Hilbert spaces (RKHS) are subspaces of L². Kernel evaluations are inner products in L², and the representer theorem uses L² completeness."
+connections:
+  - topic: "lebesgue-integral"
+    relationship: "The Lp norm ||f||_p = (∫|f|^p dμ)^(1/p) is defined via the Lebesgue integral. The Riesz-Fischer completeness proof uses the Dominated Convergence Theorem from Topic 26 as the key tool."
+  - topic: "sigma-algebras"
+    relationship: "Measurable functions and the a.e.-equivalence relation are inherited from the measure-theoretic framework in Topic 25. Lp spaces are quotients of the measurable functions by a.e.-equivalence."
+  - topic: "completeness-compactness"
+    relationship: "The Riesz-Fischer proof extracts a convergent subsequence from a Cauchy sequence — the same technique as Bolzano-Weierstrass from Topic 3, now applied in function space."
+  - topic: "fourier-series"
+    relationship: "L² convergence of Fourier series is the statement that partial Fourier sums converge in the L² norm — not pointwise, but in the function-space distance defined here."
+references:
+  - type: "book"
+    title: "Real Analysis"
+    authors: "Royden, H. L. & Fitzpatrick, P. M."
+    year: 2010
+    note: "Fourth edition. Chapter 7 (Lp spaces on ℝ) and Chapter 19 (general measure spaces). Closest to our exposition order."
+  - type: "book"
+    title: "Real Analysis: Modern Techniques and Their Applications"
+    authors: "Folland, G. B."
+    year: 1999
+    note: "Second edition. Chapter 6 (Lp spaces). Concise treatment of Hölder, Minkowski, completeness, and duality."
+  - type: "book"
+    title: "Functional Analysis, Sobolev Spaces and Partial Differential Equations"
+    authors: "Brezis, H."
+    year: 2011
+    note: "Chapter 4 (Lp spaces). Excellent for the density results and dual space characterization."
+  - type: "book"
+    title: "Real Analysis: Measure Theory, Integration, and Hilbert Spaces"
+    authors: "Stein, E. M. & Shakarchi, R."
+    year: 2005
+    note: "Chapter 2. Elegant treatment connecting Lp to Hilbert space theory."
+---
+
+import TheoremBlock from '../../components/ui/TheoremBlock.astro';
+import HolderMinkowskiExplorer from '../../components/viz/HolderMinkowskiExplorer.tsx';
+import LpBallExplorer from '../../components/viz/LpBallExplorer.tsx';
+import LpNormExplorer from '../../components/viz/LpNormExplorer.tsx';
+import RieszFischerExplorer from '../../components/viz/RieszFischerExplorer.tsx';
+
+## 1. Three Puzzles $L^p$ Spaces Solve
+
+Topic 26 built the Lebesgue integral and proved the three convergence theorems — Monotone Convergence, Fatou, and Dominated Convergence. We can now integrate measurable functions, take limits of integrals, and swap limits and integrals under modest hypotheses. That is enough to *evaluate* integrals, but it is not yet enough to *organize* them. The functions we integrate live as scattered objects: each one has its own integral, but we have no way to talk about how *close* two functions are, no way to talk about a sequence of functions converging to another function in a useful sense, and no way to do the kind of geometric reasoning — distances, projections, perpendicularity — that we routinely do with vectors in $\mathbb{R}^n$.
+
+This topic fixes that. We organize measurable functions into vector spaces — the $L^p$ spaces — equipped with norms that turn function-space questions into geometric ones. Three puzzles motivate the construction.
+
+**1. When does least-squares regression have a unique solution?** Linear regression finds the function $\hat f$ in some class $\mathcal{F}$ that minimizes $\int (y - f)^2 \, d\mu$. This is a "closest point" problem: we want the element of $\mathcal{F}$ that is nearest to the data $y$. But "nearest" requires a *distance* on functions. And for the minimization to have a solution at all, we need the space to be *complete* — minimizing sequences should converge to something *inside* the space, not slip out the side. We will see in Sections 6 and 7 that $L^2$ provides exactly this: a distance ($\|f - g\|_2$) and a completeness theorem (Riesz–Fischer) that guarantees minimizing sequences land somewhere legal.
+
+**2. Why do Fourier series converge "in energy" but not pointwise?** Topic 22 showed that the partial Fourier sums of a discontinuous function — say, a square wave — overshoot at the discontinuity by about 9% no matter how many terms we add. This is the Gibbs phenomenon, and it tells us the partial sums *do not* converge pointwise to the target at the jump. Yet the integrated squared error $\int |f - S_n f|^2 \, dx$ goes to zero. So in some sense the partial sums *do* converge — just not pointwise. The right notion of convergence is convergence in the $L^2$ *norm*, which measures "how much energy is in the error" rather than "how big is the error at each point." The two notions are different, and the difference is exactly the difference between asking "how does $f$ behave at $x$?" and "how does $f$ behave on average?"
+
+**3. What does it mean for two probability densities to be "close"?** Generative models in machine learning are trained by minimizing some kind of distance between the learned density $p_\theta$ and the data density $p_{\text{data}}$. But "distance between densities" is not a single thing — it depends on which $L^p$ norm we use to measure it. The $L^1$ distance $\int |p_\theta - p_{\text{data}}| \, dx$ is the total variation: it cares about *every* region where the two densities disagree. The $L^2$ distance penalizes large pointwise errors quadratically, smoothing out the influence of small errors and amplifying the influence of large ones. The $L^\infty$ distance demands uniform agreement: even one point of large disagreement makes the distance large. The choice of $p$ encodes a modeling decision about which kinds of errors we are willing to tolerate.
+
+These three puzzles all reduce to the same demand: we need a vector space of functions, equipped with a norm, in which we can do geometric reasoning. That is what $L^p$ provides.
+
+## 2. The $L^p$ Norm and $L^p$ Spaces
+
+We start with the definition of the norm and then quotient by an equivalence relation to make it a true norm rather than a seminorm. The construction is one of the cleanest examples of "promote a seminorm to a norm by killing the kernel" in analysis.
+
+<TheoremBlock type="definition" number={1} title="The $L^p$ seminorm">
+
+Let $(\Omega, \mathcal{F}, \mu)$ be a measure space, $1 \leq p < \infty$, and $f$ a measurable function $\Omega \to \mathbb{R}$. The **$L^p$ seminorm** of $f$ is
+
+$$\|f\|_p \;=\; \left( \int |f|^p \, d\mu \right)^{1/p}.$$
+
+This is a seminorm, not a norm: $\|f\|_p \geq 0$, scalar multiplication pulls through ($\|\alpha f\|_p = |\alpha| \, \|f\|_p$), and the triangle inequality holds (Minkowski, Section 5). What it does *not* satisfy is the definiteness axiom: $\|f\|_p = 0$ does not imply $f = 0$ — only $f = 0$ almost everywhere.
+
+</TheoremBlock>
+
+The failure of definiteness is the whole reason we need the next step. If $f = 0$ on a set of full measure but is non-zero on a measure-zero set, the integral $\int |f|^p \, d\mu = 0$ and so $\|f\|_p = 0$ — yet $f$ is not the zero function. To get a true norm we have to identify functions that agree almost everywhere.
+
+<TheoremBlock type="definition" number={2} title="The space $L^p(\mu)$">
+
+Define the equivalence relation $f \sim g$ on measurable functions by
+
+$$f \sim g \;\iff\; f = g \text{ $\mu$-almost everywhere}.$$
+
+The space $L^p(\mu)$ is the set of equivalence classes $[f]$ of measurable functions for which $\|f\|_p < \infty$. On $L^p(\mu)$, the seminorm becomes a *norm*:
+
+$$\|[f]\|_p \;=\; 0 \;\iff\; [f] = [0],$$
+
+because $\|f\|_p = 0$ now means "$f = 0$ a.e.", which is exactly the statement that $[f]$ is the zero equivalence class.
+
+</TheoremBlock>
+
+The quotient is not just a technicality. Without it, we would have a *seminormed* space: a vector space where some non-zero elements have zero "length." Quotient by the kernel (the functions of seminorm zero) and the seminorm becomes a norm. The norm is what gives us a metric ($d(f, g) = \|f - g\|_p$), and the metric is what gives us geometry — open balls, convergence, completeness, projections. From now on we will write $f \in L^p$ when we mean the equivalence class $[f] \in L^p$.
+
+The case $p = \infty$ needs its own definition because the formula $(\int |f|^p)^{1/p}$ has no obvious meaning when $p$ is infinite. The right notion is the *essential supremum*: the smallest constant that bounds $|f|$ except possibly on a null set.
+
+<TheoremBlock type="definition" number={3} title="The essential supremum and $L^\infty(\mu)$">
+
+For a measurable function $f$, the **essential supremum** is
+
+$$\operatorname{ess\,sup} |f| \;=\; \inf \bigl\{ M \geq 0 \;:\; |f(x)| \leq M \text{ for $\mu$-a.e. } x \bigr\}.$$
+
+The space $L^\infty(\mu)$ consists of equivalence classes (under a.e.-equality) of measurable functions $f$ for which $\operatorname{ess\,sup} |f| < \infty$. Its norm is
+
+$$\|f\|_\infty \;=\; \operatorname{ess\,sup} |f|.$$
+
+</TheoremBlock>
+
+The essential supremum is the natural measure-theoretic version of the supremum: it ignores what happens on null sets. A function that equals $1$ everywhere except at a single point where it equals $10^{100}$ has essential supremum $1$, even though its actual supremum is $10^{100}$ — because the offending point is a null set, and a.e.-equivalence renders it invisible.
+
+<TheoremBlock type="example" number={1} title="$x^{-1/3}$ is in $L^p$ for $p < 3$ but not $L^3$">
+
+Consider $f(x) = x^{-1/3}$ on $(0, 1]$ with Lebesgue measure. We compute
+
+$$\|f\|_p^p \;=\; \int_0^1 x^{-p/3} \, dx \;=\; \begin{cases} \dfrac{1}{1 - p/3} & \text{if } p < 3, \\ \infty & \text{if } p \geq 3. \end{cases}$$
+
+So $f \in L^p((0, 1])$ for every $p < 3$, with $\|f\|_p$ growing as $p$ approaches $3$. At $p = 3$ the integral $\int_0^1 x^{-1} \, dx$ diverges logarithmically and the norm becomes infinite, so $f \notin L^3$. The number $3$ is called the **critical exponent** for this function: for any $p$ below it the function is integrable to the $p$-th power, and for any $p$ at or above it, it is not. Different functions have different critical exponents, and that variability is what makes the family of $L^p$ spaces interesting — the same function can be a member of one space and not another.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={2} title="A function in every finite $L^p$ but not in $L^\infty$">
+
+Let $f(x) = (\log(1/x))^{-1}$ on $(0, 1/2)$ extended by zero outside. As $x \to 0^+$, $\log(1/x) \to \infty$, so $f(x) \to 0$ — the function is bounded near $0$. But near $x = 1/2$ from below, $\log(1/x) \to \log 2 > 0$, so $f$ approaches a finite positive value. The essential supremum is finite on most of the interval but blows up on the *upper* boundary in a different way:
+
+$$\sup_{x \in (0, 1/2)} f(x) \;=\; \lim_{x \to 1/2^-} \frac{1}{\log(1/x)} \;=\; \frac{1}{\log 2} \;\approx\; 1.44.$$
+
+So this particular $f$ is in fact in $L^\infty$. To get a function in every finite $L^p$ but *not* in $L^\infty$, take instead $f(x) = (\log(1/x))^{1/2}$ on $(0, 1)$: the integrals $\int_0^1 (\log(1/x))^{p/2} \, dx$ are all finite (the logarithm grows slower than any power, so integrating against it converges for every $p$), but $f(x) \to \infty$ as $x \to 0$, so $\operatorname{ess\,sup} |f| = \infty$ and $f \notin L^\infty$. The membership patterns of $L^p$ as $p$ varies are surprisingly subtle, and they reflect different ways a function can fail to be "small."
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={1} title="Notation: $f$ and $[f]$">
+
+We will write $f \in L^p$ throughout this topic when we technically mean $[f] \in L^p$. The abuse is universal in analysis and rarely causes confusion: when a statement holds for $f$, it holds for every representative of $[f]$, since the statements are themselves only sensitive to a.e.-behavior. Two functions in the same equivalence class are interchangeable for every purpose we care about — integrals against them, $L^p$ norms, convergence in $L^p$ — so working with representatives instead of classes is harmless and notationally cleaner.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={2} title="Why the quotient is essential">
+
+The quotient by a.e.-equivalence is not optional. Without it, the seminorm $\|\cdot\|_p$ is *not* a norm, the functional $f \mapsto \|f\|_p$ does *not* separate points, and the metric $d(f, g) = \|f - g\|_p$ is *not* a metric — two distinct functions can be at distance zero. None of the geometric constructions we want — open balls, convergence in norm, completeness, orthogonal projection — make sense in a seminormed space, because the topology is not Hausdorff. The quotient promotes the seminorm to a norm by collapsing every equivalence class to a single point, and that single move makes the entire theory of $L^p$ spaces possible.
+
+</TheoremBlock>
+
+The interactive viz below makes the dependence of $\|f\|_p$ on $p$ concrete: pick a function from the dropdown, slide $p$, and watch how the integrand $|f(x)|^p$ redistributes mass as $p$ changes. For large $p$ the mass concentrates where $|f|$ is largest, and the norm approaches the essential supremum.
+
+<LpNormExplorer client:visible />
+
+## 3. Jensen's Inequality
+
+Before we prove Hölder and Minkowski, we need one preparatory inequality that is interesting in its own right and that also previews the proof technique. Jensen's inequality says that integrating a convex function against a probability measure gives at least the convex function applied to the integral. It is the single inequality that connects measure theory to information theory: every non-negativity result about KL divergence, mutual information, and entropy is a Jensen application.
+
+<TheoremBlock type="theorem" number={1} title="Jensen's inequality">
+
+Let $(\Omega, \mathcal{F}, \mu)$ be a probability space ($\mu(\Omega) = 1$), let $f \in L^1(\mu)$, and let $\phi: \mathbb{R} \to \mathbb{R}$ be convex. Then
+
+$$\phi\!\left( \int f \, d\mu \right) \;\leq\; \int \phi \circ f \, d\mu.$$
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+The proof uses one fact about convex functions: at every point, a convex function has a *supporting line*. That is, for every $a \in \mathbb{R}$ there exists a slope $\lambda \in \mathbb{R}$ (the right or left derivative of $\phi$ at $a$, or any value in between if $\phi$ is not differentiable at $a$) such that
+
+$$\phi(t) \;\geq\; \phi(a) + \lambda (t - a) \quad \text{for all } t \in \mathbb{R}.$$
+
+This is the definition of $\phi$ being convex, restated geometrically: the graph of $\phi$ lies above every one of its tangent lines.
+
+**Step 1: Choose $a$.** Set $a = \int f \, d\mu$ — the integral of $f$ against $\mu$. Since $\mu$ is a probability measure and $f \in L^1$, this integral is a finite real number. Choose any supporting line of $\phi$ at $a$ with slope $\lambda$.
+
+**Step 2: Apply the supporting-line inequality pointwise.** For each $x \in \Omega$ we have $f(x) \in \mathbb{R}$, so the supporting-line inequality with $t = f(x)$ gives
+
+$$\phi(f(x)) \;\geq\; \phi(a) + \lambda (f(x) - a).$$
+
+This holds at every point $x$, with the same constants $\phi(a)$ and $\lambda$.
+
+**Step 3: Integrate against $\mu$.** Both sides of the pointwise inequality are measurable functions of $x$, and the right-hand side is integrable because it is an affine function of $f$ and $f \in L^1$. Integrating preserves the inequality:
+
+$$\int \phi(f(x)) \, d\mu(x) \;\geq\; \int \bigl[ \phi(a) + \lambda (f(x) - a) \bigr] \, d\mu(x).$$
+
+The right side splits using linearity of the integral:
+
+$$\int \phi(f) \, d\mu \;\geq\; \phi(a) \cdot \mu(\Omega) + \lambda \int (f - a) \, d\mu \;=\; \phi(a) + \lambda \cdot 0 \;=\; \phi(a).$$
+
+We used $\mu(\Omega) = 1$ (probability measure) for the first term and $\int (f - a) \, d\mu = \int f \, d\mu - a = a - a = 0$ for the second. Substituting $a = \int f \, d\mu$ on the right gives the conclusion.
+
+</TheoremBlock>
+
+The proof is short but geometrically sharp: convexity says the graph of $\phi$ lies above its tangent line, and integration is linear, so anything you can say about a tangent line you can say about its integral. Jensen's inequality is, in essence, the statement that integration commutes with affine transformations and convex functions only "lose" information in the right direction.
+
+<TheoremBlock type="example" number={3} title="KL divergence is non-negative — the first Jensen application">
+
+Let $P$ and $Q$ be probability measures on $\Omega$ with $P \ll Q$ (i.e., $P$ is absolutely continuous with respect to $Q$ — every $Q$-null set is $P$-null), and let $g = dP/dQ$ be the Radon–Nikodym density (we will formalize Radon–Nikodym in Topic 28; for now treat $g$ as the "ratio" of $P$ to $Q$). The **Kullback–Leibler divergence** of $P$ from $Q$ is
+
+$$D_{\mathrm{KL}}(P \,\|\, Q) \;=\; \int \log g \, dP \;=\; -\int \log(1/g) \, dP.$$
+
+The function $\phi(t) = -\log t$ is convex on $(0, \infty)$. Apply Jensen's inequality to $f = 1/g$ against the probability measure $P$:
+
+$$-\log\!\left( \int (1/g) \, dP \right) \;\leq\; \int -\log(1/g) \, dP \;=\; D_{\mathrm{KL}}(P \,\|\, Q).$$
+
+Now compute the integral on the left. Since $g = dP/dQ$, we have $\int (1/g) \, dP = \int (1/g) \cdot g \, dQ = \int 1 \, dQ = 1$. So $-\log(1) = 0$, and we get
+
+$$0 \;\leq\; D_{\mathrm{KL}}(P \,\|\, Q),$$
+
+with equality iff $1/g$ is constant $P$-a.e. (the equality case of Jensen for strictly convex $\phi$), which means $g$ is constant, which means $g = 1$ a.e., which means $P = Q$. This is **Gibbs' inequality**, the foundational non-negativity result of information theory.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={3} title="Jensen connects measure theory to information theory">
+
+Jensen's inequality is the bridge from measure theory to information theory, and it is the *only* bridge most people remember after they leave grad school. Every non-negativity statement in information theory — Gibbs' inequality (KL $\geq 0$), the chain rule for KL divergence, the data processing inequality, the convexity of mutual information — is a Jensen application. Variational methods in machine learning rest on the same foundation: the ELBO (evidence lower bound) used in variational autoencoders and Bayesian neural networks is Jensen applied to $\log p(x) = \log \int p(x, z) \, dz$, and the inequality slack is exactly the KL divergence between the variational posterior and the true posterior. Forward link: <a href="https://formalml.com/topics/variational-inference" class="formalml-badge" target="_blank" rel="noopener">Variational Inference</a>.
+
+</TheoremBlock>
+
+## 4. Hölder's Inequality
+
+Hölder's inequality is the central duality inequality of $L^p$ spaces. It says that the integral of a product of two functions is bounded by the product of their respective $L^p$ norms — provided the exponents are *conjugate*. The notion of conjugate exponents is the engine of the entire $L^p$ duality theory we will develop in Section 10.
+
+We prove Hölder via Young's inequality, which is itself a one-line consequence of the convexity of the exponential. Young's inequality is the pointwise inequality that, when integrated, becomes Hölder.
+
+<TheoremBlock type="proposition" number={1} title="Young's inequality">
+
+For $a, b \geq 0$ and conjugate exponents $p, q > 1$ satisfying $1/p + 1/q = 1$:
+
+$$ab \;\leq\; \frac{a^p}{p} + \frac{b^q}{q}.$$
+
+Equality holds iff $a^p = b^q$.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+The cases $a = 0$ or $b = 0$ are trivial, so assume $a, b > 0$.
+
+**Step 1: Rewrite the product as an exponential.** Take logarithms inside an exponential:
+
+$$ab \;=\; \exp(\log a + \log b) \;=\; \exp\!\left( \frac{1}{p} \cdot p \log a + \frac{1}{q} \cdot q \log b \right).$$
+
+The exponent on the right is a *convex combination* of $p \log a$ and $q \log b$, with weights $1/p$ and $1/q$ that sum to $1$ by the conjugacy condition.
+
+**Step 2: Apply convexity of the exponential.** The function $\phi(t) = e^t$ is convex. For any convex combination $\alpha u + \beta v$ with $\alpha, \beta \geq 0$ and $\alpha + \beta = 1$, convexity gives $e^{\alpha u + \beta v} \leq \alpha e^u + \beta e^v$. With $\alpha = 1/p$, $\beta = 1/q$, $u = p \log a$, and $v = q \log b$:
+
+$$\exp\!\left( \frac{1}{p} \cdot p \log a + \frac{1}{q} \cdot q \log b \right) \;\leq\; \frac{1}{p} \exp(p \log a) + \frac{1}{q} \exp(q \log b).$$
+
+**Step 3: Simplify.** Note that $\exp(p \log a) = a^p$ and $\exp(q \log b) = b^q$. Combining the previous two displays:
+
+$$ab \;\leq\; \frac{a^p}{p} + \frac{b^q}{q}.$$
+
+Equality in the convexity step requires $p \log a = q \log b$ (the two points being averaged are the same), which after exponentiation is $a^p = b^q$.
+
+</TheoremBlock>
+
+Young's inequality is a *pointwise* statement: it bounds the product of two non-negative numbers by an explicit sum involving their powers. Hölder's inequality is what you get by integrating Young pointwise after a clever normalization step — it converts a pointwise bound on numbers into an integrated bound on functions.
+
+<TheoremBlock type="theorem" number={2} title="Hölder's inequality">
+
+Let $f \in L^p(\mu)$ and $g \in L^q(\mu)$ with $1 \leq p \leq \infty$ and $1/p + 1/q = 1$ (with the convention $1/\infty = 0$, so $p = 1$ pairs with $q = \infty$ and vice versa). Then $fg \in L^1(\mu)$ and
+
+$$\|fg\|_1 \;\leq\; \|f\|_p \, \|g\|_q.$$
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+We prove the case $1 < p < \infty$ (so $1 < q < \infty$ as well). The endpoint cases $p = 1, q = \infty$ and $p = \infty, q = 1$ are immediate from the definition of $\|g\|_\infty$ as the essential supremum: $|fg| \leq \|g\|_\infty \cdot |f|$ a.e., so $\int |fg| \leq \|g\|_\infty \int |f| = \|f\|_1 \|g\|_\infty$.
+
+**Step 1: Trivial cases.** If $\|f\|_p = 0$, then $f = 0$ a.e., so $fg = 0$ a.e., and both sides of the inequality are zero. Similarly for $\|g\|_q = 0$. So we may assume $\|f\|_p > 0$ and $\|g\|_q > 0$.
+
+**Step 2: Normalize.** Define the rescaled functions
+
+$$\tilde f \;=\; \frac{f}{\|f\|_p}, \qquad \tilde g \;=\; \frac{g}{\|g\|_q}.$$
+
+By construction $\|\tilde f\|_p = 1$ and $\|\tilde g\|_q = 1$. Proving $\|\tilde f \tilde g\|_1 \leq 1$ for the normalized pair will give $\|fg\|_1 \leq \|f\|_p \|g\|_q$ after multiplying through by $\|f\|_p \|g\|_q$.
+
+**Step 3: Apply Young's inequality pointwise.** For each $x$, set $a = |\tilde f(x)|$ and $b = |\tilde g(x)|$ in Young's inequality:
+
+$$|\tilde f(x) \tilde g(x)| \;=\; |\tilde f(x)| \cdot |\tilde g(x)| \;\leq\; \frac{|\tilde f(x)|^p}{p} + \frac{|\tilde g(x)|^q}{q}.$$
+
+This holds at every point $x$, with the same $p$ and $q$.
+
+**Step 4: Integrate against $\mu$.** Both sides are measurable functions of $x$, and the right-hand side is integrable since $\tilde f \in L^p$ and $\tilde g \in L^q$. Integration preserves the inequality:
+
+$$\int |\tilde f \tilde g| \, d\mu \;\leq\; \frac{1}{p} \int |\tilde f|^p \, d\mu + \frac{1}{q} \int |\tilde g|^q \, d\mu.$$
+
+By construction, $\int |\tilde f|^p \, d\mu = \|\tilde f\|_p^p = 1^p = 1$, and likewise $\int |\tilde g|^q \, d\mu = 1$. The right side becomes $1/p + 1/q = 1$, so
+
+$$\|\tilde f \tilde g\|_1 \;=\; \int |\tilde f \tilde g| \, d\mu \;\leq\; 1.$$
+
+**Step 5: Un-normalize.** Multiplying both sides by $\|f\|_p \|g\|_q$:
+
+$$\|fg\|_1 \;=\; \|f\|_p \|g\|_q \cdot \|\tilde f \tilde g\|_1 \;\leq\; \|f\|_p \|g\|_q.$$
+
+</TheoremBlock>
+
+The proof is a perfect example of the "integrate a pointwise inequality" technique. Young's inequality is a pointwise bound on numbers; integrating it after a normalization step turns it into an integrated bound on functions. The conjugacy condition $1/p + 1/q = 1$ is what makes the right-hand side simplify to $1$ — without it, the proof would not close.
+
+<TheoremBlock type="example" number={4} title="Cauchy–Schwarz is Hölder at $p = q = 2$">
+
+The most familiar special case of Hölder is the **Cauchy–Schwarz inequality**:
+
+$$\int |fg| \, d\mu \;\leq\; \left( \int |f|^2 \, d\mu \right)^{1/2} \left( \int |g|^2 \, d\mu \right)^{1/2}.$$
+
+This is Hölder's inequality with $p = q = 2$ — and the conjugacy condition $1/2 + 1/2 = 1$ checks out. Cauchy–Schwarz is the inequality that makes $L^2$ an *inner product space*: if we define $\langle f, g \rangle = \int fg \, d\mu$, then Cauchy–Schwarz says $|\langle f, g \rangle| \leq \|f\|_2 \|g\|_2$, which is the defining property of an inner product. Section 9 develops this perspective in detail.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={5} title="Hölder with explicit power functions">
+
+Consider $f(x) = x^{1/3}$ and $g(x) = x^{1/6}$ on $[0, 1]$ with Lebesgue measure, $p = 3$ and $q = 3/2$ (note $1/3 + 2/3 = 1$). Compute each piece of Hölder:
+
+$$\|fg\|_1 \;=\; \int_0^1 x^{1/3} \cdot x^{1/6} \, dx \;=\; \int_0^1 x^{1/2} \, dx \;=\; \frac{2}{3} \;\approx\; 0.6667.$$
+
+$$\|f\|_3 \;=\; \left( \int_0^1 (x^{1/3})^3 \, dx \right)^{1/3} \;=\; \left( \int_0^1 x \, dx \right)^{1/3} \;=\; \left( \frac{1}{2} \right)^{1/3} \;\approx\; 0.7937.$$
+
+$$\|g\|_{3/2} \;=\; \left( \int_0^1 (x^{1/6})^{3/2} \, dx \right)^{2/3} \;=\; \left( \int_0^1 x^{1/4} \, dx \right)^{2/3} \;=\; \left( \frac{4}{5} \right)^{2/3} \;\approx\; 0.8618.$$
+
+The product $\|f\|_3 \cdot \|g\|_{3/2} \approx 0.7937 \cdot 0.8618 \approx 0.6840$, so Hölder gives
+
+$$0.6667 \;\leq\; 0.6840.$$
+
+The inequality holds with a ratio of about $0.974$ — close to equality but not sharp. The interactive viz below lets you slide $p$ and watch this ratio evolve, including for choices that drive the ratio toward $1$ (the Young's-inequality saturation case).
+
+</TheoremBlock>
+
+<HolderMinkowskiExplorer client:visible />
+
+<TheoremBlock type="remark" number={4} title="When does Hölder hold with equality?">
+
+Tracing through the proof, equality in Hölder is equivalent to equality in the Young's-inequality step at $\mu$-almost every point, which (Proposition 1) requires $|\tilde f|^p = |\tilde g|^q$ almost everywhere. Un-normalizing, this becomes: there exist constants $\alpha, \beta \geq 0$, not both zero, such that $\alpha |f|^p = \beta |g|^q$ a.e. Functions of this form — where $|f|^p$ and $|g|^q$ are proportional — are called **conjugate pairs**.
+
+The sharpness condition is surprisingly fragile: it is *not* enough for $f$ and $g$ to "look similar." Consider $f(x) = x^{1/3}$ and $g(x) = x^{1/6}$ on $[0, 1]$ with $p = 3$, $q = 3/2$ (the "power-pair" preset in the explorer above). The powers look naturally matched, but the pointwise check fails: $|f|^p = x$ while $|g|^q = (x^{1/6})^{3/2} = x^{1/4}$, so $|f|^p$ and $|g|^q$ differ by a factor of $x^{3/4}$ — they are not proportional, and the Hölder ratio sits at about $0.9747$ rather than $1$.
+
+To *actually* get equality at $p = 3$, $q = 3/2$, we need $|f|^p \propto |g|^q$. The simplest way: take $f = x^{\alpha}$ and $g = x^{\beta}$ with $\alpha p = \beta q$, so $3\alpha = (3/2)\beta$, so $\beta = 2\alpha$. Choosing $\alpha = 1/3$ gives $g = x^{2/3}$, and now $|f|^p = x = |g|^q$ exactly. This is the "power-pair-sharp" preset in the explorer — flip to it and the ratio snaps to $1$ to within quadrature precision. Sharp Hölder pairs are the analogue of eigenvalue–eigenvector pairs in a finite-dimensional inner product space: they expose the "tightness directions" of the inequality.
+
+</TheoremBlock>
+
+## 5. Minkowski's Inequality
+
+Minkowski's inequality is the triangle inequality for $L^p$. It is the inequality that promotes $\|\cdot\|_p$ from a "size functional" to a *norm*: the triangle inequality is exactly the missing axiom that the seminorm definition didn't give us for free. We prove Minkowski directly from Hölder.
+
+<TheoremBlock type="theorem" number={3} title="Minkowski's inequality">
+
+Let $f, g \in L^p(\mu)$ with $1 \leq p \leq \infty$. Then $f + g \in L^p(\mu)$ and
+
+$$\|f + g\|_p \;\leq\; \|f\|_p + \|g\|_p.$$
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+The cases $p = 1$ and $p = \infty$ are immediate: $|f + g| \leq |f| + |g|$ pointwise, and integrating (for $p = 1$) or taking the essential supremum (for $p = \infty$) gives the result. We prove the case $1 < p < \infty$ via Hölder.
+
+**Step 1: Bound $|f + g|^p$ in terms of $|f|$ and $|g|$.** The triangle inequality for absolute values gives $|f + g| \leq |f| + |g|$ pointwise, so
+
+$$|f + g|^p \;=\; |f + g| \cdot |f + g|^{p-1} \;\leq\; \bigl( |f| + |g| \bigr) \cdot |f + g|^{p-1}.$$
+
+Distributing:
+
+$$|f + g|^p \;\leq\; |f| \cdot |f + g|^{p-1} + |g| \cdot |f + g|^{p-1}.$$
+
+**Step 2: Integrate.** Integrating both sides against $\mu$:
+
+$$\|f + g\|_p^p \;=\; \int |f + g|^p \, d\mu \;\leq\; \int |f| \cdot |f + g|^{p-1} \, d\mu + \int |g| \cdot |f + g|^{p-1} \, d\mu.$$
+
+**Step 3: Apply Hölder to each term.** Let $q = p / (p - 1)$ be the conjugate exponent of $p$, so $1/p + 1/q = 1$. Apply Hölder's inequality to the first integral with $f$ in the $L^p$ slot and $|f + g|^{p-1}$ in the $L^q$ slot:
+
+$$\int |f| \cdot |f + g|^{p-1} \, d\mu \;\leq\; \|f\|_p \cdot \left( \int |f + g|^{(p-1)q} \, d\mu \right)^{1/q}.$$
+
+Compute $(p - 1) q = (p - 1) \cdot p / (p - 1) = p$. So the right side is $\|f\|_p \cdot \|f + g\|_p^{p/q}$. Similarly for the second integral:
+
+$$\int |g| \cdot |f + g|^{p-1} \, d\mu \;\leq\; \|g\|_p \cdot \|f + g\|_p^{p/q}.$$
+
+**Step 4: Combine and divide.** Substituting back into Step 2:
+
+$$\|f + g\|_p^p \;\leq\; \bigl( \|f\|_p + \|g\|_p \bigr) \cdot \|f + g\|_p^{p/q}.$$
+
+If $\|f + g\|_p = 0$ the inequality holds trivially; otherwise we may divide both sides by $\|f + g\|_p^{p/q}$. Note that $p - p/q = p(1 - 1/q) = p \cdot (1/p) = 1$ by conjugacy, so $\|f + g\|_p^p / \|f + g\|_p^{p/q} = \|f + g\|_p^1$. The result is
+
+$$\|f + g\|_p \;\leq\; \|f\|_p + \|g\|_p.$$
+
+</TheoremBlock>
+
+The trick in the proof is "split $|f+g|^p$ as $|f+g| \cdot |f+g|^{p-1}$ and apply Hölder," where the conjugate exponent $q = p/(p-1)$ is engineered exactly so that $(p-1)q = p$ — the inner integrals collapse back to $\|f+g\|_p$, which we can then divide out. This is a small algebraic miracle that only works because of the conjugacy condition.
+
+<TheoremBlock type="example" number={6} title="Minkowski with disjoint indicators">
+
+Take $f = \mathbf{1}_{[0, 1/2]}$ and $g = \mathbf{1}_{[1/2, 1]}$ on $[0, 1]$ with Lebesgue measure, and $p = 2$. Compute the three quantities:
+
+$$\|f\|_2 \;=\; \left( \int_0^{1/2} 1 \, dx \right)^{1/2} \;=\; \frac{1}{\sqrt{2}},$$
+
+$$\|g\|_2 \;=\; \left( \int_{1/2}^1 1 \, dx \right)^{1/2} \;=\; \frac{1}{\sqrt{2}},$$
+
+$$\|f + g\|_2 \;=\; \left( \int_0^1 1 \, dx \right)^{1/2} \;=\; 1.$$
+
+(The supports are disjoint, so $f + g$ is the indicator of $[0, 1]$ — except possibly at the single point $x = 1/2$, which has measure zero.) Minkowski says $\|f + g\|_2 \leq \|f\|_2 + \|g\|_2$, which here becomes
+
+$$1 \;\leq\; \frac{1}{\sqrt{2}} + \frac{1}{\sqrt{2}} \;=\; \sqrt{2} \;\approx\; 1.4142.$$
+
+This is a strict inequality with a healthy gap — about $41\%$ slack. The reason: in the $L^2$ norm, "disjoint supports" is not the same as "orthogonal." The two functions overlap at exactly one point (a measure-zero set), but the $L^2$ geometry treats them as if they were in different "directions" yet still adds them in a non-orthogonal way. The disjoint indicators are *orthogonal* in the inner-product sense ($\langle f, g \rangle = 0$, by Section 9), and for orthogonal vectors the Pythagorean identity says $\|f + g\|_2^2 = \|f\|_2^2 + \|g\|_2^2$, which is $1 = 1/2 + 1/2$. So the Minkowski inequality holds with strict inequality, but the Pythagorean identity holds with equality — these are two different statements about the same pair, and they are both true.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={5} title="$p < 1$: the triangle inequality fails">
+
+The Minkowski proof uses the fact that $t \mapsto t^p$ is *convex* on $[0, \infty)$, which holds for $p \geq 1$. For $0 < p < 1$ the function $t^p$ is *concave*, and the triangle inequality reverses direction. Concretely, with the same disjoint indicators $f = \mathbf{1}_{[0, 1/2]}$ and $g = \mathbf{1}_{[1/2, 1]}$ but $p = 1/2$:
+
+$$\|f\|_{1/2} \;=\; \left( \int_0^{1/2} 1^{1/2} \, dx \right)^{2} \;=\; \left( \frac{1}{2} \right)^2 \;=\; \frac{1}{4},$$
+
+$$\|g\|_{1/2} \;=\; \frac{1}{4} \quad \text{by symmetry},$$
+
+$$\|f + g\|_{1/2} \;=\; \left( \int_0^1 1^{1/2} \, dx \right)^2 \;=\; 1^2 \;=\; 1.$$
+
+Comparing: $\|f + g\|_{1/2} = 1$ but $\|f\|_{1/2} + \|g\|_{1/2} = 1/2$. So $\|f + g\|_{1/2} > \|f\|_{1/2} + \|g\|_{1/2}$ — the "norm" of the sum is *larger* than the sum of the "norms." The triangle inequality fails, $\|\cdot\|_{1/2}$ is not a norm, and $L^{1/2}$ is not a normed space. (It is still a topological vector space; the formula $d(f, g) = \int |f - g|^{1/2} \, d\mu$ defines a translation-invariant metric. But there is no norm.) For this reason the entire $L^p$ theory in the rest of this topic restricts to $p \geq 1$.
+
+</TheoremBlock>
+
+## 6. $L^p$ Is a Normed Vector Space
+
+We have all the pieces. Sections 2 and 5 give us the seminorm, the quotient that promotes it to a norm, and the triangle inequality. Putting them together:
+
+<TheoremBlock type="theorem" number={4} title="$L^p(\mu)$ is a normed vector space">
+
+For every $1 \leq p \leq \infty$, $\bigl( L^p(\mu), \|\cdot\|_p \bigr)$ is a normed vector space. That is:
+
+$$\|f\|_p \;\geq\; 0 \text{ for all } f \in L^p, \text{ with equality iff } f = 0 \text{ in } L^p.$$
+
+$$\|\alpha f\|_p \;=\; |\alpha| \, \|f\|_p \text{ for all } \alpha \in \mathbb{R} \text{ and } f \in L^p.$$
+
+$$\|f + g\|_p \;\leq\; \|f\|_p + \|g\|_p \text{ for all } f, g \in L^p.$$
+
+</TheoremBlock>
+
+The first axiom (definiteness) is the part where the a.e.-quotient earns its keep: $\|f\|_p = 0$ implies $\int |f|^p \, d\mu = 0$, which implies $|f|^p = 0$ a.e., which implies $f = 0$ a.e., which is exactly the statement that $f = 0$ in $L^p$ (as an equivalence class). The second axiom (homogeneity) is immediate from pulling the constant out of the integral. The third axiom (triangle inequality) is Minkowski. So $L^p$ is a normed vector space.
+
+But "normed vector space" is not yet enough for the geometric reasoning we want. Real geometry — the kind where minimizing sequences converge, where projections exist, where Cauchy implies convergent — needs *completeness*. That is what Section 7 establishes: $L^p$ is not just a normed vector space, it is a *Banach space* (a complete normed vector space). The Riesz–Fischer theorem is the cornerstone result of this topic, and its proof uses the Dominated Convergence Theorem from Topic 26 in an essential way.
+
+Before we get there, let us look at what these norms actually *mean* geometrically. The unit ball of an $L^p$ norm — the set of vectors with norm at most $1$ — is a shape that depends in a striking way on $p$. At $p = 1$ the ball is a diamond (or, in higher dimensions, a cross-polytope); at $p = 2$ it is a sphere; at $p = \infty$ it is a cube. The shape morphs continuously between these extremes as $p$ varies, and the morphing is the visual core of the entire theory of $L^p$ regularization in machine learning. The flagship explorer below lets you slide $p$ and watch the unit ball change shape — pay particular attention to the corners that appear at $p = 1$ and disappear at $p > 1$, because those corners are exactly the geometric reason that $L^1$ regularization (Lasso) produces sparse solutions and $L^2$ regularization (Ridge) does not.
+
+<LpBallExplorer client:visible />
+
+<TheoremBlock type="remark" number={6} title="The quotient promotes a seminorm to a norm">
+
+Looking back at the construction: the seminorm $\|\cdot\|_p$ on the space of measurable functions has a non-trivial *kernel* — the set of functions with $\|f\|_p = 0$ — and that kernel is precisely the set of functions that are zero almost everywhere. Quotienting by the kernel collapses the kernel to a single point (the zero element), and on the quotient the seminorm becomes a norm. This is a general construction: in any seminormed vector space, the kernel of the seminorm is a linear subspace, and the quotient by the kernel is automatically a normed space. $L^p$ is one of the most famous applications of this general fact, and it is the reason measure-theoretic functional analysis can use the geometric language of normed vector spaces at all.
+
+</TheoremBlock>
+
+## 7. Completeness — The Riesz–Fischer Theorem
+
+The single most important fact about $L^p$ spaces — the result that makes essentially every downstream use of $L^p$ work — is that $L^p$ is *complete*. Every Cauchy sequence converges to an element *of the space*. This is not automatic for normed vector spaces in general (the space of polynomials with the $L^2$ norm, for example, is not complete: a Cauchy sequence of polynomials can converge to a non-polynomial), and it is not at all obvious from the definition. The Riesz–Fischer theorem is the proof.
+
+<TheoremBlock type="definition" number={4} title="Cauchy sequence in $L^p$">
+
+A sequence $(f_n)$ in $L^p(\mu)$ is **Cauchy** if for every $\varepsilon > 0$ there exists $N$ such that $\|f_n - f_m\|_p < \varepsilon$ for all $n, m \geq N$.
+
+Equivalently, $\|f_n - f_m\|_p \to 0$ as $\min(n, m) \to \infty$.
+
+</TheoremBlock>
+
+The Cauchy condition is purely *internal* to the sequence — it asks "are the terms getting closer to each other?" without ever mentioning a candidate limit. Completeness is the assertion that every Cauchy sequence in fact has a limit in the space. The Riesz–Fischer theorem says $L^p$ has this property.
+
+<TheoremBlock type="theorem" number={5} title="Riesz–Fischer theorem">
+
+For every $1 \leq p \leq \infty$ and every measure space $(\Omega, \mathcal{F}, \mu)$, the space $L^p(\mu)$ is complete: every Cauchy sequence in $L^p(\mu)$ converges to an element of $L^p(\mu)$.
+
+In particular, $L^p(\mu)$ with the norm $\|\cdot\|_p$ is a **Banach space**.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+We prove the case $1 \leq p < \infty$. The case $p = \infty$ is a separate (easier) argument that we sketch in Remark 7. Let $(f_n)$ be a Cauchy sequence in $L^p$. We will construct a candidate limit, show that a subsequence converges to it, and then use the Cauchy property to upgrade subsequence convergence to full-sequence convergence.
+
+**Step 1: Extract a fast-converging subsequence.** Since $(f_n)$ is Cauchy, we can choose indices $n_1 < n_2 < n_3 < \cdots$ such that
+
+$$\|f_{n_{k+1}} - f_{n_k}\|_p \;<\; 2^{-k} \quad \text{for every } k \geq 1.$$
+
+This is possible because the Cauchy condition with $\varepsilon_k = 2^{-k}$ gives an index $N_k$ such that $\|f_n - f_m\|_p < 2^{-k}$ for $n, m \geq N_k$; we just choose $n_{k+1} > \max(n_k, N_k)$.
+
+**Step 2: Bound the partial-sum-of-differences.** Define the non-negative function
+
+$$g_N(x) \;=\; \sum_{k=1}^N |f_{n_{k+1}}(x) - f_{n_k}(x)|.$$
+
+Each $g_N$ is measurable and non-negative. By Minkowski's inequality applied $N$ times,
+
+$$\|g_N\|_p \;\leq\; \sum_{k=1}^N \|f_{n_{k+1}} - f_{n_k}\|_p \;<\; \sum_{k=1}^N 2^{-k} \;<\; 1.$$
+
+So the $L^p$ norms of the partial sums $g_N$ are uniformly bounded by $1$.
+
+**Step 3: Pass to the monotone limit.** The sequence $(g_N)$ is monotone increasing — adding another non-negative term cannot decrease the sum. By the Monotone Convergence Theorem (Topic 26, Section 5) applied to $(g_N^p)$, the pointwise limit
+
+$$g(x) \;=\; \lim_{N \to \infty} g_N(x) \;=\; \sum_{k=1}^\infty |f_{n_{k+1}}(x) - f_{n_k}(x)|$$
+
+exists in $[0, \infty]$ at every $x$ and satisfies
+
+$$\int g^p \, d\mu \;=\; \lim_{N \to \infty} \int g_N^p \, d\mu \;=\; \lim_{N \to \infty} \|g_N\|_p^p \;\leq\; 1^p \;=\; 1.$$
+
+So $g \in L^p$, and in particular $g(x) < \infty$ for $\mu$-almost every $x$. This is the key consequence of the bound: the *infinite* sum of absolute differences is finite a.e.
+
+**Step 4: Construct the candidate limit $f$.** Where $g(x) < \infty$ — i.e., on a set of full measure — the series
+
+$$f_{n_1}(x) + \sum_{k=1}^\infty \bigl( f_{n_{k+1}}(x) - f_{n_k}(x) \bigr)$$
+
+is absolutely convergent. (This is the standard "absolute convergence implies convergence" fact for real-valued series, applied at each $x$.) The partial sums of this series are exactly $f_{n_{N+1}}(x)$ — the series telescopes — so we define
+
+$$f(x) \;=\; \lim_{k \to \infty} f_{n_k}(x) \quad \text{for $\mu$-a.e. } x,$$
+
+and $f(x) = 0$ on the null set where the series fails to converge. The function $f$ is measurable (as the a.e.-limit of measurable functions, redefined on a null set).
+
+**Step 5: $f \in L^p$.** We need to check that the candidate limit actually lives in $L^p$. The triangle inequality gives, for every $k \geq 1$,
+
+$$|f_{n_k}(x) - f_{n_1}(x)| \;\leq\; \sum_{j=1}^{k-1} |f_{n_{j+1}}(x) - f_{n_j}(x)| \;\leq\; g(x).$$
+
+Letting $k \to \infty$ and using the pointwise limit definition of $f$:
+
+$$|f(x) - f_{n_1}(x)| \;\leq\; g(x) \quad \text{a.e.}$$
+
+So $|f| \leq |f_{n_1}| + g$ a.e., and both $f_{n_1} \in L^p$ and $g \in L^p$, so $f \in L^p$ by Minkowski.
+
+**Step 6: $f_{n_k} \to f$ in $L^p$.** We use the Dominated Convergence Theorem from Topic 26. Define $h_k(x) = |f_{n_k}(x) - f(x)|^p$. We need:
+
+(a) $h_k(x) \to 0$ a.e. as $k \to \infty$. This holds because $f_{n_k}(x) \to f(x)$ a.e. by Step 4 and $t \mapsto |t|^p$ is continuous.
+
+(b) A dominating function. By the same triangle-inequality argument as Step 5, $|f_{n_k}(x) - f(x)| \leq 2 g(x)$ for almost every $x$ (cap it through $f_{n_1}$ and $g$). So
+
+$$h_k(x) \;=\; |f_{n_k}(x) - f(x)|^p \;\leq\; (2 g(x))^p \;=\; 2^p \cdot g(x)^p.$$
+
+The function $2^p \cdot g^p$ is in $L^1$ because $\int g^p \, d\mu \leq 1$ from Step 3. So $h_k$ is dominated by an integrable function for every $k$.
+
+DCT now gives $\int h_k \, d\mu \to 0$, which is exactly $\|f_{n_k} - f\|_p^p \to 0$. So $f_{n_k} \to f$ in $L^p$ along the chosen subsequence.
+
+**Step 7: The full sequence converges.** We have shown that the *subsequence* $(f_{n_k})$ converges to $f$ in $L^p$. To upgrade this to convergence of the full sequence $(f_n)$, fix $\varepsilon > 0$. Since $(f_n)$ is Cauchy, choose $N$ such that $\|f_n - f_m\|_p < \varepsilon / 2$ whenever $n, m \geq N$. Since $f_{n_k} \to f$ in $L^p$, choose $K$ such that $\|f_{n_K} - f\|_p < \varepsilon / 2$ and $n_K \geq N$. Then for any $n \geq n_K$,
+
+$$\|f_n - f\|_p \;\leq\; \|f_n - f_{n_K}\|_p + \|f_{n_K} - f\|_p \;<\; \frac{\varepsilon}{2} + \frac{\varepsilon}{2} \;=\; \varepsilon.$$
+
+So $\|f_n - f\|_p \to 0$ and the full sequence converges to $f$ in $L^p$.
+
+</TheoremBlock>
+
+The proof has the unmistakable structure of a "real analysis lower-bound transfer" argument: extract a fast-decaying subsequence so that the differences are summable, sum the differences to get an a.e. limit, dominate to get $L^p$ convergence, then use Cauchyness to extend from subsequence to full sequence. The DCT plays the role of the closer — once we have an a.e. limit and a uniform $L^p$ dominator, DCT does the rest. Everything else in the proof is preparatory work to set up the DCT application.
+
+<TheoremBlock type="example" number={7} title="A Cauchy sequence converging in $L^2$">
+
+The smooth-step functions $f_n: [-1/2, 3/2] \to \mathbb{R}$ defined by
+
+$$f_n(t) \;=\; \frac{1}{2}\bigl(1 + \tanh(n t)\bigr) \cdot \frac{1}{2}\bigl(1 + \tanh(n (1 - t))\bigr)$$
+
+are smooth approximations to the indicator $\mathbf{1}_{[0, 1]}$. As $n$ grows the two $\tanh$ transitions sharpen, and $f_n(t) \to \mathbf{1}_{[0, 1]}(t)$ pointwise on the interior $(-1/2, 0) \cup (0, 1) \cup (1, 3/2)$ and at every interior point of $[0, 1]$ — so the convergence is pointwise everywhere except at the two boundary points $\{0, 1\}$, which are a null set.
+
+Numerically, $\|f_n - \mathbf{1}_{[0, 1]}\|_2$ decays rapidly: at $n = 10$ it is around $0.18$, at $n = 50$ around $0.08$, at $n = 200$ around $0.04$. The sequence $(f_n)$ is Cauchy in $L^2$ — for any $m, n$ both large, the two functions both approximate the indicator and so are close to each other — and Riesz–Fischer guarantees a limit in $L^2$. That limit is the equivalence class $[\mathbf{1}_{[0, 1]}]$. The interactive viz below lets you advance $n$ and watch both the function and the $L^p$-norm difference.
+
+</TheoremBlock>
+
+<RieszFischerExplorer client:visible />
+
+<TheoremBlock type="remark" number={7} title="Why completeness matters for ML — and the $p = \infty$ case">
+
+Completeness is the abstract guarantee that minimizing sequences in optimization actually converge to something legitimate. In gradient descent, EM, variational inference, and any other iterative procedure that produces a sequence of approximations $(f_n)$ to a target, completeness of the ambient space $L^p$ is what guarantees that "Cauchy" implies "converges to a real $L^p$ function." Without completeness, a perfectly well-behaved minimizing sequence could "escape" the space and converge to something pathological — a delta function, a non-measurable beast, or nothing at all. Forward link: <a href="https://formalml.com/topics/gradient-descent" class="formalml-badge" target="_blank" rel="noopener">Gradient Descent</a>.
+
+The case $p = \infty$ is technically separate but easier than the proof we just gave. If $(f_n)$ is Cauchy in $L^\infty$, then for every $\varepsilon > 0$ there is an $N$ such that $|f_n(x) - f_m(x)| < \varepsilon$ for $\mu$-almost every $x$ when $n, m \geq N$. Taking a countable union of null sets (one per pair $(n, m)$) and removing it from $\Omega$ leaves a set on which $(f_n)$ is uniformly Cauchy as a sequence of bounded functions, so it converges uniformly to a bounded function $f$. Then $\|f_n - f\|_\infty \to 0$. So $L^\infty$ is also complete.
+
+</TheoremBlock>
+
+## 8. Density Results
+
+The space $L^p$ has many "nice" subspaces — simple functions, continuous compactly supported functions, polynomials on compact intervals, smooth functions — and an important question is whether these subspaces are *dense*. Density means: every $L^p$ function can be approximated arbitrarily well in the $L^p$ norm by an element of the subspace. Density results are the bread and butter of approximation theory: they say that questions about general $L^p$ functions can often be reduced to questions about simpler, more tractable functions.
+
+<TheoremBlock type="theorem" number={6} title="Density of simple functions in $L^p$">
+
+For every $1 \leq p < \infty$, the simple functions in $L^p(\mu)$ are dense: for every $f \in L^p$, there exists a sequence of simple functions $(s_n)$ with $\|f - s_n\|_p \to 0$.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+By Topic 25's simple-function approximation theorem, there exists a sequence of simple functions $(s_n)$ with $|s_n(x)| \leq |f(x)|$ pointwise and $s_n(x) \to f(x)$ pointwise (and even uniformly on sets where $f$ is bounded, but we only need pointwise here).
+
+The sequence $|f - s_n|^p$ converges pointwise to zero. To upgrade pointwise convergence to $L^p$ convergence, we need a dominator. The triangle inequality gives
+
+$$|f(x) - s_n(x)|^p \;\leq\; (|f(x)| + |s_n(x)|)^p \;\leq\; (2 |f(x)|)^p \;=\; 2^p |f(x)|^p.$$
+
+The function $2^p |f|^p$ is in $L^1$ because $f \in L^p$, so $\int |f|^p \, d\mu < \infty$. By the Dominated Convergence Theorem (Topic 26),
+
+$$\|f - s_n\|_p^p \;=\; \int |f - s_n|^p \, d\mu \;\longrightarrow\; \int 0 \, d\mu \;=\; 0.$$
+
+Taking $p$-th roots gives $\|f - s_n\|_p \to 0$.
+
+</TheoremBlock>
+
+The proof is a beautiful one-line application of DCT: we already know the simple functions converge pointwise from Topic 25, and we already know $|f|^p$ is integrable from $f \in L^p$, so DCT gives the rest. This is the recurring pattern of this topic: every density and convergence result is "find a pointwise limit, find a dominator, apply DCT."
+
+For $L^p$ on $\mathbb{R}^n$ with Lebesgue measure there is an even stronger density result: continuous, compactly supported functions are dense. This is what justifies using neural networks — universal approximators of continuous functions — to approximate $L^p$ functions.
+
+<TheoremBlock type="theorem" number={7} title="Density of $C_c(\mathbb{R}^n)$ in $L^p(\mathbb{R}^n)$">
+
+For $1 \leq p < \infty$, the space $C_c(\mathbb{R}^n)$ of continuous, compactly supported functions is dense in $L^p(\mathbb{R}^n, \lambda)$: for every $f \in L^p(\mathbb{R}^n)$, there exists a sequence $(\varphi_n) \subset C_c(\mathbb{R}^n)$ with $\|f - \varphi_n\|_p \to 0$.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+The proof has two stages. First, we approximate $f$ by simple functions (Theorem 6). Second, we approximate each simple function by a continuous compactly supported function via mollification.
+
+A simple function on $\mathbb{R}^n$ is a finite linear combination of indicator functions of measurable sets. By inner regularity of Lebesgue measure, every measurable set of finite measure can be approximated from inside by a closed set (and outside by an open set) up to arbitrarily small measure. Urysohn's lemma then gives a continuous function that is $1$ on the closed set, $0$ outside the open set, and varies linearly in between. Taking the linear combination with the same coefficients as the simple function, we obtain a continuous compactly supported function that differs from the simple function in $L^p$ norm by an arbitrarily small amount. Iterating both approximation steps with errors $\varepsilon/2^{k+1}$ at the $k$-th step and applying the triangle inequality completes the proof.
+
+A full version of this argument lives in Folland §6.1 (or Brezis §4.1 for the $\mathbb{R}^n$ case in detail). The key technical lemma is *mollification*: convolving an $L^p$ function with a smooth, compactly supported "bump" function (a mollifier) produces a smooth approximation that converges in $L^p$ as the mollifier scale shrinks.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={8} title="Density failure in $L^\infty$">
+
+The density of $C_c$ in $L^p$ holds for $1 \leq p < \infty$, but **fails** at $p = \infty$. Consider $f = \mathbf{1}_{[0, 1]}$ as an element of $L^\infty(\mathbb{R})$, and let $g$ be any continuous function. Near $x = 0$, $g$ must transition continuously from $g(0^-) \approx g(0)$ to $g(0^+) \approx g(0)$ — there is no "jump." So $g$ cannot equal $0$ for $x < 0$ and $1$ for $x > 0$ simultaneously: at any $\delta > 0$, there will be points $x \in (-\delta, 0)$ where $g(x) \neq 0$ or points $x \in (0, \delta)$ where $g(x) \neq 1$. The same argument applies near $x = 1$.
+
+Quantitatively: for any continuous $g: \mathbb{R} \to \mathbb{R}$, the difference $f - g$ has $\|f - g\|_\infty \geq 1/2$. (In a neighborhood of either jump, $f$ and $g$ differ by at least $1/2$ in essential supremum.) So $C_c$ is *not* dense in $L^\infty$. The closure of $C_c$ in $L^\infty$ is the smaller space $C_0(\mathbb{R})$ of continuous functions vanishing at infinity, which is a proper subspace. The density failure at $p = \infty$ is one of several reasons $L^\infty$ is "harder" than the other $L^p$ spaces and why most theorems in this topic explicitly restrict to $1 \leq p < \infty$.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={8} title="Density for neural network approximation">
+
+Density of $C_c$ in $L^p$ has a striking machine learning consequence. The universal approximation theorem (which we will state precisely in [Approximation Theory](/topics/approximation-theory) — Topic 20) says that neural networks with one hidden layer can approximate any continuous function uniformly on compact sets. Combined with density of $C_c$ in $L^p$, this gives:
+
+> *Any $L^p$ function can be approximated arbitrarily well in $L^p$ norm by a neural network.*
+
+The logic is a two-step approximation: given $f \in L^p$, first find a continuous compactly supported $\varphi$ with $\|f - \varphi\|_p < \varepsilon / 2$ (Theorem 7), then find a neural network $h$ with $\|\varphi - h\|_\infty < \varepsilon / (2 \cdot \text{vol}(\text{supp } \varphi)^{1/p})$ (universal approximation), and conclude $\|f - h\|_p \leq \|f - \varphi\|_p + \|\varphi - h\|_p < \varepsilon$. This is the existence proof behind every "neural networks can approximate any function" claim in machine learning textbooks. What it leaves open — and what most of modern statistical learning theory addresses — is the question of *how big* the network has to be to achieve a given approximation error.
+
+</TheoremBlock>
+
+## 9. $L^2$ as a Hilbert Space (Preview)
+
+Among all the $L^p$ spaces, $p = 2$ is special. The $L^2$ norm comes from an *inner product* — a bilinear pairing $\langle f, g \rangle$ that satisfies $\|f\|_2 = \sqrt{\langle f, f \rangle}$ — which gives $L^2$ a richer geometric structure than the other $L^p$ spaces. In particular, $L^2$ has notions of *orthogonality* and *projection* that the other $L^p$ spaces lack. This section previews the inner-product structure; the full Hilbert space theory will be developed in Topic 31.
+
+<TheoremBlock type="definition" number={5} title="The $L^2$ inner product">
+
+For real-valued $f, g \in L^2(\mu)$, the **$L^2$ inner product** is
+
+$$\langle f, g \rangle \;=\; \int f g \, d\mu.$$
+
+For complex-valued functions, the inner product uses the conjugate of $g$: $\langle f, g \rangle = \int f \bar g \, d\mu$.
+
+</TheoremBlock>
+
+<TheoremBlock type="proposition" number={2} title="Inner product axioms on $L^2$">
+
+The $L^2$ inner product is well-defined (the integral is finite by Cauchy–Schwarz; see Example 9), bilinear in the real case (sesquilinear in the complex case), symmetric (conjugate-symmetric in the complex case), and positive definite: $\langle f, f \rangle \geq 0$ with equality iff $f = 0$ in $L^2$. Moreover,
+
+$$\|f\|_2 \;=\; \sqrt{\langle f, f \rangle} \;=\; \sqrt{\int |f|^2 \, d\mu}.$$
+
+So the $L^2$ norm is the norm induced by the inner product, and $L^2$ is an *inner product space*. Combined with the Riesz–Fischer completeness from Section 7, this makes $L^2$ a **Hilbert space**: a complete inner product space.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={9} title="Cauchy–Schwarz as Hölder at $p = q = 2$">
+
+For $f, g \in L^2$, the Cauchy–Schwarz inequality
+
+$$|\langle f, g \rangle| \;=\; \left| \int f \bar g \, d\mu \right| \;\leq\; \int |f \bar g| \, d\mu \;=\; \|f \bar g\|_1 \;\leq\; \|f\|_2 \, \|g\|_2$$
+
+is exactly Hölder's inequality with $p = q = 2$. The first inequality is $|\int h \, d\mu| \leq \int |h| \, d\mu$ (the integral version of $|x| = |x|$), and the second is Hölder. So Cauchy–Schwarz is not an independent inequality — it is a special case of the more general Hölder result we proved in Section 4. This is the geometric reason that $L^2$ is the "best-behaved" $L^p$ space: at $p = 2$, the basic inequality of the inner-product structure coincides with the basic inequality of the integral structure.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={10} title="The Fourier basis is orthonormal in $L^2([0, 2\pi])$">
+
+On the interval $[0, 2\pi]$ with normalized Lebesgue measure $d\mu = dx / (2\pi)$, the complex exponentials $e_n(x) = e^{i n x}$ for $n \in \mathbb{Z}$ form an *orthonormal system*: $\langle e_n, e_m \rangle = \delta_{nm}$ (Kronecker delta). To see this, compute
+
+$$\langle e_n, e_m \rangle \;=\; \frac{1}{2\pi} \int_0^{2\pi} e^{i n x} e^{-i m x} \, dx \;=\; \frac{1}{2\pi} \int_0^{2\pi} e^{i (n - m) x} \, dx.$$
+
+If $n = m$, the integrand is $1$ and the integral is $2\pi$, so $\langle e_n, e_n \rangle = 1$. If $n \neq m$, the integral evaluates to $[e^{i (n - m) x} / (i (n - m))]_0^{2\pi} = 0$ (the function $e^{i (n - m) x}$ is $2\pi$-periodic). So the Fourier basis is orthonormal, which means partial Fourier series can be computed by a finite-dimensional projection, the Fourier coefficients are inner products $\hat f(n) = \langle f, e_n \rangle$, and Parseval's identity $\|f\|_2^2 = \sum_n |\hat f(n)|^2$ is the Pythagorean theorem in the Hilbert space $L^2([0, 2\pi])$. Forward link: [Fourier Series](/topics/fourier-series) (Topic 22).
+
+</TheoremBlock>
+
+<TheoremBlock type="proposition" number={3} title="Orthogonal projection (statement only)">
+
+Let $V \subseteq L^2(\mu)$ be a *closed* linear subspace. For every $f \in L^2$, there exists a unique element $\hat f \in V$ — the **orthogonal projection of $f$ onto $V$** — that minimizes $\|f - v\|_2$ over all $v \in V$. The error vector $f - \hat f$ is orthogonal to every element of $V$:
+
+$$\langle f - \hat f, v \rangle \;=\; 0 \quad \text{for all } v \in V.$$
+
+A full proof requires the Hilbert space theory developed in Topic 31, but the statement is accessible now and is the central geometric fact about $L^2$.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={9} title="Regression as $L^2$ projection">
+
+Linear regression is *exactly* an orthogonal projection in $L^2$. Given data $y \in \mathbb{R}^n$ and a design matrix $X \in \mathbb{R}^{n \times d}$, the least-squares estimator is $\hat \beta = \arg\min_\beta \|y - X \beta\|_2^2$. The vector $X \hat \beta$ is the orthogonal projection of $y$ onto the column space of $X$ (a closed subspace of $\mathbb{R}^n = L^2$ with counting measure), and the *normal equations* $X^T X \hat \beta = X^T y$ are the orthogonality condition $\langle y - X \hat \beta, X v \rangle = 0$ for every $v$ — i.e., the residual is orthogonal to every linear combination of the columns of $X$. This identification is not a metaphor: it is literally the same thing. Generalized least squares uses a weighted inner product $\langle f, g \rangle_W = f^T W g$ for some positive-definite weight $W$, and the geometry remains the same — projection onto the column space, orthogonality of the residual, existence and uniqueness via the projection theorem. Forward link: <a href="https://formalml.com/topics/regression" class="formalml-badge" target="_blank" rel="noopener">Regression</a>.
+
+</TheoremBlock>
+
+## 10. Duality — $(L^p)^* = L^q$
+
+Every normed vector space $X$ has a *dual space* $X^*$: the space of bounded linear functionals $\Phi: X \to \mathbb{R}$, with the operator norm $\|\Phi\| = \sup_{\|f\| \leq 1} |\Phi(f)|$. For $L^p$ spaces with conjugate exponents $p, q$, the dual space has a particularly clean characterization — it is *isometrically isomorphic* to the other space in the conjugate pair. This is the **Riesz representation theorem for $L^p$**, and it is the foundation of $L^p$ duality theory.
+
+<TheoremBlock type="theorem" number={8} title="Riesz representation theorem for $L^p$">
+
+Let $1 < p < \infty$ and let $(\Omega, \mathcal{F}, \mu)$ be a $\sigma$-finite measure space. Let $q$ be the conjugate exponent of $p$, so $1/p + 1/q = 1$. Then every bounded linear functional $\Phi: L^p(\mu) \to \mathbb{R}$ has the form
+
+$$\Phi(f) \;=\; \int f g \, d\mu \quad \text{for a unique } g \in L^q(\mu),$$
+
+and the operator norm of $\Phi$ equals the $L^q$ norm of the representing function:
+
+$$\|\Phi\|_{(L^p)^*} \;=\; \|g\|_q.$$
+
+In particular, the map $g \mapsto \Phi_g$ is an *isometric isomorphism* $L^q \to (L^p)^*$, often written as $(L^p)^* \cong L^q$.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+We sketch the proof; full details are in Folland §6.2 or Royden §19.5.
+
+**Embedding $L^q \hookrightarrow (L^p)^*$.** Given $g \in L^q$, define $\Phi_g(f) = \int f g \, d\mu$. By Hölder's inequality, $|\Phi_g(f)| \leq \|f\|_p \|g\|_q$, so $\Phi_g$ is a bounded linear functional with $\|\Phi_g\|_{(L^p)^*} \leq \|g\|_q$. To show equality, take $f = |g|^{q-1} \operatorname{sgn}(g) / \|g\|_q^{q-1}$; a direct computation gives $\|f\|_p = 1$ and $\Phi_g(f) = \|g\|_q$, so $\|\Phi_g\| \geq \|g\|_q$. Combining, $\|\Phi_g\| = \|g\|_q$.
+
+**Surjectivity.** Given a bounded linear functional $\Phi \in (L^p)^*$, we want to find $g \in L^q$ with $\Phi = \Phi_g$. For each measurable set $A$ of finite measure, define $\nu(A) = \Phi(\mathbf{1}_A)$. Linearity of $\Phi$ on indicator functions makes $\nu$ a finitely additive set function; boundedness and a countable-additivity argument upgrade $\nu$ to a $\sigma$-additive signed measure. Moreover, if $\mu(A) = 0$, then $\mathbf{1}_A = 0$ in $L^p$, so $\Phi(\mathbf{1}_A) = 0$. So $\nu$ is *absolutely continuous* with respect to $\mu$ (every $\mu$-null set is $\nu$-null).
+
+By the **Radon–Nikodym theorem** (which we will prove in Topic 28; for now we use it as a black box), absolute continuity implies that $\nu$ has a density $g = d\nu / d\mu$, so $\nu(A) = \int_A g \, d\mu$. By construction, $\Phi(\mathbf{1}_A) = \int \mathbf{1}_A g \, d\mu$ for every set $A$ of finite measure. Linearity then extends this from indicators to simple functions, and density of simple functions in $L^p$ (Theorem 6) plus continuity of $\Phi$ extends it to all of $L^p$. So $\Phi(f) = \int f g \, d\mu$ on all of $L^p$. Showing $g \in L^q$ uses the operator norm bound $|\Phi(f)| \leq \|\Phi\| \|f\|_p$ and a clever choice of test function similar to the embedding step.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={10} title="Endpoint cases — $L^1$, $L^\infty$, and the asymmetry">
+
+The same theorem holds at $p = 1$, $q = \infty$ — namely $(L^1)^* \cong L^\infty$, with the same proof structure but using $\sigma$-finiteness explicitly to handle the unboundedness of representing functions. The mirror statement $(L^\infty)^* \cong L^1$ is **false**: the dual of $L^\infty$ is *strictly larger* than $L^1$, containing "singular" functionals such as evaluation at a point that cannot be represented as $f \mapsto \int f g \, d\mu$ for any $g \in L^1$. This asymmetry — duality is symmetric for $1 < p < \infty$ but not at the endpoints — is one of the features that make $L^\infty$ the most idiosyncratic $L^p$ space and the reason most theorems in functional analysis explicitly exclude $p = \infty$.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={11} title="Dual pairing in finite dimensions: $(\ell^p)^* = \ell^q$">
+
+When $\Omega = \{1, 2, \ldots, n\}$ with counting measure, $L^p$ becomes $\ell^p$ — the space of $n$-tuples with the $p$-norm $\|\mathbf{x}\|_p = (\sum_i |x_i|^p)^{1/p}$. Hölder becomes the finite-dimensional inequality $|\sum_i x_i y_i| \leq \|\mathbf{x}\|_p \|\mathbf{y}\|_q$, and the Riesz representation theorem becomes the statement that every linear functional $\Phi: \mathbb{R}^n \to \mathbb{R}$ has the form $\Phi(\mathbf{x}) = \sum_i x_i y_i = \mathbf{x} \cdot \mathbf{y}$ for a unique $\mathbf{y} \in \mathbb{R}^n$, with $\|\Phi\|_{(\ell^p)^*} = \|\mathbf{y}\|_q$. So the dual space of $\mathbb{R}^n$ with the $p$-norm is $\mathbb{R}^n$ with the $q$-norm. In coordinates, every linear functional is a dot product — but the *norm* on the dual is the $q$-norm rather than the $p$-norm. This is the finite-dimensional fingerprint of the general $L^p$ duality theorem, and it is the foundation of every constrained optimization argument that uses Lagrangian duality with $p$-norm constraints.
+
+</TheoremBlock>
+
+## 11. Computational Notes
+
+A few practical observations about computing $L^p$ norms in code, since machine learning practitioners encounter discrete and continuous $L^p$ norms constantly.
+
+- **Discrete $L^p$ norms.** `numpy.linalg.norm(x, ord=p)` computes $\|\mathbf{x}\|_p = (\sum_i |x_i|^p)^{1/p}$ for a vector $\mathbf{x}$. This is $L^p$ against the counting measure on $\{1, 2, \ldots, n\}$. The `ord=np.inf` case gives $\max_i |x_i|$ — the discrete essential supremum, which equals the actual supremum because every singleton has positive measure under counting measure.
+
+- **Continuous $L^p$ norms.** For an analytic or sampled function, `scipy.integrate.quad(lambda x: abs(f(x))**p, a, b)[0]**(1/p)` computes $\|f\|_p$ on $[a, b]$ via numerical quadrature. This is the "integrate $|f|^p$, then take the $p$-th root" recipe straight from Definition 1, and it works for any $p \in [1, \infty)$. For $p = \infty$, replace with a sup over a fine grid.
+
+- **`torch.nn.functional.mse_loss` is a discrete $L^2$ computation.** The mean squared error loss is $\text{MSE}(\mathbf{y}, \hat{\mathbf{y}}) = \frac{1}{n} \sum_i (y_i - \hat y_i)^2 = \frac{1}{n} \|\mathbf{y} - \hat{\mathbf{y}}\|_2^2$, which is $\|\cdot\|_2^2$ against the *normalized* counting measure on $\{1, \ldots, n\}$ (assigning measure $1/n$ to each point). The factor of $1/n$ converts counting measure to the empirical measure, which is what makes MSE the natural loss for finite-sample expected value estimation.
+
+- **Regularization geometry: the $L^p$ ball is the constraint set.** Ridge regression solves $\min_\beta \|y - X \beta\|_2^2 + \lambda \|\beta\|_2^2$ — the regularization term constrains $\beta$ to lie inside an $L^2$ ball, which is a sphere with no corners. The least-squares contour is generically tangent to the sphere at a point with all coordinates non-zero, so Ridge "shrinks" coefficients but never sets them exactly to zero. Lasso solves $\min_\beta \|y - X \beta\|_2^2 + \lambda \|\beta\|_1$ — the regularization constrains $\beta$ to an $L^1$ ball, which is a diamond with corners *on* the coordinate axes. The least-squares contour generically intersects the diamond at a corner, where one or more coordinates are exactly zero, so Lasso produces *sparse* solutions. Elastic net uses both penalties: $\lambda_1 \|\beta\|_1 + \lambda_2 \|\beta\|_2^2$, and its constraint set is a smooth blend of the two extremes. The flagship $L^p$ ball viz in Section 6 makes this geometric explanation visual.
+
+![L1 vs L2 ball geometry with level curves of a least-squares loss — the L1 corner at the axis is where Lasso produces sparsity, the smooth L2 sphere is where Ridge shrinks but never zeros](/images/topics/lp-spaces/lp-ball-regularization.png)
+
+<TheoremBlock type="example" number={12} title="Numerical verification of Hölder">
+
+For $f(x) = \sin(\pi x)$ and $g(x) = x^2$ on $[0, 1]$, $p = 3$, $q = 3/2$, computing each $L^p$ norm via `scipy.integrate.quad`:
+
+$$\|fg\|_1 \;=\; \int_0^1 \sin(\pi x) \cdot x^2 \, dx \;\approx\; 0.1894,$$
+
+$$\|f\|_3 \;=\; \left( \int_0^1 \sin^3(\pi x) \, dx \right)^{1/3} \;\approx\; 0.8268,$$
+
+$$\|g\|_{3/2} \;=\; \left( \int_0^1 x^3 \, dx \right)^{2/3} \;=\; (0.25)^{2/3} \;\approx\; 0.3969.$$
+
+Hölder bound: $\|f\|_3 \cdot \|g\|_{3/2} \approx 0.3281$. The inequality $0.1894 \leq 0.3281$ holds with substantial slack (ratio about $0.577$). The ratio is far from $1$ because $|f|^3 = \sin^3(\pi x)$ and $|g|^{3/2} = x^3$ are not proportional — the conjugacy condition for sharp Hölder fails. Compare to the power-pair example in Section 4 where the ratio approached $1$ because the functions were specifically designed to be a conjugate pair.
+
+</TheoremBlock>
+
+## 12. Connections to Machine Learning
+
+$L^p$ spaces are not an abstract curiosity — they are the function-space framework that *every* modern ML algorithm implicitly assumes. Five concrete connections illustrate the range.
+
+![Four-panel ML connections to Lp spaces: regression as L2 projection, ridge/lasso constraint sets, score matching in L2, Wasserstein distances](/images/topics/lp-spaces/ml-connections-27.png)
+
+**Regression as $L^2$ projection.** Least-squares regression finds the closest element of a closed subspace of $L^2$, and the existence-and-uniqueness of the minimizer is exactly the orthogonal-projection theorem from Section 9. The normal equations are the orthogonality condition. Generalized least squares uses a weighted $L^2$ norm where the weights encode observation precisions, and weighted regression remains a projection — just in a re-weighted Hilbert space. Forward link: <a href="https://formalml.com/topics/regression" class="formalml-badge" target="_blank" rel="noopener">Regression</a>.
+
+**Regularization geometry.** The shapes of the $L^1$ and $L^2$ unit balls determine the qualitative behavior of regularized estimators. The $L^1$ ball has corners on the coordinate axes; the intersection of a level curve of the data-fit term with a corner produces *sparsity* (some coordinates exactly zero). The $L^2$ ball is a smooth sphere; intersections never sit on axes, so $L^2$ regularization shrinks coordinates but never zeros them out. This is why Lasso selects features and Ridge does not — and the explanation is purely geometric, not statistical.
+
+**Fourier neural operators.** Fourier neural operators (FNO) learn mappings between function spaces, typically $\mathcal{G}_\theta: L^2(\mathbb{R}^d) \to L^2(\mathbb{R}^d)$. The training objective is an $L^2$ loss over function pairs $(u, s)$ from a PDE dataset: $\mathcal{L}(\theta) = \mathbb{E}\bigl[ \|\mathcal{G}_\theta(u) - s\|_{L^2}^2 \bigr]$. Riesz–Fischer guarantees that the optimization happens in a complete function space — minimizing sequences converge inside $L^2$. Without completeness, the optimization could "escape" to non-functions, and the entire approach would be ill-defined. Forward link: <a href="https://formalml.com/topics/fourier-neural-operators" class="formalml-badge" target="_blank" rel="noopener">Fourier Neural Operators</a>.
+
+**Score matching.** Score matching trains a generative model by minimizing the $L^2$ distance between the score functions (gradients of log-densities) of the model and data: $\mathcal{L}_{\text{SM}}(\theta) = \int \|\nabla \log p_\theta(x) - \nabla \log p_{\text{data}}(x)\|_2^2 \, p_{\text{data}}(x) \, dx$. The objective is well-defined precisely when both score functions live in $L^2(p_{\text{data}})$. Denoising score matching, sliced score matching, and diffusion-model training are all computational tricks for evaluating this $L^2$ functional without knowing $\nabla \log p_{\text{data}}$ explicitly. Forward link: <a href="https://formalml.com/topics/score-matching" class="formalml-badge" target="_blank" rel="noopener">Score Matching</a>.
+
+**Wasserstein distances and optimal transport.** The Wasserstein-$p$ distance between two probability measures is
+
+$$W_p(\mu, \nu) \;=\; \left( \inf_{\gamma \in \Gamma(\mu, \nu)} \int |x - y|^p \, d\gamma(x, y) \right)^{1/p},$$
+
+which has the structure of an $L^p$ norm in the space of *couplings* $\Gamma(\mu, \nu)$. The Kantorovich dual formulation uses the $(L^p)^* = L^q$ duality from Section 10: $W_1(\mu, \nu) = \sup_{\|f\|_{\text{Lip}} \leq 1} \int f \, d(\mu - \nu)$, where the supremum is over $1$-Lipschitz functions (an $L^\infty$ subspace). The dual side replaces the infimum over couplings with a supremum over functions, and the duality is exactly $L^p$/$L^q$ duality applied to the optimal transport setting. Forward link: <a href="https://formalml.com/topics/wasserstein-distances" class="formalml-badge" target="_blank" rel="noopener">Wasserstein Distances</a>.
+
+<TheoremBlock type="example" number={13} title="$L^1$ vs. $L^2$ regularization paths">
+
+Consider a 2D regression with parameter vector $\beta = (\beta_1, \beta_2)$. As the regularization strength $\lambda$ varies, the *Ridge path* $\hat\beta(\lambda) = (X^T X + \lambda I)^{-1} X^T y$ moves smoothly from the OLS solution $(\lambda = 0)$ toward the origin $(\lambda \to \infty)$, with both coordinates shrinking continuously and never reaching zero except in the limit. The *Lasso path* $\hat\beta(\lambda) = \arg\min_\beta \|y - X \beta\|_2^2 + \lambda \|\beta\|_1$ is piecewise linear and *kinks* at values of $\lambda$ where one of the coordinates first becomes exactly zero. After the kink, the Lasso solution stays on the axis — it has selected one feature and dropped the other. The qualitative difference between "smooth shrinkage" (Ridge) and "kink-then-zero" (Lasso) is entirely a consequence of the $L^p$ ball geometry: the $L^2$ ball is differentiable, so the optimum moves smoothly; the $L^1$ ball has corners, so the optimum hits a corner at some $\lambda$ and stays there.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={14} title="$L^2$ convergence of Fourier partial sums">
+
+Take $f = \mathbf{1}_{[0, \pi]}$ on $[0, 2\pi]$. The partial Fourier sums $S_N f = \sum_{|n| \leq N} \hat f(n) e^{i n x}$ exhibit the **Gibbs phenomenon**: at the discontinuities $x = 0$ and $x = \pi$, $S_N f$ overshoots $f$ by about $9\%$ no matter how large $N$ is. So $S_N f$ does *not* converge pointwise to $f$ at the jumps. But the $L^2$ error decays:
+
+$$\|f - S_N f\|_2^2 \;=\; \sum_{|n| > N} |\hat f(n)|^2 \;\xrightarrow[N \to \infty]{} \;0,$$
+
+since the Fourier coefficients of $f$ are square-summable (Parseval's identity). The decay is moderate — about $1/\sqrt{N}$ — but it goes to zero. So $S_N f \to f$ in $L^2$ but *not* pointwise. The Gibbs overshoot is an artifact of pointwise behavior at a measure-zero set, and the $L^2$ norm is insensitive to it because it integrates against a measure that assigns no mass to individual points. This is the cleanest example of "two notions of convergence give different answers, and the answer that survives in the long run is the one that respects the underlying measure."
+
+</TheoremBlock>
+
+## 13. Connections & Further Reading
+
+This is the **third topic** in Track 7 — Measure & Integration — and the third **advanced** topic in formalCalculus. Topics 25 and 26 built the framework and the integral; this topic built the function spaces. The combination is the foundation that the next several topics across measure theory, functional analysis, and probability rest on. The Riesz–Fischer completeness theorem proved here is what makes everything downstream possible: without completeness of $L^p$, there is no Banach space theory, no Hilbert space theory, no Radon–Nikodym theorem, no functional-analytic optimization. Topic 27 is the smallest topic that the rest of modern analysis depends on.
+
+The central editorial pivot in this topic was *from individual functions to spaces of functions*. Topic 26 asked "does this function have a finite integral?" and Topic 27 asks "how far apart are these two functions?" Both questions are about measurable functions, but the second one requires organizing functions into a vector space with a norm — and that organization is exactly what makes function-space methods feel like linear algebra. Once $L^p$ is in place, the analogies between $\mathbb{R}^n$ and function spaces (vectors / functions, dot products / integrals, projections / regression, completeness / convergence guarantees) become *literal* identities rather than loose metaphors.
+
+**Within formalCalculus:**
+
+- [The Lebesgue Integral](/topics/lebesgue-integral) — The $L^p$ norm $\|f\|_p = (\int |f|^p \, d\mu)^{1/p}$ is a Lebesgue integral, and the Riesz–Fischer proof uses the Dominated Convergence Theorem from Topic 26 as its closing tool. Without the convergence theorems from Topic 26, the Riesz–Fischer proof would not close.
+- [Sigma-Algebras & Measures](/topics/sigma-algebras) — Measurable functions, the a.e.-equivalence relation, simple functions, and the simple-function approximation theorem are all from Topic 25. The density-of-simple-functions theorem in Section 8 is a direct application of the Topic 25 simple-function approximation result.
+- [Completeness & Compactness](/topics/completeness-compactness) — The Riesz–Fischer subsequence-extraction technique (extract a fast-decaying subsequence, sum the differences, recover an a.e. limit) is the same kind of move as the Bolzano–Weierstrass extraction from Topic 3, applied in function space rather than in $\mathbb{R}$.
+- [Fourier Series](/topics/fourier-series) — The $L^2$ convergence of Fourier series (Example 14) is a special case of the general orthonormal-system theory that we previewed in Section 9. Topic 22's geometric statements about Fourier series being "basis expansions" are made rigorous by the Hilbert space structure of $L^2$ developed here.
+
+**Successor topics within formalCalculus** *(coming soon)*:
+
+- **Radon-Nikodym & Probability Densities** — Densities $d\nu / d\mu$ live in $L^1(\mu)$. The Radon-Nikodym proof uses $L^2$ projection onto closed subspaces of measure differences — an $L^p$ technique applied to a measure-theoretic problem.
+- **Normed & Banach Spaces** — $L^p$ is the canonical example of a Banach space (a complete normed vector space). Topic 30 develops the abstract theory; this topic provides the indispensable concrete example that makes the abstract theory feel grounded.
+- **Inner Product & Hilbert Spaces** — $L^2$ is the canonical Hilbert space. Topic 31 develops orthogonal projection, the Riesz representation theorem (the general version of Section 10's special case), and the spectral theorem — all of which generalize properties we saw in $L^2$ here.
+
+**Forward to formalml.com:**
+
+- <a href="https://formalml.com/topics/regression" class="formalml-badge" target="_blank" rel="noopener">Regression</a> — Least-squares regression is exactly $L^2$ projection onto a closed subspace. The existence and uniqueness of the OLS estimator follows from the projection theorem previewed in Section 9. The normal equations are the orthogonality condition.
+- <a href="https://formalml.com/topics/fourier-neural-operators" class="formalml-badge" target="_blank" rel="noopener">Fourier Neural Operators</a> — FNOs learn mappings $L^2(\mathbb{R}^d) \to L^2(\mathbb{R}^d)$ between function spaces. The completeness of $L^2$ from Riesz–Fischer is what makes the optimization well-posed.
+- <a href="https://formalml.com/topics/score-matching" class="formalml-badge" target="_blank" rel="noopener">Score Matching</a> — Score matching minimizes the $L^2(p_{\text{data}})$ distance between model and data score functions. The well-posedness of the objective requires both scores to live in $L^2$.
+- <a href="https://formalml.com/topics/wasserstein-distances" class="formalml-badge" target="_blank" rel="noopener">Wasserstein Distances</a> — The Kantorovich dual formulation of Wasserstein distances uses the $(L^p)^* = L^q$ duality from Section 10. The Lipschitz constraint on the dual side is an $L^\infty$ subspace.
+- <a href="https://formalml.com/topics/kernel-methods" class="formalml-badge" target="_blank" rel="noopener">Kernel Methods</a> — Reproducing kernel Hilbert spaces (RKHS) are subspaces of $L^2$. Kernel evaluations are $L^2$ inner products, and the representer theorem is a finite-dimensional projection within an infinite-dimensional Hilbert space — making essential use of the $L^2$ completeness from Riesz–Fischer.
+
+**References:**
+
+- Royden, H. L. & Fitzpatrick, P. M. *Real Analysis* (4th ed., 2010), Chapter 7 (Lp spaces on $\mathbb{R}$) and Chapter 19 (general measure spaces). Closest match to our exposition order, with the same seminorm-then-quotient construction in Section 2.
+- Folland, G. B. *Real Analysis: Modern Techniques and Their Applications* (2nd ed., 1999), Chapter 6. Concise and rigorous treatment of Hölder, Minkowski, completeness, density, and duality. Reference for the duality proof sketch in Section 10.
+- Brezis, H. *Functional Analysis, Sobolev Spaces and Partial Differential Equations* (2011), Chapter 4. Excellent for the density results and the $\sigma$-finiteness condition in the dual space characterization. Brezis is also where many readers first see the $L^p$/Sobolev space theory in the form ML practitioners actually use it.
+- Stein, E. M. & Shakarchi, R. *Real Analysis: Measure Theory, Integration, and Hilbert Spaces* (2005), Chapter 2. Elegant treatment that connects $L^p$ theory directly to the Hilbert space theory of $L^2$. The geometric instinct in Stein & Shakarchi is closest to the philosophy of this curriculum.
+

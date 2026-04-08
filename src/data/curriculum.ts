@@ -64,9 +64,9 @@ export const tracks: Track[] = [
     published: [
       'Sigma-Algebras & Measures',
       'The Lebesgue Integral',
+      'Lp Spaces',
     ],
     planned: [
-      'Lp Spaces',
       'Radon-Nikodym & Probability Densities',
     ],
   },
