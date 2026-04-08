@@ -203,6 +203,18 @@ export interface HolderCheckResult {
   isSharp: boolean;
 }
 
+/** Result of checking Minkowski's inequality numerically. */
+export interface MinkowskiCheckResult {
+  /** The exponent p used. */
+  p: number;
+  /** ||f + g||_p — the left-hand side of Minkowski's inequality. */
+  lhs: number;
+  /** ||f||_p + ||g||_p — the right-hand side. */
+  rhs: number;
+  /** lhs / rhs. For p ≥ 1, Minkowski guarantees ratio ≤ 1; for p < 1 the direction reverses. */
+  ratio: number;
+}
+
 /**
  * Compute the Lp norm ||f||_p = (∫_a^b |f(x)|^p dx)^{1/p} via adaptive quadrature.
  *
@@ -257,21 +269,24 @@ export function computeLpNorm(
  * @param g — second function
  * @param p — exponent for f (q = p/(p-1) computed automatically)
  * @param domain — [a, b]
- * @param resolution — quadrature resolution passed through to computeLpNorm
+ * @param supSampleCount — passed through to `computeLpNorm` as its `resolution`
+ *   parameter. Only affects accuracy when one of p, q is ∞ (where `computeLpNorm`
+ *   approximates the essential supremum via a uniform grid). For finite p and q,
+ *   `adaptiveQuadrature` is used internally and this parameter has no effect.
  */
 export function checkHolder(
   f: (x: number) => number,
   g: (x: number) => number,
   p: number,
   domain: [number, number],
-  resolution: number = 1000,
+  supSampleCount: number = 1000,
 ): HolderCheckResult {
   const q = p === 1 ? Infinity : p === Infinity ? 1 : p / (p - 1);
   const fg = (x: number) => f(x) * g(x);
 
-  const lhs = computeLpNorm(fg, 1, domain, resolution).norm;
-  const fNorm = computeLpNorm(f, p, domain, resolution).norm;
-  const gNorm = computeLpNorm(g, q, domain, resolution).norm;
+  const lhs = computeLpNorm(fg, 1, domain, supSampleCount).norm;
+  const fNorm = computeLpNorm(f, p, domain, supSampleCount).norm;
+  const gNorm = computeLpNorm(g, q, domain, supSampleCount).norm;
   const rhs = fNorm * gNorm;
   const ratio = rhs > 0 ? lhs / rhs : 0;
 
@@ -289,22 +304,25 @@ export function checkHolder(
  * @param g — second function
  * @param p — exponent
  * @param domain — [a, b]
- * @param resolution — quadrature resolution passed through to computeLpNorm
+ * @param supSampleCount — passed through to `computeLpNorm` as its `resolution`
+ *   parameter. Only affects accuracy when p = ∞ (where `computeLpNorm` approximates
+ *   the essential supremum via a uniform grid). For finite p, `adaptiveQuadrature`
+ *   is used internally and this parameter has no effect.
  */
 export function checkMinkowski(
   f: (x: number) => number,
   g: (x: number) => number,
   p: number,
   domain: [number, number],
-  resolution: number = 1000,
-): { lhs: number; rhs: number; ratio: number } {
+  supSampleCount: number = 1000,
+): MinkowskiCheckResult {
   const fPlusG = (x: number) => f(x) + g(x);
 
-  const lhs = computeLpNorm(fPlusG, p, domain, resolution).norm;
-  const fNorm = computeLpNorm(f, p, domain, resolution).norm;
-  const gNorm = computeLpNorm(g, p, domain, resolution).norm;
+  const lhs = computeLpNorm(fPlusG, p, domain, supSampleCount).norm;
+  const fNorm = computeLpNorm(f, p, domain, supSampleCount).norm;
+  const gNorm = computeLpNorm(g, p, domain, supSampleCount).norm;
   const rhs = fNorm + gNorm;
   const ratio = rhs > 0 ? lhs / rhs : 0;
 
-  return { lhs, rhs, ratio };
+  return { p, lhs, rhs, ratio };
 }
