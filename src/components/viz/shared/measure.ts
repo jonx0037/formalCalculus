@@ -1,16 +1,20 @@
 /**
  * Shared utility module for measure theory and Lebesgue integration.
- * Created by Topic 26 (lebesgue-integral); will be extended by Topic 27 (lp-spaces)
- * and Topic 28 (radon-nikodym).
+ * Created by Topic 26 (lebesgue-integral); extended by Topic 27 (lp-spaces).
+ * Will be extended further by Topic 28 (radon-nikodym).
  *
  * Provides:
  *  - MeasureInterval, SimpleFunctionStep, SimpleFunctionApproximation types
  *    (migrated from sigma-algebras-data.ts; re-exported there for backward compat)
  *  - getSimpleFunctionApproximation: dyadic simple-function approximation
  *  - checkDomination: numerical verification of |f_n| ≤ g for the DCT hypothesis
+ *  - LpNormResult, HolderCheckResult types (Topic 27)
+ *  - computeLpNorm, checkHolder, checkMinkowski (Topic 27)
  *
  * All functions are pure and deterministic — no Math.random().
  */
+
+import { adaptiveQuadrature } from './integration';
 
 // ── Interfaces ─────────────────────────────────────────────
 
@@ -169,4 +173,138 @@ export function checkDomination(
     if (Math.abs(fn(x)) > g(x) + 1e-12) return false;
   }
   return true;
+}
+
+// ── Lp norms and inequalities (Topic 27) ──────────────────
+
+/** Result of computing an Lp norm. */
+export interface LpNormResult {
+  /** The exponent p that was used. */
+  p: number;
+  /** The computed norm ||f||_p. */
+  norm: number;
+  /** Whether the norm is finite (false on overflow or NaN). */
+  isFinite: boolean;
+}
+
+/** Result of checking Hölder's inequality numerically. */
+export interface HolderCheckResult {
+  /** The exponent p used for f. */
+  p: number;
+  /** The conjugate exponent q = p / (p - 1). */
+  q: number;
+  /** ||fg||_1 — the left-hand side of Hölder's inequality. */
+  lhs: number;
+  /** ||f||_p · ||g||_q — the right-hand side (Hölder bound). */
+  rhs: number;
+  /** lhs / rhs. Hölder guarantees ratio ≤ 1; ratio ≈ 1 means the inequality is tight. */
+  ratio: number;
+  /** True if ratio ≥ 0.999 (Young's-inequality saturation, |f|^p ∝ |g|^q). */
+  isSharp: boolean;
+}
+
+/**
+ * Compute the Lp norm ||f||_p = (∫_a^b |f(x)|^p dx)^{1/p} via adaptive quadrature.
+ *
+ * For p = Infinity, returns the supremum of |f| sampled at `resolution` points
+ * (an approximation to the essential supremum on a discretized grid).
+ *
+ * For p < 1, the result is technically a "p-norm" in the loose sense — it is
+ * not a norm because the triangle inequality fails. Caller is responsible for
+ * interpreting the result in that regime; see Topic 27 §5 Remark 5.
+ *
+ * @param f — the integrand
+ * @param p — exponent (1 ≤ p ≤ ∞ for an actual norm; values < 1 are accepted)
+ * @param domain — [a, b]
+ * @param resolution — sample count for the p = ∞ branch (default 1000); ignored for finite p
+ */
+export function computeLpNorm(
+  f: (x: number) => number,
+  p: number,
+  domain: [number, number],
+  resolution: number = 1000,
+): LpNormResult {
+  const [a, b] = domain;
+
+  if (!Number.isFinite(p)) {
+    // p = ∞: ess sup approximated by sup over a uniform grid.
+    let supVal = 0;
+    for (let i = 0; i <= resolution; i++) {
+      const x = a + (i / resolution) * (b - a);
+      const v = Math.abs(f(x));
+      if (v > supVal) supVal = v;
+    }
+    return { p, norm: supVal, isFinite: Number.isFinite(supVal) };
+  }
+
+  const integrand = (x: number) => Math.pow(Math.abs(f(x)), p);
+  const result = adaptiveQuadrature(integrand, a, b);
+  // Guard against tiny negative values from quadrature roundoff.
+  const integralValue = Math.max(result.value, 0);
+  const norm = Math.pow(integralValue, 1 / p);
+
+  return { p, norm, isFinite: Number.isFinite(norm) };
+}
+
+/**
+ * Check Hölder's inequality numerically: ||fg||_1 ≤ ||f||_p · ||g||_q with q = p/(p-1).
+ *
+ * Returns both sides and the ratio. For p = 1, q is set to ∞; for p = ∞, q is 1.
+ * The `isSharp` flag fires when ratio ≥ 0.999, indicating Young's inequality
+ * saturation (|f|^p ∝ |g|^q a.e.).
+ *
+ * @param f — first function
+ * @param g — second function
+ * @param p — exponent for f (q = p/(p-1) computed automatically)
+ * @param domain — [a, b]
+ * @param resolution — quadrature resolution passed through to computeLpNorm
+ */
+export function checkHolder(
+  f: (x: number) => number,
+  g: (x: number) => number,
+  p: number,
+  domain: [number, number],
+  resolution: number = 1000,
+): HolderCheckResult {
+  const q = p === 1 ? Infinity : p === Infinity ? 1 : p / (p - 1);
+  const fg = (x: number) => f(x) * g(x);
+
+  const lhs = computeLpNorm(fg, 1, domain, resolution).norm;
+  const fNorm = computeLpNorm(f, p, domain, resolution).norm;
+  const gNorm = computeLpNorm(g, q, domain, resolution).norm;
+  const rhs = fNorm * gNorm;
+  const ratio = rhs > 0 ? lhs / rhs : 0;
+
+  return { p, q, lhs, rhs, ratio, isSharp: ratio >= 0.999 };
+}
+
+/**
+ * Check Minkowski's inequality numerically: ||f + g||_p ≤ ||f||_p + ||g||_p.
+ *
+ * Returns both sides and the ratio. For p ≥ 1 the inequality holds; for p < 1
+ * the direction reverses, so the caller is responsible for interpreting the
+ * result in that regime (the function does not flag p < 1 specially).
+ *
+ * @param f — first function
+ * @param g — second function
+ * @param p — exponent
+ * @param domain — [a, b]
+ * @param resolution — quadrature resolution passed through to computeLpNorm
+ */
+export function checkMinkowski(
+  f: (x: number) => number,
+  g: (x: number) => number,
+  p: number,
+  domain: [number, number],
+  resolution: number = 1000,
+): { lhs: number; rhs: number; ratio: number } {
+  const fPlusG = (x: number) => f(x) + g(x);
+
+  const lhs = computeLpNorm(fPlusG, p, domain, resolution).norm;
+  const fNorm = computeLpNorm(f, p, domain, resolution).norm;
+  const gNorm = computeLpNorm(g, p, domain, resolution).norm;
+  const rhs = fNorm + gNorm;
+  const ratio = rhs > 0 ? lhs / rhs : 0;
+
+  return { lhs, rhs, ratio };
 }
