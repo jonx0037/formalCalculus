@@ -1,0 +1,765 @@
+---
+title: "Radon-Nikodym & Probability Densities"
+subtitle: "Turning measures into functions — from the Radon-Nikodym theorem through conditional expectation and change of measure to the rigorous foundations of probability densities, importance sampling, and Bayesian inference."
+status: "published"
+difficulty: "advanced"
+prerequisites:
+  - "lp-spaces"
+tags:
+  - "calculus"
+  - "measure-theory"
+  - "radon-nikodym"
+  - "probability-density"
+  - "conditional-expectation"
+  - "absolute-continuity"
+  - "change-of-measure"
+  - "importance-sampling"
+  - "bayesian-inference"
+domain: "measure-integration"
+videoId: null
+notebookPath: "notebooks/radon-nikodym/28_radon_nikodym.ipynb"
+githubUrl: "https://github.com/jonx0037/formalCalculus/blob/main/src/content/topics/radon-nikodym.mdx"
+datePublished: 2026-04-15
+estimatedReadTime: 55
+abstract: "Every probability density function you have ever written down — every Gaussian bell curve, every softmax output, every generative model's learned distribution — is a Radon-Nikodym derivative. The Radon-Nikodym theorem is the single theorem that turns measure theory into probability theory: it says that when one measure is absolutely continuous with respect to another, the relationship can be captured by a single integrable function. We prove this using the L² projection machinery from Topic 27, reducing the existence of densities to a Hilbert-space projection argument. The theorem's reach is extraordinary: probability densities are Radon-Nikodym derivatives with respect to Lebesgue measure. Conditional expectation — the engine behind regression, Bayesian inference, and reinforcement learning — is a Radon-Nikodym derivative with respect to a sub-sigma-algebra. Importance sampling weights are Radon-Nikodym derivatives between proposal and target measures. KL divergence is the expected log-Radon-Nikodym derivative. This topic completes the Measure and Integration track by bridging the gap between abstract measure theory and the concrete probabilistic tools that machine learning practitioners use every day."
+formalmlConnections:
+  - topic: "probability-spaces"
+    site: "formalml"
+    relationship: "Probability densities are Radon-Nikodym derivatives dP/dλ. The entire measure-theoretic probability framework rests on the R-N theorem, making densities rigorous."
+  - topic: "regression"
+    site: "formalml"
+    relationship: "Conditional expectation E[Y|X] is the best L² predictor — the R-N derivative of a restricted measure. Least-squares regression computes it."
+  - topic: "bayesian-inference"
+    site: "formalml"
+    relationship: "Bayes' theorem is a change of measure: the posterior density is the prior times the likelihood ratio, which is a Radon-Nikodym derivative."
+  - topic: "importance-sampling"
+    site: "formalml"
+    relationship: "The importance weight dP/dQ is literally a Radon-Nikodym derivative. The identity E_P[f] = E_Q[f · dP/dQ] is a change of measure."
+  - topic: "generative-modeling"
+    site: "formalml"
+    relationship: "Normalizing flows use the change-of-variables formula p_Y(y) = p_X(T⁻¹(y)) · |det DT⁻¹|, which is a Radon-Nikodym derivative under pushforward."
+  - topic: "information-geometry"
+    site: "formalml"
+    relationship: "KL divergence D_KL(P || Q) = ∫ log(dP/dQ) dP is the expected log-Radon-Nikodym derivative. Fisher information is the variance of the score, which is ∇ log(dP/dλ)."
+  - topic: "diffusion-models"
+    site: "formalml"
+    relationship: "Score matching involves ∇ log p, the gradient of the log-Radon-Nikodym derivative. Diffusion model training minimizes an L²(p_t) distance involving scores."
+connections:
+  - topic: "lp-spaces"
+    relationship: "The von Neumann proof of Radon-Nikodym uses L² orthogonal projection from Topic 27 Section 9. R-N derivatives live in L¹(μ). Topic 27's duality proof sketch used R-N as a black box — this topic closes that loop."
+  - topic: "lebesgue-integral"
+    relationship: "The Lebesgue integral defines ν(A) = ∫_A f dμ, which is the relationship the R-N theorem reverses: given ν ≪ μ, recover f."
+  - topic: "sigma-algebras"
+    relationship: "Measurable spaces, sigma-algebras, and null sets from Topic 25 are the framework. Conditional expectation uses sub-sigma-algebras."
+  - topic: "completeness-compactness"
+    relationship: "Completeness of L² (Riesz-Fischer from Topic 27, which used the Bolzano-Weierstrass technique from Topic 3) ensures the closed-subspace projection exists."
+references:
+  - type: "book"
+    title: "Real Analysis"
+    authors: "Royden, H. L. & Fitzpatrick, P. M."
+    year: 2010
+    note: "Fourth edition. Chapter 18 (Radon-Nikodym, Lebesgue decomposition). Closest to our von Neumann proof path."
+  - type: "book"
+    title: "Real Analysis: Modern Techniques and Their Applications"
+    authors: "Folland, G. B."
+    year: 1999
+    note: "Second edition. Chapter 3 (signed measures, R-N theorem, Lebesgue decomposition). Concise classical treatment."
+  - type: "book"
+    title: "Probability and Measure"
+    authors: "Billingsley, P."
+    year: 2012
+    note: "Anniversary edition. Chapters 31–33. Excellent for the probability interpretation — densities, conditional expectation, regular conditional distributions."
+  - type: "book"
+    title: "Real Analysis: Measure Theory, Integration, and Hilbert Spaces"
+    authors: "Stein, E. M. & Shakarchi, R."
+    year: 2005
+    note: "Chapter 6. Clean presentation of the von Neumann proof using L² projection."
+---
+
+import TheoremBlock from '../../components/ui/TheoremBlock.astro';
+import DensityAsDerivativeExplorer from '../../components/viz/DensityAsDerivativeExplorer.tsx';
+import ConditionalExpectationExplorer from '../../components/viz/ConditionalExpectationExplorer.tsx';
+import ImportanceSamplingExplorer from '../../components/viz/ImportanceSamplingExplorer.tsx';
+
+## 1. Three Puzzles the Radon-Nikodym Theorem Solves
+
+Topic 27 organized integrable functions into the $L^p$ spaces — vector spaces with a norm, a notion of distance, and (for $L^2$) an inner product and an orthogonal-projection theorem. Along the way we used the **Radon-Nikodym theorem** as a black box twice: once in Section 9, when we previewed $L^2$ projection, and once in Section 10, when we proved $(L^p)^* = L^q$ duality and said *"by the Radon-Nikodym theorem (which we will prove in Topic 28; for now we use it as a black box), absolute continuity implies that $\nu$ has a density..."*. This topic pays the debt. The von Neumann proof uses the $L^2$ projection theorem from Topic 27 §9 — the same tool we previewed for regression — to reduce the existence of densities to a single Hilbert-space projection argument.
+
+The pivot in this topic is from *spaces of functions* to *measures as functions*. Topic 27 asked "how do we organize integrable functions?"; Topic 28 asks "when can one measure be represented as a function against another?" The answer makes measure theory into probability theory. Three concrete questions motivate the theorem.
+
+**1. What exactly is a "probability density"?** Every ML practitioner writes $p(x) = \frac{1}{\sqrt{2\pi}} e^{-x^2/2}$ and calls it "the density of the standard normal." But a *probability measure* $P$ assigns numbers to sets, not points — and when $P$ is continuous, $P(\{x\}) = 0$ for every individual $x$. So what is $p(x)$? It is not $P(\{x\})$. The Radon-Nikodym theorem answers: $p(x)$ is the derivative $\frac{dP}{d\lambda}$ of the probability measure with respect to Lebesgue measure $\lambda$ — a function whose integral recovers $P$. The "density" is a derivative in a precise measure-theoretic sense, not a metaphor.
+
+**2. What is $E[Y \mid X]$, really?** Introductory courses define conditional expectation $E[Y \mid X = x]$ by "averaging $Y$ over the slice where $X = x$." But when $X$ is continuous, the event $\{X = x\}$ has probability zero — you cannot condition on a zero-probability event without doing some work first. Measure-theoretic conditional expectation resolves this: $E[Y \mid X]$ is the Radon-Nikodym derivative of a certain restricted measure, and (when $Y \in L^2$) it is the **best** $L^2$ predictor of $Y$ given $X$. Regression algorithms — linear regression, random forests, neural networks — are all approximating this single object.
+
+**3. How do importance-sampling weights work?** To estimate $E_P[f]$ using samples from a different distribution $Q$, we reweight: $E_P[f] = E_Q[f \cdot w]$ where $w = \frac{dP}{dQ}$. But what *is* $\frac{dP}{dQ}$? It is a Radon-Nikodym derivative — the function that converts integration with respect to $Q$ into integration with respect to $P$. The reweighting identity is a *change-of-measure* formula, and its validity requires $P \ll Q$ (every $Q$-null set is $P$-null). When importance sampling fails — when the variance of the weights blows up — it is almost always because the absolute-continuity hypothesis is silently violated in some region of the sample space.
+
+These three questions are the same question from three angles: when can a measure be written as a function against another measure, and what is that function? The answer is the **Radon-Nikodym derivative**, and the theorem that produces it is the bridge from measure theory to probability theory.
+
+## 2. Absolute Continuity and Mutual Singularity
+
+Before stating the theorem we need two definitions. Both describe relationships between measures, and the contrast between them is sharp: absolutely continuous measures share their null sets; mutually singular measures live on disjoint sets.
+
+<TheoremBlock type="definition" number={1} title="Absolute continuity of measures">
+
+Let $\mu$ and $\nu$ be measures on a measurable space $(\Omega, \mathcal{F})$. We say $\nu$ is **absolutely continuous** with respect to $\mu$, written $\nu \ll \mu$, if for every $A \in \mathcal{F}$,
+
+$$\mu(A) = 0 \;\;\Longrightarrow\;\; \nu(A) = 0.$$
+
+In words: every $\mu$-null set is also a $\nu$-null set. The relationship is one-directional — $\nu \ll \mu$ does not imply $\mu \ll \nu$.
+
+</TheoremBlock>
+
+<TheoremBlock type="definition" number={2} title="Mutual singularity">
+
+Two measures $\mu$ and $\nu$ on $(\Omega, \mathcal{F})$ are **mutually singular**, written $\mu \perp \nu$, if there exist disjoint sets $A, B \in \mathcal{F}$ with $A \cup B = \Omega$ such that
+
+$$\mu(A) = 0 \quad \text{and} \quad \nu(B) = 0.$$
+
+In words: the two measures live on disjoint pieces of $\Omega$ — $\mu$ assigns all its mass to $B$, and $\nu$ assigns all its mass to $A$. They cannot see each other.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={1} title="Gaussian measure is absolutely continuous w.r.t. Lebesgue">
+
+Let $P$ be the standard normal probability measure on $(\mathbb{R}, \mathcal{B})$ and let $\lambda$ denote Lebesgue measure. If $\lambda(A) = 0$ — say, $A$ is a countable set or a Cantor-type set of Lebesgue measure zero — then
+
+$$P(A) = \int_A \frac{1}{\sqrt{2\pi}} e^{-x^2/2} \, dx = 0,$$
+
+because the Lebesgue integral over a null set is always zero. So $P \ll \lambda$. The density $\frac{1}{\sqrt{2\pi}} e^{-x^2/2}$ is — as we will see in Section 3 — the Radon-Nikodym derivative $\frac{dP}{d\lambda}$. Every Gaussian distribution you have ever computed with is a worked example of absolute continuity.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={2} title="Dirac measure is singular w.r.t. Lebesgue">
+
+Let $\delta_0$ be the Dirac measure at $0$: $\delta_0(A) = 1$ if $0 \in A$, else $0$. Then $\delta_0 \perp \lambda$. To verify, take $A = \{0\}$ and $B = \mathbb{R} \setminus \{0\}$. Then $\lambda(A) = 0$ (a single point has Lebesgue measure zero) and $\delta_0(B) = 0$ (the Dirac mass is not at any point of $B$). The two measures partition $\mathbb{R}$ into the single point where $\delta_0$ lives and the rest of the line where $\lambda$ lives. They cannot be combined into a density relationship — there is no function $f$ with $\delta_0(A) = \int_A f \, d\lambda$, because integrating any Lebesgue-integrable function over $\{0\}$ gives zero.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={3} title="Counting measure on $\mathbb{Z}$ is singular w.r.t. Lebesgue on $\mathbb{R}$">
+
+Let $\#$ be counting measure on $\mathbb{R}$ that assigns measure $1$ to each integer and $0$ to non-integers; equivalently, $\#(A) = |A \cap \mathbb{Z}|$. Then $\# \perp \lambda$. Take $A = \mathbb{Z}$ and $B = \mathbb{R} \setminus \mathbb{Z}$. Then $\lambda(A) = 0$ (a countable set has Lebesgue measure zero) and $\#(B) = 0$ (no integers in $B$). Discrete and continuous measures live on disjoint supports. This is why you cannot write a Poisson distribution as $dP/d\lambda$ — the Poisson measure is supported on $\{0, 1, 2, \ldots\}$, which is a $\lambda$-null set.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={1} title="Absolute continuity of measures vs. absolute continuity of functions">
+
+The reader may know "absolutely continuous function" from calculus — a function $F: [a, b] \to \mathbb{R}$ is absolutely continuous if for every $\varepsilon > 0$ there is a $\delta > 0$ such that any finite collection of disjoint subintervals with total length less than $\delta$ produces total variation less than $\varepsilon$. These two concepts are related but distinct: a function $F$ is absolutely continuous on $[a, b]$ if and only if there exists $f \in L^1([a, b])$ with $F(x) = F(a) + \int_a^x f(t) \, dt$, and equivalently the signed measure $\nu_F(A) = \int_A F'(x) \, dx$ is absolutely continuous (in our measure-theoretic sense) with respect to Lebesgue measure. The function-theoretic notion is a special case of the measure-theoretic one.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={2} title="$\sigma$-finiteness is essential">
+
+The Radon-Nikodym theorem requires both $\mu$ and $\nu$ to be **$\sigma$-finite**: $\Omega$ is a countable union of measurable sets of finite measure under each. Without this, the theorem can fail. The standard counterexample is counting measure on $\mathbb{R}$ (which is not $\sigma$-finite — the only set of finite counting measure is a finite set, and $\mathbb{R}$ is not a countable union of finite sets) compared with Lebesgue measure: $\lambda \ll \#$ holds vacuously (the only $\#$-null set is $\emptyset$), but no integrable density can exist because $\lambda$ and $\#$ disagree on every uncountable measurable set. In probability applications, $\sigma$-finiteness is automatic: every probability measure is finite (hence $\sigma$-finite), so this hypothesis is rarely something the practitioner needs to check.
+
+</TheoremBlock>
+
+![Three-panel illustration: a Gaussian density (absolutely continuous w.r.t. Lebesgue), a Dirac mass at zero (singular w.r.t. Lebesgue), and the corresponding null sets that distinguish the two regimes](/images/topics/radon-nikodym/absolute-continuity.png)
+
+## 3. The Radon-Nikodym Derivative
+
+We can now define the central object of the topic. The definition is short — it just *names* a function that satisfies a particular integral identity — and the substance of the topic is showing that such a function actually exists whenever absolute continuity holds.
+
+<TheoremBlock type="definition" number={3} title="The Radon-Nikodym derivative">
+
+Let $\mu$ and $\nu$ be $\sigma$-finite measures on $(\Omega, \mathcal{F})$ with $\nu \ll \mu$. If there exists a non-negative measurable function $f \in L^1(\mu)$ such that
+
+$$\nu(A) = \int_A f \, d\mu \quad \text{for every } A \in \mathcal{F},$$
+
+then $f$ is called the **Radon-Nikodym derivative** of $\nu$ with respect to $\mu$, written
+
+$$f = \frac{d\nu}{d\mu}.$$
+
+The notation is deliberately Leibniz-style: $f$ behaves like a derivative in several senses (chain rule, inverse rule), as we will see in Section 5.
+
+</TheoremBlock>
+
+<TheoremBlock type="proposition" number={1} title="Uniqueness of the R-N derivative ($\mu$-a.e.)">
+
+If $f$ and $g$ are both Radon-Nikodym derivatives of $\nu$ with respect to $\mu$, then $f = g$ $\mu$-almost everywhere.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+Suppose $\int_A f \, d\mu = \nu(A) = \int_A g \, d\mu$ for every measurable $A$, so
+
+$$\int_A (f - g) \, d\mu = 0 \quad \text{for every } A \in \mathcal{F}.$$
+
+Let $A_+ = \{x : f(x) > g(x)\}$. Then $f - g > 0$ on $A_+$, and $\int_{A_+} (f - g) \, d\mu = 0$ forces $\mu(A_+) = 0$ (an integral of a strictly positive function over a set is zero only when the set has measure zero). Similarly, with $A_- = \{x : g(x) > f(x)\}$, we get $\mu(A_-) = 0$. So $\mu(\{f \neq g\}) = \mu(A_+ \cup A_-) = 0$, which is exactly the statement that $f = g$ $\mu$-a.e.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={4} title="The R-N derivative you already know">
+
+Every probability density function the reader has ever computed with is a Radon-Nikodym derivative w.r.t. Lebesgue measure on $\mathbb{R}$. For the standard normal,
+
+$$\frac{dP_{\text{normal}}}{d\lambda}(x) = \frac{1}{\sqrt{2\pi}} \, e^{-x^2/2}.$$
+
+For the exponential distribution with rate $\theta > 0$,
+
+$$\frac{dP_{\text{exp}}}{d\lambda}(x) = \theta \, e^{-\theta x} \, \mathbf{1}_{x \geq 0}.$$
+
+For the Beta$(\alpha, \beta)$ distribution on $[0, 1]$,
+
+$$\frac{dP_{\text{Beta}}}{d\lambda}(x) = \frac{x^{\alpha - 1} (1 - x)^{\beta - 1}}{B(\alpha, \beta)} \, \mathbf{1}_{[0, 1]}(x),$$
+
+where $B(\alpha, \beta)$ is the Beta function. In each case the function on the right is the R-N derivative of the probability measure on the left with respect to Lebesgue measure on $\mathbb{R}$. The defining property $\nu(A) = \int_A f \, d\mu$ becomes the familiar identity $P(A) = \int_A p(x) \, dx$.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={5} title="Discrete R-N derivative is the PMF">
+
+Let $\mu$ be counting measure on $\{1, 2, 3, \ldots\}$ (assigning measure $1$ to each integer) and let $\nu$ be the geometric distribution with parameter $\frac{1}{2}$, so $\nu(\{k\}) = 2^{-k}$. Then $\nu \ll \mu$ (any $\mu$-null set is empty), and the R-N derivative is
+
+$$\frac{d\nu}{d\mu}(k) = 2^{-k}.$$
+
+The defining property reduces to $\nu(A) = \sum_{k \in A} 2^{-k}$ for $A \subseteq \mathbb{Z}_{\geq 1}$. The R-N derivative of a *discrete* probability measure with respect to counting measure is exactly the **probability mass function**. The "PDF vs PMF" distinction every student learns is purely about which dominating measure you take the derivative against — Lebesgue for continuous distributions, counting for discrete ones. The Radon-Nikodym framework unifies them.
+
+</TheoremBlock>
+
+<DensityAsDerivativeExplorer client:visible />
+
+![Two-panel: CDFs of two Beta distributions on the left and their corresponding densities (R-N derivatives) on the right, with the integral over a shaded interval verified numerically](/images/topics/radon-nikodym/density-as-derivative.png)
+
+## 4. The Radon-Nikodym Theorem
+
+We have defined the R-N derivative and shown it is unique when it exists. The substance of the theory is the *existence* statement: whenever $\nu \ll \mu$ and both measures are $\sigma$-finite, the derivative exists. The proof uses the $L^2$ projection theorem from Topic 27 §9 — the very tool that section advertised as a forward reference. This is the proof Topic 27 promised.
+
+<TheoremBlock type="theorem" number={1} title="Radon-Nikodym theorem">
+
+Let $(\Omega, \mathcal{F}, \mu)$ be a $\sigma$-finite measure space and let $\nu$ be a $\sigma$-finite measure on $(\Omega, \mathcal{F})$ with $\nu \ll \mu$. Then there exists a non-negative measurable function $f \in L^1(\mu)$ such that
+
+$$\nu(A) = \int_A f \, d\mu \quad \text{for every } A \in \mathcal{F}.$$
+
+The function $f$ is unique $\mu$-a.e. (Proposition 1) and is called the Radon-Nikodym derivative $\frac{d\nu}{d\mu}$.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+Following von Neumann, we reduce the existence of the density to a single application of $L^2$ orthogonal projection. The argument has four stages.
+
+**Stage 1 — Reduction to finite measures.** By $\sigma$-finiteness, we can write $\Omega$ as a disjoint union $\Omega = \bigsqcup_n E_n$ with $\mu(E_n) < \infty$ and $\nu(E_n) < \infty$ for every $n$. If we can produce a density $f_n$ on each $E_n$ — that is, a function with $\nu|_{E_n}(A) = \int_A f_n \, d\mu|_{E_n}$ for every $A \subseteq E_n$ — then the function $f = \sum_n f_n \cdot \mathbf{1}_{E_n}$ is a density for $\nu$ on all of $\Omega$. So it suffices to prove the theorem under the additional assumption that both $\mu$ and $\nu$ are *finite*. Assume from here on that $\mu(\Omega) < \infty$ and $\nu(\Omega) < \infty$.
+
+**Stage 2 — The auxiliary measure $\rho = \mu + \nu$.** Define $\rho = \mu + \nu$, the sum measure. Both $\mu$ and $\nu$ are absolutely continuous with respect to $\rho$ (every $\rho$-null set is in particular a $\mu$-null set and a $\nu$-null set). Now consider the linear functional $\phi: L^2(\rho) \to \mathbb{R}$ defined by
+
+$$\phi(g) = \int g \, d\nu.$$
+
+This is linear in $g$. To check it is bounded, apply the Cauchy-Schwarz inequality in $L^2(\rho)$:
+
+$$|\phi(g)| = \left|\int g \, d\nu\right| \leq \int |g| \, d\nu \leq \int |g| \, d\rho.$$
+
+The last step uses $\nu \leq \rho$ pointwise as set functions. Now apply Cauchy-Schwarz to bound the $L^1(\rho)$ integral by an $L^2(\rho)$ integral:
+
+$$\int |g| \, d\rho = \int |g| \cdot 1 \, d\rho \leq \|g\|_{L^2(\rho)} \cdot \|1\|_{L^2(\rho)} = \rho(\Omega)^{1/2} \|g\|_{L^2(\rho)}.$$
+
+So $|\phi(g)| \leq \rho(\Omega)^{1/2} \|g\|_{L^2(\rho)}$, which is exactly the statement that $\phi$ is a bounded linear functional on $L^2(\rho)$ with operator norm at most $\rho(\Omega)^{1/2}$.
+
+**Stage 3 — Riesz representation via $L^2$ projection.** By Topic 27 §9 Proposition 3 — or equivalently the Riesz representation theorem for Hilbert spaces, which we previewed in Section 9 of that topic — every bounded linear functional on a Hilbert space is represented by an inner product with a unique element of the space. Applied to our $\phi$ on the Hilbert space $L^2(\rho)$, this gives a function $h \in L^2(\rho)$ such that
+
+$$\phi(g) = \langle g, h \rangle_{L^2(\rho)} = \int g h \, d\rho \quad \text{for every } g \in L^2(\rho).$$
+
+Combining with the definition of $\phi$, we get the integral identity that drives the rest of the proof:
+
+$$\int g \, d\nu = \int g h \, d\rho \quad \text{for every } g \in L^2(\rho). \tag{$\ast$}$$
+
+This is the entire content of Topic 27's projection theorem applied here. Everything in Stage 4 is bookkeeping that turns $h$ into the actual R-N derivative.
+
+**Stage 4 — Extract the derivative.** Substitute $g = \mathbf{1}_A$ in $(\ast)$ for an arbitrary measurable set $A$ (this is allowed because $\rho$ is finite, so $\mathbf{1}_A \in L^2(\rho)$). The left side becomes $\nu(A)$, and the right side becomes $\int_A h \, d\rho = \int_A h \, d\mu + \int_A h \, d\nu$. So
+
+$$\nu(A) = \int_A h \, d\mu + \int_A h \, d\nu.$$
+
+Rearranging,
+
+$$\int_A (1 - h) \, d\nu = \int_A h \, d\mu \quad \text{for every } A \in \mathcal{F}. \tag{$\ast\ast$}$$
+
+We claim $0 \leq h \leq 1$ $\rho$-a.e. To see $h \geq 0$, choose $A = \{h < 0\}$ in $(\ast\ast)$: the right side is $\int_A h \, d\mu \leq 0$ (because $h < 0$ on $A$), and the left side is $\int_A (1 - h) \, d\nu \geq 0$ (because $1 - h > 1$ on $A$ and $\nu$ is positive). Both being equal forces both to be zero, which forces $\mu(A) = 0$ and $\nu(A) = 0$, hence $\rho(A) = 0$. So $h \geq 0$ $\rho$-a.e. The argument that $h \leq 1$ is symmetric: choose $A = \{h > 1\}$, observe that $1 - h < 0$ on $A$ while $h > 0$, and conclude both sides are zero so $\rho(A) = 0$.
+
+Now consider the set $\{h = 1\}$. Plugging $A = \{h = 1\}$ into $(\ast\ast)$ gives $\int_{\{h=1\}} 0 \, d\nu = \int_{\{h=1\}} h \, d\mu$, hence $\mu(\{h = 1\}) = 0$ (since $h = 1 > 0$ on the set). By absolute continuity $\nu \ll \mu$, this forces $\nu(\{h = 1\}) = 0$. So we may discard the set $\{h = 1\}$ — it has both $\mu$-measure zero and $\nu$-measure zero — and assume $0 \leq h < 1$ on $\Omega$.
+
+Define
+
+$$f = \frac{h}{1 - h} \quad \text{on } \{h < 1\}.$$
+
+Then $f \geq 0$ everywhere (since $h \in [0, 1)$). Substituting back into $(\ast)$ with $g = (1 - h) \cdot \mathbf{1}_A / (1 - h) = \mathbf{1}_A$ — that is, working through the algebra of $(\ast\ast)$ — gives
+
+$$\int_A (1 - h) \, d\nu = \int_A h \, d\mu = \int_A (1 - h) \cdot \frac{h}{1 - h} \, d\mu = \int_A (1 - h) f \, d\mu.$$
+
+Dividing both sides by $(1 - h)$ (legitimate because $1 - h > 0$ on the relevant set) gives $\nu(A) = \int_A f \, d\mu$ for every measurable $A$. This is exactly the Radon-Nikodym identity: $f$ is the density we sought. Finiteness of $f$ in $L^1(\mu)$ follows from $\nu(\Omega) < \infty$, since $\int_\Omega f \, d\mu = \nu(\Omega) < \infty$.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={3} title="Why the von Neumann proof">
+
+The classical proof of Radon-Nikodym (via the Hahn decomposition theorem) requires building two pages of signed-measure machinery from scratch — positive sets, negative sets, total variation, and the Hahn decomposition itself. Von Neumann's proof reduces the entire theorem to a single application of $L^2$ projection, which we already proved in Topic 27. The argument is essentially: *"a bounded linear functional on $L^2$ is representable as an inner product, and the R-N derivative falls out of the algebra."* This is one of the most elegant proof strategies in analysis. It also closes Topic 27's promise: the $L^2$ projection theorem we previewed in §9 is the engine that drives this proof. The function-space machinery built one topic ago has paid off in full.
+
+</TheoremBlock>
+
+## 5. Properties of the Radon-Nikodym Derivative
+
+The Leibniz notation $d\nu/d\mu$ is not a coincidence: R-N derivatives obey a chain rule and an inverse rule that mirror the behavior of classical derivatives. These properties make formal manipulations with R-N derivatives feel exactly like the change-of-variables computations from single-variable calculus — except that the "derivative" is now a function in $L^1$ instead of a number.
+
+<TheoremBlock type="theorem" number={2} title="Chain rule for R-N derivatives">
+
+Let $\mu$, $\nu$, and $\lambda$ be $\sigma$-finite measures on $(\Omega, \mathcal{F})$ with $\nu \ll \mu \ll \lambda$. Then $\nu \ll \lambda$ and
+
+$$\frac{d\nu}{d\lambda} = \frac{d\nu}{d\mu} \cdot \frac{d\mu}{d\lambda} \qquad \lambda\text{-a.e.}$$
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+That $\nu \ll \lambda$ follows immediately from the chain of implications: if $\lambda(A) = 0$ then $\mu(A) = 0$ (by $\mu \ll \lambda$), and then $\nu(A) = 0$ (by $\nu \ll \mu$). For the formula, let $f = d\nu/d\mu$ and $g = d\mu/d\lambda$, both of which exist by Theorem 1. We need to show $\nu(A) = \int_A f g \, d\lambda$ for every $A$, because then by uniqueness (Proposition 1), $fg$ must equal $d\nu/d\lambda$ a.e.
+
+Start with the definition of $f$: $\nu(A) = \int_A f \, d\mu$. We want to rewrite the right side as a $\lambda$-integral. The key fact is that for any non-negative measurable function $\phi$,
+
+$$\int \phi \, d\mu = \int \phi \cdot g \, d\lambda$$
+
+where $g = d\mu/d\lambda$. This identity follows by the standard machine: it holds for $\phi = \mathbf{1}_B$ (just the definition of $g$ as the density), extends to simple functions by linearity, extends to non-negative measurables by the Monotone Convergence Theorem (Topic 26 Theorem 1), and extends to $L^1(\mu)$ functions by the $f = f^+ - f^-$ decomposition. Apply this with $\phi = f \cdot \mathbf{1}_A$:
+
+$$\nu(A) = \int_A f \, d\mu = \int (f \cdot \mathbf{1}_A) \, d\mu = \int (f \cdot \mathbf{1}_A) \cdot g \, d\lambda = \int_A f g \, d\lambda.$$
+
+This holds for every measurable $A$, so by Proposition 1, $fg = d\nu/d\lambda$ $\lambda$-a.e.
+
+</TheoremBlock>
+
+<TheoremBlock type="proposition" number={2} title="Inverse rule">
+
+Let $\mu$ and $\nu$ be $\sigma$-finite measures on $(\Omega, \mathcal{F})$ with $\nu \ll \mu$ and $\mu \ll \nu$ (mutual absolute continuity). Then
+
+$$\frac{d\mu}{d\nu} = \left(\frac{d\nu}{d\mu}\right)^{-1} \quad \mu\text{-a.e. and } \nu\text{-a.e.}$$
+
+This follows from the chain rule with $\lambda = \nu$: $\frac{d\nu}{d\nu} = 1 = \frac{d\nu}{d\mu} \cdot \frac{d\mu}{d\nu}$, so the two factors are reciprocals where they are nonzero. Mutual absolute continuity guarantees that the set where one factor vanishes is a null set under both measures, so the reciprocal is well-defined a.e.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={6} title="Chain rule and the change-of-variables formula for densities">
+
+Let $X$ be a real-valued random variable with density $f_X$ with respect to Lebesgue measure $\lambda$. Let $g: \mathbb{R} \to \mathbb{R}$ be a strictly monotone differentiable function with nowhere-zero derivative — that is, a $C^1$ diffeomorphism of $\mathbb{R}$ onto its image — and let $Y = g(X)$. The pushforward measure $P_Y(A) = P_X(g^{-1}(A))$ has a density with respect to Lebesgue measure on the image. By the chain rule for R-N derivatives applied to the pushforward,
+
+$$\frac{dP_Y}{d\lambda}(y) = f_X(g^{-1}(y)) \cdot \frac{1}{|g'(g^{-1}(y))|}.$$
+
+This is the **change-of-variables formula** for probability densities that every introductory probability course states without proof. The factor $1 / |g'|$ is the Jacobian of the inverse transformation, and the entire formula is just the chain rule for R-N derivatives applied in the special case of a bijection between two open subsets of $\mathbb{R}$. The same formula in higher dimensions involves the Jacobian determinant of the inverse map — again as an application of the chain rule, now for measures on $\mathbb{R}^n$.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={4} title="The Leibniz notation is not a coincidence">
+
+R-N derivatives satisfy a chain rule (Theorem 2), an inverse rule (Proposition 2), and — with the right definitions — a kind of product rule. This is exactly the algebra of classical derivatives, and the Leibniz-style notation $d\nu/d\mu$ was chosen to make the analogy explicit. But the analogy has a limit: the R-N derivative is an *equivalence class* of functions in $L^1(\mu)$ (modulo $\mu$-null sets), not a number. Identities like the chain rule hold $\lambda$-almost everywhere, not pointwise. When using R-N notation, always remember the "a.e." qualifier — it is the price of generality, and dropping it is the most common bookkeeping error in measure-theoretic probability.
+
+</TheoremBlock>
+
+## 6. Signed Measures and Jordan Decomposition
+
+So far we have only discussed positive measures (functions $\mu: \mathcal{F} \to [0, \infty]$). The Radon-Nikodym theorem extends to *signed* measures, which take values in $\mathbb{R}$ (or $[-\infty, \infty]$, with at most one infinity allowed). We give the bare minimum needed to state the extension; the full Hahn decomposition theory is treated in Folland §3.1 for the reader who wants more.
+
+<TheoremBlock type="definition" number={4} title="Signed measure">
+
+A **signed measure** on $(\Omega, \mathcal{F})$ is a function $\nu: \mathcal{F} \to [-\infty, \infty]$ that takes at most one of the values $\pm \infty$, satisfies $\nu(\emptyset) = 0$, and is countably additive: for every disjoint sequence $(A_n) \subseteq \mathcal{F}$,
+
+$$\nu\left(\bigsqcup_{n} A_n\right) = \sum_{n} \nu(A_n).$$
+
+Positive measures are the special case of signed measures that happen to take only non-negative values.
+
+</TheoremBlock>
+
+<TheoremBlock type="definition" number={5} title="Total variation">
+
+The **total variation** of a signed measure $\nu$ on $(\Omega, \mathcal{F})$ is the positive measure $|\nu|$ defined by
+
+$$|\nu|(A) = \sup \left\{ \sum_{i=1}^{n} |\nu(A_i)| : A = \bigsqcup_{i=1}^{n} A_i, \, A_i \in \mathcal{F} \right\}$$
+
+where the supremum runs over all finite measurable partitions of $A$. The total variation $|\nu|$ measures the total mass moved by $\nu$, treating positive and negative contributions equally.
+
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={3} title="Jordan decomposition">
+
+Every signed measure $\nu$ with $|\nu|(\Omega) < \infty$ can be written uniquely as
+
+$$\nu = \nu^+ - \nu^-$$
+
+where $\nu^+$ and $\nu^-$ are positive (finite) measures with $\nu^+ \perp \nu^-$. Moreover, $|\nu| = \nu^+ + \nu^-$.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+We sketch the proof; the full Hahn decomposition argument is in Folland §3.1. The Hahn decomposition theorem (which we state without proof here) gives disjoint sets $P, N \in \mathcal{F}$ with $\Omega = P \cup N$ such that $\nu(A) \geq 0$ for every measurable $A \subseteq P$ and $\nu(A) \leq 0$ for every measurable $A \subseteq N$. Define
+
+$$\nu^+(A) = \nu(A \cap P), \qquad \nu^-(A) = -\nu(A \cap N).$$
+
+Both are positive measures by construction: $\nu^+$ is non-negative because $A \cap P \subseteq P$, and $\nu^-$ is non-negative because $\nu \leq 0$ on subsets of $N$ (so $-\nu \geq 0$). They are mutually singular because they live on disjoint sets ($P$ and $N$). The sum recovers $\nu$ because $\nu(A) = \nu(A \cap P) + \nu(A \cap N) = \nu^+(A) - \nu^-(A)$. Uniqueness of the decomposition follows from the mutual singularity of $\nu^+$ and $\nu^-$: any other pair of positive mutually-singular measures with the same difference must coincide with these on the sets $P$ and $N$.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={5} title="Why the minimal scope">
+
+We keep signed-measure theory deliberately minimal because the primary applications in this topic — probability densities, conditional expectation, importance sampling — are about *positive* measures. Jordan decomposition appears here for two reasons. First, it gives the cleanest extension of the R-N theorem to signed measures: if $\nu$ is a signed measure with $|\nu| \ll \mu$, then $\nu^+ \ll \mu$ and $\nu^- \ll \mu$, so applying Theorem 1 to each piece gives $d\nu^+/d\mu$ and $d\nu^-/d\mu$, and we define $d\nu/d\mu = d\nu^+/d\mu - d\nu^-/d\mu$ as a function in $L^1(\mu)$. Second, the conditional-expectation construction in Section 9 applies to *any* $L^1$ random variable $X$, not just non-negative ones — and that argument relies on the signed-measure version of R-N to handle $X = X^+ - X^-$ properly.
+
+</TheoremBlock>
+
+## 7. The Lebesgue Decomposition Theorem
+
+The Radon-Nikodym theorem assumes $\nu \ll \mu$. What happens when we drop that assumption? The Lebesgue decomposition theorem says: any $\sigma$-finite measure $\nu$ splits canonically into an absolutely continuous part and a singular part. Together with R-N, this gives a complete picture: the absolutely continuous part has a density, and the singular part lives on a null set of $\mu$.
+
+<TheoremBlock type="theorem" number={4} title="Lebesgue decomposition theorem">
+
+Let $\mu$ and $\nu$ be $\sigma$-finite measures on $(\Omega, \mathcal{F})$. Then $\nu$ decomposes uniquely as
+
+$$\nu = \nu_{\mathrm{ac}} + \nu_{\mathrm{sing}}$$
+
+where $\nu_{\mathrm{ac}} \ll \mu$ and $\nu_{\mathrm{sing}} \perp \mu$. In particular, $\nu_{\mathrm{ac}}$ has a Radon-Nikodym derivative $d\nu_{\mathrm{ac}}/d\mu \in L^1(\mu)$, and $\nu_{\mathrm{sing}}$ is concentrated on a $\mu$-null set.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={7} title="The Cantor three-part decomposition">
+
+The cleanest worked example is a measure built from three pieces of mismatched type. Let
+
+$$\nu = \tfrac{1}{3} \, \lambda|_{[0, 1]} \;+\; \tfrac{1}{3} \, \delta_0 \;+\; \tfrac{1}{3} \, \mu_C$$
+
+on $\mathbb{R}$, where $\lambda|_{[0,1]}$ is Lebesgue measure restricted to $[0, 1]$, $\delta_0$ is the Dirac mass at $0$, and $\mu_C$ is the Cantor measure (the probability measure whose CDF is the Devil's staircase from Topic 25). Decompose $\nu$ with respect to Lebesgue measure $\lambda$ on $\mathbb{R}$. The absolutely continuous part is
+
+$$\nu_{\mathrm{ac}} = \tfrac{1}{3} \, \lambda|_{[0,1]}, \quad \text{with density } \frac{d\nu_{\mathrm{ac}}}{d\lambda} = \tfrac{1}{3} \, \mathbf{1}_{[0, 1]}.$$
+
+The singular part is
+
+$$\nu_{\mathrm{sing}} = \tfrac{1}{3} \, \delta_0 + \tfrac{1}{3} \, \mu_C.$$
+
+The Dirac component sits on the single point $\{0\}$ (Lebesgue measure zero), and the Cantor measure is supported on the Cantor set (also Lebesgue measure zero), so $\nu_{\mathrm{sing}} \perp \lambda$ via the partition $A = \{0\} \cup \mathcal{C}$ versus $B = \mathbb{R} \setminus A$. The singular part itself can be split further into a *discrete* component ($\delta_0$, atoms) and a *singular continuous* component ($\mu_C$, no atoms but no density). The full Lebesgue decomposition of any $\sigma$-finite measure on $\mathbb{R}$ has at most these three pieces: absolutely continuous, discrete, and singular continuous.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={6} title="Lebesgue decomposition from the von Neumann proof">
+
+The Lebesgue decomposition theorem can be read off the same von Neumann argument that proved Radon-Nikodym. Recall the function $h \in L^2(\rho)$ from Stage 3 of the proof, where $\rho = \mu + \nu$. The set $\{h = 1\}$ is exactly where the absolute-continuity argument forced $\mu(\{h = 1\}) = 0$; on this set, $\nu$ lives on a $\mu$-null set, which is the singular part. On $\{h < 1\}$, the algebra produced the density $f = h/(1 - h)$, which is the absolutely continuous part. So defining $\nu_{\mathrm{sing}}(A) = \nu(A \cap \{h = 1\})$ and $\nu_{\mathrm{ac}}(A) = \nu(A \cap \{h < 1\}) = \int_A f \, d\mu$ gives the decomposition. The full derivation is in Stein and Shakarchi, Chapter 6.
+
+</TheoremBlock>
+
+![Three-panel: the absolutely continuous component (uniform density on [0,1]), the discrete atom (Dirac mass at 0), and the singular continuous Cantor staircase, plus the combined CDF showing all three contributions](/images/topics/radon-nikodym/cantor-decomposition.png)
+
+## 8. Probability Densities as Radon-Nikodym Derivatives
+
+We promised in Section 1 to explain what a probability density "really is." Here is the answer, made precise. The point of this section is not new mathematics — Definition 6 is just Definition 3 specialized to probability measures — but the change of vocabulary. Once you read "probability density function" as "Radon-Nikodym derivative with respect to Lebesgue measure," everything in elementary probability snaps into rigorous focus.
+
+<TheoremBlock type="definition" number={6} title="Probability density function (rigorous)">
+
+Let $P$ be a probability measure on $(\mathbb{R}^n, \mathcal{B}(\mathbb{R}^n))$ with $P \ll \lambda$, where $\lambda$ is Lebesgue measure on $\mathbb{R}^n$. The **probability density function** of $P$ is
+
+$$p = \frac{dP}{d\lambda},$$
+
+the Radon-Nikodym derivative of $P$ with respect to Lebesgue measure. It satisfies (i) $p \geq 0$ $\lambda$-a.e., (ii) $\int_{\mathbb{R}^n} p \, d\lambda = 1$, and (iii) $P(A) = \int_A p \, d\lambda$ for every Borel $A \subseteq \mathbb{R}^n$.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={8} title="Beta density as an R-N derivative">
+
+The Beta$(\alpha, \beta)$ probability measure $P$ on $[0, 1]$ has
+
+$$\frac{dP}{d\lambda}(x) = \frac{x^{\alpha - 1}(1 - x)^{\beta - 1}}{B(\alpha, \beta)} \, \mathbf{1}_{[0, 1]}(x),$$
+
+where $B(\alpha, \beta) = \int_0^1 t^{\alpha - 1}(1 - t)^{\beta - 1} \, dt$ is the Beta function. The integral $\int_0^1 \frac{dP}{d\lambda} \, d\lambda = 1$ is exactly the definition of $B(\alpha, \beta)$. The shape of the density encodes how $P$ distributes mass relative to the uniform distribution: when $\alpha = \beta = 1$, the density is constant and $P$ is uniform; when $\alpha > \beta$ the mass shifts right; when $\alpha < 1$ or $\beta < 1$ the density blows up at an endpoint. The viz in Section 3 lets the reader explore this dependence interactively.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={9} title="When no density exists">
+
+The Cantor measure $\mu_C$ on $[0, 1]$ is not absolutely continuous with respect to Lebesgue measure: $\mu_C$ is supported on the Cantor set $\mathcal{C}$, which has Lebesgue measure zero. So $\mu_C \perp \lambda$, and $d\mu_C/d\lambda$ does not exist. Not every probability measure has a density — only the absolutely continuous ones. The Cantor measure is the canonical example of a probability measure on $[0, 1]$ with no density: it is continuous (no atoms — every singleton has measure zero) but not absolutely continuous (it lives on a Lebesgue-null set). It is the *singular continuous* part of the Lebesgue decomposition. Discrete distributions (like the Poisson or geometric) also have no density with respect to Lebesgue, but they do have densities with respect to *counting measure* — see Example 5.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={7} title="Density is always with respect to a reference measure">
+
+The phrase "the density of the Poisson distribution is $e^{-\theta} \theta^k / k!$" is shorthand for $dP/d\#(k) = e^{-\theta} \theta^k / k!$, where $\#$ is counting measure on $\{0, 1, 2, \ldots\}$. The same Poisson measure has no density with respect to Lebesgue measure on $\mathbb{R}$ — it is supported on the integers, which form a Lebesgue-null set. Always ask: "density with respect to *what*?" The answer is almost always "Lebesgue measure" for continuous distributions and "counting measure" for discrete ones, but the framework allows densities with respect to any dominating measure, and exotic choices (like the Cantor measure on $[0, 1]$) are sometimes useful in advanced applications.
+
+</TheoremBlock>
+
+![Three-panel: standard normal density on R, Exponential density on [0, ∞), and Beta density on [0, 1], each with a shaded region whose area is the corresponding probability — the picture every "probability is the area under the curve" intuition is grounded in](/images/topics/radon-nikodym/probability-densities.png)
+
+## 9. Conditional Expectation via Radon-Nikodym
+
+This is the flagship application. Conditional expectation $E[Y \mid X]$ is the single most important object in measure-theoretic probability — the workhorse of regression, Bayesian inference, reinforcement learning, and stochastic calculus — and the Radon-Nikodym theorem is what makes it well-defined when conditioning on a continuous variable. We state the definition, prove existence, prove the four basic properties, and then prove the $L^2$-best-predictor theorem that connects everything to regression.
+
+<TheoremBlock type="definition" number={7} title="Conditional expectation $E[X \mid \mathcal{G}]$">
+
+Let $(\Omega, \mathcal{F}, P)$ be a probability space, $X \in L^1(P)$ an integrable random variable, and $\mathcal{G} \subseteq \mathcal{F}$ a sub-$\sigma$-algebra. The **conditional expectation** of $X$ given $\mathcal{G}$ is the (a.e.-unique) $\mathcal{G}$-measurable function $E[X \mid \mathcal{G}] \in L^1(P)$ satisfying
+
+$$\int_A E[X \mid \mathcal{G}] \, dP = \int_A X \, dP \quad \text{for every } A \in \mathcal{G}.$$
+
+In words: $E[X \mid \mathcal{G}]$ has the same integral as $X$ over every set you can describe using only the information in $\mathcal{G}$.
+
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={5} title="Existence and uniqueness of conditional expectation">
+
+Under the conditions of Definition 7, $E[X \mid \mathcal{G}]$ exists and is unique $P$-almost everywhere.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+Define the signed measure $\nu$ on the sub-$\sigma$-algebra $(\Omega, \mathcal{G})$ by
+
+$$\nu(A) = \int_A X \, dP \quad \text{for } A \in \mathcal{G}.$$
+
+Countable additivity of $\nu$ follows from the Dominated Convergence Theorem (Topic 26 Theorem 3). Then $\nu \ll P|_\mathcal{G}$: if $A \in \mathcal{G}$ and $P(A) = 0$, then $\nu(A) = \int_A X \, dP = 0$ because the Lebesgue integral over a null set is zero. Both measures are $\sigma$-finite on $\mathcal{G}$ (since $P$ is finite). By the Radon-Nikodym theorem extended to signed measures via Jordan decomposition (Section 6), there exists a $\mathcal{G}$-measurable function $f \in L^1(P|_\mathcal{G})$ with
+
+$$\nu(A) = \int_A f \, dP \quad \text{for every } A \in \mathcal{G}.$$
+
+This $f$ is $\mathcal{G}$-measurable by the way the R-N theorem produces densities (the derivative is constructed inside the function space tied to the $\sigma$-algebra), and it satisfies the defining property of conditional expectation. Set $E[X \mid \mathcal{G}] = f$. Uniqueness $P$-a.e. follows from Proposition 1 applied to $P|_\mathcal{G}$.
+
+</TheoremBlock>
+
+<TheoremBlock type="proposition" number={3} title="Properties of conditional expectation">
+
+Let $X, Y \in L^1(P)$ and let $\mathcal{H} \subseteq \mathcal{G} \subseteq \mathcal{F}$ be sub-$\sigma$-algebras of $\mathcal{F}$.
+
+**(i) Linearity.** $E[aX + bY \mid \mathcal{G}] = a E[X \mid \mathcal{G}] + b E[Y \mid \mathcal{G}]$ a.e., for any constants $a, b \in \mathbb{R}$.
+
+**(ii) Tower property.** $E[E[X \mid \mathcal{G}] \mid \mathcal{H}] = E[X \mid \mathcal{H}]$ a.e. Conditioning twice on a coarser-and-finer pair collapses to conditioning once on the coarser one.
+
+**(iii) Conditional Jensen.** If $\phi: \mathbb{R} \to \mathbb{R}$ is convex and $\phi(X) \in L^1(P)$, then $\phi(E[X \mid \mathcal{G}]) \leq E[\phi(X) \mid \mathcal{G}]$ a.e.
+
+**(iv) Independence.** If $X$ is independent of $\mathcal{G}$ — meaning the $\sigma$-algebra $\sigma(X)$ generated by $X$ is independent of $\mathcal{G}$ — then $E[X \mid \mathcal{G}] = E[X]$ a.e. (the constant function equal to the unconditional mean).
+
+All four properties follow directly from the defining integral identity by routine measure-theoretic arguments — see Billingsley §34.
+
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={6} title="$L^2$-best-predictor theorem">
+
+Let $X \in L^2(\Omega, \mathcal{F}, P)$ and let $\mathcal{G} \subseteq \mathcal{F}$ be a sub-$\sigma$-algebra. Then $E[X \mid \mathcal{G}]$ is the unique element of $L^2(\Omega, \mathcal{G}, P)$ that minimizes
+
+$$\|X - Y\|_{L^2(P)}^2 = \int (X - Y)^2 \, dP$$
+
+over all $\mathcal{G}$-measurable $Y \in L^2(P)$. Equivalently, $E[X \mid \mathcal{G}]$ is the orthogonal projection of $X$ onto the closed subspace $L^2(\Omega, \mathcal{G}, P) \subseteq L^2(\Omega, \mathcal{F}, P)$.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+Let $V = L^2(\Omega, \mathcal{G}, P)$ and $H = L^2(\Omega, \mathcal{F}, P)$. We claim $V$ is a closed subspace of $H$. It is clearly a linear subspace. For closedness, suppose $(Y_n) \subseteq V$ converges to $Y$ in $H$ — that is, $\|Y_n - Y\|_{L^2(P)} \to 0$. By the Riesz-Fischer theorem from Topic 27, $L^2$ convergence implies a subsequence converges $P$-a.e. Pass to that subsequence. Since each $Y_n$ is $\mathcal{G}$-measurable and the pointwise a.e. limit of $\mathcal{G}$-measurable functions is $\mathcal{G}$-measurable (after redefining on a null set), $Y$ is $\mathcal{G}$-measurable, hence $Y \in V$.
+
+Now apply the $L^2$ projection theorem from Topic 27 §9 Proposition 3: there exists a unique element $\hat X \in V$ minimizing $\|X - \hat X\|_{L^2}$, characterized by the orthogonality condition
+
+$$\langle X - \hat X, Z \rangle_{L^2(P)} = \int (X - \hat X) Z \, dP = 0 \quad \text{for every } Z \in V.$$
+
+Specializing $Z = \mathbf{1}_A$ for $A \in \mathcal{G}$ (note $\mathbf{1}_A \in V$ since $A$ is $\mathcal{G}$-measurable), the orthogonality condition becomes
+
+$$\int_A (X - \hat X) \, dP = 0, \quad \text{i.e.,} \quad \int_A \hat X \, dP = \int_A X \, dP \quad \text{for every } A \in \mathcal{G}.$$
+
+This is exactly the defining property of conditional expectation. By the uniqueness in Definition 7, $\hat X = E[X \mid \mathcal{G}]$ a.e. So $E[X \mid \mathcal{G}]$ is the $L^2$ projection of $X$ onto $V$, which is the best predictor of $X$ given $\mathcal{G}$ in the mean-squared sense.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={10} title="Conditional expectation of a bivariate normal">
+
+Let $(X, Y)$ be jointly normal with $\mu = (\mu_X, \mu_Y)$ and covariance matrix
+
+$$\Sigma = \begin{pmatrix} \sigma_X^2 & \rho \, \sigma_X \sigma_Y \\ \rho \, \sigma_X \sigma_Y & \sigma_Y^2 \end{pmatrix}.$$
+
+A direct computation (complete the square in the joint density) gives
+
+$$E[Y \mid X = x] = \mu_Y + \rho \, \frac{\sigma_Y}{\sigma_X} \, (x - \mu_X).$$
+
+This is a *linear* function of $x$ — the conditional expectation is the **linear regression** of $Y$ on $X$. With the notebook's preset values $\mu_X = \mu_Y = 0.5$, $\sigma_X = 0.2$, $\sigma_Y = 0.25$, $\rho = 0.7$, the slope is $0.7 \cdot 0.25/0.2 = 0.875$, so
+
+$$E[Y \mid X = x] = 0.5 + 0.875 \, (x - 0.5).$$
+
+At $x = 0.65$, this gives $E[Y \mid X = 0.65] = 0.5 + 0.875 \cdot 0.15 = 0.63125$ (analytical), and the notebook's slice-averaging numerical method recovers approximately $0.6240$ (modulo discretization error). The flagship visualization below lets you see the same curve from three angles — slice averaging, $L^2$ projection, and the explicit R-N derivative — and verify that they all produce the same function.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={8} title="Regression is conditional expectation">
+
+The $L^2$-best-predictor theorem says: among **all** functions of $X$, the one that best predicts $Y$ in mean-squared error is $E[Y \mid X]$. Linear regression, polynomial regression, kernel regression, random forests, and neural networks are all attempting to approximate this single object. The R-N theorem is what guarantees that the object exists at all (the function might be exotic, but it is well-defined and integrable). The $L^2$ projection theorem from Topic 27 is what guarantees it is unique and optimal in mean-squared error. The training loss of a regression model is the squared distance from this projection, and successful training reduces the gap. Forward link: <a href="https://formalml.com/topics/regression" class="formalml-badge" target="_blank" rel="noopener">Regression</a>.
+
+</TheoremBlock>
+
+<ConditionalExpectationExplorer client:visible />
+
+![Three-panel: a joint density heatmap with the conditional expectation E[Y|X] curve overlaid, the slice-averaging interpretation showing means at representative x-values, and an L² error comparison showing that E[Y|X] beats the constant predictor E[Y]](/images/topics/radon-nikodym/conditional-expectation.png)
+
+## 10. Change of Measure and Importance Sampling
+
+The change-of-measure identity is the operational use of R-N derivatives that ML practitioners encounter most often: it is the engine of importance sampling, REINFORCE policy gradients, and the variational lower bound. The identity is short, the proof is the standard "indicator → simple → non-negative measurable → general" machine, and the consequences are everywhere.
+
+<TheoremBlock type="theorem" number={7} title="Change of measure">
+
+Let $P, Q$ be $\sigma$-finite measures on $(\Omega, \mathcal{F})$ with $P \ll Q$, and let $f$ be a $P$-integrable function. Then
+
+$$E_P[f] = \int f \, dP = \int f \cdot \frac{dP}{dQ} \, dQ = E_Q\!\left[f \cdot \frac{dP}{dQ}\right].$$
+
+Integration with respect to $P$ is the same as integration with respect to $Q$ after multiplying the integrand by the R-N derivative.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+Start with $f = \mathbf{1}_A$ for $A \in \mathcal{F}$. The left side is $\int \mathbf{1}_A \, dP = P(A)$. The right side is
+
+$$\int \mathbf{1}_A \cdot \frac{dP}{dQ} \, dQ = \int_A \frac{dP}{dQ} \, dQ = P(A),$$
+
+where the last step is the defining identity of the R-N derivative. So the identity holds for indicators. By linearity, it extends to simple functions $f = \sum_i c_i \mathbf{1}_{A_i}$. By the Monotone Convergence Theorem (Topic 26), it extends to non-negative measurable functions: any such $f$ is the increasing limit of simple functions $f_n \uparrow f$, and both sides of the identity pass to the limit. Finally, for general $P$-integrable $f$, write $f = f^+ - f^-$ with $f^\pm \geq 0$ and apply the identity to each piece separately. The change-of-measure identity is the indicator-simple-monotone-linear chain in its purest form.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={11} title="Importance sampling">
+
+Goal: estimate $E_P[f]$ where $P$ is a target distribution that is hard or expensive to sample from, using samples from a proposal distribution $Q$ that is easier. The change-of-measure identity gives
+
+$$E_P[f] = E_Q\!\left[f \cdot \frac{dP}{dQ}\right] \approx \frac{1}{n} \sum_{i=1}^{n} f(X_i) \, w(X_i), \quad X_i \sim Q,$$
+
+where $w(x) = dP/dQ(x)$ is the **importance weight**. The estimator on the right is unbiased for $E_P[f]$ as long as $P \ll Q$ everywhere $f$ is integrable.
+
+The notebook's preset case takes $P = N(0, 1)$, $Q = N(2, 1)$, and $f(x) = x^2$ (so $E_P[f] = 1$). The weight has the closed form
+
+$$w(x) = \frac{p(x)}{q(x)} = \frac{e^{-x^2/2}}{e^{-(x - 2)^2/2}} = e^{-2x + 2}.$$
+
+The notebook generates samples from $Q$ and computes the running estimate $\hat\mu_n = (1/n) \sum_i f(X_i) w(X_i)$ as $n$ grows; the trace converges to $1$ but the convergence is noisy because $Q$ shifts the proposal away from the bulk of $P$, blowing up the variance of the weights for negative $x$. The interactive visualization below lets you watch this convergence directly and compare different target/proposal pairs.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={12} title="KL divergence as expected log-R-N derivative">
+
+The Kullback-Leibler divergence between two probability measures $P, Q$ with $P \ll Q$ is
+
+$$D_{\mathrm{KL}}(P \,\|\, Q) = \int \log\!\frac{dP}{dQ} \, dP = E_P\!\left[\log\!\frac{dP}{dQ}\right].$$
+
+It is the expected log-density-ratio under $P$. Non-negativity follows from Jensen's inequality (Topic 27 Theorem 1) applied with $\phi = -\log$ (which is convex):
+
+$$D_{\mathrm{KL}}(P \,\|\, Q) = -E_P\!\left[\log\!\frac{dQ}{dP}\right] \;\geq\; -\log E_P\!\left[\frac{dQ}{dP}\right] = -\log 1 = 0.$$
+
+The middle inequality is Jensen, and the last step uses the change-of-measure identity:
+
+$$E_P\!\left[\frac{dQ}{dP}\right] = \int \frac{dQ}{dP} \, dP = \int dQ = 1.$$
+
+For two normal distributions $P = N(0, 1)$ and $Q = N(1, 1.5)$, the closed form is
+
+$$D_{\mathrm{KL}}(P \,\|\, Q) = \log\!\frac{\sigma_Q}{\sigma_P} + \frac{\sigma_P^2 + (\mu_P - \mu_Q)^2}{2 \sigma_Q^2} - \tfrac{1}{2} \approx 0.3499.$$
+
+The notebook verifies this analytic value against direct numerical integration of the integral $\int p(x) \log(p(x)/q(x)) \, dx$, getting a match to $\sim$$10^{-6}$.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={9} title="Normalizing flows are R-N chain rules in disguise">
+
+A normalizing flow defines a $C^1$ bijection $T: \mathbb{R}^d \to \mathbb{R}^d$ and pushes a base distribution $P_Z$ (typically standard normal) forward to a learned distribution $P_X = T_\# P_Z$. The R-N derivative of $P_X$ with respect to Lebesgue measure on $\mathbb{R}^d$ is computed via the chain rule for densities (Example 6 in higher dimensions):
+
+$$p_X(x) = p_Z(T^{-1}(x)) \cdot \big|\det DT^{-1}(x)\big|.$$
+
+This is the **change-of-variables formula** for densities, and it is just the chain rule for R-N derivatives applied to the pushforward measure. Normalizing flows are designed so that the determinant on the right is cheap to compute — coupling layers, autoregressive flows, and continuous flows are all architectural tricks for keeping $|\det DT^{-1}|$ tractable while preserving expressivity. Forward link: <a href="https://formalml.com/topics/generative-modeling" class="formalml-badge" target="_blank" rel="noopener">Generative Modeling</a>.
+
+</TheoremBlock>
+
+<ImportanceSamplingExplorer client:visible />
+
+![Three-panel: target N(0,1) and proposal N(2,1) densities with the importance weight w(x) overlaid, a histogram of weighted samples, and the convergence of the Monte Carlo estimate to the true value as n grows](/images/topics/radon-nikodym/importance-sampling.png)
+
+![Two-panel: density ratio dP/dQ for P=N(0,1), Q=N(1,1.5) on the left, and log(dP/dQ) weighted by p(x) with the shaded KL integral on the right, illustrating that KL divergence is the expected log-R-N derivative](/images/topics/radon-nikodym/kl-divergence.png)
+
+## 11. Computational Notes
+
+A few practical observations about computing R-N derivatives in code, since ML practitioners encounter them constantly under different names.
+
+- **Kernel density estimation as R-N approximation.** Given samples $x_1, \ldots, x_n$ from a probability measure $P$ with $P \ll \lambda$, the kernel density estimator $\hat p_h(x) = \frac{1}{n h} \sum_{i=1}^{n} K\!\left( \frac{x - x_i}{h} \right)$ is a non-parametric estimate of $dP/d\lambda$. Under regularity conditions on the kernel $K$ and the bandwidth $h$, $\hat p_h$ converges to the true density in $L^1$ as $n \to \infty$, $h \to 0$, and $nh \to \infty$. KDE is the simplest and most direct way to estimate an R-N derivative from samples.
+
+- **`scipy.stats` and densities.** Every continuous distribution in `scipy.stats` exposes a `.pdf(x)` method that returns $dP/d\lambda(x)$ and a `.logpdf(x)` method that returns $\log(dP/d\lambda(x))$. The `.logpdf` form is preferred for numerical work because density values can be very small and underflow, but log densities are well-behaved across the entire support.
+
+- **Conditional expectation in pandas.** A `df.groupby('X')['Y'].mean()` call computes the empirical conditional expectation of $Y$ given $X$ — that is, the slice average of $Y$ over the groups defined by distinct $X$ values. This is the empirical version of the slice-averaging interpretation in Section 9, applied to a finite sample.
+
+- **Importance weights in PyTorch.** `torch.distributions.Normal(0, 1).log_prob(x)` returns $\log p(x)$ for the standard normal density. The log-importance weight for samples from $Q$ used to estimate expectations under $P$ is `log_p(x) - log_q(x)`, which is $\log(dP/dQ)$. The actual weight is `exp(log_p(x) - log_q(x))`, but the log form is preferred until the very last step to avoid overflow.
+
+<TheoremBlock type="example" number={13} title="Numerical density-ratio verification">
+
+For $P = N(0, 1)$ and $Q = N(1, 1.5)$, the density ratio $dP/dQ$ has the closed form
+
+$$\frac{dP}{dQ}(x) = \frac{p(x)}{q(x)} = \frac{1.5 \, e^{-x^2/2}}{e^{-(x-1)^2/(2 \cdot 1.5^2)}}.$$
+
+Pick the integrand $f(x) = x^2$ and verify the change-of-measure identity numerically by computing both sides of $\int f \, p \, d\lambda = \int f \cdot (dP/dQ) \cdot q \, d\lambda$ via quadrature on $[-5, 5]$. Both integrals should agree to $\sim$$10^{-6}$ — the expected accuracy of `scipy.integrate.quad` for smooth integrands. If they disagree by more than discretization error, either the weight is wrong or the support of $P$ extends beyond the support of $Q$ (in which case $P \not\ll Q$ and the identity does not hold). The notebook performs this verification step explicitly and confirms the agreement.
+
+</TheoremBlock>
+
+## 12. Connections to Machine Learning
+
+This section is longer than the ML-connections sections in Topics 25–27, reflecting the extraordinary breadth of Radon-Nikodym applications in machine learning. Once you read "the density of $P$" as "the R-N derivative $dP/d\lambda$," every probabilistic computation in ML traces back to a change of measure or a conditional expectation.
+
+**Probability densities and likelihoods.** Every PDF the practitioner has ever written down — Gaussian, Beta, Dirichlet, mixture model, neural-network output — is $dP/d\lambda$. Every likelihood $L(\theta) = \prod_i p_\theta(x_i)$ is a product of R-N derivative values. Maximum likelihood estimation, Fisher information, and the Cramér-Rao bound all operate on R-N derivatives. The entire parametric statistics framework is built on this single object. Forward link: <a href="https://formalml.com/topics/probability-spaces" class="formalml-badge" target="_blank" rel="noopener">Probability Spaces</a>.
+
+**Conditional expectation and regression.** $E[Y \mid X]$ is the best $L^2$ predictor of $Y$ given $X$ (Theorem 6), and it is an R-N derivative on a sub-$\sigma$-algebra (Theorem 5). Least-squares regression, random forests, gradient-boosted trees, and neural-network regression are all approximating this single object. The normal equations of OLS are exactly the orthogonality condition from the $L^2$ projection theorem applied to the linear subspace of affine functions of $X$. Forward link: <a href="https://formalml.com/topics/regression" class="formalml-badge" target="_blank" rel="noopener">Regression</a>.
+
+**Bayesian inference as change of measure.** Bayes' theorem says the posterior density is proportional to the prior times the likelihood: $p(\theta \mid x) \propto p(x \mid \theta) \, p(\theta)$. In R-N terms, the posterior measure $P_{\theta \mid X}$ is absolutely continuous with respect to the prior $P_\theta$, and the R-N derivative is the (normalized) likelihood ratio. The posterior update is a *change of measure* from prior to posterior, and the normalization constant $p(x) = \int p(x \mid \theta) p(\theta) \, d\theta$ is the marginal likelihood. Variational inference, MCMC, and Hamiltonian Monte Carlo are all algorithms for working with this change of measure when the posterior cannot be computed in closed form. Forward link: <a href="https://formalml.com/topics/bayesian-inference" class="formalml-badge" target="_blank" rel="noopener">Bayesian Inference</a>.
+
+**Importance sampling and REINFORCE.** The identity $E_P[f] = E_Q[f \cdot dP/dQ]$ from Section 10 is the engine of importance sampling. In reinforcement learning, the REINFORCE policy-gradient estimator uses the same identity in disguise: $\nabla_\theta E_{p_\theta}[R] = E_{p_\theta}[R \cdot \nabla_\theta \log p_\theta]$, where the gradient $\nabla_\theta \log p_\theta$ is the **score function** — the gradient of the log R-N derivative. Every time a policy gradient is estimated by sampling from the current policy, an R-N derivative is being approximated. Forward link: <a href="https://formalml.com/topics/importance-sampling" class="formalml-badge" target="_blank" rel="noopener">Importance Sampling</a>.
+
+**KL divergence and information geometry.** $D_{\mathrm{KL}}(P \,\|\, Q) = E_P[\log(dP/dQ)]$ is the expected log-R-N derivative. The Fisher information matrix $I(\theta)_{ij} = E_{P_\theta}[\partial_i \log p_\theta \cdot \partial_j \log p_\theta]$ is the covariance of the score vector — the gradient of the log R-N derivative — and it is the local curvature of the manifold of probability distributions in the KL geometry. Natural-gradient methods, mirror descent, and trust-region policy optimization all use this geometry. Forward link: <a href="https://formalml.com/topics/information-geometry" class="formalml-badge" target="_blank" rel="noopener">Information Geometry</a>.
+
+**Normalizing flows and diffusion models.** Normalizing flows compute $dP_X/d\lambda$ via the R-N chain rule applied to a learned bijection $T$ (Remark 9). Diffusion models learn the **score** $\nabla \log p_t$ at each noise level $t$ — the gradient of the log R-N derivative of the noisy data distribution — and use it to reverse the noising process. Both frameworks are built on R-N derivatives all the way down. Forward link: <a href="https://formalml.com/topics/diffusion-models" class="formalml-badge" target="_blank" rel="noopener">Diffusion Models</a>.
+
+**$f$-divergences and GANs.** Every $f$-divergence $D_f(P \,\|\, Q) = \int f(dP/dQ) \, dQ$ is a functional of the R-N derivative. KL is the special case $f(t) = t \log t$. The total variation, Jensen-Shannon, $\chi^2$, and Hellinger divergences are other choices of $f$. Generative adversarial networks (GANs) train a discriminator that approximates $dP_{\mathrm{data}}/dP_{\mathrm{gen}}$, and the generator's loss is some $f$-divergence between the two distributions — the discriminator literally learns the R-N derivative. Forward link: <a href="https://formalml.com/topics/generative-modeling" class="formalml-badge" target="_blank" rel="noopener">Generative Modeling</a>.
+
+<TheoremBlock type="example" number={14} title="Score function identity">
+
+For a parametric family $\{P_\theta\}$ with densities $p_\theta = dP_\theta/d\lambda$, the **score function** is $s_\theta(x) = \nabla_\theta \log p_\theta(x)$. A foundational identity says it has mean zero under $P_\theta$:
+
+$$E_{P_\theta}[s_\theta(X)] = 0.$$
+
+Proof: differentiate $\int p_\theta \, d\lambda = 1$ with respect to $\theta$. Under regularity conditions (those that justify swapping the derivative and the integral via the Dominated Convergence Theorem from Topic 26),
+
+$$0 = \nabla_\theta \!\int p_\theta \, d\lambda = \int \nabla_\theta p_\theta \, d\lambda = \int \frac{\nabla_\theta p_\theta}{p_\theta} \, p_\theta \, d\lambda = E_{P_\theta}[\nabla_\theta \log p_\theta] = E_{P_\theta}[s_\theta].$$
+
+The middle step uses the chain rule for derivatives and the fact that $p_\theta > 0$ where the support lies. This identity is the basis of maximum-likelihood asymptotics — the score is a martingale at the true parameter, and the variance of the score is the Fisher information.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={15} title="Variational lower bound (ELBO)">
+
+In variational inference, the marginal log-likelihood $\log p(x)$ is intractable because it requires integrating over a latent variable $z$: $p(x) = \int p(x, z) \, dz$. The **evidence lower bound** (ELBO) sidesteps this by introducing an auxiliary distribution $q(z)$ over the latents and applying Jensen's inequality to the log:
+
+$$\log p(x) = \log\!\int p(x, z) \, dz = \log \, E_q\!\left[\frac{p(x, z)}{q(z)}\right] \;\geq\; E_q\!\left[\log\!\frac{p(x, z)}{q(z)}\right].$$
+
+The ratio $p(x, z)/q(z)$ inside the log is the R-N derivative of the joint $P_{X, Z}$ with respect to the product of the data marginal and the variational distribution $q$ — a change of measure between two probability spaces. The ELBO is itself an expectation of a log R-N derivative, and maximizing it with respect to both the model parameters and $q$ tightens the bound on $\log p(x)$ from below. Variational autoencoders, expectation maximization, and amortized inference all maximize ELBO objectives.
+
+</TheoremBlock>
+
+![Four-panel ML connections to Radon-Nikodym: Bayesian update as change of measure, importance sampling weight visualization, normalizing flow density transformation via the chain rule, and the score function as the gradient of the log density](/images/topics/radon-nikodym/ml-connections-28.png)
+
+## 13. The Measure & Integration Arc — Connections & Further Reading
+
+This is the **fourth and final** topic in the Measure & Integration track. The track tells a single story in four chapters. Topic 25 built the *language*: $\sigma$-algebras gave us a rigorous notion of "measurable set," and measures assigned sizes to those sets in a way that is countably additive and well-behaved under countable operations. Topic 26 built the *integral*: the Lebesgue integral generalized Riemann's by measuring the *domain* rather than the *range*, unlocking three convergence theorems (Monotone Convergence, Fatou, Dominated Convergence) that make limit/integral interchange rigorous. Topic 27 built *function spaces*: $L^p$ organized integrable functions into normed vector spaces with geometric structure — distances, balls, completeness — and the $L^2$ inner product made "projection onto a closed subspace" meaningful. Topic 28 completed the arc by turning *measures into functions*: the Radon-Nikodym theorem says that when one measure is absolutely continuous with respect to another, the relationship is captured by a single integrable function — the density.
+
+The four topics form a chain of increasingly powerful tools. $\sigma$-algebras are the foundation (you cannot measure without them). The Lebesgue integral is the engine (you cannot integrate without it). $L^p$ spaces are the geometry (you cannot do analysis without norms and completeness). And the Radon-Nikodym theorem is the bridge to probability (you cannot do measure-theoretic probability without densities and conditional expectation). Each topic depends on the previous one, and the dependency is not formal — the proofs literally use the tools.
+
+For the ML practitioner, this arc provides the rigorous underpinnings of the probabilistic tools used daily. The density $p(x)$ is $dP/d\lambda$ — a Radon-Nikodym derivative. The expected value $E[X]$ is $\int X \, dP$ — a Lebesgue integral. The best predictor $E[Y \mid X]$ is an $L^2$ projection of the random variable $Y$ onto the sub-$\sigma$-algebra generated by $X$. KL divergence is an integral of a log R-N derivative. Every probabilistic computation in modern machine learning traces back to this four-topic chain. The "Track 7" arc exists precisely so that a reader who finishes it can pick up any modern paper in measure-theoretic ML and recognize the pieces.
+
+**Within formalCalculus:**
+
+- [The Lebesgue Integral](/topics/lebesgue-integral) — The defining identity $\nu(A) = \int_A f \, d\mu$ is a Lebesgue integral, and the change-of-variables extension in Section 5 used the Monotone Convergence Theorem from Topic 26 as its closing tool.
+- [$L^p$ Spaces](/topics/lp-spaces) — The von Neumann proof of Radon-Nikodym in Section 4 is a single application of the $L^2$ projection theorem from Topic 27 §9. R-N derivatives live in $L^1(\mu)$. Topic 27's duality proof sketch ($(L^p)^* = L^q$ in §10) used R-N as a black box; this topic closes that loop.
+- [Sigma-Algebras & Measures](/topics/sigma-algebras) — Measurable spaces, null sets, and a.e.-equivalence are the framework throughout. The sub-$\sigma$-algebra construction in Section 9 reuses the $\sigma$-algebra machinery from Topic 25.
+- [Completeness & Compactness](/topics/completeness-compactness) — Completeness of $L^2$ (proved by Riesz-Fischer in Topic 27, using the Bolzano-Weierstrass-style subsequence extraction from Topic 3) is what makes the closed-subspace projection theorem work. Without completeness, the von Neumann proof would not close.
+
+**Successor topics within formalCalculus** *(coming soon)*:
+
+- **Normed & Banach Spaces** — $L^p$ duality proved via Radon-Nikodym (now complete) is the canonical example of a dual-space characterization in functional analysis.
+- **Inner Product & Hilbert Spaces** — Conditional expectation as $L^2$ projection onto a sub-$\sigma$-algebra is the prototypical Hilbert-space example. The full projection theorem and the spectral theorem build on the orthogonal-projection machinery developed here.
+
+**Forward to formalml.com:**
+
+- <a href="https://formalml.com/topics/probability-spaces" class="formalml-badge" target="_blank" rel="noopener">Probability Spaces</a> — Every PDF is a Radon-Nikodym derivative; the entire measure-theoretic probability framework rests on this topic.
+- <a href="https://formalml.com/topics/regression" class="formalml-badge" target="_blank" rel="noopener">Regression</a> — Conditional expectation is the best $L^2$ predictor; regression algorithms are how we approximate it.
+- <a href="https://formalml.com/topics/bayesian-inference" class="formalml-badge" target="_blank" rel="noopener">Bayesian Inference</a> — The posterior update is a change of measure from prior to posterior.
+- <a href="https://formalml.com/topics/importance-sampling" class="formalml-badge" target="_blank" rel="noopener">Importance Sampling</a> — The importance weight is literally a Radon-Nikodym derivative.
+- <a href="https://formalml.com/topics/generative-modeling" class="formalml-badge" target="_blank" rel="noopener">Generative Modeling</a> — Normalizing flows compute density via the R-N chain rule; GANs learn the R-N derivative as a discriminator.
+- <a href="https://formalml.com/topics/information-geometry" class="formalml-badge" target="_blank" rel="noopener">Information Geometry</a> — KL divergence and Fisher information are both functionals of R-N derivatives.
+- <a href="https://formalml.com/topics/diffusion-models" class="formalml-badge" target="_blank" rel="noopener">Diffusion Models</a> — Score matching learns the gradient of the log R-N derivative at every noise level.
+
+**References:**
+
+- Royden, H. L. & Fitzpatrick, P. M. *Real Analysis* (4th ed.), Chapter 18.
+- Folland, G. B. *Real Analysis: Modern Techniques and Their Applications* (2nd ed.), Chapter 3.
+- Billingsley, P. *Probability and Measure* (anniversary ed.), Chapters 31–33.
+- Stein, E. M. & Shakarchi, R. *Real Analysis: Measure Theory, Integration, and Hilbert Spaces*, Chapter 6.
+
+![Four-panel timeline showing the conceptual arc of the Measure & Integration track: σ-algebras (the language) → Lebesgue integral (the engine) → Lp spaces (the geometry) → Radon-Nikodym (the bridge to probability)](/images/topics/radon-nikodym/track-retrospective.png)
