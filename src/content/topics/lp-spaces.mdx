@@ -762,6 +762,8 @@ A few practical observations about computing $L^p$ norms in code, since machine 
 
 - **Regularization geometry: the $L^p$ ball is the constraint set.** Ridge regression solves $\min_\beta \|y - X \beta\|_2^2 + \lambda \|\beta\|_2^2$ — the regularization term constrains $\beta$ to lie inside an $L^2$ ball, which is a sphere with no corners. The least-squares contour is generically tangent to the sphere at a point with all coordinates non-zero, so Ridge "shrinks" coefficients but never sets them exactly to zero. Lasso solves $\min_\beta \|y - X \beta\|_2^2 + \lambda \|\beta\|_1$ — the regularization constrains $\beta$ to an $L^1$ ball, which is a diamond with corners *on* the coordinate axes. The least-squares contour generically intersects the diamond at a corner, where one or more coordinates are exactly zero, so Lasso produces *sparse* solutions. Elastic net uses both penalties: $\lambda_1 \|\beta\|_1 + \lambda_2 \|\beta\|_2^2$, and its constraint set is a smooth blend of the two extremes. The flagship $L^p$ ball viz in Section 6 makes this geometric explanation visual.
 
+![L1 vs L2 ball geometry with level curves of a least-squares loss — the L1 corner at the axis is where Lasso produces sparsity, the smooth L2 sphere is where Ridge shrinks but never zeros](/images/topics/lp-spaces/lp-ball-regularization.png)
+
 <TheoremBlock type="example" number={12} title="Numerical verification of Hölder">
 
 For $f(x) = \sin(\pi x)$ and $g(x) = x^2$ on $[0, 1]$, $p = 3$, $q = 3/2$, computing each $L^p$ norm via `scipy.integrate.quad`:
@@ -779,6 +781,8 @@ Hölder bound: $\|f\|_3 \cdot \|g\|_{3/2} \approx 0.3281$. The inequality $0.189
 ## 12. Connections to Machine Learning
 
 $L^p$ spaces are not an abstract curiosity — they are the function-space framework that *every* modern ML algorithm implicitly assumes. Five concrete connections illustrate the range.
+
+![Four-panel ML connections to Lp spaces: regression as L2 projection, ridge/lasso constraint sets, score matching in L2, Wasserstein distances](/images/topics/lp-spaces/ml-connections-27.png)
 
 **Regression as $L^2$ projection.** Least-squares regression finds the closest element of a closed subspace of $L^2$, and the existence-and-uniqueness of the minimizer is exactly the orthogonal-projection theorem from Section 9. The normal equations are the orthogonality condition. Generalized least squares uses a weighted $L^2$ norm where the weights encode observation precisions, and weighted regression remains a projection — just in a re-weighted Hilbert space. Forward link: <a href="https://formalml.com/topics/regression" class="formalml-badge" target="_blank" rel="noopener">Regression</a>.
 
