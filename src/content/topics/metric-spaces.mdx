@@ -445,3 +445,277 @@ Every pair of terms in the sequence is at sup-norm distance at least 1 — so no
 
 ![Two-panel figure: the family sin(nπx) for n = 1..8 plotted, and the pairwise sup-norm distance matrix showing all off-diagonal entries ≥ 1.](/images/topics/metric-spaces/compactness-counterexample.png)
 
+## 7. The Contraction Mapping Theorem
+
+We now prove the theorem that justifies most of the fixed-point arguments scattered throughout the rest of this curriculum. It is short, clean, and extraordinarily useful: four earlier topics have been waiting to cite it.
+
+<TheoremBlock type="theorem" number={4} title="Banach Contraction Mapping Theorem">
+
+Let $(X, d)$ be a **complete** metric space and let $T : X \to X$ be a **contraction** with Lipschitz constant $0 \leq k < 1$, meaning
+
+$$d(T(x), T(y)) \leq k \cdot d(x, y) \quad \text{for all } x, y \in X.$$
+
+Then:
+
+1. $T$ has a **unique fixed point** $x^* \in X$ — a point with $T(x^*) = x^*$.
+2. For any starting point $x_0 \in X$, the iterates $x_{n+1} = T(x_n)$ converge to $x^*$.
+3. The **convergence rate** is geometric: $d(x_n, x^*) \leq \dfrac{k^n}{1 - k} \cdot d(x_0, x_1)$.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+Fix a starting point $x_0 \in X$ and define the iterates $x_{n+1} = T(x_n)$. The contraction property applied to consecutive iterates gives
+
+$$d(x_{n+1}, x_n) = d(T(x_n), T(x_{n-1})) \leq k \cdot d(x_n, x_{n-1}).$$
+
+By induction, this bound extends to
+
+$$d(x_{n+1}, x_n) \leq k^n \cdot d(x_1, x_0).$$
+
+Now we show $(x_n)$ is Cauchy. For any $m > n$, the triangle inequality stacks up $m - n$ consecutive-iterate bounds:
+
+$$d(x_m, x_n) \leq \sum_{j = n}^{m-1} d(x_{j+1}, x_j) \leq d(x_1, x_0) \sum_{j = n}^{m-1} k^j.$$
+
+The geometric-series tail bound gives $\sum_{j = n}^{m-1} k^j \leq \dfrac{k^n}{1 - k}$, so
+
+$$d(x_m, x_n) \leq \frac{k^n}{1 - k} \cdot d(x_1, x_0).$$
+
+Since $k < 1$, the right-hand side tends to $0$ as $n \to \infty$ uniformly in $m$ — the sequence $(x_n)$ is Cauchy. Because $X$ is complete, $(x_n)$ converges to some limit $x^* \in X$.
+
+Next we show $x^*$ is a fixed point. Contractions are Lipschitz (with constant $k$), hence continuous, so we can pass $T$ through the limit:
+
+$$T(x^*) = T\big(\lim_{n \to \infty} x_n\big) = \lim_{n \to \infty} T(x_n) = \lim_{n \to \infty} x_{n+1} = x^*.$$
+
+Uniqueness: suppose $y^*$ is another fixed point of $T$. Then
+
+$$d(x^*, y^*) = d(T(x^*), T(y^*)) \leq k \cdot d(x^*, y^*).$$
+
+Since $k < 1$, this forces $d(x^*, y^*) = 0$, so $y^* = x^*$.
+
+Finally, the convergence rate. Letting $m \to \infty$ in the Cauchy-tail bound $d(x_m, x_n) \leq \frac{k^n}{1-k} \cdot d(x_1, x_0)$, the left side converges to $d(x^*, x_n)$, proving
+
+$$d(x_n, x^*) \leq \frac{k^n}{1 - k} \cdot d(x_0, x_1).$$
+
+</TheoremBlock>
+
+Three things to note. First, the theorem tells us nothing about *which* starting point to use — any $x_0 \in X$ works, and they all converge to the same fixed point. Second, the rate bound is sharp enough to give a stopping criterion: after $n$ iterations, the distance to $x^*$ is at most $\frac{k^n}{1-k}$ times the first step $d(x_0, x_1)$, a quantity we can measure after one evaluation of $T$. Third, the contraction hypothesis $k < 1$ is *strict*: at $k = 1$ the theorem breaks, as the viz below demonstrates by letting you set $k = 1$ and watch iterates orbit instead of converging.
+
+<MetricContractionExplorer client:visible />
+
+<TheoremBlock type="example" number={9} title="Picard Iteration for ODEs">
+
+The Picard–Lindelöf existence-and-uniqueness theorem for first-order ODEs from [First-Order ODEs](/topics/first-order-odes) rewrites the initial-value problem $y'(t) = f(t, y(t))$, $y(0) = y_0$ as the fixed-point equation
+
+$$y(t) = y_0 + \int_0^t f(s, y(s)) \, ds.$$
+
+Defining the **Picard operator** $\Phi[y](t) = y_0 + \int_0^t f(s, y(s)) \, ds$, a fixed point of $\Phi$ is exactly a solution of the ODE. Topic 21 showed that when $f$ is Lipschitz in its second argument with constant $L$ and we work on a short interval $[0, h]$ with $Lh < 1$, the Picard operator is a contraction on $C([0, h])$ with the sup-norm — constant $Lh$ — and $C([0, h])$ is complete by Theorem 2. The Banach theorem then produces a unique fixed point, which is the ODE solution. The abstract theorem we just proved is what makes Topic 21's concrete argument go through.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={10} title="Newton Iteration for Implicit Methods">
+
+The implicit Euler method from [Numerical Methods for ODEs](/topics/numerical-odes) requires solving the nonlinear equation $y_{n+1} = y_n + h \cdot f(t_{n+1}, y_{n+1})$ at each time step. Newton's method reduces this to iterating $g(y) = y - [I - h f_y(t_{n+1}, y)]^{-1}(y - y_n - h f(t_{n+1}, y))$. For sufficiently small $h$, the derivative of $g$ at the root is bounded in norm by some $k < 1$, so by the mean value theorem $g$ is a contraction on a small neighborhood of the root and Banach's theorem guarantees convergence. Topic 24 invoked this conclusion in its convergence analysis without proof; we have now proved the general result.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={11} title="The Inverse Function Theorem">
+
+The proof of the [Inverse Function Theorem in Topic 12](/topics/inverse-implicit) constructs a local inverse by setting up the fixed-point equation $x = \phi(x)$ where $\phi$ is a map on a small ball in $\mathbb{R}^n$ whose Jacobian is bounded below 1 in operator norm. Banach's theorem then gives a unique fixed point, which is the preimage of the target point. The whole construction is a single application of Theorem 4 to a carefully chosen contraction — the argument was specialized to $\mathbb{R}^n$ in Topic 12, but the contraction-mapping framework developed here shows why it works in full generality.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={5} title="Bernstein Operators Are Not Contractions">
+
+[Topic 20](/topics/approximation-theory) proved that Bernstein operators $B_n f$ converge uniformly to $f$ on $[0, 1]$ — a statement that lives entirely in the metric space $(C([0, 1]), d_\infty)$. But $B_n$ is *not* a contraction: it does not uniformly shrink sup-norm distances between arbitrary functions. Bernstein convergence is therefore not an application of Theorem 4; it is a different kind of approximation phenomenon that happens to share the same ambient metric space. The general lesson: sitting inside a complete metric space does not automatically make every self-map a contraction, and density-of-polynomials results require separate machinery (probabilistic moment arguments in the Bernstein case). What Topic 20 *does* share with this topic is the underlying metric-space structure — the sup-norm distance between $B_n f$ and $f$ is how "convergence" is defined there, and that distance is a metric in exactly the sense defined here.
+
+</TheoremBlock>
+
+![Three-panel figure: iterates converging for k < 1, orbiting for k = 1, and diverging for k > 1.](/images/topics/metric-spaces/contraction-fixed-point.png)
+
+![Log-scale convergence plot: actual d(x_n, x*) vs. theoretical bound k^n/(1−k)·d(x₀, x₁) for several values of k.](/images/topics/metric-spaces/banach-divergence.png)
+
+## 8. General Topology — Beyond Metric Spaces
+
+Everything we have done so far has used the metric $d$. But many of the concepts — continuity, open sets, closure, compactness — make sense in spaces where there is no metric at all, provided you know which sets are "open." This section introduces the general notion of a **topological space** and explains why the preimage characterization of continuity is the one that generalizes.
+
+<TheoremBlock type="definition" number={12} title="Topological Space">
+
+A **topological space** is a pair $(X, \tau)$ where $X$ is a set and $\tau$ is a collection of subsets of $X$ — called **open sets** — satisfying:
+
+1. $\emptyset \in \tau$ and $X \in \tau$.
+2. Arbitrary unions of elements of $\tau$ are in $\tau$.
+3. Finite intersections of elements of $\tau$ are in $\tau$.
+
+The collection $\tau$ is called a **topology** on $X$. A metric space $(X, d)$ induces a topology $\tau_d = \{\, U \subseteq X : U \text{ is open in the metric-space sense}\,\}$ by Proposition 1, so every metric space *is* a topological space. But there are topological spaces with no compatible metric, and those are strictly more general.
+
+</TheoremBlock>
+
+The three axioms are exactly the properties Proposition 1 established for metric-space open sets. Any collection of subsets satisfying them qualifies as a topology, regardless of whether it came from a metric. The question is whether all topologies come from metrics — and the answer is no.
+
+<TheoremBlock type="example" number={12} title="The Cofinite Topology">
+
+Let $X$ be an uncountable set — for concreteness, take $X = \mathbb{R}$. Define $\tau$ to consist of the empty set together with all subsets $U \subseteq X$ whose complement $X \setminus U$ is finite:
+
+$$\tau = \{\emptyset\} \cup \{\, U \subseteq X : |X \setminus U| < \infty\,\}.$$
+
+This is a topology: the empty set and $X$ are in $\tau$, arbitrary unions of cofinite sets are cofinite (their complement is an intersection of finite sets, which is finite), and finite intersections of cofinite sets are cofinite (their complement is a finite union of finite sets, which is finite). So $(X, \tau)$ is a valid topological space.
+
+But $(X, \tau)$ is **not metrizable**: there is no metric that generates this topology. Here is one quick reason. In the cofinite topology, any two non-empty open sets must intersect (the union of their complements is finite, so the intersection of the sets themselves is cofinite, hence non-empty). So for any two distinct points $x, y \in X$, every neighborhood of $x$ intersects every neighborhood of $y$. In a metric space we can always separate distinct points by disjoint balls $B(x, d(x,y)/3)$ and $B(y, d(x,y)/3)$ — a property called the Hausdorff property. The cofinite topology on an uncountable set fails this, so no metric can generate it.
+
+</TheoremBlock>
+
+<TheoremBlock type="definition" number={13} title="Continuity in Topological Spaces">
+
+A function $f : (X, \tau_X) \to (Y, \tau_Y)$ between topological spaces is **continuous** if for every open set $V \in \tau_Y$, the preimage $f^{-1}(V) \in \tau_X$.
+
+</TheoremBlock>
+
+This is characterization (3) from Theorem 1 — the preimage-of-open-set condition — lifted verbatim to the topological setting. It is the *only* definition that works universally: the $\varepsilon$-$\delta$ definition requires a metric, and the sequential definition fails in non-first-countable spaces (where there are "too many" open sets for sequences to detect). In metric spaces all three definitions coincide, as we proved in Theorem 1; in general topology, we start with (3) and take the other two only when the space is metrizable.
+
+<TheoremBlock type="definition" number={14} title="Homeomorphism">
+
+A **homeomorphism** between topological spaces $(X, \tau_X)$ and $(Y, \tau_Y)$ is a bijection $f : X \to Y$ such that both $f$ and $f^{-1}$ are continuous. Two spaces related by a homeomorphism are **topologically equivalent** — they have the same open sets up to relabeling, the same convergence, the same compactness properties, and the same connectedness properties.
+
+</TheoremBlock>
+
+Homeomorphism is the "sameness" relation for topological spaces. Two very different-looking metric spaces can be topologically equivalent — for example, the open interval $(0, 1)$ and the whole real line $\mathbb{R}$ are homeomorphic (via any monotone continuous bijection like $x \mapsto \tan(\pi x - \pi/2)$), even though one has finite diameter and the other doesn't. The metric "forgot" when we reduced to the topology.
+
+<TheoremBlock type="remark" number={6} title="Metrization and Fundamental Groups">
+
+[Topic 15](/topics/line-integrals) mentioned simply connected domains and fundamental groups as the setting for its discussion of conservative vector fields and path independence. These concepts live at the general-topology level: a domain is **simply connected** if every closed loop in it can be continuously contracted to a point, a property defined entirely in terms of continuous maps (homotopies of loops), and the **fundamental group** $\pi_1(X, x_0)$ classifies loops up to continuous deformation. Fundamental groups make sense in any topological space and are preserved by homeomorphism — they are a topological invariant. Metric spaces inherit these invariants whenever they carry the metric-induced topology, which is almost always in analysis. The **Urysohn Metrization Theorem** gives a clean sufficient condition: a topological space is metrizable if (and essentially only if) it is second-countable, regular, and Hausdorff. Most spaces that appear in analysis satisfy these conditions, which is why metric-space theory covers so much ground. But the topological *vocabulary* — connectedness, path-connectedness, fundamental groups, homotopy — belongs to the general theory, not to metric spaces in particular.
+
+</TheoremBlock>
+
+## 9. Equicontinuity and the Arzelà–Ascoli Theorem
+
+In Section 6 we saw that the closed unit ball of $C([0, 1])$ is not compact — the sequence $f_n(x) = \sin(n\pi x)$ has no convergent subsequence. The Arzelà–Ascoli theorem identifies exactly what extra condition is needed to restore compactness in function spaces: **equicontinuity**. Topic 4 introduced the concept and promised the proof; we pay that debt now.
+
+<TheoremBlock type="definition" number={15} title="Equicontinuity">
+
+A family $\mathcal{F} \subseteq C([a, b])$ is **equicontinuous** if for every $\varepsilon > 0$ there exists a single $\delta > 0$ — *depending on $\varepsilon$ but not on $f$* — such that for every $f \in \mathcal{F}$ and every $x, y \in [a, b]$ with $|x - y| < \delta$:
+
+$$|f(x) - f(y)| < \varepsilon.$$
+
+</TheoremBlock>
+
+This is the concept Topic 4 introduced in the context of equicontinuity figures. The crucial word is **single**: uniform continuity of a single function says there is one $\delta$ that works for all points at once; equicontinuity of a family says there is one $\delta$ that works for all points *and all functions* at once. The family $f_n(x) = \sin(n\pi x)$ fails equicontinuity because faster-wiggling functions need smaller $\delta$'s — no single choice works for the whole family. By contrast, any family of functions with a uniform Lipschitz bound (say $|f(x) - f(y)| \leq L |x - y|$ for all $f$ in the family) is automatically equicontinuous: take $\delta = \varepsilon / L$.
+
+<TheoremBlock type="definition" number={16} title="Uniform Boundedness of a Family">
+
+A family $\mathcal{F} \subseteq C([a, b])$ is **uniformly bounded** if there exists $M > 0$ such that
+
+$$|f(x)| \leq M \quad \text{for every } f \in \mathcal{F} \text{ and every } x \in [a, b].$$
+
+Equivalently, the family fits inside a single closed ball of the sup-norm: $\|f\|_\infty \leq M$ for all $f \in \mathcal{F}$.
+
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={5} title="Arzelà–Ascoli">
+
+A subset $\mathcal{F} \subseteq C([a, b])$ (with the sup-norm metric) has compact closure if and only if $\mathcal{F}$ is uniformly bounded and equicontinuous.
+
+Equivalently: every uniformly bounded and equicontinuous sequence $(f_n)$ in $C([a, b])$ has a subsequence that converges uniformly.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+We prove both directions. The forward direction is the routine one; the reverse direction is the workhorse "diagonal subsequence" argument.
+
+**($\Leftarrow$) Uniformly bounded + equicontinuous ⟹ sequentially compact closure.** Let $(f_n)$ be a sequence in $\mathcal{F}$. We will extract a subsequence that is Cauchy in the sup-norm; by completeness of $C([a, b])$ (Theorem 2) it then converges, proving sequential compactness.
+
+*Step 1: pointwise convergence on a countable dense set.* Enumerate the rationals in $[a, b]$ as $r_1, r_2, r_3, \ldots$ — a countable dense set. At $r_1$, the sequence of real numbers $(f_n(r_1))$ is bounded (by uniform boundedness of $\mathcal{F}$), so by the Bolzano-Weierstrass theorem it has a convergent subsequence, which we index as $f_{n_k^{(1)}}$. Next, the sequence $(f_{n_k^{(1)}}(r_2))$ is bounded in $\mathbb{R}$, so we extract a further subsequence $f_{n_k^{(2)}}$ converging at $r_2$ — and still converging at $r_1$, since subsequences of convergent sequences converge to the same limit. Iterate this procedure: at step $j$ we have a subsequence $f_{n_k^{(j)}}$ that converges at each of $r_1, r_2, \ldots, r_j$.
+
+*Step 2: diagonal subsequence.* Define the **diagonal subsequence** $g_k = f_{n_k^{(k)}}$. For every fixed rational $r_j$, the sequence $(g_k)_{k \geq j}$ is a subsequence of $(f_{n_k^{(j)}})$, which converges at $r_j$; therefore $(g_k(r_j))$ converges too. So $(g_k)$ converges pointwise at every rational in $[a, b]$.
+
+*Step 3: equicontinuity promotes pointwise to uniform.* Given $\varepsilon > 0$, equicontinuity gives $\delta > 0$ such that
+
+$$|f(x) - f(y)| < \varepsilon / 3 \quad \text{for all } f \in \mathcal{F} \text{ whenever } |x - y| < \delta.$$
+
+Cover $[a, b]$ by finitely many open intervals of length less than $\delta$ centered at rationals $r_{j_1}, \ldots, r_{j_m}$ (we can pick rationals because they are dense). By Step 2, $(g_k(r_{j_i}))$ converges for each $i = 1, \ldots, m$, so there exists $K$ such that for all $k, \ell \geq K$ and all $i$:
+
+$$|g_k(r_{j_i}) - g_\ell(r_{j_i})| < \varepsilon / 3.$$
+
+Now let $x \in [a, b]$ be arbitrary. Pick $r_{j_i}$ with $|x - r_{j_i}| < \delta$. The triangle inequality gives
+
+$$|g_k(x) - g_\ell(x)| \leq |g_k(x) - g_k(r_{j_i})| + |g_k(r_{j_i}) - g_\ell(r_{j_i})| + |g_\ell(r_{j_i}) - g_\ell(x)|.$$
+
+The first and third terms are each less than $\varepsilon / 3$ by equicontinuity (applied to $g_k$ and $g_\ell$, which lie in $\mathcal{F}$). The middle term is less than $\varepsilon / 3$ by the choice of $K$. So $|g_k(x) - g_\ell(x)| < \varepsilon$ for every $x$, which means $\|g_k - g_\ell\|_\infty \leq \varepsilon$ for all $k, \ell \geq K$. The subsequence $(g_k)$ is Cauchy in $(C([a, b]), d_\infty)$, and by completeness it converges to some continuous function — which is the uniformly convergent subsequence we wanted.
+
+**($\Rightarrow$) Compact closure ⟹ uniformly bounded + equicontinuous.** Suppose $\overline{\mathcal{F}}$ is compact. Then it is bounded (compact sets are bounded in any metric space), so $\mathcal{F}$ is uniformly bounded. For equicontinuity, fix $\varepsilon > 0$. Compactness of $\overline{\mathcal{F}}$ in the sup-norm means we can cover it by finitely many sup-norm balls $B(\varphi_1, \varepsilon / 3), \ldots, B(\varphi_N, \varepsilon / 3)$ centered at functions $\varphi_1, \ldots, \varphi_N \in C([a, b])$. Each $\varphi_i$ is continuous on the compact interval $[a, b]$, hence uniformly continuous, giving some $\delta_i$ that makes $|\varphi_i(x) - \varphi_i(y)| < \varepsilon / 3$ whenever $|x - y| < \delta_i$. Take $\delta = \min(\delta_1, \ldots, \delta_N)$.
+
+Now for any $f \in \mathcal{F}$, pick $i$ with $\|f - \varphi_i\|_\infty < \varepsilon / 3$. For $|x - y| < \delta$:
+
+$$|f(x) - f(y)| \leq |f(x) - \varphi_i(x)| + |\varphi_i(x) - \varphi_i(y)| + |\varphi_i(y) - f(y)|.$$
+
+Each of the three terms is bounded by $\varepsilon / 3$, so $|f(x) - f(y)| < \varepsilon$. This bound holds for every $f \in \mathcal{F}$ with the same $\delta$ — equicontinuity.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={13} title="Why sin(nπx) Fails Arzelà–Ascoli">
+
+The counterexample family $f_n(x) = \sin(n\pi x)$ from Section 6 is uniformly bounded ($\|f_n\|_\infty = 1$ for every $n$) but **not equicontinuous**. To see why, pick $\varepsilon = 1$ and ask for a $\delta$ that forces $|f_n(x) - f_n(y)| < 1$ whenever $|x - y| < \delta$. For any proposed $\delta > 0$, take $n$ large enough that $1 / (2n) < \delta$, and take $x = 0$, $y = 1 / (2n)$. Then $|x - y| = 1/(2n) < \delta$ but
+
+$$|f_n(0) - f_n(1/(2n))| = |\sin(0) - \sin(\pi/2)| = 1.$$
+
+So the chosen $\delta$ fails at $f_n$. No single $\delta$ works for the whole family — equicontinuity fails exactly because the functions oscillate faster and faster as $n$ grows. The failure of equicontinuity is precisely what blocks the Arzelà–Ascoli conclusion and explains why no subsequence converges.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={7} title="Arzelà–Ascoli in Practice">
+
+The theorem is the workhorse compactness criterion for function spaces. It gets used constantly in the existence theory for partial differential equations (bound the approximate solutions in a uniform-Lipschitz sense, extract a convergent subsequence, pass to the limit), in the regularity theory of calculus-of-variations minimizers, and in proving convergence of numerical schemes. In machine learning, it appears implicitly whenever you control the Lipschitz constant of a hypothesis class: a uniformly bounded, uniformly Lipschitz family of functions has compact closure in $C([a, b])$, which means you can always extract convergent subsequences from training trajectories and study their limits. Spectral norm regularization of neural networks is partially motivated by exactly this kind of Arzelà–Ascoli argument.
+
+</TheoremBlock>
+
+<ArzelaAscoliExplorer client:visible />
+
+![Three-panel figure: an equicontinuous family (a single δ works for all functions), the non-equicontinuous sin(nπx) family, and a sketch of the diagonal subsequence extraction.](/images/topics/metric-spaces/arzela-ascoli.png)
+
+## 10. ML Connections — Distance, Fixed Points, and Embeddings
+
+Everything in this topic has concrete machine learning payoffs. The Banach theorem explains why iterative algorithms converge; the metric-space axioms explain what "distance" must satisfy for similarity-based methods to work; the Arzelà–Ascoli theorem controls the compactness of function classes. Here are four connections that appear across modern ML.
+
+<TheoremBlock type="example" number={14} title="The Bellman Operator Is a Contraction">
+
+In reinforcement learning, the **Bellman optimality operator** $T^*$ acts on bounded value functions $V : \mathcal{S} \to \mathbb{R}$ by
+
+$$(T^* V)(s) = \max_a \left[\, R(s, a) + \gamma \sum_{s'} P(s' \mid s, a) \cdot V(s') \,\right],$$
+
+where $\gamma \in [0, 1)$ is the **discount factor**. Under the sup-norm $\|V\|_\infty = \sup_{s \in \mathcal{S}} |V(s)|$, the space of bounded value functions on a finite state space is complete, and $T^*$ is a contraction with constant $\gamma$:
+
+$$\|T^* V - T^* W\|_\infty \leq \gamma \cdot \|V - W\|_\infty.$$
+
+The proof is a short computation using the inequality $|\max_a f(a) - \max_a g(a)| \leq \max_a |f(a) - g(a)|$ and the fact that transition probabilities sum to 1. By Banach's theorem, **value iteration** — the algorithm that repeatedly applies $T^*$ starting from any initial $V_0$ — converges to the unique optimal value function $V^*$, at a geometric rate $\gamma^n$. This single fact is the reason value iteration works; it is also why a smaller discount $\gamma$ (more aggressively short-sighted) gives faster convergence but different optimal policies. The viz below shows this concretely on a 3-state MDP.
+
+</TheoremBlock>
+
+<BellmanIterationExplorer client:visible />
+
+<TheoremBlock type="example" number={15} title="Lipschitz Continuity and Gradient Descent">
+
+A function $f : \mathbb{R}^n \to \mathbb{R}$ has **$L$-Lipschitz gradient** if $\|\nabla f(x) - \nabla f(y)\| \leq L \cdot \|x - y\|$ for all $x, y$ — the gradient map is Lipschitz with constant $L$. For such functions, the gradient descent map $T(x) = x - \eta \cdot \nabla f(x)$ has a Lipschitz constant of at most $\max(|1 - \eta \mu|, |1 - \eta L|)$ on an $\mu$-strongly-convex function, which is strictly less than 1 whenever $0 < \eta < 2/L$. So gradient descent is a contraction on strongly convex $L$-smooth objectives, and the Banach theorem gives convergence to the unique minimizer at a geometric rate — this is the simplest known convergence proof for gradient descent. Much of convex optimization theory elaborates this idea: different step-size rules, accelerated methods, stochastic variants, and second-order methods all trade off against how tightly you can control the contraction constant.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={16} title="Metric Learning and Embedding Spaces">
+
+Modern neural networks routinely *learn* metrics rather than using a fixed one. Three examples:
+
+- **Siamese networks** learn an embedding $\phi : X \to \mathbb{R}^d$ and use $d(\phi(x), \phi(y)) = \|\phi(x) - \phi(y)\|_2$ as a learned similarity. The training objective forces the embedding to place semantically similar inputs close together.
+- **Triplet loss** enforces $d(\phi(a), \phi(p)) + \alpha < d(\phi(a), \phi(n))$ for anchor $a$, positive example $p$, and negative example $n$. The triangle inequality of the embedding metric constrains which triplet configurations are even geometrically possible, which is why well-trained embeddings exhibit the "tripletable" structure we see in Word2Vec and BERT representations.
+- **Contrastive learning** (SimCLR, CLIP) implicitly learns a metric on the representation space where positive pairs are close and negative pairs are far, using cross-entropy loss as a surrogate for metric constraints.
+
+In every case, the metric space axioms — positivity, symmetry, triangle inequality — are the constraints that well-behaved similarity scores must satisfy. A "distance" that violates symmetry ($d(x, y) \neq d(y, x)$) or the triangle inequality cannot be used with nearest-neighbor search acceleration structures like ball trees, and training losses that silently break the axioms often produce embedding spaces with weird pathologies.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={8} title="k-NN and Metric Spaces">
+
+The $k$-nearest-neighbors algorithm is defined entirely in terms of a metric on the input space. Different metrics give different classifiers: Euclidean $k$-NN, Manhattan $k$-NN, Mahalanobis $k$-NN, and cosine-similarity $k$-NN all disagree on which points are "close" to a query. The triangle inequality is not just an axiom — it is what makes efficient nearest-neighbor search *possible*. Metric trees (ball trees, KD-trees, VP-trees) use the triangle inequality to prune branches of the search: if the distance from the query to a node's center plus the node's radius is larger than the best candidate found so far, the entire subtree can be skipped. Without the triangle inequality, no such pruning is correct, and nearest-neighbor search becomes linear in the dataset size. This is a concrete case where a mathematical axiom translates directly into algorithmic efficiency.
+
+</TheoremBlock>
+
+![Four-panel figure: Bellman iteration convergence, Lipschitz gradient descent trajectory, metric learning embedding separation, and k-NN decision boundaries under different metrics.](/images/topics/metric-spaces/ml-connections-29.png)
+
