@@ -1,0 +1,853 @@
+---
+title: "Calculus of Variations"
+subtitle: "Optimizing functionals — the Euler-Lagrange equation, Sobolev spaces, and the direct method"
+status: "published"
+difficulty: "advanced"
+prerequisites:
+  - "hilbert-spaces"
+  - "mean-value-taylor"
+tags:
+  - "calculus"
+  - "functional-analysis"
+  - "calculus-of-variations"
+  - "optimization"
+  - "sobolev-spaces"
+  - "pde"
+domain: "functional-analysis"
+videoId: null
+notebookPath: "notebooks/calculus-of-variations/32_calculus_of_variations.ipynb"
+githubUrl: null
+datePublished: 2026-04-15
+estimatedReadTime: 50
+abstract: "The calculus of variations extends optimization from finite-dimensional spaces to spaces of functions. Given a functional — a map from a function space to the reals — we ask: which function minimizes it? The Euler-Lagrange equation provides the necessary condition, the second variation tests sufficiency, and the direct method of the calculus of variations proves existence. Sobolev spaces supply the natural domain, and the Lax-Milgram theorem connects variational problems to weak solutions of PDEs. These ideas underpin physics-informed neural networks, optimal transport, variational autoencoders, and diffusion models."
+formalmlConnections:
+  - topic: "lagrangian-duality"
+    site: "formalml"
+    relationship: "The Euler-Lagrange equation is the infinite-dimensional prototype for first-order optimality conditions. Lagrangian duality generalizes constrained variational problems to convex optimization."
+  - topic: "information-geometry"
+    site: "formalml"
+    relationship: "Geodesics on statistical manifolds are calculus-of-variations problems with the Fisher information metric as the Lagrangian."
+  - topic: "gradient-descent"
+    site: "formalml"
+    relationship: "The direct method provides the functional-analytic foundation for the existence of minimizers. Gradient descent in function spaces (gradient flow) is a continuous-time variational principle."
+  - topic: "generative-modeling"
+    site: "formalml"
+    relationship: "Variational autoencoders minimize the ELBO — a variational objective over encoder-decoder function pairs. Diffusion models minimize score-matching losses with variational structure."
+connections:
+  - topic: "hilbert-spaces"
+    relationship: "The projection theorem, Riesz representation, and spectral theory from Topic 31 provide the Hilbert-space infrastructure on which the direct method and Lax-Milgram theorem operate."
+  - topic: "mean-value-taylor"
+    relationship: "Taylor expansion underlies the first and second variation — the Euler-Lagrange equation is the function-space analog of setting the first derivative to zero."
+  - topic: "metric-spaces"
+    relationship: "Compactness and completeness from Topic 29 (Arzelà-Ascoli, Bolzano-Weierstrass) reappear in the direct method as weak compactness in Sobolev spaces."
+  - topic: "banach-spaces"
+    relationship: "Sobolev spaces are Banach spaces (and Hilbert spaces for p=2). The open mapping theorem and bounded inverse theorem from Topic 30 underlie the well-posedness of variational problems."
+  - topic: "line-integrals"
+    relationship: "Geodesics are extremals of the arc-length functional — a line integral whose Euler-Lagrange equation yields the geodesic equation."
+  - topic: "surface-integrals"
+    relationship: "The Euler-Lagrange equation for area-minimizing surfaces connects to minimal surfaces and the divergence theorem."
+  - topic: "approximation-theory"
+    relationship: "Best approximation in function spaces is a variational problem. The Weierstrass theorem guarantees existence; the direct method provides the general principle."
+references:
+  - type: "book"
+    title: "Introduction to the Calculus of Variations"
+    authors: "Dacorogna"
+    year: 2015
+    note: "Primary reference for the direct method and Sobolev spaces"
+  - type: "book"
+    title: "Calculus of Variations"
+    authors: "Gelfand & Fomin"
+    year: 1963
+    note: "Classical reference for Euler-Lagrange derivation and classical examples"
+  - type: "book"
+    title: "Functional Analysis, Sobolev Spaces and Partial Differential Equations"
+    authors: "Brezis"
+    year: 2011
+    note: "Sobolev spaces and Lax-Milgram theorem"
+  - type: "book"
+    title: "Partial Differential Equations"
+    authors: "Evans"
+    year: 2010
+    note: "Weak solutions, Sobolev embedding theorems"
+  - type: "paper"
+    title: "Physics-Informed Neural Networks"
+    authors: "Raissi, Perdikaris & Karniadakis"
+    year: 2019
+    url: "https://doi.org/10.1016/j.jcp.2018.10.045"
+    note: "Foundational PINN paper"
+---
+
+import TheoremBlock from '../../components/ui/TheoremBlock.astro';
+import EulerLagrangeExplorer from '../../components/viz/EulerLagrangeExplorer.tsx';
+import DirectMethodExplorer from '../../components/viz/DirectMethodExplorer.tsx';
+import EigenvalueExplorer from '../../components/viz/EigenvalueExplorer.tsx';
+import BrachistochroneExplorer from '../../components/viz/BrachistochroneExplorer.tsx';
+
+## 1. Overview and Motivation
+
+In a physics-informed neural network, the loss function is a functional — it maps a function (the neural network) to a real number (the PDE residual). Minimizing it is not ordinary optimization over parameters; it is optimization over a *function space*. The loss is literally
+
+$$
+J[u] = \int_\Omega |\mathcal{L}u - f|^2 \, dx,
+$$
+
+where $\mathcal{L}$ is a differential operator and $u$ is the network output viewed as a function. This is the calculus of variations in its modern incarnation.
+
+The arc of Track 8 has been a staircase of abstraction, each step adding one axiom and gaining strictly stronger conclusions:
+
+1. **Metric spaces** ([Topic 29](/topics/metric-spaces)): distances → completeness → fixed-point theorems.
+2. **Normed/Banach spaces** ([Topic 30](/topics/banach-spaces)): length → bounded operators → the big four theorems.
+3. **Inner product/Hilbert spaces** ([Topic 31](/topics/hilbert-spaces)): angles → orthogonality → projection, Riesz representation, spectral decomposition.
+4. **Calculus of variations** (this topic): **perturbation → optimization over function spaces** → Euler-Lagrange equations, direct method, eigenvalue problems.
+
+The key idea of finite-dimensional optimization is: *which point minimizes $f$?* Set the derivative to zero and solve. The calculus of variations asks a harder question: *which function minimizes $J$?* The answer requires a new derivative (the **first variation**, a directional derivative in function space), a new existence theory (the **direct method**, using weak compactness in Hilbert spaces), and a new domain (the **Sobolev spaces** that are the natural home for variational problems).
+
+This is the final topic in formalCalculus — the capstone of both Track 8 and the entire 32-topic journey from epsilon-delta definitions to functional analysis. Let's begin.
+
+---
+
+## 2. Functionals and Their Domains
+
+<TheoremBlock type="definition" number={1} title="Functional">
+A **functional** is a map $J: \mathcal{A} \to \mathbb{R}$, where $\mathcal{A}$ is a subset of a function space. We write $J[y]$ rather than $J(y)$ to distinguish functionals (which eat *functions*) from ordinary functions (which eat *numbers*).
+</TheoremBlock>
+
+<TheoremBlock type="example" number={1} title="Arc Length Functional">
+The arc length of a curve $y: [a,b] \to \mathbb{R}$ is
+
+$$
+L[y] = \int_a^b \sqrt{1 + y'(x)^2} \, dx.
+$$
+
+This maps each $C^1$ function $y$ to a non-negative real number.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={2} title="Energy Functional">
+The Dirichlet energy
+
+$$
+E[y] = \int_a^b \frac{1}{2} y'(x)^2 \, dx
+$$
+
+measures the total "kinetic energy" stored in the gradient of $y$. Minimizing $E[y]$ subject to boundary conditions $y(a) = \alpha$, $y(b) = \beta$ yields the straight line $y(x) = \alpha + (\beta - \alpha)\frac{x - a}{b - a}$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={3} title="Action Functional (Lagrangian Mechanics)">
+In classical mechanics, the action is
+
+$$
+S[q] = \int_{t_0}^{t_1} L(q, \dot{q}, t) \, dt,
+$$
+
+where $L = T - V$ is the Lagrangian (kinetic minus potential energy). Hamilton's principle: the physical trajectory extremizes the action.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={4} title="ML Loss as a Functional">
+A PINN loss is a functional on the space of neural network functions:
+
+$$
+J[u_\theta] = \int_\Omega |\mathcal{L}u_\theta(x) - f(x)|^2 \, dx + \lambda \int_{\partial\Omega} |u_\theta(x) - g(x)|^2 \, dS.
+$$
+
+The parameters $\theta$ parameterize a submanifold of function space; optimization over $\theta$ is a finite-dimensional proxy for the infinite-dimensional variational problem.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={1} title="Hilbert-Space Vocabulary Refresh">
+We will use the inner-product and Hilbert-space machinery from [Topic 31](/topics/hilbert-spaces) throughout this topic. Recall: a **Hilbert space** is a complete inner-product space. The **projection theorem** guarantees a unique closest point in any closed convex subset. The **Riesz representation theorem** identifies the dual space $H^*$ with $H$ itself. These are not just background — they are the active ingredients in the direct method (Section 8) and the Lax-Milgram theorem (Section 9).
+</TheoremBlock>
+
+<img src="/images/topics/calculus-of-variations/functionals-overview.png" alt="Three canonical functionals: arc length, energy, and action, each mapping a function to a real number." className="my-6 rounded-lg shadow-md" />
+
+---
+
+## 3. The First Variation
+
+The first variation is the directional derivative of a functional — the rate of change of $J[y]$ when we perturb $y$ in the direction $\eta$.
+
+<TheoremBlock type="definition" number={2} title="First Variation (Gâteaux Derivative)">
+The **first variation** of $J$ at $y$ in the direction $\eta$ is
+
+$$
+\delta J[y; \eta] = \lim_{\varepsilon \to 0} \frac{J[y + \varepsilon\eta] - J[y]}{\varepsilon} = \frac{d}{d\varepsilon}\bigg|_{\varepsilon=0} J[y + \varepsilon\eta],
+$$
+
+provided the limit exists for all admissible perturbations $\eta$ (typically $\eta \in C_0^\infty(a,b)$, meaning smooth functions vanishing at the boundary). If $\delta J[y; \eta] = 0$ for all $\eta$, we call $y$ a **critical point** (or **extremal**) of $J$.
+</TheoremBlock>
+
+This is the function-space analogue of the gradient. In $\mathbb{R}^n$, a critical point of $f$ satisfies $\nabla f = 0$. In function space, a critical point of $J$ satisfies $\delta J = 0$ for all directions $\eta$. The Euler-Lagrange equation (next section) is what $\delta J = 0$ looks like when $J$ has the integral form $J[y] = \int L(x, y, y') \, dx$.
+
+<TheoremBlock type="theorem" number={1} title="Fundamental Lemma of the Calculus of Variations">
+If $f \in C([a,b])$ and
+
+$$
+\int_a^b f(x) \eta(x) \, dx = 0 \quad \text{for all } \eta \in C_0^\infty(a,b),
+$$
+
+then $f(x) = 0$ for all $x \in [a,b]$.
+
+**Proof.** Suppose for contradiction that $f(x_0) \neq 0$ at some $x_0 \in (a,b)$. Without loss of generality, assume $f(x_0) > 0$. By continuity of $f$, there exists $\delta > 0$ such that $f(x) > f(x_0)/2$ for all $x \in (x_0 - \delta, x_0 + \delta) \subset (a,b)$.
+
+Choose $\eta$ to be a smooth bump function supported on $(x_0 - \delta, x_0 + \delta)$ with $\eta \geq 0$ and $\eta(x_0) > 0$. For instance, take
+
+$$
+\eta(x) = \begin{cases} \exp\!\left(-\frac{1}{1 - ((x - x_0)/\delta)^2}\right) & \text{if } |x - x_0| < \delta, \\ 0 & \text{otherwise.} \end{cases}
+$$
+
+Then $\eta \in C_0^\infty(a,b)$, and
+
+$$
+\int_a^b f(x)\eta(x)\,dx = \int_{x_0-\delta}^{x_0+\delta} f(x)\eta(x)\,dx > \frac{f(x_0)}{2}\int_{x_0-\delta}^{x_0+\delta} \eta(x)\,dx > 0.
+$$
+
+This contradicts $\int f \eta = 0$ for all $\eta$. Therefore $f \equiv 0$. $\square$
+</TheoremBlock>
+
+<TheoremBlock type="example" number={5} title="First Variation of the Energy Functional">
+For $E[y] = \int_0^1 \frac{1}{2}y'^2 \, dx$:
+
+$$
+\frac{d}{d\varepsilon}\bigg|_{\varepsilon=0} E[y + \varepsilon\eta] = \frac{d}{d\varepsilon}\bigg|_{\varepsilon=0} \int_0^1 \frac{1}{2}(y' + \varepsilon\eta')^2 \, dx = \int_0^1 y'\eta' \, dx.
+$$
+
+Integrating by parts (with $\eta(0) = \eta(1) = 0$): $\delta E[y;\eta] = -\int_0^1 y''\eta \, dx$. Setting this to zero for all $\eta$ and applying the fundamental lemma gives $y'' = 0$ — the extremal is a straight line.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={6} title="First Variation of the Arc Length Functional">
+For $L[y] = \int_0^1 \sqrt{1+y'^2} \, dx$, a similar computation gives
+
+$$
+\delta L[y;\eta] = \int_0^1 \frac{y'}{\sqrt{1+y'^2}}\eta'\,dx.
+$$
+
+After integration by parts, the Euler-Lagrange equation is $\frac{d}{dx}\frac{y'}{\sqrt{1+y'^2}} = 0$, which implies $y'$ is constant — again, a straight line (which minimizes arc length between two points in the plane).
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={2} title="Connection to Taylor Expansion">
+The first variation is a Taylor expansion in function space. Writing $J[y + \varepsilon\eta]$ as a power series in $\varepsilon$ (cf. [Topic 6](/topics/mean-value-taylor)):
+
+$$
+J[y + \varepsilon\eta] = J[y] + \varepsilon \, \delta J[y;\eta] + \frac{\varepsilon^2}{2} \delta^2 J[y;\eta] + O(\varepsilon^3).
+$$
+
+The first variation is the linear term; the second variation (Section 6) is the quadratic term. A critical point has $\delta J = 0$; a minimum requires $\delta^2 J \geq 0$.
+</TheoremBlock>
+
+<img src="/images/topics/calculus-of-variations/first-variation.png" alt="The first variation: curve y, perturbation y+εη, and J(ε) parabola with minimum at ε=0." className="my-6 rounded-lg shadow-md" />
+
+---
+
+## 4. The Euler-Lagrange Equation
+
+This is the central result of the classical calculus of variations: a necessary condition for a curve to be an extremal of a functional.
+
+<TheoremBlock type="theorem" number={2} title="The Euler-Lagrange Equation">
+Let $L = L(x, y, y')$ be $C^2$ in all arguments, and let $J[y] = \int_a^b L(x, y, y') \, dx$. If $y \in C^2([a,b])$ is an extremal of $J$ (i.e., $\delta J[y;\eta] = 0$ for all $\eta \in C_0^\infty(a,b)$), then $y$ satisfies the **Euler-Lagrange equation**:
+
+$$
+\frac{\partial L}{\partial y} - \frac{d}{dx}\frac{\partial L}{\partial y'} = 0.
+$$
+
+**Proof.** We proceed in six steps.
+
+**Step 1: Expand the perturbed functional.** Replace $y$ by $y + \varepsilon\eta$ in $J$:
+
+$$
+J[y + \varepsilon\eta] = \int_a^b L(x,\, y+\varepsilon\eta,\, y'+\varepsilon\eta') \, dx.
+$$
+
+**Step 2: Differentiate under the integral.** By the chain rule:
+
+$$
+\frac{d}{d\varepsilon}\bigg|_{\varepsilon=0} J[y+\varepsilon\eta] = \int_a^b \left[\frac{\partial L}{\partial y}\eta + \frac{\partial L}{\partial y'}\eta'\right] dx.
+$$
+
+**Step 3: Integrate the second term by parts.** Writing $u = \frac{\partial L}{\partial y'}$ and $dv = \eta' \, dx$, we get $v = \eta$ and $du = \frac{d}{dx}\frac{\partial L}{\partial y'} dx$:
+
+$$
+\int_a^b \frac{\partial L}{\partial y'}\eta' \, dx = \left[\frac{\partial L}{\partial y'}\eta\right]_a^b - \int_a^b \frac{d}{dx}\frac{\partial L}{\partial y'}\eta \, dx.
+$$
+
+**Step 4: Apply the boundary conditions.** Since $\eta(a) = \eta(b) = 0$, the boundary term vanishes:
+
+$$
+\left[\frac{\partial L}{\partial y'}\eta\right]_a^b = 0.
+$$
+
+**Step 5: Combine and factor.** Substituting back:
+
+$$
+\delta J[y;\eta] = \int_a^b \left[\frac{\partial L}{\partial y} - \frac{d}{dx}\frac{\partial L}{\partial y'}\right]\eta \, dx = 0
+$$
+
+for all $\eta \in C_0^\infty(a,b)$.
+
+**Step 6: Apply the fundamental lemma.** By Theorem 1, since the expression in brackets is continuous and its integral against every smooth compactly-supported $\eta$ vanishes, we conclude
+
+$$
+\frac{\partial L}{\partial y} - \frac{d}{dx}\frac{\partial L}{\partial y'} = 0
+$$
+
+on $(a,b)$. $\square$
+</TheoremBlock>
+
+<EulerLagrangeExplorer client:visible />
+
+The explorer above lets you drag control points on a candidate curve $y(x)$ and watch the functional value $J[y]$ update in real time. The green curve is the analytic Euler-Lagrange solution — it achieves the minimum. The $J$ vs $\varepsilon$ plot on the right confirms that the functional value has a minimum at $\varepsilon = 0$ when the candidate *is* the E-L solution.
+
+<TheoremBlock type="example" number={7} title="Shortest Path (Straight Line)">
+For $L = \sqrt{1+y'^2}$: $\frac{\partial L}{\partial y} = 0$ and $\frac{\partial L}{\partial y'} = \frac{y'}{\sqrt{1+y'^2}}$. The Euler-Lagrange equation gives $\frac{d}{dx}\frac{y'}{\sqrt{1+y'^2}} = 0$, so $y' = \text{const}$. The extremal is a straight line — as expected.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={8} title="Harmonic Oscillator from Variational Principle">
+The action $S[q] = \int_0^T (\frac{1}{2}m\dot{q}^2 - \frac{1}{2}kq^2)\,dt$ has Lagrangian $L = \frac{1}{2}m\dot{q}^2 - \frac{1}{2}kq^2$. The Euler-Lagrange equation yields $m\ddot{q} + kq = 0$ — Newton's second law for a spring.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={3} title="Natural vs. Essential Boundary Conditions">
+The proof of the Euler-Lagrange equation assumed $\eta(a) = \eta(b) = 0$ (Dirichlet/essential boundary conditions). If we allow $\eta(b) \neq 0$, the boundary term $\frac{\partial L}{\partial y'}\big|_{x=b} \cdot \eta(b)$ must vanish independently, giving the **natural boundary condition** $\frac{\partial L}{\partial y'}\big|_{x=b} = 0$. This is important in finite element methods.
+</TheoremBlock>
+
+<img src="/images/topics/calculus-of-variations/euler-lagrange-derivation.png" alt="The Euler-Lagrange derivation: integration by parts, boundary terms, and the fundamental lemma." className="my-6 rounded-lg shadow-md" />
+
+---
+
+## 5. Classical Examples
+
+These are the problems that launched the calculus of variations in the 17th and 18th centuries.
+
+<TheoremBlock type="example" number={9} title="The Brachistochrone Problem">
+**Problem:** Find the curve of fastest descent under gravity from point $A$ to point $B$, starting from rest.
+
+The descent time is $T[y] = \int_0^{x_1} \sqrt{\frac{1+y'^2}{2gy}}\,dx$. The Euler-Lagrange equation (with Lagrangian $L = \sqrt{(1+y'^2)/(2gy)}$) yields $2yy'' + y'^2 + 1 = 0$. The solution is a **cycloid**:
+
+$$
+x = R(\theta - \sin\theta), \quad y = R(1 - \cos\theta),
+$$
+
+where $R$ is determined by the endpoint condition. The cycloid is about 19% faster than the straight-line path.
+</TheoremBlock>
+
+<BrachistochroneExplorer client:visible />
+
+<TheoremBlock type="example" number={10} title="Geodesics on Surfaces">
+A geodesic minimizes the arc-length functional $L[\gamma] = \int_a^b \sqrt{g_{ij}\dot{\gamma}^i\dot{\gamma}^j}\,dt$ (cf. [Topic 20](/topics/line-integrals)). On a sphere of radius $R$, the Euler-Lagrange equation yields great circles — the shortest paths between points on the sphere.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={11} title="The Catenary">
+A flexible chain of uniform density hanging under gravity adopts the shape that minimizes potential energy $V[y] = \int_{-a}^a \rho g\, y\sqrt{1+y'^2}\,dx$ subject to the constraint of fixed length. The Euler-Lagrange equation with a Lagrange multiplier gives the catenary:
+
+$$
+y(x) = c\cosh\left(\frac{x}{c}\right),
+$$
+
+where $c > 0$ depends on the chain length and endpoint separation.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={12} title="The Isoperimetric Problem">
+**Problem:** Among all closed curves of fixed perimeter $P$, which one encloses the maximum area?
+
+This is a constrained variational problem. We maximize $A[\gamma] = \frac{1}{2}\oint (x\,dy - y\,dx)$ subject to $L[\gamma] = P$. Using a Lagrange multiplier $\lambda$, the Euler-Lagrange equation for $J = A - \lambda L$ yields a **circle** of radius $R = P/(2\pi)$.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={4} title="Constrained Variations and Lagrange Multipliers">
+Constrained variational problems (like the isoperimetric problem) add a side condition $K[y] = c$ to the functional $J[y]$. The method of Lagrange multipliers in function space: extremize $J[y] - \lambda K[y]$ over all $y$ and $\lambda$. This is the infinite-dimensional prototype for [Lagrangian duality](https://formalml.com/topics/lagrangian-duality) in optimization.
+</TheoremBlock>
+
+<img src="/images/topics/calculus-of-variations/brachistochrone.png" alt="Brachistochrone: cycloid vs. straight line vs. parabola with descent times." className="my-6 rounded-lg shadow-md" />
+<img src="/images/topics/calculus-of-variations/geodesics-catenary.png" alt="Geodesics on a sphere, catenary curve, and the isoperimetric circle." className="my-6 rounded-lg shadow-md" />
+
+---
+
+## 6. The Second Variation and Sufficient Conditions
+
+The Euler-Lagrange equation is a necessary condition — it finds critical points. But is a critical point a minimum, a maximum, or a saddle point? The second variation answers this question, just as the second derivative does in single-variable calculus.
+
+<TheoremBlock type="definition" number={3} title="Second Variation">
+The **second variation** of $J$ at an extremal $y$ in the direction $\eta$ is
+
+$$
+\delta^2 J[y;\eta] = \frac{d^2}{d\varepsilon^2}\bigg|_{\varepsilon=0} J[y + \varepsilon\eta].
+$$
+
+For $J[y] = \int_a^b L(x,y,y')\,dx$, this becomes
+
+$$
+\delta^2 J[y;\eta] = \int_a^b \left[L_{yy}\eta^2 + 2L_{yy'}\eta\eta' + L_{y'y'}\eta'^2\right]dx.
+$$
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={3} title="Legendre's Necessary Condition">
+If $y$ is a local minimizer of $J$, then
+
+$$
+L_{y'y'}(x, y(x), y'(x)) \geq 0 \quad \text{for all } x \in [a,b].
+$$
+
+**Proof.** If $y$ is a minimizer, then $\delta^2 J[y;\eta] \geq 0$ for all admissible $\eta$. Take $\eta$ to be a tall, narrow bump centered at $x_0$. In the limit, the $\eta'^2$ term dominates, and we need $L_{y'y'}(x_0) \geq 0$. Formally: choose $\eta_n(x) = n\phi(n(x-x_0))$ where $\phi$ is a standard mollifier. Then $\eta_n' = n^2\phi'(n(x-x_0))$, and
+
+$$
+\delta^2 J \approx \int L_{y'y'}(x_0) \eta_n'^2 \, dx = n^3 L_{y'y'}(x_0)\int \phi'^2 + O(n^2).
+$$
+
+For $\delta^2 J \geq 0$ as $n \to \infty$, we need $L_{y'y'}(x_0) \geq 0$. $\square$
+</TheoremBlock>
+
+<TheoremBlock type="definition" number={4} title="Conjugate Points and the Jacobi Equation">
+A point $c \in (a,b)$ is **conjugate** to $a$ along the extremal $y$ if there exists a non-trivial solution $h$ of the **Jacobi equation**
+
+$$
+\frac{d}{dx}\left[L_{y'y'} h'\right] - \left[L_{yy} - \frac{d}{dx}L_{yy'}\right]h = 0
+$$
+
+satisfying $h(a) = h(c) = 0$. Conjugate points are where nearby extremals refocus.
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={4} title="Jacobi's Sufficient Condition">
+If $y$ is an extremal of $J$ with $L_{y'y'} > 0$ on $[a,b]$ (strengthened Legendre), and there are no conjugate points in $(a,b]$, then $y$ is a (strict) local minimum.
+
+*Proof outline.* The absence of conjugate points ensures that the Jacobi equation has no non-trivial solutions vanishing at both endpoints. This means the quadratic form $\delta^2 J[y;\eta]$ is positive definite on the space of admissible variations, which implies $y$ is a local minimum. The full proof uses the theory of fields of extremals. $\square$
+</TheoremBlock>
+
+<TheoremBlock type="example" number={13} title="Second Variation of the Energy Functional">
+For $E[y] = \int_0^1 \frac{1}{2}y'^2 \, dx$: $L_{y'y'} = 1 > 0$, $L_{yy} = 0$, $L_{yy'} = 0$. So $\delta^2 E[y;\eta] = \int_0^1 \eta'^2 \, dx \geq 0$, with equality only if $\eta' \equiv 0$, i.e., $\eta \equiv 0$ (since $\eta(0)=\eta(1)=0$). The Jacobi equation is $h'' = 0$ with $h(0)=0$, giving $h(x) = cx$. This has no zero in $(0,1]$, so there are no conjugate points. The straight line is a strict minimum.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={5} title="The Second Variation as a Function-Space Hessian">
+The second variation is the function-space analogue of the Hessian matrix. In $\mathbb{R}^n$, a critical point is a minimum if the Hessian is positive definite. In function space, a critical point is a minimum if $\delta^2 J$ is positive definite on the space of admissible perturbations. This connects the calculus of variations to the spectral theory of differential operators — the Jacobi equation defines a self-adjoint operator whose eigenvalues determine whether $\delta^2 J$ is positive definite. This closes the obligation planted in [Topic 29](/topics/metric-spaces) about the variational characterization of extrema in infinite dimensions.
+</TheoremBlock>
+
+<img src="/images/topics/calculus-of-variations/second-variation.png" alt="Positive definite second variation (minimum) vs. indefinite second variation (saddle point)." className="my-6 rounded-lg shadow-md" />
+
+---
+
+## 7. Sobolev Spaces
+
+Classical solutions (smooth functions satisfying the Euler-Lagrange equation pointwise) do not always exist. The natural function spaces for variational problems are **Sobolev spaces** — spaces of functions with weak derivatives in $L^2$.
+
+<TheoremBlock type="definition" number={5} title="Weak Derivative">
+A function $u \in L^2(\Omega)$ has a **weak derivative** $u' \in L^2(\Omega)$ if
+
+$$
+\int_\Omega u\,\varphi'\,dx = -\int_\Omega u'\varphi\,dx \quad \text{for all } \varphi \in C_0^\infty(\Omega).
+$$
+
+This is the integration-by-parts formula with no boundary term (since $\varphi$ vanishes at the boundary). The weak derivative agrees with the classical derivative when $u$ is classically differentiable, but extends to a much larger class of functions.
+</TheoremBlock>
+
+<TheoremBlock type="definition" number={6} title="Sobolev Space H¹(Ω) and H¹₀(Ω)">
+The **Sobolev space** $H^1(\Omega)$ consists of all $L^2(\Omega)$ functions with weak derivatives in $L^2(\Omega)$:
+
+$$
+H^1(\Omega) = \{u \in L^2(\Omega) : u' \in L^2(\Omega)\},
+$$
+
+equipped with the inner product $\langle u, v \rangle_{H^1} = \int_\Omega (uv + u'v')\,dx$.
+
+The subspace $H^1_0(\Omega) \subset H^1(\Omega)$ consists of functions that vanish on the boundary $\partial\Omega$ (in the trace sense). This is the natural space for Dirichlet boundary conditions.
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={5} title="H¹₀(Ω) Is a Hilbert Space">
+$H^1_0(\Omega)$ with the $H^1$ inner product is a Hilbert space (a complete inner product space).
+
+**Proof.** We need to show completeness. Let $\{u_n\}$ be a Cauchy sequence in $H^1_0(\Omega)$. Then $\{u_n\}$ and $\{u_n'\}$ are both Cauchy in $L^2(\Omega)$. Since $L^2$ is complete, there exist $u, v \in L^2(\Omega)$ with $u_n \to u$ and $u_n' \to v$ in $L^2$. We verify $v$ is the weak derivative of $u$: for any $\varphi \in C_0^\infty$,
+
+$$
+\int u\varphi'\,dx = \lim_{n\to\infty}\int u_n\varphi'\,dx = -\lim_{n\to\infty}\int u_n'\varphi\,dx = -\int v\varphi\,dx,
+$$
+
+so $u' = v$ in the weak sense. Hence $u \in H^1(\Omega)$. Since $u_n \in H^1_0$, the boundary values (traces) converge to zero, so $u \in H^1_0$. Thus $u_n \to u$ in $H^1_0$. $\square$
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={6} title="Poincaré Inequality">
+For bounded $\Omega \subset \mathbb{R}^n$, there exists $C > 0$ such that
+
+$$
+\|u\|_{L^2(\Omega)} \leq C\|u'\|_{L^2(\Omega)} \quad \text{for all } u \in H^1_0(\Omega).
+$$
+
+**Proof** (for $\Omega = (0,L)$). By the fundamental theorem of calculus and Cauchy-Schwarz:
+
+$$
+|u(x)|^2 = \left|\int_0^x u'(t)\,dt\right|^2 \leq x\int_0^x |u'(t)|^2\,dt \leq L\int_0^L |u'|^2\,dt.
+$$
+
+Integrating over $x \in (0,L)$: $\int_0^L |u|^2\,dx \leq L^2\int_0^L |u'|^2\,dx$. So $C = L$. $\square$
+
+The Poincaré inequality says that on $H^1_0$, the $H^1$ seminorm $\|u'\|_{L^2}$ is equivalent to the full $H^1$ norm. This is crucial for the coercivity arguments in the direct method.
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={7} title="Rellich-Kondrachov Compactness Theorem">
+For bounded $\Omega \subset \mathbb{R}^n$ with Lipschitz boundary, the embedding $H^1(\Omega) \hookrightarrow L^2(\Omega)$ is **compact**: every bounded sequence in $H^1(\Omega)$ has a subsequence converging in $L^2(\Omega)$.
+
+*Proof deferred.* The full proof requires approximation theory and the Arzelà-Ascoli theorem (cf. [Topic 29](/topics/metric-spaces)). We state this result because it is essential for the direct method: it converts weak convergence in $H^1$ to strong convergence in $L^2$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={14} title="Functions in H¹ That Are Not in C¹">
+The tent function $u(x) = \min(x, 1-x)$ on $[0,1]$ has a corner at $x = 1/2$ and is not classically differentiable there. But it has a weak derivative: $u'(x) = +1$ on $(0, 1/2)$ and $u'(x) = -1$ on $(1/2, 1)$. Since both $u$ and $u'$ are in $L^2$, we have $u \in H^1(0,1)$. Its $H^1$ norm is $\|u\|_{H^1}^2 = \int_0^1 u^2 + (u')^2 \, dx = 1/12 + 1 = 13/12 \approx 4.333$.
+
+In contrast, $u(x) = x^{-1/3}$ on $(0,1]$ has $u' = -\frac{1}{3}x^{-4/3}$, and $\int_0^1 (u')^2 \, dx = \frac{1}{9}\int_0^1 x^{-8/3}\,dx = \infty$. So $u \notin H^1$.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={6} title="Sobolev Spaces as Hilbert Spaces">
+The key point: $H^1_0(\Omega)$ with the inner product $\langle u, v\rangle_{H^1} = \int (uv + u'v')\,dx$ is a Hilbert space (Theorem 5). This means we can apply the entire Hilbert-space toolkit from [Topic 31](/topics/hilbert-spaces) — projection theorem, Riesz representation, spectral theory — to variational problems posed on Sobolev spaces. This closes the obligation from [Topic 31](/topics/hilbert-spaces) and [Topic 23](/topics/surface-integrals) to explain why Sobolev spaces are the right function spaces for PDEs.
+</TheoremBlock>
+
+<img src="/images/topics/calculus-of-variations/sobolev-spaces.png" alt="Smooth function, H¹ function with a corner, and a function not in H¹." className="my-6 rounded-lg shadow-md" />
+
+---
+
+## 8. The Direct Method
+
+The direct method is the crown jewel of the modern calculus of variations. It answers the existence question: *does a minimizer exist?* Where the Euler-Lagrange equation finds candidates, the direct method proves that a minimizer is actually achieved.
+
+<TheoremBlock type="definition" number={7} title="Coercivity and Weak Lower Semicontinuity">
+A functional $J: H \to \mathbb{R}$ on a Hilbert space $H$ is:
+
+- **Coercive** if $J[u] \to +\infty$ as $\|u\|_H \to \infty$.
+- **Weakly lower semicontinuous** (w.l.s.c.) if $u_n \rightharpoonup u$ (weak convergence) implies $J[u] \leq \liminf_{n\to\infty} J[u_n]$.
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={8} title="The Direct Method of the Calculus of Variations">
+Let $H$ be a reflexive Banach space (e.g., a Hilbert space) and $J: H \to \mathbb{R} \cup \{+\infty\}$ be coercive and weakly lower semicontinuous. Then $J$ attains its infimum: there exists $u^* \in H$ with $J[u^*] = \inf_{u \in H} J[u]$.
+
+**Proof.** We proceed in four steps.
+
+**Step 1: Bounded minimizing sequence.** Let $m = \inf J$ and choose a minimizing sequence $\{u_n\}$ with $J[u_n] \to m$. By coercivity, $\|u_n\|$ is bounded: if $\|u_n\| \to \infty$, then $J[u_n] \to \infty$, contradicting $J[u_n] \to m < \infty$.
+
+**Step 2: Weak compactness.** Since $H$ is reflexive and $\{u_n\}$ is bounded, by the Eberlein-Šmulian theorem (the sequential version of the Banach-Alaoglu theorem for reflexive spaces), there exists a subsequence $\{u_{n_k}\}$ and $u^* \in H$ with $u_{n_k} \rightharpoonup u^*$ (weak convergence).
+
+**Step 3: Lower semicontinuity.** Since $J$ is weakly lower semicontinuous:
+
+$$
+J[u^*] \leq \liminf_{k\to\infty} J[u_{n_k}] = \lim_{k\to\infty} J[u_{n_k}] = m.
+$$
+
+**Step 4: Conclusion.** By definition, $m = \inf J \leq J[u^*]$. Combined with Step 3, $J[u^*] = m$. The infimum is attained. $\square$
+</TheoremBlock>
+
+<DirectMethodExplorer client:visible />
+
+The explorer shows the direct method in action: a minimizing sequence $\{y_n\}$ converges to the minimizer $y^*$, with $J[y_n]$ descending to $\inf J$.
+
+<TheoremBlock type="example" number={15} title="Existence of Minimizer for the Dirichlet Energy">
+The Dirichlet energy $E[u] = \int_\Omega \frac{1}{2}|\nabla u|^2\,dx$ on $H^1_0(\Omega)$ satisfies:
+
+- **Coercivity:** By Poincaré, $E[u] \geq c\|u\|_{H^1_0}^2$.
+- **Weak lower semicontinuity:** The norm is w.l.s.c., and $E[u] = \frac{1}{2}\|u\|^2$ (using the equivalent norm from Poincaré).
+
+By the direct method, a minimizer exists. This is the variational proof of existence for the Poisson equation $-\Delta u = 0$ with Dirichlet boundary conditions.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={16} title="Best Approximation as a Variational Problem">
+Given $f \in L^2(\Omega)$ and a closed subspace $V \subset L^2(\Omega)$, the best approximation problem is: minimize $J[v] = \|f - v\|_{L^2}^2$ over $v \in V$. This is a quadratic functional on a Hilbert space — coercive and w.l.s.c. The direct method guarantees existence, and the minimizer is the orthogonal projection $P_V f$ (cf. [Topic 31](/topics/hilbert-spaces) and [Topic 15](/topics/approximation-theory)).
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={7} title="The Direct Method as the Infinite-Dimensional Extreme Value Theorem">
+In finite dimensions, the extreme value theorem says: a continuous function on a compact set attains its extrema. The direct method is the infinite-dimensional version. Coercivity provides the "compact set" (bounded sublevel sets), weak lower semicontinuity provides "continuity" (in the weak topology), and reflexivity provides "compactness" (Eberlein-Šmulian). This closes the staircase from the Bolzano-Weierstrass theorem in [Topic 29](/topics/metric-spaces) to the direct method here.
+</TheoremBlock>
+
+<img src="/images/topics/calculus-of-variations/direct-method.png" alt="Minimizing sequence converging: curves y_n, functional values J[y_n] descending, weak limit as minimizer." className="my-6 rounded-lg shadow-md" />
+
+---
+
+## 9. Weak Solutions and the Lax-Milgram Theorem
+
+The Lax-Milgram theorem is the bridge between variational problems and PDEs: it converts a variational problem into a well-posed operator equation.
+
+<TheoremBlock type="definition" number={8} title="Weak Solution of a PDE">
+A function $u \in H^1_0(\Omega)$ is a **weak solution** of the boundary value problem $-\Delta u = f$ (with $u|_{\partial\Omega} = 0$) if
+
+$$
+\int_\Omega \nabla u \cdot \nabla v \, dx = \int_\Omega fv \, dx \quad \text{for all } v \in H^1_0(\Omega).
+$$
+
+This is obtained by multiplying the PDE by a test function $v$, integrating by parts, and dropping the boundary term (since $v \in H^1_0$).
+</TheoremBlock>
+
+<TheoremBlock type="definition" number={9} title="Bilinear Form — Coercivity and Boundedness">
+A bilinear form $a: H \times H \to \mathbb{R}$ on a Hilbert space $H$ is:
+
+- **Bounded** (continuous) if $|a(u,v)| \leq M\|u\|\|v\|$ for some $M > 0$.
+- **Coercive** if $a(u,u) \geq \alpha\|u\|^2$ for some $\alpha > 0$.
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={9} title="Lax-Milgram Theorem">
+Let $H$ be a Hilbert space, $a: H \times H \to \mathbb{R}$ a bounded, coercive bilinear form, and $F \in H^*$ a bounded linear functional. Then there exists a unique $u \in H$ such that
+
+$$
+a(u, v) = F(v) \quad \text{for all } v \in H.
+$$
+
+**Proof.** The key is to use the Riesz representation theorem from [Topic 31](/topics/hilbert-spaces).
+
+**Step 1: Define the operator $A$.** For each fixed $u \in H$, the map $v \mapsto a(u,v)$ is a bounded linear functional on $H$. By the Riesz representation theorem, there exists a unique $Au \in H$ such that $a(u,v) = \langle Au, v\rangle$ for all $v$. The map $u \mapsto Au$ is linear and bounded with $\|A\| \leq M$.
+
+**Step 2: Show $A$ is bijective.** Coercivity gives $\langle Au, u\rangle = a(u,u) \geq \alpha\|u\|^2$, so:
+
+$$
+\|Au\|\|u\| \geq \langle Au, u\rangle \geq \alpha\|u\|^2 \implies \|Au\| \geq \alpha\|u\|.
+$$
+
+This means $A$ is injective and has closed range.
+
+**Step 3: Show the range is dense.** If $w \perp \text{Range}(A)$, then $\langle Aw, w\rangle = 0$, but coercivity gives $\alpha\|w\|^2 \leq \langle Aw, w\rangle = 0$, so $w = 0$. Hence $\text{Range}(A)^\perp = \{0\}$, meaning $\text{Range}(A)$ is dense in $H$.
+
+**Step 4: Conclude.** Since $\text{Range}(A)$ is both closed and dense, $A$ is surjective. Hence $A$ is bijective with bounded inverse ($\|A^{-1}\| \leq 1/\alpha$).
+
+Now apply Riesz again: $F \in H^*$ corresponds to some $f \in H$ with $F(v) = \langle f, v\rangle$. Set $u = A^{-1}f$. Then $a(u,v) = \langle Au, v\rangle = \langle f, v\rangle = F(v)$ for all $v$. $\square$
+</TheoremBlock>
+
+<TheoremBlock type="example" number={17} title="Weak Solution of Poisson's Equation">
+For $-\Delta u = f$ on $\Omega$ with $u|_{\partial\Omega} = 0$: take $H = H^1_0(\Omega)$, $a(u,v) = \int \nabla u \cdot \nabla v\, dx$, $F(v) = \int fv\,dx$. By Poincaré, $a$ is coercive: $a(u,u) = \int |\nabla u|^2 \geq C_P^{-2}\|u\|_{H^1_0}^2$. By Cauchy-Schwarz, $a$ is bounded. Lax-Milgram gives the unique weak solution $u \in H^1_0$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={18} title="Weak Solution of the Sturm-Liouville Problem">
+For $-(pu')' + qu = f$ on $(a,b)$ with $u(a)=u(b)=0$: take $a(u,v) = \int_a^b (pu'v' + quv)\,dx$. If $p \geq p_0 > 0$ and $q \geq 0$, then $a$ is coercive and bounded. Lax-Milgram applies.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={8} title="From Lax-Milgram to Finite Elements">
+The finite element method discretizes the Lax-Milgram problem: replace $H$ by a finite-dimensional subspace $V_h$ (e.g., piecewise-linear functions on a mesh), and solve $a(u_h, v_h) = F(v_h)$ for all $v_h \in V_h$. This is a finite linear system $K\mathbf{u} = \mathbf{f}$ where $K_{ij} = a(\phi_j, \phi_i)$ is the stiffness matrix. The Lax-Milgram theorem guarantees that the stiffness matrix is invertible (because $a$ is coercive on $V_h$ too).
+</TheoremBlock>
+
+<img src="/images/topics/calculus-of-variations/lax-milgram.png" alt="Bilinear form geometry and Riesz representation converting to operator equation." className="my-6 rounded-lg shadow-md" />
+
+---
+
+## 10. Eigenvalue Problems and the Rayleigh Quotient
+
+The variational characterization of eigenvalues connects the spectral theory from [Topic 31](/topics/hilbert-spaces) to the calculus of variations.
+
+<TheoremBlock type="definition" number={10} title="Sturm-Liouville Eigenvalue Problem">
+The **Sturm-Liouville eigenvalue problem** is: find non-trivial $u \in H^1_0(0,\pi)$ and $\lambda \in \mathbb{R}$ such that
+
+$$
+-u'' = \lambda u \quad \text{on } (0,\pi), \quad u(0) = u(\pi) = 0.
+$$
+
+The eigenvalues are $\lambda_n = n^2$ ($n = 1, 2, 3, \ldots$) with eigenfunctions $u_n(x) = \sin(nx)$.
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={10} title="Variational Characterization of the First Eigenvalue">
+The first eigenvalue of $-u'' = \lambda u$ on $(0,\pi)$ with Dirichlet conditions is
+
+$$
+\lambda_1 = \min_{u \in H^1_0 \setminus \{0\}} R[u], \quad \text{where } R[u] = \frac{\int_0^\pi u'^2\,dx}{\int_0^\pi u^2\,dx}
+$$
+
+is the **Rayleigh quotient**. The minimum is achieved by $u_1 = \sin(x)$ with $\lambda_1 = 1$.
+
+**Proof.** We use the weak formulation. Multiply $-u'' = \lambda u$ by $v \in H^1_0$ and integrate by parts:
+
+$$
+\int_0^\pi u'v'\,dx = \lambda\int_0^\pi uv\,dx.
+$$
+
+Setting $v = u$: $\int u'^2 = \lambda\int u^2$, so $\lambda = R[u]$ for any eigenfunction.
+
+Now we show $\lambda_1$ is the minimum of $R$. Expand $u$ in the eigenfunction basis: $u = \sum c_n\sin(nx)$. By Parseval's identity:
+
+$$
+\int_0^\pi u^2 = \frac{\pi}{2}\sum c_n^2, \quad \int_0^\pi u'^2 = \frac{\pi}{2}\sum n^2 c_n^2.
+$$
+
+Therefore $R[u] = \frac{\sum n^2 c_n^2}{\sum c_n^2} \geq \frac{1^2 \sum c_n^2}{\sum c_n^2} = 1 = \lambda_1$, with equality when $c_n = 0$ for $n \geq 2$, i.e., $u = c_1\sin(x)$. $\square$
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={11} title="Min-Max Principle (Courant-Fischer)">
+The $k$-th eigenvalue is
+
+$$
+\lambda_k = \min_{\substack{V \subset H^1_0 \\ \dim V = k}} \max_{u \in V \setminus \{0\}} R[u].
+$$
+
+*Proof outline.* This follows from the spectral theorem for compact self-adjoint operators applied to the inverse of $-d^2/dx^2$ (cf. [Topic 31](/topics/hilbert-spaces)). The min-max characterization is equivalent to the variational principle: $\lambda_k$ is the minimum of $R[u]$ over the orthogonal complement of the first $k-1$ eigenfunctions. $\square$
+</TheoremBlock>
+
+<EigenvalueExplorer client:visible />
+
+Adjust the trial function coefficients to explore the Rayleigh quotient. The minimum value $R[u] = \lambda_1 = 1$ is achieved when $u$ is a multiple of $\sin(x)$. Any trial function yields $R[u] \geq \lambda_1$ — this is the variational characterization in action.
+
+<TheoremBlock type="example" number={19} title="Eigenvalues of −u'' = λu on [0,π]">
+The eigenfunctions $u_n(x) = \sin(nx)$ have eigenvalues $\lambda_n = n^2$. For the trial function $u(x) = \sin(x)$:
+
+$$
+R[\sin x] = \frac{\int_0^\pi \cos^2 x \, dx}{\int_0^\pi \sin^2 x \, dx} = \frac{\pi/2}{\pi/2} = 1 = \lambda_1. \quad \checkmark
+$$
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={9} title="Spectral Theory Connection">
+The variational characterization of eigenvalues is the bridge between the spectral theorem ([Topic 31](/topics/hilbert-spaces)) and the calculus of variations. The compact self-adjoint operator $T = (-d^2/dx^2)^{-1}$ on $L^2(0,\pi)$ has eigenvalues $\mu_n = 1/n^2$ and eigenfunctions $\sin(nx)$. The spectral theorem decomposes $T$ as $Tf = \sum \frac{1}{n^2}\langle f, u_n\rangle u_n$. The Rayleigh quotient $R[u] = \langle u, (-d^2/dx^2)u\rangle / \langle u, u\rangle$ is the inverse: $R = 1/\mu$. Minimizing $R$ is equivalent to maximizing $\mu$ — finding the largest eigenvalue of $T$.
+</TheoremBlock>
+
+<img src="/images/topics/calculus-of-variations/eigenvalue-problems.png" alt="First three eigenmodes, Rayleigh quotient values, and variational convergence." className="my-6 rounded-lg shadow-md" />
+
+---
+
+## 11. Connections to ML
+
+The calculus of variations is not just classical mathematics — it is the mathematical language of modern machine learning at its most fundamental.
+
+<TheoremBlock type="example" number={20} title="Physics-Informed Neural Networks (PINNs)">
+A PINN parameterizes the solution of a PDE $\mathcal{L}u = f$ as a neural network $u_\theta$ and minimizes the variational loss
+
+$$
+J[u_\theta] = \int_\Omega |\mathcal{L}u_\theta - f|^2\,dx + \lambda\int_{\partial\Omega}|u_\theta - g|^2\,dS.
+$$
+
+This is literally a calculus-of-variations problem: $J$ is a functional on the space of network functions. The Euler-Lagrange equation for $J$ recovers the PDE — the PINN finds an approximate solution by minimizing the variational residual. The direct method guarantees that a minimizer exists in $H^1_0$ (the Sobolev space), and the neural network approximates it.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={21} title="Optimal Transport">
+The Monge-Kantorovich problem seeks the transport map $T$ minimizing the total cost $\int c(x, T(x))\,d\mu(x)$. In its relaxed (Kantorovich) formulation, we minimize over transport plans $\gamma$:
+
+$$
+W_p^p(\mu,\nu) = \inf_{\gamma \in \Pi(\mu,\nu)} \int |x - y|^p\,d\gamma(x,y).
+$$
+
+The Wasserstein distance $W_p$ metrizes the space of probability measures. This is a variational problem over a function space — the direct method applies because the set of transport plans is weakly compact and the cost functional is lower semicontinuous.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={22} title="Variational Autoencoders (VAEs)">
+A VAE maximizes the evidence lower bound (ELBO):
+
+$$
+\text{ELBO}(\theta, \phi) = \mathbb{E}_{q_\phi(z|x)}[\log p_\theta(x|z)] - D_{\text{KL}}(q_\phi(z|x) \| p(z)).
+$$
+
+This is a variational objective over the encoder $q_\phi$ and decoder $p_\theta$. The name "variational" is literal: we are optimizing a functional over a family of distributions. The ELBO is related to the calculus of variations through the Euler-Lagrange equation for the optimal encoder, which yields the posterior $p(z|x)$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={23} title="Diffusion Models">
+Score-matching diffusion models minimize
+
+$$
+J[\mathbf{s}_\theta] = \mathbb{E}_{t,\mathbf{x}_t}\left[\|\mathbf{s}_\theta(\mathbf{x}_t, t) - \nabla \log p_t(\mathbf{x}_t)\|^2\right],
+$$
+
+where $\mathbf{s}_\theta$ is the score network. This is a variational problem: minimize a functional over the space of score functions. The optimal score $\nabla\log p_t$ is the Euler-Lagrange solution. The connection to stochastic calculus (the reverse-time SDE) adds a layer of calculus-of-variations structure.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={10} title="The Variational Principle in ML">
+Across PINNs, optimal transport, VAEs, and diffusion models, the pattern is the same: define a functional on a function space, and minimize it. The calculus of variations provides the theoretical foundation — existence of minimizers (direct method), necessary conditions (Euler-Lagrange), sufficiency (second variation), and the functional-analytic setting (Sobolev spaces, Hilbert spaces). Understanding this machinery is not optional for serious ML research; it is the language in which the theory is written.
+</TheoremBlock>
+
+<img src="/images/topics/calculus-of-variations/ml-connections-32.png" alt="Four ML applications: PINNs, optimal transport, VAEs, and diffusion models." className="my-6 rounded-lg shadow-md" />
+
+---
+
+## 12. Computational Notes
+
+The Euler-Lagrange equation can be solved numerically via finite differences or finite elements. Here is a minimal example for the Dirichlet energy minimization $-u'' = f$ on $[0,1]$ with $u(0) = u(1) = 0$:
+
+```python
+import numpy as np
+
+# Finite difference discretization of -u'' = f on [0,1]
+n = 100
+h = 1.0 / (n + 1)
+x = np.linspace(h, 1 - h, n)
+
+# Stiffness matrix (tridiagonal)
+A = (2 * np.eye(n) - np.eye(n, k=1) - np.eye(n, k=-1)) / h**2
+
+# Right-hand side: f(x) = sin(pi*x)
+f = np.sin(np.pi * x)
+
+# Solve Au = f
+u = np.linalg.solve(A, f)
+
+# Exact solution: u(x) = sin(pi*x) / pi^2
+u_exact = np.sin(np.pi * x) / np.pi**2
+print(f"Max error: {np.max(np.abs(u - u_exact)):.2e}")
+```
+
+For the Rayleigh quotient iteration (finding eigenvalues variationally):
+
+```python
+# Power method for the smallest eigenvalue of -u''
+u = np.ones(n) / np.sqrt(n)  # initial guess
+for _ in range(50):
+    v = np.linalg.solve(A, u)       # apply A^{-1}
+    lam = np.dot(u, v)              # Rayleigh quotient
+    u = v / np.linalg.norm(v)       # normalize
+print(f"λ₁ ≈ {1/lam:.6f} (exact: {np.pi**2:.6f})")
+```
+
+---
+
+## 13. Connections and Further Reading
+
+### Within formalCalculus
+
+| Topic | Connection |
+|-------|-----------|
+| [Metric Spaces](/topics/metric-spaces) | Completeness and compactness reappear in the direct method |
+| [Banach Spaces](/topics/banach-spaces) | Sobolev spaces are Banach spaces; reflexivity enables weak compactness |
+| [Hilbert Spaces](/topics/hilbert-spaces) | Riesz representation → Lax-Milgram; projection → best approximation |
+| [Mean Value & Taylor](/topics/mean-value-taylor) | First and second variation are Taylor expansions in function space |
+| [Line Integrals](/topics/line-integrals) | Geodesics as extremals of the arc-length functional |
+| [Surface Integrals](/topics/surface-integrals) | Euler-Lagrange on domains uses the divergence theorem |
+| [Approximation Theory](/topics/approximation-theory) | Best approximation is a variational problem |
+
+### Forward to formalML
+
+The calculus of variations feeds directly into four areas of modern ML theory:
+
+- **[Lagrangian Duality](https://formalml.com/topics/lagrangian-duality)** — Euler-Lagrange as the prototype for optimality conditions with constraints.
+- **[Information Geometry](https://formalml.com/topics/information-geometry)** — Geodesics on statistical manifolds are calculus-of-variations problems.
+- **[Gradient Descent](https://formalml.com/topics/gradient-descent)** — The direct method provides the existence theory; gradient flow is continuous-time variation.
+- **[Generative Modeling](https://formalml.com/topics/generative-modeling)** — VAEs and diffusion models minimize variational objectives.
+
+### Track 8 Summary
+
+The Functional Analysis Essentials track progressed through four levels of abstraction:
+
+1. **Metric spaces** — distance, completeness, compactness.
+2. **Banach spaces** — norms, bounded operators, the big four theorems.
+3. **Hilbert spaces** — inner products, projection, Riesz, spectral theory, RKHS.
+4. **Calculus of variations** — functionals, Euler-Lagrange, Sobolev spaces, direct method, Lax-Milgram.
+
+Each level added one axiom and gained enormous power. The staircase is now complete.
+
+---
+
+## 14. Summary
+
+| Element | Statement |
+|---------|-----------|
+| **Def. 1** | Functional: a map $J: \mathcal{A} \to \mathbb{R}$ from a function space |
+| **Def. 2** | First variation: $\delta J[y;\eta]$, the directional derivative of $J$ at $y$ in direction $\eta$ |
+| **Def. 3** | Second variation: $\delta^2 J[y;\eta]$, the second-order directional derivative |
+| **Def. 4** | Conjugate points and the Jacobi equation |
+| **Def. 5** | Weak derivative via integration by parts |
+| **Def. 6** | Sobolev spaces $H^1(\Omega)$ and $H^1_0(\Omega)$ |
+| **Def. 7** | Coercivity and weak lower semicontinuity |
+| **Def. 8** | Weak solution of a PDE |
+| **Def. 9** | Bilinear form — coercivity and boundedness |
+| **Def. 10** | Sturm-Liouville eigenvalue problem |
+| **Thm. 1** | Fundamental lemma of the calculus of variations |
+| **Thm. 2** | The Euler-Lagrange equation |
+| **Thm. 3** | Legendre's necessary condition: $L_{y'y'} \geq 0$ |
+| **Thm. 4** | Jacobi's sufficient condition: no conjugate points → minimum |
+| **Thm. 5** | $H^1_0(\Omega)$ is a Hilbert space |
+| **Thm. 6** | Poincaré inequality |
+| **Thm. 7** | Rellich-Kondrachov compactness (stated) |
+| **Thm. 8** | The direct method: coercive + w.l.s.c. → minimum attained |
+| **Thm. 9** | Lax-Milgram theorem |
+| **Thm. 10** | Variational characterization of eigenvalues |
+| **Thm. 11** | Min-max principle (Courant-Fischer) |
+
+---
+
+## 15. Closing Reflection
+
+We have reached the summit.
+
+Topic 32 is the 32nd and final topic on formalCalculus — the last node in a directed graph that began with [epsilon-delta definitions](/topics/epsilon-delta) and ends here, with the calculus of variations. Let us take a moment to see where we have been.
+
+The journey through **single-variable calculus** (Topics 1–8) built the foundations: limits, continuity, derivatives, integrals, and Taylor series — the language in which all subsequent mathematics is written. **Multivariable calculus** (Topics 9–14) extended this machinery to $\mathbb{R}^n$: gradients, Jacobians, Hessians, multiple integrals, line integrals, surface integrals. **Series and approximation** (Topics 15–18) taught us to represent functions as infinite sums — power series, Fourier series, uniform convergence — and to quantify the quality of approximations. **Ordinary differential equations** (Topics 19–22) showed how derivatives drive dynamics: first-order equations, linear systems, stability theory, and numerical methods. **Measure and integration** (Topics 23–28) rebuilt the integral from the ground up: sigma-algebras, the Lebesgue integral, $L^p$ spaces, the Radon-Nikodym theorem — replacing the Riemann integral with a theory powerful enough for modern analysis. And **functional analysis** (Topics 29–32, this track) assembled the abstract framework: metric spaces, normed and Banach spaces, inner-product and Hilbert spaces, and finally the calculus of variations.
+
+At each level, the pattern was the same: **add one axiom, gain an enormous amount of power.** A metric gives completeness and fixed-point theorems. A norm gives bounded operators and the big four theorems. An inner product gives projection, Riesz representation, and spectral decomposition. And the variational perspective — optimizing functionals on function spaces — gives the Euler-Lagrange equation, the direct method for existence, Sobolev spaces, and the Lax-Milgram theorem.
+
+These are not just mathematical curiosities. They are the foundations of modern machine learning. Every gradient descent step invokes the calculus. Every loss function is a functional. Every regularized objective lives in a Sobolev space. Every kernel method operates in a reproducing kernel Hilbert space. Every PINN solves a variational problem. Every diffusion model minimizes a score-matching loss that is a functional over function spaces.
+
+The reader who has worked through all 32 topics now has the rigorous calculus and analysis machinery that [formalML](https://formalml.com) assumes. The path forward is clear: Lagrangian duality, information geometry, optimization theory, spectral methods, generative modeling. The foundations are laid. The mathematics is yours.

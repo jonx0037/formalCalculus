@@ -492,3 +492,218 @@ export function checkParallelogramLaw(
 
   return { satisfied: maxDev <= tol, maxDeviation: maxDev };
 }
+
+// ═══════════════════════════════════════════════════════════════
+//  Topic 32 — Calculus of Variations
+// ═══════════════════════════════════════════════════════════════
+
+// ── Variational interfaces ─────────────────────────────────────
+
+/** Result of evaluating a functional J[y] on a discretized function. */
+export interface FunctionalEvaluation {
+  /** The functional value J[y]. */
+  value: number;
+  /** Discretized first variation (gradient) at each grid point. */
+  gradient?: number[];
+}
+
+/** One step in a minimizing sequence for the direct method. */
+export interface MinimizingSequenceStep {
+  /** Step index. */
+  n: number;
+  /** Function values y_n at grid points. */
+  values: number[];
+  /** The functional value J[y_n]. */
+  functionalValue: number;
+}
+
+// ── Functional evaluation ──────────────────────────────────────
+
+/**
+ * Evaluate a functional J[y] = ∫ L(x, y, y') dx via the trapezoidal rule.
+ *
+ * @param lagrangian — L(x, y, y') evaluator
+ * @param y — discretized function values at equally spaced grid points
+ * @param dx — grid spacing
+ * @param boundaryConditions — optional fixed boundary values
+ */
+export function evaluateFunctional(
+  lagrangian: (x: number, y: number, yp: number) => number,
+  y: number[],
+  dx: number,
+  boundaryConditions?: { left: number; right: number },
+): FunctionalEvaluation {
+  const n = y.length;
+  if (n < 2) return { value: 0 };
+
+  // Enforce boundary conditions if provided
+  const yy = [...y];
+  if (boundaryConditions) {
+    yy[0] = boundaryConditions.left;
+    yy[n - 1] = boundaryConditions.right;
+  }
+
+  // Compute functional value via trapezoidal rule
+  let value = 0;
+  for (let i = 0; i < n - 1; i++) {
+    const x = i * dx;
+    const xNext = (i + 1) * dx;
+    const yp = (yy[i + 1] - yy[i]) / dx;
+    const L0 = lagrangian(x, yy[i], yp);
+    const L1 = lagrangian(xNext, yy[i + 1], yp);
+    value += 0.5 * (L0 + L1) * dx;
+  }
+
+  // Compute discretized gradient (Euler-Lagrange residual) at interior points
+  const gradient = new Array<number>(n).fill(0);
+  const eps = 1e-6;
+  for (let i = 1; i < n - 1; i++) {
+    const pert = [...yy];
+    pert[i] += eps;
+    let valPlus = 0;
+    for (let j = 0; j < n - 1; j++) {
+      const xj = j * dx;
+      const xNext = (j + 1) * dx;
+      const yp = (pert[j + 1] - pert[j]) / dx;
+      const L0 = lagrangian(xj, pert[j], yp);
+      const L1 = lagrangian(xNext, pert[j + 1], yp);
+      valPlus += 0.5 * (L0 + L1) * dx;
+    }
+    gradient[i] = (valPlus - value) / eps;
+  }
+
+  return { value, gradient };
+}
+
+// ── First variation ────────────────────────────────────────────
+
+/**
+ * Compute the first variation δJ[y; η] via finite differences:
+ *   δJ[y; η] = lim_{ε→0} (J[y + εη] − J[y]) / ε
+ *
+ * @param lagrangian — L(x, y, y') evaluator
+ * @param y — discretized function values
+ * @param eta — perturbation direction
+ * @param dx — grid spacing
+ * @param epsilon — finite-difference step (default 1e-6)
+ */
+export function computeFirstVariation(
+  lagrangian: (x: number, y: number, yp: number) => number,
+  y: number[],
+  eta: number[],
+  dx: number,
+  epsilon = 1e-6,
+): number {
+  const n = y.length;
+  const yPlus = y.map((yi, i) => yi + epsilon * eta[i]);
+  const yMinus = y.map((yi, i) => yi - epsilon * eta[i]);
+
+  let jPlus = 0;
+  let jMinus = 0;
+  for (let i = 0; i < n - 1; i++) {
+    const x = i * dx;
+    const xNext = (i + 1) * dx;
+
+    const ypPlus = (yPlus[i + 1] - yPlus[i]) / dx;
+    const L0Plus = lagrangian(x, yPlus[i], ypPlus);
+    const L1Plus = lagrangian(xNext, yPlus[i + 1], ypPlus);
+    jPlus += 0.5 * (L0Plus + L1Plus) * dx;
+
+    const ypMinus = (yMinus[i + 1] - yMinus[i]) / dx;
+    const L0Minus = lagrangian(x, yMinus[i], ypMinus);
+    const L1Minus = lagrangian(xNext, yMinus[i + 1], ypMinus);
+    jMinus += 0.5 * (L0Minus + L1Minus) * dx;
+  }
+
+  return (jPlus - jMinus) / (2 * epsilon);
+}
+
+// ── Minimizing sequence (direct method) ────────────────────────
+
+/**
+ * Generate a minimizing sequence for J[y] = ∫ L(x, y, y') dx
+ * using gradient descent on the discretized functional.
+ *
+ * @param lagrangian — L(x, y, y') evaluator
+ * @param domain — [a, b] interval
+ * @param bc — boundary conditions { left, right }
+ * @param nSteps — number of gradient descent steps
+ * @param gridSize — number of grid points (default 51)
+ */
+export function generateMinimizingSequence(
+  lagrangian: (x: number, y: number, yp: number) => number,
+  domain: [number, number],
+  bc: { left: number; right: number },
+  nSteps: number,
+  gridSize = 51,
+): MinimizingSequenceStep[] {
+  const [a, b] = domain;
+  const dx = (b - a) / (gridSize - 1);
+  const steps: MinimizingSequenceStep[] = [];
+
+  // Initialize with a straight-line interpolation between boundary values
+  let y = new Array<number>(gridSize);
+  for (let i = 0; i < gridSize; i++) {
+    const t = i / (gridSize - 1);
+    y[i] = bc.left * (1 - t) + bc.right * t;
+  }
+
+  const eval0 = evaluateFunctional(lagrangian, y, dx, bc);
+  steps.push({ n: 0, values: [...y], functionalValue: eval0.value });
+
+  const learningRate = 0.3 * dx * dx; // CFL-like stability condition
+
+  for (let step = 1; step <= nSteps; step++) {
+    const evalCur = evaluateFunctional(lagrangian, y, dx, bc);
+    const grad = evalCur.gradient ?? new Array<number>(gridSize).fill(0);
+
+    // Gradient descent on interior points
+    const yNew = [...y];
+    for (let i = 1; i < gridSize - 1; i++) {
+      yNew[i] = y[i] - learningRate * grad[i];
+    }
+    // Enforce boundary conditions
+    yNew[0] = bc.left;
+    yNew[gridSize - 1] = bc.right;
+
+    y = yNew;
+    const evalNew = evaluateFunctional(lagrangian, y, dx, bc);
+    steps.push({ n: step, values: [...y], functionalValue: evalNew.value });
+  }
+
+  return steps;
+}
+
+// ── Rayleigh quotient ──────────────────────────────────────────
+
+/**
+ * Compute the Rayleigh quotient R[u] = ∫ u'² dx / ∫ u² dx
+ * for a discretized function u on a uniform grid.
+ *
+ * @param u — discretized function values
+ * @param dx — grid spacing
+ */
+export function computeRayleighQuotientDiscrete(
+  u: number[],
+  dx: number,
+): number {
+  const n = u.length;
+  if (n < 2) return 0;
+
+  // Numerator: ∫ u'² dx (trapezoidal, using finite differences for u')
+  let num = 0;
+  for (let i = 0; i < n - 1; i++) {
+    const up = (u[i + 1] - u[i]) / dx;
+    num += up * up * dx;
+  }
+
+  // Denominator: ∫ u² dx (trapezoidal)
+  let den = 0.5 * u[0] * u[0] * dx;
+  for (let i = 1; i < n - 1; i++) {
+    den += u[i] * u[i] * dx;
+  }
+  den += 0.5 * u[n - 1] * u[n - 1] * dx;
+
+  if (den < 1e-14) return 0;
+  return num / den;
+}
