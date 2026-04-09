@@ -1,0 +1,699 @@
+---
+title: "Inner Product & Hilbert Spaces"
+subtitle: "Adding angles and orthogonality to Banach spaces — from the projection theorem and Riesz representation through orthonormal bases and the spectral theorem to RKHS, kernel methods, and Gaussian processes."
+status: "published"
+difficulty: "advanced"
+prerequisites:
+  - "banach-spaces"
+tags:
+  - "calculus"
+  - "functional-analysis"
+  - "hilbert-spaces"
+  - "inner-product"
+  - "orthogonality"
+  - "projection-theorem"
+  - "riesz-representation"
+  - "spectral-theorem"
+  - "rkhs"
+  - "kernel-methods"
+domain: "functional-analysis"
+videoId: null
+notebookPath: "notebooks/hilbert-spaces/31_hilbert_spaces.ipynb"
+githubUrl: "https://github.com/jonx0037/formalCalculus/blob/main/src/content/topics/hilbert-spaces.mdx"
+datePublished: 2026-04-22
+estimatedReadTime: 55
+abstract: "A normed space tells you how far apart points are, but not the angle between directions. An inner product adds angles, orthogonality, and projection — and these three geometric ideas unlock results of extraordinary power. The projection theorem guarantees that every point in a Hilbert space has a unique closest point in any closed convex subset. The Riesz representation theorem identifies a Hilbert space with its dual, collapsing the distinction between vectors and linear functionals. The spectral theorem decomposes compact self-adjoint operators into eigenspaces. And reproducing kernel Hilbert spaces provide the mathematical framework for every kernel method in machine learning — from SVMs through Gaussian processes to neural tangent kernels."
+formalmlConnections:
+  - topic: "kernel-methods"
+    site: "formalml"
+    relationship: "RKHS is a Hilbert space; the representer theorem is a consequence of the Riesz representation theorem. Kernel evaluation is inner-product evaluation via the reproducing property."
+  - topic: "gradient-descent"
+    site: "formalml"
+    relationship: "Proximal operators are defined via orthogonal projections in Hilbert spaces. The Riesz identification lets us interpret gradients as descent directions."
+  - topic: "generative-modeling"
+    site: "formalml"
+    relationship: "Gaussian processes operate in RKHS. The posterior mean is a projection onto a finite-dimensional subspace spanned by the kernel evaluations at observed data points."
+  - topic: "spectral-methods"
+    site: "formalml"
+    relationship: "The spectral theorem for compact self-adjoint operators is the foundation of PCA, kernel PCA, and spectral clustering."
+  - topic: "optimization-theory"
+    site: "formalml"
+    relationship: "Hilbert-space gradient descent converges because the Riesz identification turns dual-space gradients into primal-space descent directions — no dual-space bookkeeping needed."
+connections:
+  - topic: "banach-spaces"
+    relationship: "Every Hilbert space is a Banach space. Topic 30 provides normed spaces, completeness, bounded operators, and dual spaces — Topic 31 adds the inner product that makes all of these dramatically simpler."
+  - topic: "lp-spaces"
+    relationship: "L^2 is the canonical Hilbert space — the inner product generalizes the L^2 norm from Topic 27. Bessel's inequality and Parseval's identity generalize the concrete L^2 orthogonality from Fourier series."
+  - topic: "fourier-series"
+    relationship: "Fourier analysis on L^2[-π,π] is the concrete instance of the abstract Hilbert space theory developed here — trigonometric functions as an orthonormal basis, Parseval's identity as energy conservation."
+  - topic: "approximation-theory"
+    relationship: "Best L^2 approximation is orthogonal projection onto a finite-dimensional subspace. Legendre polynomials and Chebyshev polynomials are orthonormal bases for specific weighted L^2 spaces."
+  - topic: "radon-nikodym"
+    relationship: "Conditional expectation is the orthogonal projection of an L^2 random variable onto a sub-σ-algebra. The projection theorem provides the existence and uniqueness."
+  - topic: "metric-spaces"
+    relationship: "Topic 29 built the metric foundation (completeness, compactness). Topic 31 adds inner-product structure on top of the normed (Topic 30) and metric (Topic 29) layers."
+  - topic: "calculus-of-variations"
+    relationship: "The direct method of the calculus of variations operates in Hilbert (and reflexive Banach) spaces. Weak convergence, the projection theorem, and Riesz representation are all essential."
+references:
+  - type: "book"
+    title: "Introductory Functional Analysis with Applications"
+    authors: "Kreyszig"
+    year: 1978
+    note: "Chapters 3–4 (inner product spaces, Hilbert spaces). Comprehensive and accessible."
+  - type: "book"
+    title: "Functional Analysis"
+    authors: "Conway"
+    year: 1990
+    note: "Chapters 1–2 (Hilbert spaces, projection, Riesz). Clean modern treatment."
+  - type: "book"
+    title: "Functional Analysis, Sobolev Spaces and Partial Differential Equations"
+    authors: "Brezis"
+    year: 2011
+    note: "Chapter 5 (Hilbert spaces). Concise proofs with applications."
+  - type: "book"
+    title: "Real Analysis: Modern Techniques and Their Applications"
+    authors: "Folland"
+    year: 1999
+    note: "Chapter 5 (elements of functional analysis). Rigorous with measure-theoretic context."
+  - type: "book"
+    title: "Learning with Kernels"
+    authors: "Schölkopf & Smola"
+    year: 2002
+    note: "RKHS theory for machine learning. The representer theorem and kernel trick."
+---
+
+import TheoremBlock from '../../components/ui/TheoremBlock.astro';
+import ProjectionExplorer from '../../components/viz/ProjectionExplorer.tsx';
+import GramSchmidtExplorer from '../../components/viz/GramSchmidtExplorer.tsx';
+import SpectralDecompositionExplorer from '../../components/viz/SpectralDecompositionExplorer.tsx';
+import RKHSExplorer from '../../components/viz/RKHSExplorer.tsx';
+
+## 1. Overview and Motivation
+
+In a reproducing kernel Hilbert space, evaluating a function $f$ at a point $x$ is an inner product: $f(x) = \langle f, K_x \rangle$. This single identity — the **reproducing property** — is the engine behind SVMs, Gaussian processes, and kernel PCA. It works because $H$ is a *Hilbert space*, not just a Banach space. And it works because the inner product gives us something a norm alone cannot: **angles**.
+
+A norm measures length. An inner product measures both length *and* angle. Angle gives you orthogonality; orthogonality gives you projection; projection gives you everything.
+
+The arc of Track 8 is a staircase of abstraction, where each step adds one axiom and gains strictly stronger conclusions:
+
+1. **Metric spaces** ([Topic 29](/topics/metric-spaces)): distances → completeness → fixed-point theorems.
+2. **Normed/Banach spaces** ([Topic 30](/topics/banach-spaces)): length → bounded operators → Baire, UBP, Open Mapping, Closed Graph.
+3. **Inner product/Hilbert spaces** (this topic): angles → orthogonality → projection theorem, Riesz representation, spectral decomposition, RKHS.
+
+Topic 31 is where the reader adds one more axiom and gains an enormous amount of power. Where Topic 30 was algebraic machinery — Baire-powered theorems, careful epsilon-management — this topic is geometric machinery. The proofs are more visual. The projection theorem is a "closest point" argument. The Riesz representation theorem is a "find the unique vector representing a functional" argument. The spectral theorem is an eigenvalue-decomposition argument. At every turn, the geometry of orthogonality does the heavy lifting.
+
+---
+
+## 2. Inner Product Spaces
+
+<TheoremBlock type="definition" number={1} title="Inner Product">
+An **inner product** on a real vector space $H$ is a function $\langle \cdot, \cdot \rangle : H \times H \to \mathbb{R}$ satisfying:
+
+1. **Symmetry:** $\langle x, y \rangle = \langle y, x \rangle$ for all $x, y \in H$.
+2. **Linearity in the first argument:** $\langle \alpha x + \beta y, z \rangle = \alpha \langle x, z \rangle + \beta \langle y, z \rangle$ for all $x, y, z \in H$ and scalars $\alpha, \beta$.
+3. **Positive definiteness:** $\langle x, x \rangle \geq 0$ for all $x \in H$, with equality if and only if $x = 0$.
+
+Every inner product induces a norm $\|x\| = \sqrt{\langle x, x \rangle}$ and hence a metric $d(x, y) = \|x - y\|$. A vector space equipped with an inner product is called an **inner product space** (or **pre-Hilbert space**).
+</TheoremBlock>
+
+The inner product encodes geometry: the **angle** between nonzero vectors $x$ and $y$ is $\theta = \arccos\!\left(\frac{\langle x, y \rangle}{\|x\| \, \|y\|}\right)$, and two vectors are **orthogonal** when $\langle x, y \rangle = 0$. This is the geometric structure that a norm lacks.
+
+<TheoremBlock type="example" number={1} title="Euclidean Inner Product on ℝⁿ">
+The standard inner product on $\mathbb{R}^n$ is the dot product:
+
+$$\langle x, y \rangle = \sum_{i=1}^n x_i y_i$$
+
+This induces the Euclidean norm $\|x\|_2 = \sqrt{\sum x_i^2}$. The angle formula recovers the geometric angle between vectors in $\mathbb{R}^2$ and $\mathbb{R}^3$ that we know from linear algebra.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={2} title="The L² Inner Product">
+On the space of square-integrable functions $L^2[a,b]$:
+
+$$\langle f, g \rangle = \int_a^b f(x) \, g(x) \, dx$$
+
+This is the inner product that makes Fourier analysis work ([Topic 22](/topics/fourier-series)). The induced norm is $\|f\|_2 = \sqrt{\int |f|^2}$, which matches the $L^2$ norm from [Topic 27](/topics/lp-spaces). Functions are "orthogonal" when their pointwise product integrates to zero — $\sin(nx)$ and $\cos(mx)$ are orthogonal on $[-\pi, \pi]$ precisely because $\int_{-\pi}^\pi \sin(nx)\cos(mx)\,dx = 0$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={3} title="The ℓ² Inner Product">
+On the sequence space $\ell^2 = \{(x_n) : \sum |x_n|^2 < \infty\}$:
+
+$$\langle x, y \rangle = \sum_{n=1}^\infty x_n y_n$$
+
+The series converges absolutely by Cauchy-Schwarz (Theorem 1 below). This is the discrete analog of the $L^2$ inner product — it is $L^2(\mathbb{N}, \text{counting measure})$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={4} title="Weighted Inner Products">
+Given positive weights $w_1, \ldots, w_n > 0$, the **weighted inner product** on $\mathbb{R}^n$ is:
+
+$$\langle x, y \rangle_w = \sum_{i=1}^n w_i x_i y_i$$
+
+The induced norm $\|x\|_w = \sqrt{\sum w_i x_i^2}$ stretches the geometry along coordinate axes. In machine learning, the Mahalanobis distance uses a weighted inner product $\langle x, y \rangle_\Sigma = x^T \Sigma^{-1} y$ where $\Sigma$ is a covariance matrix.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={1} title="Banach Space Vocabulary Refresh">
+If you completed [Topic 30](/topics/banach-spaces) some time ago, here is a brief refresher of the key definitions we will need. A **normed space** is a vector space with a norm satisfying positive definiteness, homogeneity, and the triangle inequality ([Topic 30](/topics/banach-spaces), Definition 1). A **Banach space** is a complete normed space ([Topic 30](/topics/banach-spaces), Definition 2). A **bounded linear operator** $T: X \to Y$ satisfies $\|Tx\|_Y \leq C\|x\|_X$ for some constant $C$ ([Topic 30](/topics/banach-spaces), Definition 3). The **dual space** $X^*$ is the space of all bounded linear functionals $\varphi: X \to \mathbb{R}$ ([Topic 30](/topics/banach-spaces), Section 10). Every inner product space is a normed space (via $\|x\| = \sqrt{\langle x, x \rangle}$), and the Hilbert-space inner product will simplify the dual-space machinery of Topic 30 dramatically.
+</TheoremBlock>
+
+<figure className="my-6">
+  <img src="/images/topics/hilbert-spaces/inner-product-geometry.png" alt="Inner product geometry: signed projection, Cauchy-Schwarz cone, angle between vectors" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">The inner product ⟨x, y⟩ encodes both length (‖x‖ = √⟨x, x⟩) and angle (cos θ = ⟨x, y⟩ / ‖x‖‖y‖). Left: inner product as signed projection. Center: the Cauchy-Schwarz inequality constrains ⟨x, y⟩ to lie between −‖x‖‖y‖ and ‖x‖‖y‖. Right: orthogonality when ⟨x, y⟩ = 0.</figcaption>
+</figure>
+
+---
+
+## 3. Cauchy-Schwarz and the Parallelogram Law
+
+These are the two fundamental identities that govern inner product spaces. Every further result in this topic depends on one or both of them.
+
+<TheoremBlock type="theorem" number={1} title="Cauchy-Schwarz Inequality">
+For any vectors $x, y$ in an inner product space:
+
+$$|\langle x, y \rangle| \leq \|x\| \cdot \|y\|$$
+
+Equality holds if and only if $x$ and $y$ are linearly dependent.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+If $y = 0$, both sides are zero. Assume $y \neq 0$. For any $t \in \mathbb{R}$, the positive definiteness of the inner product gives:
+
+$$0 \leq \langle x - ty, x - ty \rangle = \|x\|^2 - 2t\langle x, y \rangle + t^2 \|y\|^2$$
+
+This is a quadratic in $t$ that is non-negative for all $t$, so its discriminant is non-positive:
+
+$$4\langle x, y \rangle^2 - 4\|x\|^2 \|y\|^2 \leq 0$$
+
+which gives $|\langle x, y \rangle| \leq \|x\| \cdot \|y\|$.
+
+For the equality case: if $x = ty$ for some scalar $t$, then $|\langle x, y \rangle| = |t| \, \|y\|^2 = \|x\| \cdot \|y\|$. Conversely, equality in the discriminant means the quadratic has a real root $t_0$, so $\|x - t_0 y\|^2 = 0$, hence $x = t_0 y$.
+</TheoremBlock>
+
+Cauchy-Schwarz is the engine that makes the angle formula well-defined: it guarantees $\frac{|\langle x, y \rangle|}{\|x\| \|y\|} \leq 1$, so the arccosine is always defined.
+
+<TheoremBlock type="theorem" number={2} title="Parallelogram Law">
+In any inner product space:
+
+$$\|x + y\|^2 + \|x - y\|^2 = 2(\|x\|^2 + \|y\|^2)$$
+
+for all vectors $x, y$.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+We expand both squared norms using the inner product:
+
+$$\|x + y\|^2 = \langle x + y, x + y \rangle = \|x\|^2 + 2\langle x, y \rangle + \|y\|^2$$
+
+$$\|x - y\|^2 = \langle x - y, x - y \rangle = \|x\|^2 - 2\langle x, y \rangle + \|y\|^2$$
+
+Adding these two equations, the cross terms $\pm 2\langle x, y \rangle$ cancel:
+
+$$\|x + y\|^2 + \|x - y\|^2 = 2\|x\|^2 + 2\|y\|^2$$
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={2} title="The Parallelogram Law Characterizes Inner Product Norms">
+The parallelogram law is not just a consequence of inner products — it *characterizes* them. A normed space $(X, \|\cdot\|)$ has a norm induced by an inner product if and only if the parallelogram law holds. When it does, the **polarization identity** recovers the inner product from the norm:
+
+$$\langle x, y \rangle = \frac{1}{4}\left(\|x + y\|^2 - \|x - y\|^2\right)$$
+
+This is why $\ell^p$ for $p \neq 2$ is a Banach space but not a Hilbert space: the $\ell^1$ and $\ell^\infty$ norms violate the parallelogram law. The $\ell^2$ norm is the *only* $\ell^p$ norm that comes from an inner product.
+</TheoremBlock>
+
+<figure className="my-6">
+  <img src="/images/topics/hilbert-spaces/parallelogram-law.png" alt="Parallelogram law satisfied in ℓ² but violated in ℓ¹ and ℓ∞" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">The parallelogram law ‖x+y‖² + ‖x−y‖² = 2(‖x‖² + ‖y‖²) holds in ℓ² (left) but fails in ℓ¹ (center) and ℓ∞ (right). Only norms satisfying this law come from inner products.</figcaption>
+</figure>
+
+---
+
+## 4. Hilbert Spaces
+
+<TheoremBlock type="definition" number={2} title="Hilbert Space">
+A **Hilbert space** is a complete inner product space — an inner product space $H$ in which every Cauchy sequence converges (in the norm induced by the inner product).
+
+Equivalently: $H$ is a Banach space whose norm satisfies the parallelogram law.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={5} title="Catalog of Hilbert Spaces">
+The following are Hilbert spaces (complete inner product spaces):
+
+- $\mathbb{R}^n$ with the standard inner product — finite-dimensional, hence automatically complete.
+- $\ell^2$ with $\langle x, y \rangle = \sum x_n y_n$ — completeness is the Riesz-Fischer theorem ([Topic 27](/topics/lp-spaces), Theorem 5) for counting measure.
+- $L^2(\mu)$ with $\langle f, g \rangle = \int fg \, d\mu$ — completeness is Riesz-Fischer for a general measure.
+- $L^2[-\pi, \pi]$ — the Hilbert space where Fourier analysis lives ([Topic 22](/topics/fourier-series)).
+
+The following are inner product spaces that are **not** Hilbert spaces (not complete):
+
+- $C[0,1]$ with $\langle f, g \rangle = \int_0^1 fg \, dx$ — not complete under this inner product because Cauchy sequences of continuous functions can converge to discontinuous $L^2$ functions.
+- The space of polynomials on $[0,1]$ with the $L^2$ inner product — not complete because polynomials are dense in $L^2$ but do not exhaust it.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={3} title="Why Hilbert Spaces Are Special">
+Every Hilbert space is a Banach space. The converse is emphatically false: $\ell^1$, $\ell^\infty$, $C[0,1]$ with the sup-norm, and $L^p$ for $p \neq 2$ are all Banach but not Hilbert — their norms violate the parallelogram law. The distinction matters because the inner product gives us orthogonality, and orthogonality gives us the projection theorem (Theorem 4), which has no analog in general Banach spaces. The Baire-powered theorems from [Topic 30](/topics/banach-spaces) (Uniform Boundedness, Open Mapping, Closed Graph) still apply — a Hilbert space is a Banach space, so all Banach-space theorems carry over — but the inner product adds an entire geometric toolkit on top.
+</TheoremBlock>
+
+---
+
+## 5. Orthogonality
+
+<TheoremBlock type="definition" number={3} title="Orthogonality and Orthogonal Complement">
+Two vectors $x, y \in H$ are **orthogonal** (written $x \perp y$) if $\langle x, y \rangle = 0$.
+
+For a subset $M \subseteq H$, the **orthogonal complement** is:
+
+$$M^\perp = \{x \in H : \langle x, m \rangle = 0 \text{ for all } m \in M\}$$
+
+$M^\perp$ is always a closed subspace of $H$, regardless of whether $M$ itself is a subspace.
+</TheoremBlock>
+
+The **Pythagorean theorem** extends to inner product spaces: if $x \perp y$, then $\|x + y\|^2 = \|x\|^2 + \|y\|^2$. This is the geometric identity that the projection theorem exploits.
+
+<TheoremBlock type="theorem" number={3} title="Orthogonal Decomposition">
+Let $M$ be a closed subspace of a Hilbert space $H$. Then every $x \in H$ can be written uniquely as:
+
+$$x = m + m^\perp$$
+
+where $m \in M$ and $m^\perp \in M^\perp$. In other words, $H = M \oplus M^\perp$ (orthogonal direct sum), and $(M^\perp)^\perp = M$.
+</TheoremBlock>
+
+This is one of the most powerful structural results in functional analysis. It says that a closed subspace of a Hilbert space has a *complement* — and not just any complement, but an orthogonal one. In general Banach spaces, closed subspaces need not have complements at all.
+
+<TheoremBlock type="example" number={6} title="Orthogonal Complement in ℝ³">
+In $\mathbb{R}^3$ with the standard inner product, let $M$ be the $xy$-plane: $M = \{(x, y, 0) : x, y \in \mathbb{R}\}$. Then $M^\perp = \{(0, 0, z) : z \in \mathbb{R}\}$ — the $z$-axis. Every vector $(a, b, c) = (a, b, 0) + (0, 0, c)$ decomposes uniquely into its $M$ and $M^\perp$ components.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={7} title="Orthogonal Complement in L²">
+In $L^2[-\pi, \pi]$, let $M = \{f \in L^2 : f \text{ is even}\}$ (even functions). Then $M^\perp = \{f \in L^2 : f \text{ is odd}\}$ (odd functions). Every $L^2$ function decomposes uniquely as $f = f_{\text{even}} + f_{\text{odd}}$ where $f_{\text{even}}(x) = \frac{f(x) + f(-x)}{2}$ and $f_{\text{odd}}(x) = \frac{f(x) - f(-x)}{2}$.
+</TheoremBlock>
+
+<figure className="my-6">
+  <img src="/images/topics/hilbert-spaces/orthogonal-projection.png" alt="Orthogonal projection in ℝ², ℝ³, and function space" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">Orthogonal projection: in ℝ² (left), ℝ³ (center), and a schematic for function spaces (right). The residual x − P_M(x) is always perpendicular to the subspace M.</figcaption>
+</figure>
+
+---
+
+## 6. The Projection Theorem
+
+This is the central result of the topic. The projection theorem says: in a Hilbert space, every point has a unique closest point in any closed convex subset — and when the subset is a subspace, the closest point is the orthogonal projection.
+
+<TheoremBlock type="theorem" number={4} title="Projection Theorem">
+Let $H$ be a Hilbert space and $C \subseteq H$ a nonempty, closed, convex subset. For every $x \in H$, there exists a unique $p \in C$ such that:
+
+$$\|x - p\| = \inf_{c \in C} \|x - c\| = d(x, C)$$
+
+When $C = M$ is a closed subspace, the minimizer $p$ is characterized by the orthogonality condition: $\langle x - p, m \rangle = 0$ for all $m \in M$.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+We prove existence, uniqueness, and the orthogonality characterization.
+
+**Step 1. Setup.** Let $d = \inf_{c \in C} \|x - c\|$. Choose a minimizing sequence $(c_n) \subset C$ with $\|x - c_n\| \to d$.
+
+**Step 2. The minimizing sequence is Cauchy.** Apply the parallelogram law to $u = x - c_n$ and $v = x - c_m$:
+
+$$\|u + v\|^2 + \|u - v\|^2 = 2(\|u\|^2 + \|v\|^2)$$
+
+The left side involves $u + v = 2x - c_n - c_m$ and $u - v = c_m - c_n$. Since $C$ is convex, $\frac{c_n + c_m}{2} \in C$, so $\|x - \frac{c_n + c_m}{2}\| \geq d$, which gives $\|u + v\| = 2\|x - \frac{c_n + c_m}{2}\| \geq 2d$. Thus:
+
+$$\|c_n - c_m\|^2 = 2\|x - c_n\|^2 + 2\|x - c_m\|^2 - \|2x - c_n - c_m\|^2$$
+
+$$\leq 2\|x - c_n\|^2 + 2\|x - c_m\|^2 - 4d^2$$
+
+Since $\|x - c_n\|^2 \to d^2$ and $\|x - c_m\|^2 \to d^2$, the right side $\to 2d^2 + 2d^2 - 4d^2 = 0$. So $(c_n)$ is Cauchy.
+
+**Step 3. Existence.** Since $H$ is complete and $C$ is closed, the Cauchy sequence $(c_n)$ converges to some $p \in C$. Continuity of the norm gives $\|x - p\| = \lim \|x - c_n\| = d$.
+
+**Step 4. Uniqueness.** If $p, q \in C$ both achieve the minimum $d$, apply the parallelogram law to $u = x - p$ and $v = x - q$:
+
+$$\|p - q\|^2 = 2\|x - p\|^2 + 2\|x - q\|^2 - \|2x - p - q\|^2 \leq 2d^2 + 2d^2 - 4d^2 = 0$$
+
+So $p = q$.
+
+**Step 5. Orthogonality (when $C = M$ is a subspace).** Suppose $p \in M$ is the closest point to $x$. For any $m \in M$ and $t \in \mathbb{R}$, $p + tm \in M$, so:
+
+$$\|x - p\|^2 \leq \|x - p - tm\|^2 = \|x - p\|^2 - 2t\langle x - p, m \rangle + t^2 \|m\|^2$$
+
+This gives $0 \leq -2t\langle x - p, m \rangle + t^2\|m\|^2$ for all $t$. Taking $t = \frac{\langle x - p, m \rangle}{\|m\|^2}$ (assuming $m \neq 0$) gives $\langle x - p, m \rangle^2 \leq 0$, hence $\langle x - p, m \rangle = 0$.
+</TheoremBlock>
+
+The parallelogram law is essential in Step 2. In a Banach space without an inner product (where the parallelogram law fails), the closest point may not exist or may not be unique. This is the fundamental reason Hilbert spaces are geometrically better behaved than general Banach spaces.
+
+<TheoremBlock type="definition" number={4} title="Orthogonal Projection Operator">
+Let $M$ be a closed subspace of a Hilbert space $H$. The **orthogonal projection** $P_M : H \to M$ maps each $x \in H$ to its unique closest point $P_M(x) \in M$. It satisfies:
+
+1. $P_M$ is linear and bounded with $\|P_M\| = 1$ (unless $M = \{0\}$).
+2. $P_M^2 = P_M$ (idempotent: projecting twice is the same as projecting once).
+3. $P_M^* = P_M$ (self-adjoint: $\langle P_M x, y \rangle = \langle x, P_M y \rangle$).
+4. $\ker(P_M) = M^\perp$ and $\text{range}(P_M) = M$.
+5. $I - P_M = P_{M^\perp}$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={8} title="Projection in ℝⁿ">
+In $\mathbb{R}^n$, if $M$ is the span of an orthonormal set $\{e_1, \ldots, e_k\}$, then:
+
+$$P_M(x) = \sum_{j=1}^k \langle x, e_j \rangle \, e_j$$
+
+The residual is $x - P_M(x) = \sum_{j=k+1}^n \langle x, e_j \rangle \, e_j$ (where $\{e_{k+1}, \ldots, e_n\}$ extends to an ONB of $\mathbb{R}^n$). The Pythagorean theorem gives $\|x\|^2 = \|P_M(x)\|^2 + \|x - P_M(x)\|^2$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={9} title="Best L² Approximation as Projection">
+Finding the best $L^2$ approximation to a function $f$ by polynomials of degree $\leq n$ is exactly orthogonal projection onto the $(n+1)$-dimensional subspace $\Pi_n \subset L^2$. The error $f - P_{\Pi_n}(f)$ is orthogonal to every polynomial of degree $\leq n$. When we use the Legendre polynomials as an orthonormal basis for $\Pi_n$ on $[-1,1]$, the projection formula becomes:
+
+$$P_{\Pi_n}(f) = \sum_{k=0}^n \langle f, P_k \rangle \, P_k$$
+
+This is best approximation in the $L^2$ sense, developed abstractly in [Topic 20](/topics/approximation-theory) and now revealed as a special case of the projection theorem.
+</TheoremBlock>
+
+<ProjectionExplorer client:visible />
+
+<figure className="my-6">
+  <img src="/images/topics/hilbert-spaces/projection-theorem.png" alt="Projection theorem: closest point, variational characterization, projection operator" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">The projection theorem in three views: closest point in a convex set (left), the variational characterization via orthogonality (center), and the projection operator P_M as a linear map (right).</figcaption>
+</figure>
+
+---
+
+## 7. Orthonormal Bases
+
+<TheoremBlock type="definition" number={5} title="Orthonormal System and Orthonormal Basis">
+An **orthonormal system** (ONS) in $H$ is a set $\{e_\alpha\}_{\alpha \in A}$ such that $\langle e_\alpha, e_\beta \rangle = \delta_{\alpha\beta}$ (each vector has unit norm and distinct vectors are orthogonal).
+
+An **orthonormal basis** (ONB) is a maximal orthonormal system — equivalently, an ONS $\{e_\alpha\}$ such that $\overline{\text{span}}\{e_\alpha\} = H$ (the closed linear span is all of $H$).
+
+An ONB is not a Hamel basis (which requires every vector to be a *finite* linear combination). An ONB allows *infinite* linear combinations — series that converge in the norm.
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={5} title="Gram-Schmidt Orthonormalization">
+Given a finite or countably infinite linearly independent set $\{v_1, v_2, \ldots\}$ in an inner product space, the Gram-Schmidt process produces an orthonormal set $\{e_1, e_2, \ldots\}$ with the property that $\text{span}\{e_1, \ldots, e_k\} = \text{span}\{v_1, \ldots, v_k\}$ for every $k$.
+
+The algorithm: set $u_1 = v_1$, $e_1 = u_1/\|u_1\|$. For $k \geq 2$:
+
+$$u_k = v_k - \sum_{j=1}^{k-1} \langle v_k, e_j \rangle \, e_j, \quad e_k = \frac{u_k}{\|u_k\|}$$
+
+Each $u_k$ is obtained by subtracting the projection of $v_k$ onto the span of $\{e_1, \ldots, e_{k-1}\}$. What remains is the component of $v_k$ orthogonal to the previous basis vectors.
+</TheoremBlock>
+
+<GramSchmidtExplorer client:visible />
+
+<TheoremBlock type="theorem" number={6} title="Bessel's Inequality">
+Let $\{e_k\}_{k=1}^\infty$ be an orthonormal system in a Hilbert space $H$. For every $x \in H$:
+
+$$\sum_{k=1}^\infty |\langle x, e_k \rangle|^2 \leq \|x\|^2$$
+
+The coefficients $c_k = \langle x, e_k \rangle$ are called the **Fourier coefficients** of $x$ with respect to the ONS.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+For any finite $N$, let $P_N x = \sum_{k=1}^N \langle x, e_k \rangle \, e_k$ be the projection of $x$ onto $\text{span}\{e_1, \ldots, e_N\}$. By orthogonality of the residual:
+
+$$\|x\|^2 = \|P_N x\|^2 + \|x - P_N x\|^2 \geq \|P_N x\|^2$$
+
+Now $\|P_N x\|^2 = \sum_{k=1}^N |\langle x, e_k \rangle|^2$ (because the $e_k$ are orthonormal). So:
+
+$$\sum_{k=1}^N |\langle x, e_k \rangle|^2 \leq \|x\|^2$$
+
+This holds for every $N$, so the series $\sum_{k=1}^\infty |\langle x, e_k \rangle|^2$ converges and is bounded by $\|x\|^2$.
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={7} title="Parseval's Identity">
+Let $\{e_k\}_{k=1}^\infty$ be an orthonormal basis for a Hilbert space $H$. Then for every $x \in H$:
+
+$$\sum_{k=1}^\infty |\langle x, e_k \rangle|^2 = \|x\|^2$$
+
+Equivalently, $x = \sum_{k=1}^\infty \langle x, e_k \rangle \, e_k$ (convergence in norm).
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+Bessel's inequality gives $\leq$. For the reverse, since $\{e_k\}$ is an ONB, the closed span of $\{e_k\}$ is all of $H$. So for every $\epsilon > 0$, there exists $N$ and scalars $a_1, \ldots, a_N$ with $\|x - \sum_{k=1}^N a_k e_k\| < \epsilon$.
+
+The projection $P_N x = \sum_{k=1}^N \langle x, e_k \rangle \, e_k$ minimizes the distance from $x$ to $\text{span}\{e_1, \ldots, e_N\}$ (by the projection theorem), so $\|x - P_N x\| \leq \|x - \sum a_k e_k\| < \epsilon$.
+
+Therefore $\|x - P_N x\|^2 = \|x\|^2 - \sum_{k=1}^N |\langle x, e_k \rangle|^2 < \epsilon^2$, and since $\epsilon$ is arbitrary, $\sum_{k=1}^\infty |\langle x, e_k \rangle|^2 = \|x\|^2$.
+</TheoremBlock>
+
+Parseval's identity is a conservation law: it says the "energy" of $x$ is fully captured by its Fourier coefficients. For $L^2[-\pi, \pi]$ with the trigonometric ONB, Parseval becomes $\frac{1}{\pi}\int_{-\pi}^\pi |f|^2 = \frac{a_0^2}{2} + \sum_{n=1}^\infty (a_n^2 + b_n^2)$ — the concrete version from [Topic 22](/topics/fourier-series).
+
+<TheoremBlock type="proposition" number={1} title="Separable Hilbert Spaces Have Countable ONBs">
+A Hilbert space $H$ is separable (has a countable dense subset) if and only if it admits a countable orthonormal basis. Every separable infinite-dimensional Hilbert space is isometrically isomorphic to $\ell^2$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={10} title="Fourier Basis as an Orthonormal Basis">
+The trigonometric system $\{1/\sqrt{2\pi}, \cos(nx)/\sqrt{\pi}, \sin(nx)/\sqrt{\pi}\}_{n \geq 1}$ is an orthonormal basis for $L^2[-\pi, \pi]$. Parseval's identity in this basis is the classical result that the Fourier coefficients capture all the $L^2$ energy of the function. This concrete Fourier theory from [Topic 22](/topics/fourier-series) is a special case of the abstract Hilbert space theory developed here.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={4} title="All Separable Hilbert Spaces Are the Same">
+Proposition 1 says something remarkable: up to isometric isomorphism, there is only one separable infinite-dimensional Hilbert space — $\ell^2$. Whether you work with $L^2[0,1]$, $L^2(\mathbb{R})$ (with respect to a finite measure), or any other separable Hilbert space, the abstract structure is the same. The isomorphism maps any ONB to the standard basis of $\ell^2$. This universality is unique to Hilbert spaces — for Banach spaces, $L^p$ and $\ell^p$ are genuinely different spaces when $p \neq 2$.
+</TheoremBlock>
+
+<figure className="my-6">
+  <img src="/images/topics/hilbert-spaces/gram-schmidt.png" alt="Gram-Schmidt orthonormalization step by step in ℝ³" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">Gram-Schmidt orthonormalization in ℝ³: at each step, subtract the projection onto the existing orthonormal vectors (orange dashed), then normalize the residual.</figcaption>
+</figure>
+
+<figure className="my-6">
+  <img src="/images/topics/hilbert-spaces/parseval-energy.png" alt="Parseval's identity and Bessel's inequality" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">Parseval's identity: the sum of squared Fourier coefficients equals ‖f‖². Bessel's inequality with partial sums — the sum converges monotonically to ‖f‖².</figcaption>
+</figure>
+
+---
+
+## 8. The Riesz Representation Theorem
+
+The Riesz representation theorem is the most important structural result about Hilbert spaces. It says that the dual space $H^*$ (all bounded linear functionals on $H$) is isometrically isomorphic to $H$ itself — every bounded linear functional is "represented" by a unique vector via the inner product.
+
+<TheoremBlock type="theorem" number={8} title="Riesz Representation Theorem">
+Let $H$ be a Hilbert space and $\varphi : H \to \mathbb{R}$ a bounded linear functional. Then there exists a unique $y \in H$ such that:
+
+$$\varphi(x) = \langle x, y \rangle \quad \text{for all } x \in H$$
+
+Moreover, $\|\varphi\|_{H^*} = \|y\|_H$. The map $\varphi \mapsto y$ is a linear isometric isomorphism $H^* \to H$ (in the real case; conjugate-linear in the complex case).
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+**Step 1. The kernel of $\varphi$.** If $\varphi = 0$, take $y = 0$. Assume $\varphi \neq 0$. The kernel $M = \ker(\varphi) = \{x : \varphi(x) = 0\}$ is a closed subspace of $H$ (closed because $\varphi$ is continuous).
+
+**Step 2. The codimension-1 decomposition.** Since $\varphi \neq 0$, $M \neq H$. By the orthogonal decomposition theorem (Theorem 3), $H = M \oplus M^\perp$. Since $\varphi$ is a nonzero functional, $\dim(M^\perp) = 1$ — pick any $z \in M^\perp$ with $z \neq 0$.
+
+**Step 3. Construct the representing vector.** Set $y = \frac{\overline{\varphi(z)}}{\|z\|^2} z$ (in the real case, $\overline{\varphi(z)} = \varphi(z)$). For any $x \in H$, write $x = m + \alpha z$ where $m \in M$ and $\alpha = \frac{\varphi(x)}{\varphi(z)}$.
+
+Then:
+
+$$\langle x, y \rangle = \langle m + \alpha z, \frac{\varphi(z)}{\|z\|^2} z \rangle = \alpha \frac{\varphi(z)}{\|z\|^2} \|z\|^2 = \alpha \varphi(z) = \varphi(x)$$
+
+**Step 4. Uniqueness.** If $\langle x, y_1 \rangle = \langle x, y_2 \rangle$ for all $x$, then $\langle x, y_1 - y_2 \rangle = 0$ for all $x$. Taking $x = y_1 - y_2$ gives $\|y_1 - y_2\|^2 = 0$, so $y_1 = y_2$.
+
+**Step 5. Isometry.** $\|\varphi\| = \sup_{\|x\| \leq 1} |\langle x, y \rangle| = \|y\|$ by Cauchy-Schwarz, with equality achieved at $x = y/\|y\|$.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={5} title="Contrast with Banach-Space Duality">
+In [Topic 30](/topics/banach-spaces), computing the dual space $X^*$ required the full Hahn-Banach machinery, and the dual of $L^p$ required the Radon-Nikodym theorem ([Topic 28](/topics/radon-nikodym)). For Hilbert spaces, the Riesz representation theorem replaces all of this with a single, geometric argument based on the projection theorem. The dual of $H$ is $H$ itself — there is no separate "dual space" to worry about. This is why optimization in Hilbert spaces (gradient descent, proximal methods) is fundamentally simpler than in general Banach spaces (mirror descent, Fenchel conjugates) — the gradient *is* a vector in the same space, not an element of a dual space that needs to be mapped back.
+</TheoremBlock>
+
+<TheoremBlock type="corollary" number={1} title="Hilbert Spaces Are Reflexive">
+Every Hilbert space is reflexive: the canonical embedding $J: H \to H^{**}$ is surjective. This follows immediately from the Riesz representation theorem applied twice: $H \cong H^*$ and $H^* \cong H^{**}$.
+
+Reflexivity was an open question for general Banach spaces in [Topic 30](/topics/banach-spaces) (Remark 7). For Hilbert spaces, it is an immediate corollary.
+</TheoremBlock>
+
+<figure className="my-6">
+  <img src="/images/topics/hilbert-spaces/riesz-representation.png" alt="Riesz representation: functional as hyperplane, representing vector, H* ≅ H" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">The Riesz representation theorem: a bounded linear functional φ defines a hyperplane ker(φ) (left), the representing vector y is the normal to this hyperplane (center), and the identification H* ≅ H collapses the distinction between vectors and functionals (right).</figcaption>
+</figure>
+
+---
+
+## 9. Compact Operators and the Spectral Theorem
+
+<TheoremBlock type="definition" number={6} title="Compact Operator">
+A bounded linear operator $T: H \to H$ is **compact** if it maps every bounded set to a relatively compact set (a set whose closure is compact). Equivalently, $T$ maps bounded sequences to sequences with convergent subsequences.
+
+Compact operators are the "almost finite-dimensional" operators. They can be approximated by finite-rank operators. In finite dimensions, every linear operator is compact.
+</TheoremBlock>
+
+<TheoremBlock type="definition" number={7} title="Self-Adjoint Operator">
+A bounded linear operator $T: H \to H$ is **self-adjoint** (or **symmetric**) if:
+
+$$\langle Tx, y \rangle = \langle x, Ty \rangle \quad \text{for all } x, y \in H$$
+
+Self-adjoint operators are the infinite-dimensional generalization of symmetric matrices. Their eigenvalues are real, and eigenvectors for distinct eigenvalues are orthogonal.
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={9} title="Spectral Theorem for Compact Self-Adjoint Operators">
+Let $T: H \to H$ be a compact self-adjoint operator on a Hilbert space $H$. Then:
+
+1. The eigenvalues of $T$ are real, and form a sequence $(\lambda_n)$ converging to $0$ (or are finitely many).
+2. Eigenvectors corresponding to distinct eigenvalues are orthogonal.
+3. $H = \ker(T) \oplus \overline{\bigoplus_n E_{\lambda_n}}$, where $E_{\lambda_n} = \ker(T - \lambda_n I)$ are the eigenspaces.
+4. For every $x \in H$:
+
+$$Tx = \sum_n \lambda_n \langle x, e_n \rangle \, e_n$$
+
+where $\{e_n\}$ is an orthonormal basis of eigenvectors for $(\ker T)^\perp$, with $Te_n = \lambda_n e_n$.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+**Step 1. Eigenvalues are real.** If $Tx = \lambda x$ with $x \neq 0$, then $\lambda \|x\|^2 = \langle Tx, x \rangle = \langle x, Tx \rangle = \overline{\lambda} \|x\|^2$, so $\lambda = \overline{\lambda} \in \mathbb{R}$.
+
+**Step 2. Eigenvectors for distinct eigenvalues are orthogonal.** If $Tx = \lambda x$ and $Ty = \mu y$ with $\lambda \neq \mu$, then $\lambda \langle x, y \rangle = \langle Tx, y \rangle = \langle x, Ty \rangle = \mu \langle x, y \rangle$, so $(\lambda - \mu)\langle x, y \rangle = 0$, giving $\langle x, y \rangle = 0$.
+
+**Step 3. The first eigenvalue exists via the Rayleigh quotient.** Define $\|T\| = \sup_{\|x\|=1} |\langle Tx, x \rangle|$ (which equals the operator norm for self-adjoint $T$). There exists a sequence $(x_n)$ on the unit sphere with $|\langle Tx_n, x_n \rangle| \to \|T\|$. By compactness, $(Tx_n)$ has a convergent subsequence. One shows the subsequence of $(x_n)$ converges to an eigenvector $e_1$ with eigenvalue $\lambda_1 = \pm\|T\|$.
+
+**Step 4. Induction on orthogonal complements.** The subspace $\{e_1\}^\perp$ is invariant under $T$ (because $T$ is self-adjoint). Restrict $T$ to $\{e_1\}^\perp$ — the restriction is still compact and self-adjoint — and apply Step 3 to find $\lambda_2, e_2$. Continue inductively.
+
+**Step 5. Eigenvalues converge to 0.** If the eigenvalues $(\lambda_n)$ do not converge to 0, there exists $\epsilon > 0$ and a subsequence with $|\lambda_{n_k}| \geq \epsilon$. The eigenvectors $e_{n_k}$ are orthonormal, so $\|Te_{n_k} - Te_{n_j}\|^2 = \lambda_{n_k}^2 + \lambda_{n_j}^2 \geq 2\epsilon^2$ — the sequence $(Te_{n_k})$ has no convergent subsequence, contradicting compactness of $T$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={11} title="Spectral Decomposition of a Symmetric Matrix">
+A $2 \times 2$ symmetric matrix $A = \begin{pmatrix} a & b \\ b & c \end{pmatrix}$ has eigenvalues $\lambda_{1,2} = \frac{(a+c) \pm \sqrt{(a-c)^2 + 4b^2}}{2}$ with orthogonal eigenvectors. The spectral decomposition is $A = \lambda_1 v_1 v_1^T + \lambda_2 v_2 v_2^T$. The unit circle maps to an ellipse with semi-axes $|\lambda_1|$ and $|\lambda_2|$ along the eigenvector directions. The rank-1 approximation $\lambda_1 v_1 v_1^T$ is the best rank-1 approximation in the operator norm (Eckart-Young theorem) — this is PCA in finite dimensions.
+</TheoremBlock>
+
+<SpectralDecompositionExplorer client:visible />
+
+<TheoremBlock type="remark" number={6} title="Beyond Compact Self-Adjoint">
+The spectral theorem for compact self-adjoint operators is a stepping stone to the general spectral theorem for bounded (or unbounded) self-adjoint operators, which replaces the discrete eigenvalue sum with a spectral integral $T = \int \lambda \, dE(\lambda)$ over a projection-valued measure. This general version — due to von Neumann — is essential for quantum mechanics (where observables are self-adjoint operators) but is beyond the scope of this topic. We note only that our compact case captures the most common finite-dimensional intuition: diagonalization with orthogonal eigenvectors.
+</TheoremBlock>
+
+<figure className="my-6">
+  <img src="/images/topics/hilbert-spaces/spectral-decomposition.png" alt="Spectral decomposition: unit circle image, eigenvalue bar chart, rank-k approximation" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">Spectral decomposition of a symmetric matrix: the unit circle maps to an ellipse whose axes are the eigenvectors (left), eigenvalues as a bar chart (center), and rank-k approximation convergence (right).</figcaption>
+</figure>
+
+---
+
+## 10. Reproducing Kernel Hilbert Spaces
+
+This section is the strongest bridge between Hilbert space theory and machine learning. A reproducing kernel Hilbert space (RKHS) is a Hilbert space of functions in which "evaluate the function at a point" is a continuous operation — and by the Riesz representation theorem, evaluation at each point is an inner product with a special element.
+
+<TheoremBlock type="definition" number={8} title="Reproducing Kernel Hilbert Space">
+A **reproducing kernel Hilbert space** (RKHS) is a Hilbert space $H$ of functions $f: \mathcal{X} \to \mathbb{R}$ such that for every $x \in \mathcal{X}$, the evaluation functional $\delta_x : f \mapsto f(x)$ is a bounded linear functional on $H$.
+
+By the Riesz representation theorem (Theorem 8), there exists a unique $K_x \in H$ such that $f(x) = \langle f, K_x \rangle$ for all $f \in H$. The function $K : \mathcal{X} \times \mathcal{X} \to \mathbb{R}$ defined by $K(x, y) = \langle K_x, K_y \rangle = K_y(x)$ is called the **reproducing kernel** of $H$.
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={10} title="The Reproducing Property">
+Let $H$ be an RKHS with kernel $K$. Then for every $f \in H$ and every $x \in \mathcal{X}$:
+
+$$f(x) = \langle f, K(\cdot, x) \rangle_H$$
+
+This is the **reproducing property**: evaluating $f$ at $x$ is the same as taking the inner product of $f$ with the kernel function $K(\cdot, x)$.
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={11} title="Moore-Aronszajn Theorem">
+For every positive-definite kernel $K : \mathcal{X} \times \mathcal{X} \to \mathbb{R}$ (meaning $\sum_{i,j} c_i c_j K(x_i, x_j) \geq 0$ for all finite sets of points and coefficients), there exists a unique RKHS $H_K$ with $K$ as its reproducing kernel.
+
+*Proof sketch.* Start with the pre-Hilbert space of finite linear combinations $\sum_i c_i K(\cdot, x_i)$ with inner product $\langle \sum c_i K(\cdot, x_i), \sum d_j K(\cdot, y_j) \rangle = \sum_{i,j} c_i d_j K(x_i, y_j)$. Positive-definiteness of $K$ ensures this inner product is well-defined and positive. Complete the space to get $H_K$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={12} title="Common Kernels and Their RKHS">
+- **Linear kernel:** $K(x, y) = x \cdot y$. The RKHS is the space of linear functions.
+- **Polynomial kernel (degree $d$):** $K(x, y) = (1 + x \cdot y)^d$. The RKHS consists of polynomials of degree $\leq d$.
+- **Gaussian (RBF) kernel:** $K(x, y) = \exp(-\|x - y\|^2 / 2\sigma^2)$. The RKHS is an infinite-dimensional space of smooth functions that is dense in $L^2$ — this kernel is **universal**.
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={12} title="Representer Theorem">
+Let $H_K$ be an RKHS with kernel $K$, and let $\{(x_i, y_i)\}_{i=1}^n$ be training data. The minimizer of the regularized empirical risk:
+
+$$f^* = \arg\min_{f \in H_K} \sum_{i=1}^n \ell(f(x_i), y_i) + \lambda \|f\|_{H_K}^2$$
+
+(where $\ell$ is any loss function and $\lambda > 0$) lies in the finite-dimensional subspace spanned by the kernel evaluations at training points:
+
+$$f^* = \sum_{i=1}^n \alpha_i K(\cdot, x_i)$$
+
+for some coefficients $\alpha_1, \ldots, \alpha_n \in \mathbb{R}$.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+Decompose $f = f_\parallel + f_\perp$ where $f_\parallel \in \text{span}\{K(\cdot, x_1), \ldots, K(\cdot, x_n)\}$ and $f_\perp \perp K(\cdot, x_i)$ for all $i$ (using the projection theorem).
+
+By the reproducing property, $f(x_i) = \langle f, K(\cdot, x_i) \rangle = \langle f_\parallel, K(\cdot, x_i) \rangle + \langle f_\perp, K(\cdot, x_i) \rangle = f_\parallel(x_i) + 0 = f_\parallel(x_i)$.
+
+So the loss $\sum \ell(f(x_i), y_i)$ depends only on $f_\parallel$. Meanwhile, $\|f\|^2 = \|f_\parallel\|^2 + \|f_\perp\|^2 \geq \|f_\parallel\|^2$. Therefore setting $f_\perp = 0$ does not increase the loss and strictly decreases the regularization unless $f_\perp = 0$ already. The minimizer has $f_\perp = 0$, hence $f^* \in \text{span}\{K(\cdot, x_i)\}$.
+</TheoremBlock>
+
+The representer theorem is the mathematical foundation of kernel methods in machine learning. It says that even though $H_K$ may be infinite-dimensional (as for the Gaussian kernel), the optimal function lives in a finite-dimensional subspace whose dimension is the number of training points — not the dimension of $H_K$.
+
+<TheoremBlock type="remark" number={7} title="Why the Representer Theorem Matters for ML">
+The representer theorem turns an infinite-dimensional optimization problem into a finite-dimensional one. Instead of searching over all functions in $H_K$, we search over $n$ coefficients $\alpha_1, \ldots, \alpha_n$. The kernel trick then allows us to compute everything — predictions, regularization, gradients — using only kernel evaluations $K(x_i, x_j)$, without ever constructing the (possibly infinite-dimensional) feature map explicitly. This is why SVMs, Gaussian processes, and kernel PCA scale with the number of training points rather than the dimension of the feature space. See <a href="https://formalml.com/topics/kernel-methods" target="_blank" rel="noopener noreferrer">Kernel Methods</a> on formalML for the full development.
+</TheoremBlock>
+
+<RKHSExplorer client:visible />
+
+---
+
+## 11. Connections to ML
+
+<TheoremBlock type="example" number={13} title="Kernel Methods and SVMs">
+Support vector machines solve a classification problem by finding a maximum-margin hyperplane in an RKHS. The SVM dual problem involves only kernel evaluations $K(x_i, x_j)$ — the representer theorem guarantees the optimal classifier is $f^*(x) = \sum_i \alpha_i K(x_i, x)$, where the $\alpha_i$ are the Lagrange multipliers (support vector coefficients). See <a href="https://formalml.com/topics/kernel-methods" target="_blank" rel="noopener noreferrer">Kernel Methods</a> on formalML.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={14} title="Gaussian Processes as Projections in RKHS">
+A Gaussian process (GP) prior on functions induces an RKHS. The GP posterior mean at a test point $x^*$, given training data, is the orthogonal projection of $K(\cdot, x^*)$ onto the subspace $\text{span}\{K(\cdot, x_1), \ldots, K(\cdot, x_n)\}$. The posterior variance measures the squared distance from $K(\cdot, x^*)$ to this subspace — it is $K(x^*, x^*) - k^T (K + \sigma^2 I)^{-1} k$ where $k_i = K(x^*, x_i)$. See <a href="https://formalml.com/topics/generative-modeling" target="_blank" rel="noopener noreferrer">Generative Modeling</a> on formalML.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={15} title="Proximal Operators as Projections">
+The proximal operator $\text{prox}_f(x) = \arg\min_y \{f(y) + \frac{1}{2}\|y - x\|^2\}$ is a generalization of orthogonal projection. When $f = \iota_C$ is the indicator function of a closed convex set $C$, $\text{prox}_f(x) = P_C(x)$ — exactly the projection from Theorem 4. Proximal gradient descent, ISTA/FISTA, and ADMM all use projections in Hilbert spaces as their core operations. See <a href="https://formalml.com/topics/optimization-theory" target="_blank" rel="noopener noreferrer">Optimization Theory</a> on formalML.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={16} title="Attention as Projection">
+In the transformer attention mechanism, the output for a query $q$ is $\text{Attention}(q) = \sum_i \text{softmax}(\langle q, k_i \rangle) v_i$ — a weighted combination of values $v_i$, where the weights are inner-product similarities between the query and keys. This is a "soft projection" of $q$ onto the subspace spanned by keys, with the inner product determining the projection weights. Standard orthogonal projection is the "hard" limit as the softmax temperature goes to zero.
+</TheoremBlock>
+
+<figure className="my-6">
+  <img src="/images/topics/hilbert-spaces/ml-connections-31.png" alt="ML connections: SVM, GP, proximal operators, attention" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">Hilbert spaces in ML: (a) SVM kernel trick — classification via a hyperplane in RKHS, (b) GP posterior as projection in RKHS, (c) proximal operator as generalized projection, (d) attention as soft projection via inner products.</figcaption>
+</figure>
+
+---
+
+## 12. Computational Notes
+
+All of the algorithms in this topic have efficient numerical implementations.
+
+**Inner products and norms.** In NumPy: `np.dot(x, y)` or `x @ y` for the Euclidean inner product, `np.linalg.norm(x)` for the norm. For weighted inner products: `np.dot(w * x, y)`.
+
+**Projection.** Onto a subspace with orthonormal basis $E$ (columns are ONB vectors): `P = E @ E.T`, then `proj = P @ x`. For a general basis, Gram-Schmidt first or use the normal equations: `proj = E @ np.linalg.solve(E.T @ E, E.T @ x)`.
+
+**Gram-Schmidt.** NumPy: `np.linalg.qr(V)` computes the QR decomposition, where $Q$ contains the orthonormalized vectors. For step-by-step visualization, implement the loop explicitly as in the notebook.
+
+**Kernel methods.** Build the Gram matrix $K_{ij} = K(x_i, x_j)$, solve `alpha = np.linalg.solve(K + lambda * I, y)`, predict via `f_star = K_test @ alpha`.
+
+**Eigendecomposition.** For a symmetric matrix: `eigenvalues, eigenvectors = np.linalg.eigh(A)`. Use `eigh` (not `eig`) for symmetric matrices — it guarantees real eigenvalues and orthogonal eigenvectors.
+
+---
+
+## 13. Connections and Further Reading
+
+| Topic | Connection |
+|-------|-----------|
+| [Metric Spaces](/topics/metric-spaces) | Completeness and compactness foundations. Inner product spaces add geometry to the metric layer. |
+| [Banach Spaces](/topics/banach-spaces) | Every Hilbert space is Banach. The inner product replaces Baire-powered arguments with projection-based ones. |
+| [$L^p$ Spaces](/topics/lp-spaces) | $L^2$ is the canonical Hilbert space. Duality $(L^p)^* \cong L^q$ becomes the simpler $H^* \cong H$ via Riesz. |
+| [Fourier Series](/topics/fourier-series) | Trigonometric functions as an ONB for $L^2[-\pi, \pi]$. Parseval's identity as energy conservation. |
+| [Approximation Theory](/topics/approximation-theory) | Best $L^2$ approximation = orthogonal projection. Legendre polynomials as an ONB. |
+| [Radon-Nikodym](/topics/radon-nikodym) | Conditional expectation as $L^2$ projection onto a sub-$\sigma$-algebra. |
+| <a href="https://formalml.com/topics/kernel-methods" target="_blank" rel="noopener noreferrer">Kernel Methods</a> (formalML) | RKHS is a Hilbert space. Representer theorem via Riesz. |
+| <a href="https://formalml.com/topics/gradient-descent" target="_blank" rel="noopener noreferrer">Gradient Descent</a> (formalML) | Riesz identification: gradients as descent directions in the primal space. |
+| <a href="https://formalml.com/topics/spectral-methods" target="_blank" rel="noopener noreferrer">Spectral Methods</a> (formalML) | PCA and spectral clustering via the spectral theorem. |
+
+---
+
+## 14. Summary
+
+| Concept | Key Result | Why It Matters |
+|---------|-----------|---------------|
+| Inner product | Adds angles and orthogonality to normed spaces | Enables the geometric toolkit that norms lack |
+| Cauchy-Schwarz | $\|\langle x, y \rangle\| \leq \|x\| \cdot \|y\|$ | Makes angles well-defined; controls all inner-product estimates |
+| Parallelogram law | $\|x+y\|^2 + \|x-y\|^2 = 2(\|x\|^2 + \|y\|^2)$ | Characterizes inner product norms; essential in projection proof |
+| Hilbert space | Complete inner product space | The "good" geometric spaces where all theorems work |
+| Projection theorem | Unique closest point in closed convex sets | The foundation for everything below |
+| Orthonormal bases | Parseval's identity: $\sum \|\langle x, e_k \rangle\|^2 = \|x\|^2$ | Generalized Fourier analysis; every separable Hilbert space ≅ ℓ² |
+| Riesz representation | $H^* \cong H$ via $\varphi(x) = \langle x, y \rangle$ | Collapses dual-space complexity; Hilbert spaces are self-dual |
+| Spectral theorem | Compact self-adjoint $T = \sum \lambda_n e_n \otimes e_n$ | Eigendecomposition with orthogonal eigenvectors; foundation of PCA |
+| RKHS | $f(x) = \langle f, K_x \rangle_H$ | Evaluation via inner product; representer theorem for kernel methods |
+
+---
+
+## 15. Looking Ahead
+
+The next and final topic in Track 8 is **Calculus of Variations** — the study of functionals defined on function spaces, and the search for functions that minimize (or maximize) them. The Euler-Lagrange equation, the direct method for existence of minimizers, and weak solutions to PDEs all rely on the Hilbert space infrastructure we have built here. The projection theorem provides existence of minimizers in reflexive spaces; the Riesz representation theorem turns the weak formulation of PDEs into a Hilbert-space problem; and Sobolev spaces — the natural domains for variational problems — are Hilbert spaces when $p = 2$.
+
+Where this topic added one axiom (the inner product) to Banach spaces and gained geometric power, Topic 32 will add one more idea — *variation* — to function spaces and gain the ability to find optimal functions. The staircase of abstraction reaches its summit.
