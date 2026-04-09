@@ -97,17 +97,15 @@ export default function OperatorNormExplorer() {
 
       // Compute domains
       const inputExtent = 1.3;
-      const imageExtentX = Math.max(
-        ...imageBall.map((p) => Math.abs(p.x)),
-        opResult.norm,
-        0.5,
-      ) * 1.2;
-      const imageExtentY = Math.max(
-        ...imageBall.map((p) => Math.abs(p.y)),
-        opResult.norm,
-        0.5,
-      ) * 1.2;
-      const imageExtent = Math.max(imageExtentX, imageExtentY);
+      let maxAbsX = 0;
+      let maxAbsY = 0;
+      for (const p of imageBall) {
+        const ax = Math.abs(p.x);
+        const ay = Math.abs(p.y);
+        if (ax > maxAbsX) maxAbsX = ax;
+        if (ay > maxAbsY) maxAbsY = ay;
+      }
+      const imageExtent = Math.max(maxAbsX, maxAbsY, opResult.norm, 0.5) * 1.2;
 
       // Scales — left panel
       const xL = d3.scaleLinear().domain([-inputExtent, inputExtent]).range([0, panelW]);
@@ -221,7 +219,7 @@ export default function OperatorNormExplorer() {
           .attr('x2', xR(imgX)).attr('y2', yR(imgY))
           .style('stroke', ORANGE)
           .style('stroke-width', 2)
-          .style('marker-end', 'url(#arrow-orange)');
+          .attr('marker-end', 'url(#arrow-orange)');
 
         // Arrow marker definition
         svg.append('defs')

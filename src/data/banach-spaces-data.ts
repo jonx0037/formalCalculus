@@ -2,10 +2,11 @@
  * Data presets and scenario definitions for the Normed & Banach Spaces
  * topic (Topic 30).
  *
- * All functions are pure and deterministic — no Math.random(), no
- * module-level computation. Follows the lazy-getter pattern of
- * `metric-spaces-data.ts`: getters compute on demand when viz
- * components call them.
+ * All functions are pure and deterministic — no Math.random().
+ * Follows the lazy-getter pattern of `metric-spaces-data.ts`:
+ * getters compute on demand when viz components call them.
+ * Module-level constants (e.g. rotation matrix entries via
+ * Math.cos/Math.sin) are small deterministic evaluations.
  *
  * Three viz components consume this module:
  *  - `OperatorNormExplorer`    — via `getMatrixPreset(id)`

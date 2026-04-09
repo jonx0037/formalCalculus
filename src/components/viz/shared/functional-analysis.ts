@@ -162,11 +162,18 @@ function svd2x2(
   const s1 = Math.sqrt(Math.max(0, lambda1));
   const s2 = Math.sqrt(Math.max(0, lambda2));
 
-  // Right singular vector v₁ for the larger singular value
+  // Right singular vector v₁ for the larger singular value.
+  // Use whichever row of (AᵀA - λ₁I) has larger entries to avoid
+  // catastrophic cancellation when λ₁ ≈ g₁₁ or λ₁ ≈ g₂₂.
   let vx: number, vy: number;
   if (Math.abs(g12) > 1e-14) {
-    vx = lambda1 - g22;
-    vy = g12;
+    if (Math.abs(lambda1 - g11) > Math.abs(lambda1 - g22)) {
+      vx = g12;
+      vy = lambda1 - g11;
+    } else {
+      vx = lambda1 - g22;
+      vy = g12;
+    }
   } else if (g11 >= g22) {
     vx = 1;
     vy = 0;
@@ -233,13 +240,14 @@ export function computeOperatorNorm(
     const row1 = Math.abs(a11) + Math.abs(a12);
     const row2 = Math.abs(a21) + Math.abs(a22);
     const norm = Math.max(row1, row2);
-    const dir: [number, number] = row1 >= row2 ? [1, 1] : [1, -1];
-    // Normalize to ℓ^∞ unit sphere
-    const m = Math.max(Math.abs(dir[0]), Math.abs(dir[1]));
+    // Maximizer: sign pattern of the maximizing row, on the ℓ^∞ unit sphere
+    const dir: [number, number] = row1 >= row2
+      ? [Math.sign(a11) || 1, Math.sign(a12) || 1]
+      : [Math.sign(a21) || 1, Math.sign(a22) || 1];
     return {
       norm,
       singularValues: [s1, s2],
-      maximizingDirection: [dir[0] / m, dir[1] / m],
+      maximizingDirection: dir,
     };
   }
 
