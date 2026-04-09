@@ -107,17 +107,27 @@ export default function BrachistochroneExplorer() {
     // Circular arc through origin and endpoint
     if (showArc) {
       const arcPts: [number, number][] = [];
-      // Parametrize as circle through (0,0) and (endX, endY)
-      // Center at (endX/2, c) where c chosen for gentle arc
+      // Circle through (0,0) and (endX, endY): center lies on the
+      // perpendicular bisector of the chord at (endX/2, endY/2).
+      // Choose center on the line x = endX/2 so the circle is symmetric in x.
+      // From |center|² = R²: cx² + cy² = (cx - endX)² + (cy - endY)²
+      // → cy = (endX² + endY²) / (2·endY)
       const cx = endX / 2;
       const cy = (endX * endX + endY * endY) / (2 * endY);
-      const R = Math.sqrt(cx * cx + cy * cy);
-      const angle0 = Math.atan2(-cy, -cx);
+      const R = Math.sqrt(cx * cx + cy * cy); // = distance from center to origin
+
+      // Angles from center to origin and endpoint
+      const angle0 = Math.atan2(0 - cy, 0 - cx);
       const angle1 = Math.atan2(endY - cy, endX - cx);
+
+      // Ensure we take the shorter arc (both points are below the center)
+      let sweep = angle1 - angle0;
+      if (sweep > Math.PI) sweep -= 2 * Math.PI;
+      if (sweep < -Math.PI) sweep += 2 * Math.PI;
 
       for (let i = 0; i <= nPts; i++) {
         const t = i / nPts;
-        const ang = angle0 + t * (angle1 - angle0);
+        const ang = angle0 + t * sweep;
         arcPts.push([cx + R * Math.cos(ang), cy + R * Math.sin(ang)]);
       }
       const arcTime = computeDescentTime(arcPts);

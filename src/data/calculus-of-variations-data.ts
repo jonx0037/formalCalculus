@@ -51,7 +51,7 @@ const FUNCTIONAL_SPECS: FunctionalSpec[] = [
     eulerLagrange: "y'' = 0",
     solution: 'y(x) = (1-x) \\cdot y(0) + x \\cdot y(1)',
     lagrangianFn: (_x, _y, yp) => 0.5 * yp * yp,
-    evaluate: (y, yPrime, a, b, n = 200) => {
+    evaluate: (_y, yPrime, a, b, n = 200) => {
       const dx = (b - a) / n;
       let sum = 0;
       for (let i = 0; i <= n; i++) {
@@ -72,7 +72,7 @@ const FUNCTIONAL_SPECS: FunctionalSpec[] = [
     eulerLagrange: "\\frac{y''}{(1+y'^2)^{3/2}} = 0",
     solution: 'y(x) = (1-x) \\cdot y(0) + x \\cdot y(1)',
     lagrangianFn: (_x, _y, yp) => Math.sqrt(1 + yp * yp),
-    evaluate: (y, yPrime, a, b, n = 200) => {
+    evaluate: (_y, yPrime, a, b, n = 200) => {
       const dx = (b - a) / n;
       let sum = 0;
       for (let i = 0; i <= n; i++) {
@@ -189,14 +189,19 @@ export function getCycloidParameterization(
   const ratio = xEnd / Math.max(yEnd, 1e-10);
   let theta = Math.PI; // initial guess
   for (let iter = 0; iter < 50; iter++) {
-    const f = (theta - Math.sin(theta)) / (1 - Math.cos(theta)) - ratio;
-    const num = (1 - Math.cos(theta)) * (1 - Math.cos(theta));
-    const denom =
-      (1 - Math.cos(theta)) ** 2 -
-      (theta - Math.sin(theta)) * Math.sin(theta);
-    const fp = num > 1e-14 ? denom / num : 1;
-    const step = f / Math.max(Math.abs(fp), 1e-10);
-    theta -= Math.sign(fp) !== 0 ? step : 0;
+    const cosT = Math.cos(theta);
+    const sinT = Math.sin(theta);
+    const oneMinusCos = 1 - cosT;
+    if (oneMinusCos < 1e-14) break;
+    const f = (theta - sinT) / oneMinusCos - ratio;
+    // Derivative of (θ - sinθ)/(1 - cosθ) w.r.t. θ:
+    // fp = [(1-cosθ)(1-cosθ) - (θ-sinθ)sinθ] / (1-cosθ)²
+    const fp =
+      (oneMinusCos * (1 - cosT) - (theta - sinT) * sinT) /
+      (oneMinusCos * oneMinusCos);
+    if (Math.abs(fp) > 1e-12) {
+      theta -= f / fp;
+    }
     theta = Math.max(0.01, Math.min(2 * Math.PI - 0.01, theta));
     if (Math.abs(f) < 1e-12) break;
   }

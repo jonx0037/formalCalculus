@@ -554,22 +554,34 @@ export function evaluateFunctional(
     value += 0.5 * (L0 + L1) * dx;
   }
 
-  // Compute discretized gradient (Euler-Lagrange residual) at interior points
+  // Compute discretized gradient (Euler-Lagrange residual) at interior points.
+  // O(n): perturbing y[i] only affects segments [i-1,i] and [i,i+1].
   const gradient = new Array<number>(n).fill(0);
   const eps = 1e-6;
+
+  // Pre-compute segment contributions for the unperturbed function
+  const segVal = new Array<number>(n - 1);
+  for (let j = 0; j < n - 1; j++) {
+    const xj = j * dx;
+    const xNext = (j + 1) * dx;
+    const yp = (yy[j + 1] - yy[j]) / dx;
+    segVal[j] = 0.5 * (lagrangian(xj, yy[j], yp) + lagrangian(xNext, yy[j + 1], yp)) * dx;
+  }
+
   for (let i = 1; i < n - 1; i++) {
-    const pert = [...yy];
-    pert[i] += eps;
-    let valPlus = 0;
-    for (let j = 0; j < n - 1; j++) {
-      const xj = j * dx;
-      const xNext = (j + 1) * dx;
-      const yp = (pert[j + 1] - pert[j]) / dx;
-      const L0 = lagrangian(xj, pert[j], yp);
-      const L1 = lagrangian(xNext, pert[j + 1], yp);
-      valPlus += 0.5 * (L0 + L1) * dx;
-    }
-    gradient[i] = (valPlus - value) / eps;
+    // Only recompute the two segments adjacent to point i
+    let delta = 0;
+    // Segment [i-1, i]: perturbing y[i] changes the right endpoint
+    const j1 = i - 1;
+    const yp1 = (yy[i] + eps - yy[j1]) / dx;
+    const seg1 = 0.5 * (lagrangian(j1 * dx, yy[j1], yp1) + lagrangian(i * dx, yy[i] + eps, yp1)) * dx;
+    delta += seg1 - segVal[j1];
+    // Segment [i, i+1]: perturbing y[i] changes the left endpoint
+    const j2 = i;
+    const yp2 = (yy[j2 + 1] - (yy[i] + eps)) / dx;
+    const seg2 = 0.5 * (lagrangian(i * dx, yy[i] + eps, yp2) + lagrangian((i + 1) * dx, yy[j2 + 1], yp2)) * dx;
+    delta += seg2 - segVal[j2];
+    gradient[i] = delta / eps;
   }
 
   return { value, gradient };

@@ -15,7 +15,6 @@ import { useD3 } from './shared/useD3';
 import { useResizeObserver } from './shared/useResizeObserver';
 import { sampleCurve, finiteYMax } from './shared/plotting';
 import type { Point2D } from './shared/plotting';
-import { computeRayleighQuotientDiscrete } from './shared/functional-analysis';
 import { getEigenvalueData, computeRayleighQuotient } from '../../data/calculus-of-variations-data';
 
 // ── Constants ─────────────────────────────────────────────────

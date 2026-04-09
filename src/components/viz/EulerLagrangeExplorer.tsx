@@ -18,7 +18,6 @@ import { useResizeObserver } from './shared/useResizeObserver';
 import { sampleCurve, finiteYMax } from './shared/plotting';
 import type { Point2D } from './shared/plotting';
 import { getFunctionalSpecs } from '../../data/calculus-of-variations-data';
-import type { FunctionalSpec } from '../../data/calculus-of-variations-data';
 
 // ── Constants ─────────────────────────────────────────────────
 
@@ -50,7 +49,7 @@ export default function EulerLagrangeExplorer() {
   const [a, b] = spec.domain;
   const { left: yA, right: yB } = spec.boundaryConditions;
 
-  // Build candidate curve from control points via cubic interpolation
+  // Build candidate curve from control points via piecewise linear interpolation
   const candidateFn = useCallback(
     (x: number): number => {
       const t = (x - a) / (b - a);
@@ -260,24 +259,21 @@ export default function EulerLagrangeExplorer() {
 
       gLeft
         .selectAll('.control-point')
-        .data(controlPoints)
+        .data(controlPoints.map((v, i) => ({ value: v, index: i })))
         .enter()
         .append('circle')
         .attr('class', 'control-point')
-        .attr('cx', (_, i) => xScale(cpXPositions[i]))
-        .attr('cy', (d) => yScale(d))
+        .attr('cx', (d) => xScale(cpXPositions[d.index]))
+        .attr('cy', (d) => yScale(d.value))
         .attr('r', 6)
         .attr('fill', RED)
         .attr('stroke', '#fff')
         .attr('stroke-width', 2)
         .style('cursor', 'ns-resize')
         .call(
-          d3.drag<SVGCircleElement, number>().on('drag', function (event, _d) {
-            const cpIdx = controlPoints.indexOf(_d);
-            if (cpIdx >= 0) {
-              const newY = yScale.invert(event.y);
-              handleDrag(cpIdx, newY);
-            }
+          d3.drag<SVGCircleElement, { value: number; index: number }>().on('drag', function (event, d) {
+            const newY = yScale.invert(event.y);
+            handleDrag(d.index, newY);
           }) as any,
         );
 

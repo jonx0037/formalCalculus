@@ -9,7 +9,7 @@
  *           show/hide functional values, weak convergence annotation.
  */
 
-import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import * as d3 from 'd3';
 import { useD3 } from './shared/useD3';
 import { useResizeObserver } from './shared/useResizeObserver';
@@ -89,11 +89,21 @@ export default function DirectMethodExplorer() {
     [preset],
   );
 
-  // Animation
-  const animRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Animation via requestAnimationFrame
+  const animRef = useRef<number | null>(null);
   useEffect(() => {
-    if (isPlaying) {
-      animRef.current = setInterval(() => {
+    if (!isPlaying) {
+      if (animRef.current) {
+        cancelAnimationFrame(animRef.current);
+        animRef.current = null;
+      }
+      return;
+    }
+
+    let lastTime = performance.now();
+    const animate = (time: number) => {
+      if (time - lastTime >= 300) {
+        lastTime = time;
         setCurrentN((prev) => {
           if (prev >= totalSteps) {
             setIsPlaying(false);
@@ -101,10 +111,13 @@ export default function DirectMethodExplorer() {
           }
           return prev + 1;
         });
-      }, 300);
-    }
+      }
+      animRef.current = requestAnimationFrame(animate);
+    };
+    animRef.current = requestAnimationFrame(animate);
+
     return () => {
-      if (animRef.current) clearInterval(animRef.current);
+      if (animRef.current) cancelAnimationFrame(animRef.current);
     };
   }, [isPlaying, totalSteps]);
 
