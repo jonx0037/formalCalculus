@@ -87,3 +87,361 @@ import MetricContractionExplorer from '../../components/viz/MetricContractionExp
 import CompactnessCounterexampleExplorer from '../../components/viz/CompactnessCounterexampleExplorer.tsx';
 import BellmanIterationExplorer from '../../components/viz/BellmanIterationExplorer.tsx';
 import ArzelaAscoliExplorer from '../../components/viz/ArzelaAscoliExplorer.tsx';
+
+## 1. Why Metric Spaces?
+
+Every machine learning algorithm that computes a distance is quietly operating in a metric space. The Euclidean distance in $\mathbb{R}^n$ is the obvious example — it is what $k$-nearest neighbors uses, what gradient descent steps respect, and what the word "similarity" means for Word2Vec embeddings. But Euclidean distance is not the only game in town, and for several of the questions we are about to ask, it is not even the right tool.
+
+Three motivating puzzles set the stage.
+
+**Puzzle 1: Comparing functions.** Given two continuous functions $f, g : [0, 1] \to \mathbb{R}$, how do we measure *how far apart* they are? One natural answer is the sup-norm distance $\|f - g\|_\infty = \sup_{x \in [0,1]} |f(x) - g(x)|$, which we saw already in [Uniform Convergence](/topics/uniform-convergence) — it is the metric that makes "convergence" mean "uniform convergence." But there are other answers: the integral-based $L^1$ distance $\int_0^1 |f - g|$, the $L^2$ distance $\sqrt{\int_0^1 (f - g)^2}$, and many more. Each is a legitimate metric, and each gives $C([0, 1])$ a different geometric character. The framework we develop in this topic will explain why.
+
+**Puzzle 2: When does iteration converge?** Suppose $T$ is a map from some space to itself and we iterate: start with $x_0$, set $x_1 = T(x_0)$, $x_2 = T(x_1)$, and so on. When does the sequence $(x_n)$ converge, and when it does, to what? We are going to prove a theorem — the Banach Contraction Mapping Theorem — that answers this completely for any map that "shrinks distances." The same theorem is why Picard iteration solves ordinary differential equations, why Newton's method converges in a neighborhood of a simple root, and why reinforcement-learning value iteration finds the optimal policy. A single abstract result unifies half a dozen concrete convergence arguments.
+
+**Puzzle 3: Which function families are "small" enough to extract a convergent subsequence?** In Topic 3 we proved the Bolzano–Weierstrass theorem: every bounded sequence in $\mathbb{R}^n$ has a convergent subsequence. In $C([0, 1])$ this is simply false — the sequence $f_n(x) = \sin(n\pi x)$ is bounded in the sup-norm (each $\|f_n\|_\infty = 1$), yet no subsequence converges uniformly. We [flagged this counterexample in Topic 3](/topics/completeness-compactness) and promised to explain it here. The explanation is that "bounded" is the wrong condition in infinite dimensions; the right one involves **equicontinuity**, and the theorem that packages it is **Arzelà–Ascoli**.
+
+These three puzzles are really one question asked three ways: *what structure does a space need for the usual analytic intuition to work?* The answer — the **metric space axioms** — is small, geometric, and surprisingly powerful. By the end of this topic we will have generalized completeness, compactness, and continuity from $\mathbb{R}^n$ to arbitrary metric spaces, and we will have proved the two theorems that turn this machinery into concrete convergence guarantees for machine learning algorithms.
+
+## 2. Metric Space Axioms and Examples
+
+The metric space abstraction compresses the idea of "distance" into three axioms. Everything we prove from here down follows from these three statements and nothing else — which is what gives the theory its reach.
+
+<TheoremBlock type="definition" number={1} title="Metric Space">
+
+A **metric space** is a pair $(X, d)$ consisting of a set $X$ and a function $d : X \times X \to [0, \infty)$ called a **metric** (or **distance function**) satisfying:
+
+1. **Positivity:** $d(x, y) = 0$ if and only if $x = y$, and $d(x, y) \geq 0$ for all $x, y$.
+2. **Symmetry:** $d(x, y) = d(y, x)$ for all $x, y \in X$.
+3. **Triangle inequality:** $d(x, z) \leq d(x, y) + d(y, z)$ for all $x, y, z \in X$.
+
+</TheoremBlock>
+
+The three axioms are exactly the properties the word "distance" should have. Positivity says distance is never negative and vanishes only at a single point. Symmetry says the distance from $x$ to $y$ does not depend on which one you started at. The triangle inequality says that going via an intermediate point $y$ is never a shortcut. If any of these fail, the machinery we are about to build breaks — which is why metric learning papers spend so much effort ensuring their learned "distances" actually satisfy these properties. Examples build intuition faster than axioms; here are four canonical ones.
+
+<TheoremBlock type="example" number={1} title="The ℓᵖ Metrics on Rⁿ">
+
+For $1 \leq p < \infty$, the **$\ell^p$ metric** on $\mathbb{R}^n$ is
+
+$$d_p(x, y) = \left(\sum_{i=1}^n |x_i - y_i|^p\right)^{1/p}.$$
+
+For $p = \infty$ the formula degenerates and we use
+
+$$d_\infty(x, y) = \max_{1 \leq i \leq n} |x_i - y_i|.$$
+
+All three axioms are satisfied for every $p \in [1, \infty]$ (the triangle inequality is Minkowski's inequality). Three values of $p$ are worth remembering: $p = 2$ gives the usual Euclidean distance, $p = 1$ gives the "Manhattan" or taxicab distance, and $p = \infty$ gives the Chebyshev (max-coordinate) distance. In $\mathbb{R}^2$, the "unit ball" $\{x : d_p(x, 0) \leq 1\}$ is a diamond for $p = 1$, a circle for $p = 2$, and a square for $p = \infty$ — the same set $\mathbb{R}^2$ acquires three visibly different geometries depending on which metric we choose.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={2} title="The Sup-Norm Metric on C([a,b])">
+
+The space $C([a, b])$ of continuous real-valued functions on $[a, b]$ becomes a metric space under
+
+$$d_\infty(f, g) = \|f - g\|_\infty = \sup_{x \in [a,b]} |f(x) - g(x)|.$$
+
+Positivity and symmetry are immediate. The triangle inequality follows from the pointwise inequality $|f(x) - h(x)| \leq |f(x) - g(x)| + |g(x) - h(x)|$ by taking suprema on both sides. This is the same sup-norm that appeared in [Uniform Convergence](/topics/uniform-convergence): a sequence $f_n$ converges to $f$ in this metric if and only if $f_n \to f$ uniformly. Section 5 will prove that $(C([a, b]), d_\infty)$ is **complete** — every Cauchy sequence converges — which is why the sup-norm is the right tool for function-space fixed-point arguments.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={3} title="The Discrete Metric">
+
+On *any* set $X$, define
+
+$$d(x, y) = \begin{cases} 0 & \text{if } x = y, \\ 1 & \text{if } x \neq y. \end{cases}$$
+
+All three axioms are trivial to verify. Under this metric every subset is open, every convergent sequence is eventually constant, and the "unit ball" $B(x, 1)$ contains only the single point $x$. The discrete metric shows that metric-space theory applies to exotic settings — there is no requirement that $X$ look anything like $\mathbb{R}^n$ — and it is a useful source of counterexamples whenever you suspect a theorem secretly needs continuity.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={4} title="Hamming Distance">
+
+On the set $\{0, 1\}^n$ of binary strings of length $n$, the **Hamming distance** is
+
+$$d_H(x, y) = \#\{\, i : x_i \neq y_i\,\},$$
+
+the number of coordinates in which $x$ and $y$ differ. Symmetry is clear, positivity is clear, and the triangle inequality holds because "coordinates where $x$ and $z$ differ" is a subset of "coordinates where $x$ and $y$ differ" $\cup$ "coordinates where $y$ and $z$ differ." Hamming distance is the metric behind error-correcting codes and is directly relevant to discrete ML: training a classifier to produce outputs within Hamming distance $k$ of a target is a metric-space constraint.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={1} title="Different Metrics, Different Topologies">
+
+The same underlying set can carry many different metrics, and the choice shapes everything else: which sequences converge, which sets are open, which functions are continuous. In $\mathbb{R}^2$ the $\ell^1$, $\ell^2$, and $\ell^\infty$ metrics all generate the same notion of "open set" (they are *topologically equivalent* — we will define this precisely in Section 8), so they all agree on which sequences converge. But the Hamming metric on $\{0, 1\}^n$ is qualitatively different from the Euclidean metric on the same set viewed as a subset of $\mathbb{R}^n$: under Hamming distance, consecutive binary strings (differing in a single bit) are always at distance 1, but under Euclidean distance their positions depend on which bit changed. The metric determines the geometry, and the geometry determines the analysis.
+
+</TheoremBlock>
+
+![Four-panel figure: the ℓ¹ diamond, ℓ² disk, and ℓ∞ square unit balls in R², plus the discrete-metric "ball" containing a single point.](/images/topics/metric-spaces/metric-balls.png)
+
+## 3. Open Sets, Closed Sets, and the Language of Topology
+
+With the metric in hand we can start building the vocabulary of topology: balls, open sets, closed sets, interiors, closures, boundaries. This is the language that every subsequent theorem in the topic will speak, and it is the same vocabulary Topic 3 used for $\mathbb{R}^n$ — only now it works in any metric space.
+
+<TheoremBlock type="definition" number={2} title="Open and Closed Balls">
+
+Let $(X, d)$ be a metric space, let $x \in X$, and let $r > 0$. The **open ball of radius $r$ centered at $x$** is
+
+$$B(x, r) = \{\, y \in X : d(x, y) < r\,\}.$$
+
+The **closed ball of radius $r$ centered at $x$** is
+
+$$\overline{B}(x, r) = \{\, y \in X : d(x, y) \leq r\,\}.$$
+
+</TheoremBlock>
+
+The open ball has a strict inequality; the closed ball includes the boundary sphere. In $\mathbb{R}^n$ with $d_2$ these are the familiar solid balls without and with their bounding spheres. In $C([a, b])$ with the sup-norm, the open ball $B(f, \varepsilon)$ is the set of all continuous functions whose graph lies strictly within an $\varepsilon$-tube around the graph of $f$ — exactly the "uniform tube" that Topic 4 used to define uniform convergence.
+
+<TheoremBlock type="definition" number={3} title="Open and Closed Sets">
+
+A set $U \subseteq X$ is **open** if for every point $x \in U$ there exists some $r > 0$ such that the open ball $B(x, r)$ is entirely contained in $U$:
+
+$$\forall x \in U \ \exists r > 0 : B(x, r) \subseteq U.$$
+
+A set $F \subseteq X$ is **closed** if its complement $X \setminus F$ is open.
+
+</TheoremBlock>
+
+A set is open if every point has some breathing room: a small open ball around it that stays inside the set. A set is closed if its complement has that property. Note that "closed" does not mean "not open" — the empty set and the whole space $X$ are both open and closed in every metric space (check the definitions directly), and in the discrete metric *every* subset is both open and closed. Openness and closedness are more subtle than they look.
+
+<TheoremBlock type="proposition" number={1} title="Properties of Open and Closed Sets">
+
+In any metric space $(X, d)$:
+
+1. $\emptyset$ and $X$ are both open and closed.
+2. Arbitrary unions of open sets are open.
+3. Finite intersections of open sets are open.
+4. Arbitrary intersections of closed sets are closed.
+5. Finite unions of closed sets are closed.
+
+</TheoremBlock>
+
+The asymmetry between "arbitrary" and "finite" matters. Arbitrary intersections of open sets need *not* be open — the classic example is $\bigcap_{n \geq 1} (-1/n, 1/n) = \{0\}$, an intersection of open intervals whose limit is a single point, which is not open. Similarly, arbitrary unions of closed sets need not be closed. The finiteness restriction in items 3 and 5 is therefore essential, not cosmetic.
+
+<TheoremBlock type="definition" number={4} title="Interior, Closure, Boundary, Limit Point">
+
+For a subset $A \subseteq X$:
+
+- The **interior** $A^\circ$ is the union of all open sets contained in $A$; equivalently, it is the largest open set inside $A$.
+- The **closure** $\overline{A}$ is the intersection of all closed sets containing $A$; equivalently, it is the smallest closed set that contains $A$.
+- The **boundary** is $\partial A = \overline{A} \setminus A^\circ$.
+- A point $x \in X$ is a **limit point** of $A$ if every open ball $B(x, r)$ contains a point of $A$ other than $x$.
+
+</TheoremBlock>
+
+Two facts follow immediately. First, $A^\circ \subseteq A \subseteq \overline{A}$: the interior is contained in $A$, which is contained in the closure. Second, $A$ is open exactly when $A = A^\circ$, and $A$ is closed exactly when $A = \overline{A}$ — these are not additional hypotheses but equivalent characterizations. The closure can also be described as $\overline{A} = A \cup \{\text{limit points of } A\}$, which is often the easiest way to compute it in practice.
+
+<TheoremBlock type="example" number={5} title="Open Sets in C([0,1])">
+
+In $C([0, 1])$ with the sup-norm, the open ball $B(f, \varepsilon)$ consists of all continuous functions $g$ whose graph lies within the horizontal band $\{(x, y) : f(x) - \varepsilon < y < f(x) + \varepsilon\}$. A set $\mathcal{U} \subseteq C([0, 1])$ is open precisely when for every $f \in \mathcal{U}$ we can find a small enough $\varepsilon$ so that *every* continuous function inside the $\varepsilon$-tube around $f$ is also in $\mathcal{U}$. This is exactly the "$\varepsilon$-tube" picture from Topic 4's visualization of uniform convergence — the only difference is that now we are thinking of a tube as an open ball in a metric space.
+
+</TheoremBlock>
+
+![Four-panel figure: interior, closure, and boundary of a subset of R; an open ball in R²; an ε-tube open ball in C([0,1]); and the trivial "balls" of the discrete metric.](/images/topics/metric-spaces/open-closed-sets.png)
+
+## 4. Continuity in Metric Spaces
+
+Continuity is the next concept that lifts from $\mathbb{R}$ to arbitrary metric spaces. We give three equivalent characterizations — an $\varepsilon$-$\delta$ definition, a sequential definition, and a preimage-of-open-set definition — and show that all three are equivalent. The third characterization is the conceptual payoff: it describes continuity using only the structure of open sets, which is what lets the definition generalize to spaces without a metric at all.
+
+<TheoremBlock type="definition" number={5} title="Continuity (ε–δ)">
+
+Let $(X, d_X)$ and $(Y, d_Y)$ be metric spaces. A function $f : X \to Y$ is **continuous at a point $x_0 \in X$** if for every $\varepsilon > 0$ there exists $\delta > 0$ such that
+
+$$d_X(x, x_0) < \delta \quad \Longrightarrow \quad d_Y(f(x), f(x_0)) < \varepsilon.$$
+
+The function $f$ is **continuous** (on all of $X$) if it is continuous at every point of $X$.
+
+</TheoremBlock>
+
+This is the same $\varepsilon$-$\delta$ definition we used in Topic 2 for real-valued functions of a real variable, with $d_X$ and $d_Y$ replacing the absolute value. Now the three characterizations.
+
+<TheoremBlock type="theorem" number={1} title="Three Characterizations of Continuity">
+
+Let $f : (X, d_X) \to (Y, d_Y)$ be a function between metric spaces. The following are equivalent:
+
+1. $f$ is continuous at every point of $X$ (the $\varepsilon$–$\delta$ definition).
+2. For every convergent sequence $x_n \to x$ in $X$, we have $f(x_n) \to f(x)$ in $Y$.
+3. For every open set $V \subseteq Y$, the preimage $f^{-1}(V) \subseteq X$ is open in $X$.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+We prove the three implications $(1) \Rightarrow (2) \Rightarrow (3) \Rightarrow (1)$.
+
+**$(1) \Rightarrow (2)$.** Assume $f$ is continuous at every point, let $x_n \to x$ in $X$, and fix $\varepsilon > 0$. Continuity at $x$ gives some $\delta > 0$ such that $d_X(y, x) < \delta$ implies $d_Y(f(y), f(x)) < \varepsilon$. Since $x_n \to x$, there exists $N$ such that for all $n \geq N$ we have $d_X(x_n, x) < \delta$, and therefore $d_Y(f(x_n), f(x)) < \varepsilon$. This is exactly the statement that $f(x_n) \to f(x)$.
+
+**$(2) \Rightarrow (3)$.** Assume sequential continuity, let $V \subseteq Y$ be open, and let $x \in f^{-1}(V)$. We need to show some ball $B(x, r)$ is contained in $f^{-1}(V)$. Suppose not. Then for every $n \geq 1$ there exists a point $x_n$ with $d_X(x_n, x) < 1/n$ but $f(x_n) \notin V$. By construction $x_n \to x$, so by sequential continuity $f(x_n) \to f(x)$. But $f(x) \in V$ and $V$ is open, so some ball $B(f(x), \varepsilon)$ is contained in $V$, which means $f(x_n) \in V$ for all sufficiently large $n$ — contradicting $f(x_n) \notin V$.
+
+**$(3) \Rightarrow (1)$.** Assume preimages of open sets are open, let $x_0 \in X$, and fix $\varepsilon > 0$. The open ball $B(f(x_0), \varepsilon)$ is open in $Y$, so by hypothesis its preimage $f^{-1}(B(f(x_0), \varepsilon))$ is open in $X$ and contains $x_0$. By the definition of "open" we can find some $\delta > 0$ with $B(x_0, \delta) \subseteq f^{-1}(B(f(x_0), \varepsilon))$, which rewrites as: $d_X(x, x_0) < \delta \Rightarrow d_Y(f(x), f(x_0)) < \varepsilon$. That is the $\varepsilon$–$\delta$ condition at $x_0$. Since $x_0$ was arbitrary, $f$ is continuous.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={2} title="Why Preimages Matter">
+
+Characterization (3) is the conceptual leap: it describes continuity entirely in terms of the *structure of open sets*, with no reference to distances or sequences. This is what lets the definition generalize to **topological spaces** in Section 8, where there may be no metric at all. In metric spaces all three characterizations are equivalent — we just proved it — so the preimage formulation looks like one more way to say the same thing. The power of (3) only becomes apparent when we leave metrics behind: in an arbitrary topological space, the $\varepsilon$–$\delta$ definition is not even *expressible*, and the sequential definition can fail in strange ways. The preimage characterization is the universally correct one.
+
+</TheoremBlock>
+
+<TheoremBlock type="definition" number={6} title="Lipschitz Continuity">
+
+A function $f : (X, d_X) \to (Y, d_Y)$ is **Lipschitz continuous** with constant $L \geq 0$ if
+
+$$d_Y(f(x), f(y)) \leq L \cdot d_X(x, y) \quad \text{for all } x, y \in X.$$
+
+The smallest such $L$ is called the **Lipschitz constant** of $f$. If $L < 1$ the map is called a **contraction**, and this case will drive Section 7.
+
+</TheoremBlock>
+
+Lipschitz continuity is strictly stronger than continuity (every Lipschitz function is continuous, take $\delta = \varepsilon / L$) and strictly weaker than differentiability with bounded derivative (every such function is Lipschitz on a bounded domain). For ML purposes, Lipschitz constants quantify how rapidly a function can change: they control the convergence rate of gradient descent, the sensitivity of a neural network to input perturbations, and the stability of numerical ODE solvers. We will see concrete examples in Sections 7 and 10.
+
+![Two-panel figure: the ε–δ picture in a metric space, and the preimage-of-open-set characterization — an open ball V in Y pulled back to an open set in X.](/images/topics/metric-spaces/continuity-preimage.png)
+
+## 5. Completeness in Metric Spaces
+
+Completeness generalizes the Cauchy-completeness of $\mathbb{R}$ (Topic 3, Section 1) to arbitrary metric spaces. The crucial new example — the one that powers every fixed-point argument in the rest of the topic — is that $C([a, b])$ with the sup-norm is complete.
+
+<TheoremBlock type="definition" number={7} title="Cauchy Sequence in a Metric Space">
+
+A sequence $(x_n)$ in a metric space $(X, d)$ is **Cauchy** if for every $\varepsilon > 0$ there exists $N$ such that
+
+$$d(x_m, x_n) < \varepsilon \quad \text{for all } m, n \geq N.$$
+
+</TheoremBlock>
+
+<TheoremBlock type="definition" number={8} title="Complete Metric Space">
+
+A metric space $(X, d)$ is **complete** if every Cauchy sequence in $X$ converges to a limit that is also in $X$.
+
+</TheoremBlock>
+
+Cauchy says the terms of the sequence eventually cluster together; complete says that clustering is enough to guarantee a limit. The two concepts are linked but distinct: $\mathbb{Q}$ is *not* complete (the sequence $1, 1.4, 1.41, 1.414, \ldots$ of decimal approximations to $\sqrt{2}$ is Cauchy in $\mathbb{Q}$ but has no rational limit), while $\mathbb{R}$ *is* complete — and this is exactly how $\mathbb{R}$ was constructed from $\mathbb{Q}$ (by filling in the missing limits).
+
+<TheoremBlock type="example" number={6} title="Completeness of Rⁿ">
+
+$\mathbb{R}$ is complete by the Cauchy-completeness theorem from Topic 3, Section 1. $\mathbb{R}^n$ is complete under any of the $\ell^p$ metrics: if $(x^{(k)})$ is a Cauchy sequence in $\mathbb{R}^n$, then each coordinate sequence $(x^{(k)}_i)$ is Cauchy in $\mathbb{R}$ (because $|x^{(k)}_i - x^{(\ell)}_i| \leq d_p(x^{(k)}, x^{(\ell)})$), so each coordinate converges to some limit $x^*_i$, and coordinate-wise convergence in $\mathbb{R}^n$ implies $\ell^p$ convergence. This is the same argument Topic 3 ran for the Euclidean metric; all it needed was the coordinate inequality, which holds for every $p \geq 1$.
+
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={2} title="Completeness of C([a,b])">
+
+The space $C([a, b])$ with the sup-norm metric $d_\infty(f, g) = \|f - g\|_\infty$ is complete.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+Let $(f_n)$ be a Cauchy sequence in $C([a, b])$. We need to exhibit a continuous function $f$ such that $\|f_n - f\|_\infty \to 0$.
+
+*Step 1: Pointwise limit exists.* For each $x \in [a, b]$, the sequence of real numbers $(f_n(x))$ is Cauchy in $\mathbb{R}$, because
+
+$$|f_n(x) - f_m(x)| \leq \sup_{t \in [a,b]} |f_n(t) - f_m(t)| = \|f_n - f_m\|_\infty.$$
+
+Since $\mathbb{R}$ is complete, $(f_n(x))$ converges to some real number, which we define to be $f(x)$. This gives a function $f : [a, b] \to \mathbb{R}$ as the pointwise limit.
+
+*Step 2: Convergence is uniform.* Given $\varepsilon > 0$, the Cauchy condition gives $N$ such that $\|f_n - f_m\|_\infty < \varepsilon$ for all $m, n \geq N$. Fix $x \in [a, b]$ and any $n \geq N$. Letting $m \to \infty$ in the inequality $|f_n(x) - f_m(x)| < \varepsilon$, the right side stays $\leq \varepsilon$ and the left side converges to $|f_n(x) - f(x)|$. Therefore $|f_n(x) - f(x)| \leq \varepsilon$ for all $x$, which means $\|f_n - f\|_\infty \leq \varepsilon$. Since $\varepsilon$ was arbitrary, $f_n \to f$ uniformly.
+
+*Step 3: The limit is continuous.* This is exactly the **Uniform Limit Theorem** from [Uniform Convergence](/topics/uniform-convergence): a uniform limit of continuous functions is continuous. So $f \in C([a, b])$, and the previous step says $\|f_n - f\|_\infty \to 0$. The sequence converges in the sup-norm metric, as needed.
+
+</TheoremBlock>
+
+This theorem is small but it is the backbone of the rest of the topic. Every fixed-point argument in Sections 7 and 10 — Picard iteration, Newton's method, Bellman iteration — lives inside $(C([a, b]), d_\infty)$ or an analogous function space, and every such argument needs to know that Cauchy sequences converge. The completeness of $C([a, b])$ is what lets us "extract a limit" at the end of each proof.
+
+<TheoremBlock type="example" number={7} title="Incompleteness of C([0,1]) under a Different Metric">
+
+The *same set* $C([0, 1])$ is **not** complete under the integral-based metric
+
+$$d_2(f, g) = \sqrt{\int_0^1 (f(x) - g(x))^2 \, dx}.$$
+
+Consider the sequence of continuous functions $f_n$ on $[0, 1]$ defined to be $0$ on $[0, 1/2 - 1/n]$, linear from $0$ to $1$ on $[1/2 - 1/n, 1/2 + 1/n]$, and $1$ on $[1/2 + 1/n, 1]$ — a "ramp" of width $2/n$ around $x = 1/2$. For large $m, n$, the difference $f_m - f_n$ is supported in a shrinking interval of length $2/\min(m, n)$, so $d_2(f_m, f_n) \to 0$ as $m, n \to \infty$: the sequence is Cauchy in $d_2$. But its pointwise limit is the step function that jumps from $0$ to $1$ at $x = 1/2$, which is discontinuous — and no continuous function can be the $d_2$-limit of this Cauchy sequence. So $(C([0, 1]), d_2)$ is not complete. **The completeness of a space depends on the metric**, not just the set.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={3} title="The Completion Theorem">
+
+Every metric space $(X, d)$ has a **completion**: a complete metric space $(\hat{X}, \hat{d})$ together with an isometric embedding $\iota : X \hookrightarrow \hat{X}$ such that $\iota(X)$ is dense in $\hat{X}$. The construction mirrors how $\mathbb{R}$ is built from $\mathbb{Q}$: form equivalence classes of Cauchy sequences in $X$, where two Cauchy sequences are equivalent if their interleaving is also Cauchy. The completion of $(C([0, 1]), d_2)$ is a larger space containing limits like our ramp-sequence step function — a space that analysts call $L^2[0, 1]$ and that shows up constantly in modern machine learning. We state the completion theorem as a fact rather than proving it in detail; Munkres, Chapter 3, has the full construction.
+
+</TheoremBlock>
+
+![Three-panel figure: a Cauchy sequence in R converging; a Cauchy sequence in (C([0,1]), sup-norm) converging uniformly; the ramp-sequence Cauchy in d₂ but with no continuous limit.](/images/topics/metric-spaces/completeness-cauchy.png)
+
+## 6. Compactness in Metric Spaces
+
+Compactness is the most technically important concept in the topic. In $\mathbb{R}^n$, the Heine–Borel theorem from Topic 3 told us that compact sets are exactly the closed and bounded ones. In general metric spaces this is false — and the proof of "why it fails" is the $\sin(n\pi x)$ counterexample we promised back in Topic 3. In this section we give the general definition, prove the three-way equivalence with sequential compactness and total boundedness, and visualize the counterexample.
+
+<TheoremBlock type="definition" number={9} title="Open-Cover Compactness">
+
+A metric space $(X, d)$ is **compact** if every open cover of $X$ has a finite subcover: whenever $X = \bigcup_{\alpha \in I} U_\alpha$ with each $U_\alpha$ open, there is a finite set $\{\alpha_1, \ldots, \alpha_N\} \subseteq I$ such that $X = U_{\alpha_1} \cup \cdots \cup U_{\alpha_N}$. A subset $K \subseteq X$ is compact if it is compact as a metric space under the restricted metric.
+
+</TheoremBlock>
+
+<TheoremBlock type="definition" number={10} title="Sequential Compactness">
+
+A metric space $(X, d)$ is **sequentially compact** if every sequence in $X$ has a convergent subsequence.
+
+</TheoremBlock>
+
+<TheoremBlock type="definition" number={11} title="Total Boundedness">
+
+A metric space $(X, d)$ is **totally bounded** if for every $\varepsilon > 0$ there exist finitely many points $x_1, \ldots, x_N \in X$ such that the corresponding $\varepsilon$-balls cover $X$:
+
+$$X = \bigcup_{i=1}^N B(x_i, \varepsilon).$$
+
+The collection $\{x_1, \ldots, x_N\}$ is called a **finite $\varepsilon$-net** for $X$.
+
+</TheoremBlock>
+
+Total boundedness is strictly stronger than boundedness. A bounded set of a metric space only needs to fit inside a single large ball; a totally bounded set needs to be approximable, at every resolution $\varepsilon$, by a finite number of points. In $\mathbb{R}^n$ the two concepts agree (because $\mathbb{R}^n$ is finite-dimensional and a single bounded ball contains only "finitely many balls-worth of material"). In infinite-dimensional spaces they come apart dramatically — and that is exactly why Heine–Borel fails in $C([0, 1])$.
+
+<TheoremBlock type="theorem" number={3} title="Compactness Equivalence in Metric Spaces">
+
+For a metric space $(X, d)$, the following three conditions are equivalent:
+
+1. $X$ is compact (every open cover has a finite subcover).
+2. $X$ is sequentially compact (every sequence has a convergent subsequence).
+3. $X$ is complete and totally bounded.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+We sketch the three directions. Full proofs are in Munkres, Chapter 3, or Rudin, Chapter 2.
+
+**$(1) \Rightarrow (2)$.** Suppose $X$ is compact and let $(x_n)$ be a sequence with no convergent subsequence. Then no point $x \in X$ is a cluster point of $(x_n)$, so each $x$ has an open ball $B(x, r_x)$ containing only finitely many terms of the sequence. These balls form an open cover of $X$. Compactness gives a finite subcover, which therefore contains only finitely many terms in total — but the full sequence has infinitely many terms, a contradiction.
+
+**$(2) \Rightarrow (3)$.** Sequential compactness implies completeness: a Cauchy sequence has a convergent subsequence by hypothesis, and a Cauchy sequence with a convergent subsequence converges to the same limit (standard Cauchy-subsequence lemma). For total boundedness, suppose $X$ has no finite $\varepsilon$-net for some $\varepsilon > 0$. Pick any $x_1 \in X$. Since $B(x_1, \varepsilon)$ is not all of $X$, pick $x_2 \notin B(x_1, \varepsilon)$. Since $B(x_1, \varepsilon) \cup B(x_2, \varepsilon)$ is not all of $X$, pick $x_3$ outside both balls. Continuing, we construct a sequence with pairwise distances $\geq \varepsilon$, which has no convergent subsequence — contradicting sequential compactness.
+
+**$(3) \Rightarrow (1)$** (the hardest direction). Suppose $X$ is complete and totally bounded but has an open cover $\{U_\alpha\}$ with no finite subcover. Total boundedness gives a finite $\varepsilon_1$-net; at least one of the balls $B(x_i, \varepsilon_1)$ intersected with $X$ has no finite subcover (otherwise combining them would give a finite subcover of the whole space). Pick one such ball, shrink $\varepsilon$ to $\varepsilon_1 / 2$, and apply total boundedness inside that ball to get a smaller uncovered ball $B(x_2, \varepsilon_1/2)$. Iterating, we obtain a nested sequence of sets with diameters shrinking to zero; picking one point from each gives a Cauchy sequence. By completeness it converges to some limit $x^*$, which belongs to some $U_\alpha$ in the cover. Because $U_\alpha$ is open, $U_\alpha$ contains a ball around $x^*$, so $U_\alpha$ covers all the tail sets in our nested sequence once they are small enough — giving a finite subcover for that tail after all, contradicting our construction.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={4} title="Heine–Borel as a Special Case">
+
+In $\mathbb{R}^n$, the Heine–Borel theorem from [Completeness & Compactness in Rⁿ](/topics/completeness-compactness) says compact ⟺ closed and bounded. This is a *special case* of the general three-way equivalence we just proved: in $\mathbb{R}^n$, bounded and totally bounded are the same thing (because $\mathbb{R}^n$ is finite-dimensional, so a single bounded ball contains only finitely many small balls' worth of volume). And a closed subset of a complete space is complete. So in $\mathbb{R}^n$, closed + bounded is the same as complete + totally bounded, which by Theorem 3 is the same as compact. **The equivalence "bounded ⟺ totally bounded" fails in infinite dimensions** — and we are about to see exactly how badly.
+
+</TheoremBlock>
+
+<CompactnessCounterexampleExplorer client:visible />
+
+<TheoremBlock type="example" number={8} title="The C([0,1]) Counterexample">
+
+The closed unit ball $\mathcal{B} = \{f \in C([0, 1]) : \|f\|_\infty \leq 1\}$ in the sup-norm is closed and bounded, but **not compact**. This is the counterexample promised in [Topic 3](/topics/completeness-compactness).
+
+*Proof.* Consider the sequence $f_n(x) = \sin(n\pi x)$ for $n = 1, 2, 3, \ldots$. Each $f_n$ is continuous and $\|f_n\|_\infty = 1$, so every $f_n \in \mathcal{B}$. We claim that no subsequence of $(f_n)$ is Cauchy in the sup-norm — and therefore no subsequence converges, so $\mathcal{B}$ is not sequentially compact and (by Theorem 3) not compact.
+
+To see why, fix distinct indices $m \neq n$. The functions $\sin(m\pi x)$ and $\sin(n\pi x)$ are orthogonal in $L^2[0, 1]$:
+
+$$\int_0^1 \sin(m\pi x) \sin(n\pi x) \, dx = 0.$$
+
+Expanding $\int_0^1 (\sin(m\pi x) - \sin(n\pi x))^2 \, dx$ using orthogonality and $\int_0^1 \sin^2(k\pi x)\,dx = 1/2$:
+
+$$\int_0^1 (\sin(m\pi x) - \sin(n\pi x))^2 \, dx = \tfrac{1}{2} + \tfrac{1}{2} - 0 = 1.$$
+
+Now use the bound $\|f\|_2^2 \leq \|f\|_\infty^2$ on $[0, 1]$: if the sup-norm of the difference were less than 1, the integral above would be less than 1. But the integral *equals* 1, so
+
+$$\|f_m - f_n\|_\infty \geq \|f_m - f_n\|_2 = 1 \quad \text{for all } m \neq n.$$
+
+Every pair of terms in the sequence is at sup-norm distance at least 1 — so no subsequence is Cauchy, and no subsequence converges.
+
+**The lesson.** In an infinite-dimensional space, closed and bounded is *not* enough for compactness. The missing ingredient is **equicontinuity**: the family $\sin(n\pi x)$ is bounded, but the functions "wiggle faster and faster" — for large $n$ there is no single $\delta$ that controls $|f_n(x) - f_n(y)|$ uniformly across the family. We will name this obstruction and package it into the Arzelà–Ascoli theorem in Section 9.
+
+</TheoremBlock>
+
+![Two-panel figure: the family sin(nπx) for n = 1..8 plotted, and the pairwise sup-norm distance matrix showing all off-diagonal entries ≥ 1.](/images/topics/metric-spaces/compactness-counterexample.png)
+
