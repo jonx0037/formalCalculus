@@ -194,21 +194,15 @@ export default function BellmanIterationExplorer() {
     runningRef.current = true;
     const tick = () => {
       if (!runningRef.current) return;
-      // Access the latest V via state setter to read current value.
       setV((currV) => {
         const next = bellmanOptimalityStep(currV, scenario, gamma);
         setHistory((h) => {
           if (h.length >= MAX_ITERATIONS + 1) return h;
           return [...h, next];
         });
-        // Stop conditions
-        if (
-          supNormDistance(next, vStar) < CONVERGENCE_TOL ||
-          (history.length >= MAX_ITERATIONS)
-        ) {
+        if (supNormDistance(next, vStar) < CONVERGENCE_TOL) {
           runningRef.current = false;
           setRunning(false);
-          return next;
         }
         return next;
       });
@@ -216,6 +210,14 @@ export default function BellmanIterationExplorer() {
         timerRef.current = window.setTimeout(tick, STEP_INTERVAL_MS);
       }
     };
+    // Stop condition for max iterations: history.length is in the dep
+    // array, so this check uses a fresh value on every re-run of the
+    // effect — no stale closure.
+    if (history.length >= MAX_ITERATIONS) {
+      runningRef.current = false;
+      setRunning(false);
+      return;
+    }
     timerRef.current = window.setTimeout(tick, STEP_INTERVAL_MS);
     return () => {
       if (timerRef.current !== null) {
@@ -224,12 +226,7 @@ export default function BellmanIterationExplorer() {
       }
       runningRef.current = false;
     };
-    // We intentionally omit history and V from deps so the tick closure is
-    // established once per running toggle; the setState callbacks read the
-    // latest values via functional updates. scenario and gamma are the only
-    // inputs that should restart the run, and gamma already triggers a reset.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [running, scenario, gamma, vStar]);
+  }, [running, scenario, gamma, vStar, history.length]);
 
   // Cleanup timer on unmount.
   useEffect(() => {
@@ -261,9 +258,18 @@ export default function BellmanIterationExplorer() {
         .append('g')
         .attr('transform', `translate(${leftMargin.left},${leftMargin.top})`);
 
-      const allValues = [...V, ...vStar, 0];
-      const yMin = Math.min(...allValues) - 1;
-      const yMax = Math.max(...allValues) + 2;
+      let yMin = 0;
+      let yMax = 0;
+      for (const val of V) {
+        if (val < yMin) yMin = val;
+        if (val > yMax) yMax = val;
+      }
+      for (const val of vStar) {
+        if (val < yMin) yMin = val;
+        if (val > yMax) yMax = val;
+      }
+      yMin -= 1;
+      yMax += 2;
 
       const xScale = d3
         .scaleBand<string>()
@@ -388,10 +394,14 @@ export default function BellmanIterationExplorer() {
         },
       );
 
-      const xDomainMax = Math.max(MAX_ITERATIONS, pts.length - 1);
+      const xDomainMax = pts.length - 1 > MAX_ITERATIONS ? pts.length - 1 : MAX_ITERATIONS;
       const xScale = d3.scaleLinear().domain([0, xDomainMax]).range([0, innerW]);
       // y-domain: from max err or bound down to 1e-12, log scale
-      const maxY = Math.max(...pts.map((p) => Math.max(p.err, p.bound)), 1e-3);
+      let maxY = 1e-3;
+      for (const p of pts) {
+        if (p.err > maxY) maxY = p.err;
+        if (p.bound > maxY) maxY = p.bound;
+      }
       const yScale = d3
         .scaleLog()
         .domain([1e-12, maxY * 2])

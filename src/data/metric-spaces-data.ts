@@ -154,24 +154,18 @@ export function getContractionScenario(scenarioId: string): ContractionScenario 
         fixedPoint: (k) => {
           // Fixed point solves (I − k·Rθ)·x* = c_offset.
           // I − k·Rθ = [[1 − k cos θ,  k sin θ], [−k sin θ, 1 − k cos θ]]
-          // det = (1 − k cos θ)² + (k sin θ)² = 1 − 2k cos θ + k²
+          // det = (1 − k cos θ)² + (k sin θ)²
+          //     = (k − cos θ)² + sin²θ  ≥  sin²(π/6) = 0.25 > 0  for all real k.
+          // The determinant is always strictly positive, so the inverse exists.
           const c = Math.cos(ROTATION_ANGLE);
           const s = Math.sin(ROTATION_ANGLE);
           const a = 1 - k * c;
           const b = k * s;
           const det = a * a + b * b;
-          if (Math.abs(det) < 1e-14) {
-            // Singular — should only happen for unusual k; return the offset as a fallback.
-            return [ROTATION_OFFSET[0], ROTATION_OFFSET[1]];
-          }
           // Inverse of [[a, b], [−b, a]] is (1/det) · [[a, −b], [b, a]].
-          const invA = a / det;
-          const invB = -b / det;
-          const invC = b / det;
-          const invD = a / det;
           return [
-            invA * ROTATION_OFFSET[0] + invB * ROTATION_OFFSET[1],
-            invC * ROTATION_OFFSET[0] + invD * ROTATION_OFFSET[1],
+            (a * ROTATION_OFFSET[0] - b * ROTATION_OFFSET[1]) / det,
+            (b * ROTATION_OFFSET[0] + a * ROTATION_OFFSET[1]) / det,
           ];
         },
         defaultStart: [-1.3, 1.3],
