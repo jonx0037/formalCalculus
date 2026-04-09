@@ -37,7 +37,7 @@
 
     { "id": "metric-spaces", "label": "Metric Spaces & Topology", "domain": "functional-analysis", "status": "published", "url": "/topics/metric-spaces" },
     { "id": "banach-spaces", "label": "Normed & Banach Spaces", "domain": "functional-analysis", "status": "published", "url": "/topics/banach-spaces" },
-    { "id": "hilbert-spaces", "label": "Inner Product & Hilbert Spaces", "domain": "functional-analysis", "status": "planned", "url": "/topics/hilbert-spaces" },
+    { "id": "hilbert-spaces", "label": "Inner Product & Hilbert Spaces", "domain": "functional-analysis", "status": "published", "url": "/topics/hilbert-spaces" },
     { "id": "calculus-of-variations", "label": "Calculus of Variations", "domain": "functional-analysis", "status": "planned", "url": "/topics/calculus-of-variations" }
   ],
   "edges": [

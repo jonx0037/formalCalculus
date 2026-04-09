@@ -326,3 +326,169 @@ export function dualMaximizer(
   const x1 = (Math.sign(y[1]) * Math.abs(y[1]) ** (q - 1)) / scale;
   return { point: [x0, x1], value: dualNorm };
 }
+
+// ═══════════════════════════════════════════════════════════════
+//  Topic 31 — Inner Product & Hilbert Spaces
+// ═══════════════════════════════════════════════════════════════
+
+// ── Inner-product interfaces ────────────────────────────────────
+
+/** An inner product on ℝⁿ with its induced norm. */
+export interface InnerProduct {
+  /** Compute ⟨x, y⟩. */
+  compute(x: number[], y: number[]): number;
+  /** Compute ‖x‖ = √⟨x, x⟩. */
+  norm(x: number[]): number;
+  /** Dimension of the space. */
+  dim: number;
+}
+
+/** Result of projecting x onto a subspace spanned by an ONB. */
+export interface ProjectionResult {
+  /** The projection P_M(x). */
+  projection: number[];
+  /** The residual x − P_M(x). */
+  residual: number[];
+  /** Distance ‖x − P_M(x)‖. */
+  distance: number;
+  /** Fourier coefficients ⟨x, e_k⟩ for each ONB vector. */
+  coefficients: number[];
+}
+
+// ── Inner product creation ──────────────────────────────────────
+
+/**
+ * Create the standard Euclidean inner product on ℝⁿ:
+ * ⟨x, y⟩ = Σ x_i y_i
+ */
+export function createStandardInnerProduct(n: number): InnerProduct {
+  return {
+    compute(x: number[], y: number[]): number {
+      let s = 0;
+      for (let i = 0; i < n; i++) s += x[i] * y[i];
+      return s;
+    },
+    norm(x: number[]): number {
+      let s = 0;
+      for (let i = 0; i < n; i++) s += x[i] * x[i];
+      return Math.sqrt(s);
+    },
+    dim: n,
+  };
+}
+
+/**
+ * Create a weighted inner product on ℝⁿ:
+ * ⟨x, y⟩_w = Σ w_i x_i y_i   (all w_i > 0)
+ */
+export function createWeightedInnerProduct(weights: number[]): InnerProduct {
+  const n = weights.length;
+  return {
+    compute(x: number[], y: number[]): number {
+      let s = 0;
+      for (let i = 0; i < n; i++) s += weights[i] * x[i] * y[i];
+      return s;
+    },
+    norm(x: number[]): number {
+      let s = 0;
+      for (let i = 0; i < n; i++) s += weights[i] * x[i] * x[i];
+      return Math.sqrt(s);
+    },
+    dim: n,
+  };
+}
+
+// ── Projection ──────────────────────────────────────────────────
+
+/**
+ * Project x onto the subspace spanned by an orthonormal basis `onb`.
+ * Each row of `onb` is one basis vector e_k.
+ * Uses the standard inner product unless `ip` is provided.
+ *
+ * P_M(x) = Σ ⟨x, e_k⟩ e_k
+ */
+export function projectOntoSubspace(
+  x: number[],
+  onb: number[][],
+  ip?: InnerProduct,
+): ProjectionResult {
+  const n = x.length;
+  const innerProduct = ip ?? createStandardInnerProduct(n);
+  const projection = new Array<number>(n).fill(0);
+  const coefficients: number[] = [];
+
+  for (const ek of onb) {
+    const ck = innerProduct.compute(x, ek);
+    coefficients.push(ck);
+    for (let i = 0; i < n; i++) projection[i] += ck * ek[i];
+  }
+
+  const residual = x.map((xi, i) => xi - projection[i]);
+  const distance = innerProduct.norm(residual);
+
+  return { projection, residual, distance, coefficients };
+}
+
+// ── Gram-Schmidt ────────────────────────────────────────────────
+
+/**
+ * Gram-Schmidt orthonormalization.
+ * Returns an orthonormal set from linearly independent input vectors.
+ * Skips (near-)zero vectors after orthogonalization (tolerance 1e-12).
+ * Uses the standard inner product unless `ip` is provided.
+ */
+export function gramSchmidt(
+  vectors: number[][],
+  ip?: InnerProduct,
+): number[][] {
+  if (vectors.length === 0) return [];
+  const n = vectors[0].length;
+  const innerProduct = ip ?? createStandardInnerProduct(n);
+  const result: number[][] = [];
+
+  for (const v of vectors) {
+    // Subtract projections onto all previously computed ONB vectors
+    const u = [...v];
+    for (const ek of result) {
+      const ck = innerProduct.compute(u, ek);
+      for (let i = 0; i < n; i++) u[i] -= ck * ek[i];
+    }
+    // Normalize
+    const norm = innerProduct.norm(u);
+    if (norm < 1e-12) continue; // linearly dependent — skip
+    for (let i = 0; i < n; i++) u[i] /= norm;
+    result.push(u);
+  }
+
+  return result;
+}
+
+// ── Parallelogram law test ──────────────────────────────────────
+
+/**
+ * Check whether a norm satisfies the parallelogram law:
+ *   ‖x + y‖² + ‖x − y‖² = 2(‖x‖² + ‖y‖²)
+ *
+ * Returns whether the law holds within `tol` (default 1e-8)
+ * across all supplied sample pairs, plus the maximum deviation.
+ */
+export function checkParallelogramLaw(
+  norm: (x: number[]) => number,
+  samplePairs: [number[], number[]][],
+  tol = 1e-8,
+): { satisfied: boolean; maxDeviation: number } {
+  let maxDev = 0;
+
+  for (const [x, y] of samplePairs) {
+    const n = x.length;
+    const xPlusY = x.map((xi, i) => xi + y[i]);
+    const xMinusY = x.map((xi, i) => xi - y[i]);
+
+    const lhs = norm(xPlusY) ** 2 + norm(xMinusY) ** 2;
+    const rhs = 2 * (norm(x) ** 2 + norm(y) ** 2);
+    const dev = rhs > 0 ? Math.abs(lhs - rhs) / rhs : Math.abs(lhs - rhs);
+    if (dev > maxDev) maxDev = dev;
+  }
+
+  return { satisfied: maxDev <= tol, maxDeviation: maxDev };
+}
