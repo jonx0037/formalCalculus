@@ -738,7 +738,7 @@ We sketch the proof; full details are in Folland §6.2 or Royden §19.5.
 
 **Surjectivity.** Given a bounded linear functional $\Phi \in (L^p)^*$, we want to find $g \in L^q$ with $\Phi = \Phi_g$. For each measurable set $A$ of finite measure, define $\nu(A) = \Phi(\mathbf{1}_A)$. Linearity of $\Phi$ on indicator functions makes $\nu$ a finitely additive set function; boundedness and a countable-additivity argument upgrade $\nu$ to a $\sigma$-additive signed measure. Moreover, if $\mu(A) = 0$, then $\mathbf{1}_A = 0$ in $L^p$, so $\Phi(\mathbf{1}_A) = 0$. So $\nu$ is *absolutely continuous* with respect to $\mu$ (every $\mu$-null set is $\nu$-null).
 
-By the **Radon–Nikodym theorem** (which we will prove in Topic 28; for now we use it as a black box), absolute continuity implies that $\nu$ has a density $g = d\nu / d\mu$, so $\nu(A) = \int_A g \, d\mu$. By construction, $\Phi(\mathbf{1}_A) = \int \mathbf{1}_A g \, d\mu$ for every set $A$ of finite measure. Linearity then extends this from indicators to simple functions, and density of simple functions in $L^p$ (Theorem 6) plus continuity of $\Phi$ extends it to all of $L^p$. So $\Phi(f) = \int f g \, d\mu$ on all of $L^p$. Showing $g \in L^q$ uses the operator norm bound $|\Phi(f)| \leq \|\Phi\| \|f\|_p$ and a clever choice of test function similar to the embedding step.
+By the [**Radon–Nikodym theorem**](/topics/radon-nikodym), absolute continuity implies that $\nu$ has a density $g = d\nu / d\mu$, so $\nu(A) = \int_A g \, d\mu$. By construction, $\Phi(\mathbf{1}_A) = \int \mathbf{1}_A g \, d\mu$ for every set $A$ of finite measure. Linearity then extends this from indicators to simple functions, and density of simple functions in $L^p$ (Theorem 6) plus continuity of $\Phi$ extends it to all of $L^p$. So $\Phi(f) = \int f g \, d\mu$ on all of $L^p$. Showing $g \in L^q$ uses the operator norm bound $|\Phi(f)| \leq \|\Phi\| \|f\|_p$ and a clever choice of test function similar to the embedding step.
 
 </TheoremBlock>
 
@@ -831,11 +831,11 @@ The central editorial pivot in this topic was *from individual functions to spac
 - [Completeness & Compactness](/topics/completeness-compactness) — The Riesz–Fischer subsequence-extraction technique (extract a fast-decaying subsequence, sum the differences, recover an a.e. limit) is the same kind of move as the Bolzano–Weierstrass extraction from Topic 3, applied in function space rather than in $\mathbb{R}$.
 - [Fourier Series](/topics/fourier-series) — The $L^2$ convergence of Fourier series (Example 14) is a special case of the general orthonormal-system theory that we previewed in Section 9. Topic 22's geometric statements about Fourier series being "basis expansions" are made rigorous by the Hilbert space structure of $L^2$ developed here.
 
-**Successor topics within formalCalculus** *(coming soon)*:
+**Successor topics within formalCalculus:**
 
-- **Radon-Nikodym & Probability Densities** — Densities $d\nu / d\mu$ live in $L^1(\mu)$. The Radon-Nikodym proof uses $L^2$ projection onto closed subspaces of measure differences — an $L^p$ technique applied to a measure-theoretic problem.
-- **Normed & Banach Spaces** — $L^p$ is the canonical example of a Banach space (a complete normed vector space). Topic 30 develops the abstract theory; this topic provides the indispensable concrete example that makes the abstract theory feel grounded.
-- **Inner Product & Hilbert Spaces** — $L^2$ is the canonical Hilbert space. Topic 31 develops orthogonal projection, the Riesz representation theorem (the general version of Section 10's special case), and the spectral theorem — all of which generalize properties we saw in $L^2$ here.
+- [**Radon-Nikodym & Probability Densities**](/topics/radon-nikodym) — Densities $d\nu / d\mu$ live in $L^1(\mu)$. The Radon-Nikodym proof uses $L^2$ projection onto closed subspaces of measure differences — an $L^p$ technique applied to a measure-theoretic problem.
+- **Normed & Banach Spaces** *(coming soon)* — $L^p$ is the canonical example of a Banach space (a complete normed vector space). Topic 30 develops the abstract theory; this topic provides the indispensable concrete example that makes the abstract theory feel grounded.
+- **Inner Product & Hilbert Spaces** *(coming soon)* — $L^2$ is the canonical Hilbert space. Topic 31 develops orthogonal projection, the Riesz representation theorem (the general version of Section 10's special case), and the spectral theorem — all of which generalize properties we saw in $L^2$ here.
 
 **Forward to formalml.com:**
 

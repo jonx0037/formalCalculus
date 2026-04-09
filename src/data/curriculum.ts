@@ -59,16 +59,15 @@ export const tracks: Track[] = [
   {
     id: 'measure-integration',
     title: 'Measure & Integration',
-    description: 'Sigma-algebras, Lebesgue integral, Lp spaces — the rigorous foundation of probability.',
+    description: 'Sigma-algebras, Lebesgue integral, Lp spaces, and the Radon-Nikodym theorem — the rigorous foundation of probability.',
     domain: 'measure-integration',
     published: [
       'Sigma-Algebras & Measures',
       'The Lebesgue Integral',
       'Lp Spaces',
-    ],
-    planned: [
       'Radon-Nikodym & Probability Densities',
     ],
+    planned: [],
   },
   {
     id: 'functional-analysis',

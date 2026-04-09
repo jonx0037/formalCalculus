@@ -1,15 +1,17 @@
 /**
  * Shared utility module for measure theory and Lebesgue integration.
- * Created by Topic 26 (lebesgue-integral); extended by Topic 27 (lp-spaces).
- * Will be extended further by Topic 28 (radon-nikodym).
+ * Created by Topic 26 (lebesgue-integral); extended by Topics 27 (lp-spaces)
+ * and 28 (radon-nikodym).
  *
  * Provides:
  *  - MeasureInterval, SimpleFunctionStep, SimpleFunctionApproximation types
  *    (migrated from sigma-algebras-data.ts; re-exported there for backward compat)
  *  - getSimpleFunctionApproximation: dyadic simple-function approximation
  *  - checkDomination: numerical verification of |f_n| ≤ g for the DCT hypothesis
- *  - LpNormResult, HolderCheckResult types (Topic 27)
+ *  - LpNormResult, HolderCheckResult, MinkowskiCheckResult types (Topic 27)
  *  - computeLpNorm, checkHolder, checkMinkowski (Topic 27)
+ *  - DensityRatioResult, ImportanceSamplingResult types (Topic 28)
+ *  - computeDensityRatio, importanceSamplingEstimate (Topic 28)
  *
  * All functions are pure and deterministic — no Math.random().
  */
@@ -325,4 +327,108 @@ export function checkMinkowski(
   const ratio = rhs > 0 ? lhs / rhs : 0;
 
   return { p, lhs, rhs, ratio };
+}
+
+// ── Radon-Nikodym primitives (Topic 28) ────────────────────
+
+/** Value of the density ratio dP/dQ at a single point on a grid. */
+export interface DensityRatioResult {
+  /** The grid point x. */
+  x: number;
+  /** The target density value p(x). */
+  pValue: number;
+  /** The proposal density value q(x). */
+  qValue: number;
+  /** p(x) / q(x). Infinity when q(x) = 0 and p(x) > 0; 0 when both are 0. */
+  ratio: number;
+}
+
+/** Result of an importance-sampling estimate. */
+export interface ImportanceSamplingResult {
+  /** Ê_P[f] = (1/n) Σ f(x_i) w(x_i) with samples x_i ~ Q and unnormalized w_i = p(x_i)/q(x_i). */
+  estimate: number;
+  /** Effective sample size: (Σ w_i)² / Σ w_i². */
+  effectiveSampleSize: number;
+  /** Normalized weights w_i / Σ w_j. */
+  normalizedWeights: number[];
+}
+
+/**
+ * Compute the density ratio dP/dQ on a uniform grid over `domain`.
+ *
+ * Handles the degenerate case q(x) = 0 gracefully: returns Infinity if p(x) > 0,
+ * 0 if both are 0. The caller is responsible for filtering non-finite ratios
+ * before plotting.
+ *
+ * Used by Topic 28's ImportanceSamplingExplorer to display the importance
+ * weight w(x) = p(x)/q(x) as a function across the proposal's support.
+ *
+ * @param p — target density function
+ * @param q — proposal density function
+ * @param domain — [a, b]
+ * @param nPoints — grid resolution (default 500)
+ */
+export function computeDensityRatio(
+  p: (x: number) => number,
+  q: (x: number) => number,
+  domain: [number, number],
+  nPoints: number = 500,
+): DensityRatioResult[] {
+  const [a, b] = domain;
+  if (nPoints < 2 || !(b > a)) return [];
+  const results: DensityRatioResult[] = new Array(nPoints);
+  for (let i = 0; i < nPoints; i++) {
+    const x = a + (i / (nPoints - 1)) * (b - a);
+    const pValue = p(x);
+    const qValue = q(x);
+    let ratio: number;
+    if (qValue === 0) {
+      ratio = pValue > 0 ? Infinity : 0;
+    } else {
+      ratio = pValue / qValue;
+    }
+    results[i] = { x, pValue, qValue, ratio };
+  }
+  return results;
+}
+
+/**
+ * Compute an importance-sampling estimate Ê_P[f] = (1/n) Σ f(x_i) w(x_i) given
+ * samples from Q and unnormalized weights w_i = p(x_i) / q(x_i). Also returns
+ * the effective sample size (Σ w_i)² / Σ w_i² and the normalized weights.
+ *
+ * The effective sample size is a diagnostic for proposal quality: ESS close to
+ * n means the weights are nearly uniform (good); ESS << n means a few samples
+ * dominate (bad). For an unbiased estimate of E_P[f], the un-normalized form
+ * Ê_P[f] = (1/n) Σ f(x_i) w(x_i) is correct as long as the unnormalized weights
+ * are p/q exactly. If the weights are only known up to a constant, switch to
+ * the self-normalized form (1/Σw_i) Σ f(x_i) w(x_i), which is biased but stable.
+ *
+ * @param f — integrand
+ * @param samples — samples drawn from proposal Q
+ * @param weights — unnormalized importance weights aligned with `samples`
+ */
+export function importanceSamplingEstimate(
+  f: (x: number) => number,
+  samples: number[],
+  weights: number[],
+): ImportanceSamplingResult {
+  const n = samples.length;
+  if (n === 0 || weights.length !== n) {
+    return { estimate: NaN, effectiveSampleSize: 0, normalizedWeights: [] };
+  }
+  let weightedSum = 0;
+  let sumW = 0;
+  let sumW2 = 0;
+  for (let i = 0; i < n; i++) {
+    const w = weights[i];
+    weightedSum += f(samples[i]) * w;
+    sumW += w;
+    sumW2 += w * w;
+  }
+  const estimate = weightedSum / n;
+  const effectiveSampleSize = sumW2 > 0 ? (sumW * sumW) / sumW2 : 0;
+  const normalizedWeights =
+    sumW > 0 ? weights.map((w) => w / sumW) : weights.map(() => 0);
+  return { estimate, effectiveSampleSize, normalizedWeights };
 }
