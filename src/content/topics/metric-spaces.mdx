@@ -719,3 +719,125 @@ The $k$-nearest-neighbors algorithm is defined entirely in terms of a metric on 
 
 ![Four-panel figure: Bellman iteration convergence, Lipschitz gradient descent trajectory, metric learning embedding separation, and k-NN decision boundaries under different metrics.](/images/topics/metric-spaces/ml-connections-29.png)
 
+## 11. Computational Notes
+
+Every concept in this topic has a short Python implementation. NumPy and SciPy have the basic machinery; the reference notebook spells out each one in detail.
+
+**$\ell^p$ distances in $\mathbb{R}^n$** are a single NumPy call:
+
+```python
+import numpy as np
+
+def lp_distance(x, y, p=2):
+    return np.linalg.norm(x - y, ord=p)
+
+# Euclidean (p=2), Manhattan (p=1), Chebyshev (p=inf)
+lp_distance(np.array([1, 2, 3]), np.array([4, 6, 8]), p=2)
+```
+
+**Fixed-point iteration** is a for-loop with a convergence check. For a contraction $T$:
+
+```python
+def fixed_point_iterate(T, x0, tol=1e-10, max_iter=1000):
+    x = np.asarray(x0, dtype=float)
+    for n in range(max_iter):
+        x_new = T(x)
+        if np.linalg.norm(x_new - x) < tol:
+            return x_new, n + 1
+        x = x_new
+    return x, max_iter
+```
+
+The loop returns the iterate and the number of steps needed. Feed this a Picard operator, a Newton step, or a Bellman backup and the same skeleton applies.
+
+**Sup-norm distance between sampled functions** is `max(abs(...))` on a shared grid:
+
+```python
+def sup_norm_distance(f_samples, g_samples):
+    return np.max(np.abs(f_samples - g_samples))
+
+x_grid = np.linspace(0, 1, 1000)
+f = np.sin(2 * np.pi * x_grid)
+g = np.sin(3 * np.pi * x_grid)
+sup_norm_distance(f, g)
+```
+
+**Pairwise distance matrices** use `scipy.spatial.distance.cdist`, which supports every $\ell^p$ metric out of the box:
+
+```python
+from scipy.spatial.distance import cdist
+
+points = np.random.randn(100, 5)
+D = cdist(points, points, metric='euclidean')  # or 'cityblock', 'chebyshev', ...
+```
+
+**Value iteration on a small MDP** is just repeated Bellman-optimality updates:
+
+```python
+def value_iteration(P, R, gamma, tol=1e-10, max_iter=1000):
+    # P: shape (S, A, S) transitions; R: shape (S, A) rewards
+    S, A, _ = P.shape
+    V = np.zeros(S)
+    for n in range(max_iter):
+        Q = R + gamma * P @ V  # shape (S, A)
+        V_new = Q.max(axis=1)
+        if np.max(np.abs(V_new - V)) < tol:
+            return V_new, n + 1
+        V = V_new
+    return V, max_iter
+```
+
+The convergence rate matches the theoretical $\gamma^n$ bound — you can verify this by plotting $\log \|V_n - V^*\|_\infty$ against $n$ and reading off the slope.
+
+## 12. Summary and Key Results
+
+The topic built a small library of theorems on top of the three metric-space axioms. Here is the proof-dependency structure in compact form.
+
+| Result | Section | Key idea |
+|---|---|---|
+| Metric space axioms | 2 | Positivity, symmetry, triangle inequality |
+| Three characterizations of continuity (Theorem 1) | 4 | ε–δ = sequential = preimage-of-open |
+| Completeness of $C([a, b])$ (Theorem 2) | 5 | Uniform limit of continuous is continuous |
+| Compactness equivalence (Theorem 3) | 6 | Compact ⟺ sequentially compact ⟺ complete + totally bounded |
+| Banach Contraction Mapping Theorem (Theorem 4) | 7 | Geometric-series Cauchy bound + completeness |
+| Arzelà–Ascoli Theorem (Theorem 5) | 9 | Diagonal subsequence + equicontinuity promotes to uniform |
+
+The dependency chain is linear. The compactness equivalence (Theorem 3) gives us the tools to recognize compactness without unrolling open covers every time. The completeness of $C([a, b])$ (Theorem 2) is the missing ingredient for fixed-point arguments, and Theorem 2's proof depends on the Uniform Limit Theorem from [Uniform Convergence](/topics/uniform-convergence). The Banach theorem (Theorem 4) depends on completeness. Arzelà–Ascoli (Theorem 5) depends on completeness and on the compactness equivalence. All of these depend on the three characterizations of continuity from Theorem 1.
+
+One result unifies four earlier topics. The Banach Contraction Mapping Theorem gives a single proof that covers:
+
+- The Picard–Lindelöf existence theorem for first-order ODEs ([Topic 21](/topics/first-order-odes))
+- Newton iteration for implicit numerical methods ([Topic 24](/topics/numerical-odes))
+- The Inverse Function Theorem ([Topic 12](/topics/inverse-implicit))
+- Value iteration in reinforcement learning (Section 10)
+
+Before this topic, each of those was a separate argument using a specifically constructed self-map. After this topic, they are four corollaries of one theorem about complete metric spaces — and the proof you read in Section 7 is the proof of all four at once.
+
+## 13. Track 8 Opening — The Road to Functional Analysis
+
+This topic opens **Track 8: Functional Analysis Essentials**, a four-topic arc that adds successively more structure to metric spaces until we reach the framework behind modern machine learning optimization. Each topic adds one layer:
+
+**Topic 29 (this topic): Metric Spaces & Topology.** The language of distance, open sets, completeness, and compactness in abstract spaces. The Banach Contraction Mapping Theorem unifies convergence arguments across the curriculum. The Arzelà–Ascoli theorem characterizes compact function families. Forward-looking: this is the geometric foundation.
+
+**Topic 30: Normed & Banach Spaces.** Add algebraic structure — a vector-space operation and a norm that interacts with it. Bounded linear operators replace generic continuous maps; the three pillars of functional analysis (Open Mapping, Closed Graph, Uniform Boundedness) emerge as consequences of the Baire Category Theorem we deferred from this topic. The payoff: "metric space + vector space = analysis powerhouse." Dual spaces of linear functionals live here, and the $L^p$ spaces we have been quietly alluding to are Banach spaces — their theory gets its full treatment in Topic 30, not here.
+
+**Topic 31: Inner Product & Hilbert Spaces.** Add geometric structure — an inner product that gives us angles, orthogonality, and projections. Orthogonal projections replace Banach-space linear functionals as the primary construction; the Riesz representation theorem identifies the dual of a Hilbert space with the space itself. This is the mathematical home of **kernel methods**, **Reproducing Kernel Hilbert Spaces (RKHS)**, and **Gaussian processes**. Every symmetric positive-definite kernel in machine learning induces a Hilbert space; Topic 31 makes that construction rigorous.
+
+**Topic 32: Calculus of Variations.** Optimization on function spaces. The Euler–Lagrange equations characterize critical points of functionals $J : \text{function space} \to \mathbb{R}$, first and second variation generalize the gradient and Hessian, and the direct method of the calculus of variations gives existence theorems via compactness arguments (Arzelà–Ascoli and its Sobolev-space cousins). This is the framework behind **physics-informed neural networks**, **optimal transport**, **variational autoencoders**, and **diffusion models** — wherever ML optimizes over functions rather than parameters, calculus of variations is quietly at work.
+
+The refinement sequence is **metric → normed → inner product → optimization**. Every Hilbert space is a Banach space; every Banach space is a metric space. The additional structure at each step buys additional theorems: metric spaces give us continuity and contraction arguments, normed spaces add linear operators and duality, inner product spaces add orthogonal projection, and the optimization layer turns projection into the Euler–Lagrange machinery.
+
+**Within formalCalculus — upcoming topics in this track:**
+
+- **Normed & Banach Spaces** *(coming soon)*
+- **Inner Product & Hilbert Spaces** *(coming soon)*
+- **Calculus of Variations** *(coming soon)*
+
+**Forward links to formalml.com.** Every topic in Track 8 has downstream machine-learning applications, and Topic 29 already touches several:
+
+- <a href="https://formalml.com/topics/gradient-descent" class="formalml-badge" target="_blank" rel="noopener">Gradient Descent</a> — Lipschitz constants from Section 4 and the contraction argument from Section 7 give the cleanest convergence proof for gradient descent on strongly convex $L$-smooth objectives.
+- <a href="https://formalml.com/topics/reinforcement-learning" class="formalml-badge" target="_blank" rel="noopener">Reinforcement Learning</a> — The Bellman operator is a contraction in the sup-norm with constant $\gamma$, so value iteration converges to $V^*$ at rate $\gamma^n$. The BellmanIterationExplorer in Section 10 demonstrates this concretely on a 3-state MDP.
+- <a href="https://formalml.com/topics/metric-learning" class="formalml-badge" target="_blank" rel="noopener">Metric Learning</a> — Siamese networks, triplet loss, and contrastive learning all learn metrics on embedding spaces. The metric space axioms are exactly the constraints those training losses enforce.
+- <a href="https://formalml.com/topics/kernel-methods" class="formalml-badge" target="_blank" rel="noopener">Kernel Methods</a> — Every positive-definite kernel induces a metric on its feature space. The RKHS norm is a metric-space distance, and Topic 31 will make the full construction rigorous.
+- <a href="https://formalml.com/topics/embedding-spaces" class="formalml-badge" target="_blank" rel="noopener">Embedding Spaces</a> — Word2Vec, BERT, and graph embeddings all live in metric spaces where Euclidean or cosine distance measures semantic proximity. The triangle inequality constrains the possible geometry of embeddings.
+
