@@ -24,3 +24,8 @@ npm-debug.log*
 
 # Pagefind
 public/pagefind/
+
+# Python venvs (notebooks)
+.venv/
+__pycache__/
+*.pyc
