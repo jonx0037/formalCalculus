@@ -281,11 +281,17 @@ Define
 
 $$f = \frac{h}{1 - h} \quad \text{on } \{h < 1\}.$$
 
-Then $f \geq 0$ everywhere (since $h \in [0, 1)$). Substituting back into $(\ast)$ with $g = (1 - h) \cdot \mathbf{1}_A / (1 - h) = \mathbf{1}_A$ — that is, working through the algebra of $(\ast\ast)$ — gives
+Then $f \geq 0$ everywhere (since $h \in [0, 1)$). The remaining step is to upgrade the test-function identity $(\ast\ast)$ from indicators to functions large enough to invert $(1 - h)$ — this is the only place the algebra needs care.
 
-$$\int_A (1 - h) \, d\nu = \int_A h \, d\mu = \int_A (1 - h) \cdot \frac{h}{1 - h} \, d\mu = \int_A (1 - h) f \, d\mu.$$
+The integral identity $(\ast\ast)$ — namely $\int_A (1 - h) \, d\nu = \int_A h \, d\mu$ for every measurable $A$ — extends from indicators to non-negative measurable test functions by the standard machine: linearity gives it for simple functions, and the Monotone Convergence Theorem (Topic 26 Theorem 1) extends it to non-negative measurables. Equivalently, the two measures $(1 - h) \, d\nu$ and $h \, d\mu$ on $\{h < 1\}$ agree on every measurable set, hence are equal as measures.
 
-Dividing both sides by $(1 - h)$ (legitimate because $1 - h > 0$ on the relevant set) gives $\nu(A) = \int_A f \, d\mu$ for every measurable $A$. This is exactly the Radon-Nikodym identity: $f$ is the density we sought. Finiteness of $f$ in $L^1(\mu)$ follows from $\nu(\Omega) < \infty$, since $\int_\Omega f \, d\mu = \nu(\Omega) < \infty$.
+Now apply this extended identity to the test function $\varphi = \mathbf{1}_A / (1 - h)$, where $A \subseteq \{h < 1 - \tfrac{1}{n}\}$ for some $n \geq 1$ (so that $\varphi$ is bounded by $n$ and hence integrable). On this restricted set the substitution gives
+
+$$\int_A \mathbf{1}_A \, d\nu = \int_A \frac{\mathbf{1}_A}{1 - h} \cdot (1 - h) \, d\nu = \int_A \frac{\mathbf{1}_A}{1 - h} \cdot h \, d\mu = \int_A \frac{h}{1 - h} \, d\mu = \int_A f \, d\mu.$$
+
+So $\nu(A) = \int_A f \, d\mu$ for every $A \subseteq \{h < 1 - \tfrac{1}{n}\}$. Taking $n \to \infty$ and applying MCT to the increasing sequence $\{h < 1 - \tfrac{1}{n}\} \uparrow \{h < 1\}$ extends the identity to all measurable $A \subseteq \{h < 1\}$. Combined with the earlier observation that $\nu(\{h = 1\}) = 0$, we get $\nu(A) = \int_A f \, d\mu$ for *every* measurable $A \subseteq \Omega$.
+
+This is exactly the Radon-Nikodym identity: $f$ is the density we sought. Finiteness of $f$ in $L^1(\mu)$ follows from $\nu(\Omega) < \infty$, since $\int_\Omega f \, d\mu = \nu(\Omega) < \infty$.
 
 </TheoremBlock>
 
