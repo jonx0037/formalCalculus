@@ -116,7 +116,6 @@ export default function CompactnessCounterexampleExplorer() {
   const panelH = stacked ? 320 : 360;
   const leftW = stacked ? totalWidth : Math.floor(totalWidth * 0.58);
   const rightW = stacked ? totalWidth : totalWidth - leftW;
-  const totalHeight = stacked ? panelH * 2 + 24 : panelH;
 
   // ── D3 rendering — left panel: curves ───────────────────────
   const leftSvgRef = useD3<SVGSVGElement>(
