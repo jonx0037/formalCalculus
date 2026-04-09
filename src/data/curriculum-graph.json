@@ -33,7 +33,7 @@
     { "id": "sigma-algebras", "label": "Sigma-Algebras & Measures", "domain": "measure-integration", "status": "published", "url": "/topics/sigma-algebras" },
     { "id": "lebesgue-integral", "label": "The Lebesgue Integral", "domain": "measure-integration", "status": "published", "url": "/topics/lebesgue-integral" },
     { "id": "lp-spaces", "label": "Lp Spaces", "domain": "measure-integration", "status": "published", "url": "/topics/lp-spaces" },
-    { "id": "radon-nikodym", "label": "Radon-Nikodym & Probability Densities", "domain": "measure-integration", "status": "planned", "url": "/topics/radon-nikodym" },
+    { "id": "radon-nikodym", "label": "Radon-Nikodym & Probability Densities", "domain": "measure-integration", "status": "published", "url": "/topics/radon-nikodym" },
 
     { "id": "metric-spaces", "label": "Metric Spaces & Topology", "domain": "functional-analysis", "status": "planned", "url": "/topics/metric-spaces" },
     { "id": "banach-spaces", "label": "Normed & Banach Spaces", "domain": "functional-analysis", "status": "planned", "url": "/topics/banach-spaces" },
