@@ -100,34 +100,51 @@ export function getBetaDensityData(
   };
 
   // Sample on (0.001, 0.999) — clipping the endpoints avoids density blow-ups
-  // when α or β is close to 1 (where the density tends to ∞ at the boundary).
+  // when α < 1 or β < 1 (where the density tends to ∞ at the corresponding
+  // boundary). The density is finite at α = 1 or β = 1 — only strict
+  // values below 1 cause the singularity.
   const densityCurve = sampleCurve(density, [0.001, 0.999], nPoints);
 
-  // Cumulative trapezoidal integration of the density curve gives the CDF.
-  // Accurate enough for visualization; the per-interval `integralOnInterval`
-  // helper recomputes on a finer sub-grid for the verification strip.
-  const cdfCurve: Point2D[] = new Array(densityCurve.length);
-  let running = 0;
-  for (let i = 0; i < densityCurve.length; i++) {
-    if (i > 0) {
-      const [xPrev, yPrev] = densityCurve[i - 1];
-      const [xCur, yCur] = densityCurve[i];
-      running += ((yPrev + yCur) / 2) * (xCur - xPrev);
-    }
-    cdfCurve[i] = [densityCurve[i][0], running];
+  // Pre-evaluate the density on a fine sub-grid (2000 cells) so that both
+  // the CDF and `integralOnInterval` can do O(1)/O(N) lookups instead of
+  // re-evaluating the Beta PDF on every drag event. Without this cache,
+  // drag interactions in DensityAsDerivativeExplorer trigger ~60 calls/sec
+  // each doing 2000 PDF evaluations.
+  const FINE_STEPS = 2000;
+  const FINE_LO = 1e-6;
+  const FINE_HI = 1 - 1e-6;
+  const fineH = (FINE_HI - FINE_LO) / FINE_STEPS;
+  const fineDensity = new Float64Array(FINE_STEPS + 1);
+  for (let i = 0; i <= FINE_STEPS; i++) {
+    fineDensity[i] = density(FINE_LO + i * fineH);
+  }
+  // Prefix sum of trapezoidal contributions: prefixIntegral[k] = ∫_{FINE_LO}^{x_k} f.
+  const prefixIntegral = new Float64Array(FINE_STEPS + 1);
+  for (let i = 1; i <= FINE_STEPS; i++) {
+    prefixIntegral[i] =
+      prefixIntegral[i - 1] + 0.5 * (fineDensity[i - 1] + fineDensity[i]) * fineH;
   }
 
+  // CDF curve: same data as `prefixIntegral` but resampled at the display
+  // resolution `nPoints` for plotting. We linearly interpolate the prefix
+  // sum onto each display x.
+  const lookupPrefix = (x: number): number => {
+    if (x <= FINE_LO) return 0;
+    if (x >= FINE_HI) return prefixIntegral[FINE_STEPS];
+    const t = (x - FINE_LO) / fineH;
+    const lo = Math.floor(t);
+    const frac = t - lo;
+    return prefixIntegral[lo] + frac * (prefixIntegral[lo + 1] - prefixIntegral[lo]);
+  };
+
+  const cdfCurve: Point2D[] = densityCurve.map(([x]) => [x, lookupPrefix(x)] as Point2D);
+
+  // Drag-time helper: O(1) on the cached prefix array, no PDF evaluations.
+  // Accurate to ~5 digits for moderate Beta shapes — sufficient for the
+  // on-screen integral readout.
   const integralOnInterval = (a: number, b: number): number => {
-    // Direct trapezoidal on a 2000-step sub-grid. Accurate to ~5 digits for
-    // moderate Beta shapes — sufficient for the on-screen integral readout.
-    const aa = Math.max(a, 1e-6);
-    const bb = Math.min(b, 1 - 1e-6);
-    if (bb <= aa) return 0;
-    const steps = 2000;
-    const h = (bb - aa) / steps;
-    let sum = 0.5 * (density(aa) + density(bb));
-    for (let i = 1; i < steps; i++) sum += density(aa + i * h);
-    return sum * h;
+    if (b <= a) return 0;
+    return lookupPrefix(Math.min(b, 1)) - lookupPrefix(Math.max(a, 0));
   };
 
   return { alpha, beta, densityCurve, cdfCurve, integralOnInterval };
@@ -187,7 +204,14 @@ export function getConditionalExpectationScenario(
     }
     case 'bivariate-normal':
     default: {
-      // Notebook preset.
+      // Notebook preset. The full (untruncated) bivariate normal density,
+      // shown on the [0,1]² viewing window. Because most of the mass sits
+      // inside the window (μ centered at (0.5, 0.5) with σ_X=0.2, σ_Y=0.25),
+      // the closed-form linear conditional mean for the untruncated BVN is
+      // accurate to plotting precision over the visible region. Truly
+      // truncating + renormalizing on [0,1]² would introduce a small
+      // nonlinearity in the conditional mean near the window edges; we
+      // intentionally do NOT truncate so the closed-form formula stays exact.
       const muX = 0.5;
       const muY = 0.5;
       const sigmaX = 0.2;
@@ -196,8 +220,9 @@ export function getConditionalExpectationScenario(
       const slope = rho * (sigmaY / sigmaX); // = 0.875
       return {
         id: 'bivariate-normal',
-        name: 'Bivariate Normal (truncated to [0,1]²)',
-        description: 'μ = (0.5, 0.5), σ_X = 0.2, σ_Y = 0.25, ρ = 0.7. Conditional mean is linear in x.',
+        name: 'Bivariate Normal (windowed on [0,1]²)',
+        description:
+          'μ = (0.5, 0.5), σ_X = 0.2, σ_Y = 0.25, ρ = 0.7. Untruncated density shown on the [0,1]² window; conditional mean is linear in x.',
         jointDensity: (x, y) =>
           bivariateDensity(x, y, muX, muY, sigmaX, sigmaY, rho),
         conditionalMean: (x) => muY + slope * (x - muX),
@@ -221,7 +246,9 @@ export function getConditionalExpectationScenario(
  * guarantees the same sample-size slider position always shows the same
  * convergence trace.
  *
- * Numbers from Numerical Recipes (Park & Miller variant on 2^32).
+ * Multiplier and increment from Numerical Recipes (Press et al.) — the
+ * "quick and dirty" 32-bit LCG, distinct from the Park–Miller minimal
+ * standard generator (which uses different constants).
  */
 function lcg(seed: number): () => number {
   let state = (seed >>> 0) || 1; // forbid 0 (would lock the sequence)

@@ -21,7 +21,7 @@ interface ScenarioOption {
 }
 
 const SCENARIOS: ScenarioOption[] = [
-  { id: 'bivariate-normal', label: 'Bivariate Normal (truncated)' },
+  { id: 'bivariate-normal', label: 'Bivariate Normal (windowed on [0,1]²)' },
   { id: 'beta-conditional', label: 'X ~ Uniform, Y | X ~ Beta(X+1, 3−X)' },
   { id: 'independent-uniform', label: 'X, Y i.i.d. Uniform(0,1)' },
 ];
@@ -60,61 +60,46 @@ function numericalConditional(
   return { mean, numerator: num, denominator: den };
 }
 
-/**
- * Compute the L² error ||Y − g(X)||² for a candidate predictor g, by
- * Monte-Carlo-style integration: ∫∫ (y − g(x))² p(x, y) dx dy on the
- * domain rectangle. Used by the projection view to compare the optimal
- * predictor g* = E[Y | X] against a constant baseline g(x) = E[Y].
- */
-function l2Error(
-  jointDensity: (x: number, y: number) => number,
-  predictor: (x: number) => number,
-  xDomain: [number, number],
-  yDomain: [number, number],
-  nGrid: number = 50,
-): number {
-  const [x0, x1] = xDomain;
-  const [y0, y1] = yDomain;
-  const dx = (x1 - x0) / nGrid;
-  const dy = (y1 - y0) / nGrid;
-  let sum = 0;
-  for (let i = 0; i < nGrid; i++) {
-    const x = x0 + (i + 0.5) * dx;
-    const gX = predictor(x);
-    for (let j = 0; j < nGrid; j++) {
-      const y = y0 + (j + 0.5) * dy;
-      const p = jointDensity(x, y);
-      const e = y - gX;
-      sum += e * e * p;
-    }
-  }
-  return sum * dx * dy;
+/** A pre-evaluated 2D density grid plus its cell area, ready for reuse. */
+interface DensityGrid {
+  cells: ReadonlyArray<{ x: number; y: number; value: number }>;
+  dx: number;
+  dy: number;
 }
 
 /**
- * Compute E[Y] = ∫∫ y · p(x, y) dx dy on the domain rectangle. Used as
- * the constant baseline predictor for the L² projection view.
+ * Compute the L² error ||Y − g(X)||² for a candidate predictor g over the
+ * pre-evaluated joint-density grid. Used by the projection view to compare
+ * the optimal predictor g* = E[Y | X] against a constant baseline g(x) = E[Y].
+ *
+ * Reuses the existing grid (no fresh jointDensity evaluations) to keep the
+ * heatmap and the displayed L² norms numerically consistent.
  */
-function unconditionalMean(
-  jointDensity: (x: number, y: number) => number,
-  xDomain: [number, number],
-  yDomain: [number, number],
-  nGrid: number = 80,
+function l2Error(
+  grid: DensityGrid,
+  predictor: (x: number) => number,
 ): number {
-  const [x0, x1] = xDomain;
-  const [y0, y1] = yDomain;
-  const dx = (x1 - x0) / nGrid;
-  const dy = (y1 - y0) / nGrid;
+  let sum = 0;
+  for (const cell of grid.cells) {
+    const e = cell.y - predictor(cell.x);
+    sum += e * e * cell.value;
+  }
+  return sum * grid.dx * grid.dy;
+}
+
+/**
+ * Compute E[Y] = ∫∫ y · p(x, y) dx dy / ∫∫ p(x, y) dx dy over the
+ * pre-evaluated joint-density grid. Used as the constant baseline
+ * predictor for the L² projection view.
+ *
+ * The dx·dy area factors cancel in the ratio, so we just sum over cells.
+ */
+function unconditionalMean(grid: DensityGrid): number {
   let num = 0;
   let den = 0;
-  for (let i = 0; i < nGrid; i++) {
-    const x = x0 + (i + 0.5) * dx;
-    for (let j = 0; j < nGrid; j++) {
-      const y = y0 + (j + 0.5) * dy;
-      const p = jointDensity(x, y);
-      num += y * p;
-      den += p;
-    }
+  for (const cell of grid.cells) {
+    num += cell.y * cell.value;
+    den += cell.value;
   }
   return den > 0 ? num / den : 0;
 }
@@ -137,19 +122,23 @@ export default function ConditionalExpectationExplorer() {
   );
 
   // Heatmap grid: GRID_RES × GRID_RES cells of joint density values.
-  const grid = useMemo(() => {
+  // Carries dx, dy so downstream helpers (l2Error, unconditionalMean) can
+  // reuse it without re-evaluating jointDensity on a fresh grid.
+  const grid = useMemo<DensityGrid>(() => {
     const N = GRID_RES;
     const [x0, x1] = scenario.xDomain;
     const [y0, y1] = scenario.yDomain;
+    const dx = (x1 - x0) / N;
+    const dy = (y1 - y0) / N;
     const cells: Array<{ x: number; y: number; value: number }> = [];
     for (let i = 0; i < N; i++) {
       for (let j = 0; j < N; j++) {
-        const x = x0 + ((i + 0.5) / N) * (x1 - x0);
-        const y = y0 + ((j + 0.5) / N) * (y1 - y0);
+        const x = x0 + (i + 0.5) * dx;
+        const y = y0 + (j + 0.5) * dy;
         cells.push({ x, y, value: scenario.jointDensity(x, y) });
       }
     }
-    return cells;
+    return { cells, dx, dy };
   }, [scenario]);
 
   // Single source of truth: the conditional-mean curve. Used in ALL three
@@ -159,29 +148,19 @@ export default function ConditionalExpectationExplorer() {
     [scenario],
   );
 
-  // Unconditional mean E[Y] for the L² projection comparison.
-  const eY = useMemo(
-    () => unconditionalMean(scenario.jointDensity, scenario.xDomain, scenario.yDomain),
-    [scenario],
-  );
+  // Unconditional mean E[Y] for the L² projection comparison. Reuses the
+  // existing grid (no fresh density evaluations) so the heatmap and the
+  // displayed E[Y] are numerically consistent.
+  const eY = useMemo(() => unconditionalMean(grid), [grid]);
 
   // L² errors for the projection view (only computed when needed).
+  // Reuses the existing grid for the same consistency reason.
   const projectionErrors = useMemo(() => {
     if (view !== 'projection') return null;
-    const optimal = l2Error(
-      scenario.jointDensity,
-      scenario.conditionalMean,
-      scenario.xDomain,
-      scenario.yDomain,
-    );
-    const constant = l2Error(
-      scenario.jointDensity,
-      () => eY,
-      scenario.xDomain,
-      scenario.yDomain,
-    );
+    const optimal = l2Error(grid, scenario.conditionalMean);
+    const constant = l2Error(grid, () => eY);
     return { optimal, constant };
-  }, [view, scenario, eY]);
+  }, [view, grid, scenario, eY]);
 
   // Numerical conditional at the user-selected x-slice (R-N view).
   const rnReadout = useMemo(() => {
@@ -209,7 +188,10 @@ export default function ConditionalExpectationExplorer() {
 
   // Color domain for heatmap — capped at 95th percentile to keep contrast.
   const colorDomain = useMemo(() => {
-    const finite = grid.map((c) => c.value).filter(Number.isFinite);
+    const finite: number[] = [];
+    for (const cell of grid.cells) {
+      if (Number.isFinite(cell.value)) finite.push(cell.value);
+    }
     finite.sort((a, b) => a - b);
     const lo = finite[0] ?? 0;
     const hi95 = finite[Math.floor(finite.length * 0.95)] ?? finite[finite.length - 1] ?? 1;
@@ -274,7 +256,7 @@ export default function ConditionalExpectationExplorer() {
 
         // Heatmap cells
         g.selectAll('rect.cell')
-          .data(grid)
+          .data(grid.cells)
           .enter()
           .append('rect')
           .attr('class', 'cell')
@@ -523,7 +505,12 @@ export default function ConditionalExpectationExplorer() {
               .scaleLinear()
               .domain(scenario.yDomain)
               .range([0, innerW]);
-            const condYMax = Math.max(...yPoints.map(([, v]) => v).filter(Number.isFinite));
+            // Single-pass max — no intermediate array allocations and no
+            // spread-into-Math.max stack-limit risk.
+            let condYMax = 0;
+            for (const [, v] of yPoints) {
+              if (Number.isFinite(v) && v > condYMax) condYMax = v;
+            }
             const dScale = d3
               .scaleLinear()
               .domain([0, condYMax * 1.15 || 1])

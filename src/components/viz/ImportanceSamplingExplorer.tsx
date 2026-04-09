@@ -62,8 +62,11 @@ export default function ImportanceSamplingExplorer() {
     [scenarioId],
   );
 
+  // Let each scenario use its own default seed (set in radon-nikodym-data.ts:
+  // 42 for normal-shift, 43 for normal-scale, 44 for exponential). Passing
+  // 42 here would override and de-duplicate the per-scenario seeds.
   const samples = useMemo(
-    () => scenario.sampleProposal(n, 42),
+    () => scenario.sampleProposal(n),
     [scenario, n],
   );
 
@@ -122,12 +125,20 @@ export default function ImportanceSamplingExplorer() {
     [targetCurve, proposalCurve, weightCurve],
   );
 
-  // y-domain for the convergence trace: pad around the true value
+  // y-domain for the convergence trace: pad around the true value.
+  // Single-pass loop — runningTrace can hold up to 5000 elements, where
+  // Math.min/max with array spread risks an intermediate allocation and
+  // (depending on the engine) a stack-limit error.
   const trueValue = scenario.trueExpectations[fKey] ?? 0;
   const traceYDomain = useMemo(() => {
-    const finite = runningTrace.map(([, y]) => y).filter(Number.isFinite);
-    const lo = Math.min(...finite, trueValue);
-    const hi = Math.max(...finite, trueValue);
+    let lo = trueValue;
+    let hi = trueValue;
+    for (const [, y] of runningTrace) {
+      if (Number.isFinite(y)) {
+        if (y < lo) lo = y;
+        if (y > hi) hi = y;
+      }
+    }
     const pad = Math.max((hi - lo) * 0.15, 0.1);
     return [lo - pad, hi + pad] as [number, number];
   }, [runningTrace, trueValue]);
