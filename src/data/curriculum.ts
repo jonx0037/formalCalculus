@@ -74,9 +74,8 @@ export const tracks: Track[] = [
     title: 'Functional Analysis Essentials',
     description: 'Metric spaces, Banach and Hilbert spaces, calculus of variations.',
     domain: 'functional-analysis',
-    published: [],
+    published: ['Metric Spaces & Topology'],
     planned: [
-      'Metric Spaces & Topology',
       'Normed & Banach Spaces',
       'Inner Product & Hilbert Spaces',
       'Calculus of Variations',
