@@ -118,7 +118,11 @@ export default function RKHSExplorer() {
       const panelH = height - margin.top - margin.bottom;
 
       // ── Left panel: Kernel K(centerX, ·) ──
-      const kernelYMax = Math.max(1.1, ...kernelCurve.map((p) => Math.abs(p.y)));
+      let kernelYMax = 1.1;
+      for (const p of kernelCurve) {
+        const val = Math.abs(p.y);
+        if (val > kernelYMax) kernelYMax = val;
+      }
       const xL = d3.scaleLinear().domain(xDomain).range([0, panelW]);
       const yL = d3.scaleLinear().domain([-kernelYMax * 0.3, kernelYMax]).range([panelH, 0]);
 
@@ -161,12 +165,16 @@ export default function RKHSExplorer() {
         .text('K');
 
       // ── Right panel: f* and training points ──
-      const allY = fStarCurve.map((p) => p.y);
-      const fMax = Math.max(
-        2,
-        ...allY.map((v) => Math.abs(v)),
-        ...trainPoints.map((p) => Math.abs(p.y)),
-      ) * 1.2;
+      let fMax = 2;
+      for (const p of fStarCurve) {
+        const val = Math.abs(p.y);
+        if (val > fMax) fMax = val;
+      }
+      for (const p of trainPoints) {
+        const val = Math.abs(p.y);
+        if (val > fMax) fMax = val;
+      }
+      fMax *= 1.2;
 
       const xR = d3.scaleLinear().domain(xDomain).range([0, panelW]);
       const yR = d3.scaleLinear().domain([-fMax, fMax]).range([panelH, 0]);

@@ -20,9 +20,9 @@ export interface InnerProductExample {
   name: string;
   /** The space on which the inner product is defined. */
   space: string;
-  /** LaTeX formula for the inner product. */
+  /** Human-readable formula for the inner product (Unicode, not LaTeX). */
   formula: string;
-  /** LaTeX formula for the induced norm. */
+  /** Human-readable formula for the induced norm (Unicode, not LaTeX). */
   inducedNorm: string;
   /** Whether the space is complete under this inner product. */
   isComplete: boolean;
@@ -71,7 +71,7 @@ export interface KernelSpec {
   id: string;
   /** Human-readable name. */
   name: string;
-  /** LaTeX formula. */
+  /** Human-readable formula (Unicode, not LaTeX). */
   formula: string;
   /** Evaluate K(x, y) with optional parameters. */
   evaluate: (x: number, y: number, params?: Record<string, number>) => number;
@@ -153,9 +153,9 @@ export interface SpectralData {
 export function computeSpectralDecomposition(
   matrix: [number, number, number, number],
 ): SpectralData {
-  const [a11, a12, , a22] = matrix;
-  // Enforce symmetry
-  const b12 = a12;
+  const [a11, a12, a21, a22] = matrix;
+  // Enforce symmetry by averaging off-diagonal entries
+  const b12 = (a12 + a21) / 2;
 
   const trace = a11 + a22;
   const det = a11 * a22 - b12 * b12;
@@ -328,17 +328,26 @@ export function solveRepresenter(
   const n = trainX.length;
   if (n === 0) return { alpha: [], rkhsNormSq: 0 };
 
-  // Build kernel matrix K + λI
+  // Build kernel matrix K₀ (symmetric) and regularized K₀ + λI
+  const K0: number[][] = [];
   const K: number[][] = [];
   for (let i = 0; i < n; i++) {
+    K0[i] = [];
     K[i] = [];
-    for (let j = 0; j < n; j++) {
-      K[i][j] = kernel(trainX[i], trainX[j]) + (i === j ? lambda : 0);
+    for (let j = i; j < n; j++) {
+      const val = kernel(trainX[i], trainX[j]);
+      K0[i][j] = val;
+      K[i][j] = val + (i === j ? lambda : 0);
+      if (i !== j) {
+        K0[j] = K0[j] || [];
+        K0[j][i] = val;
+        K[j] = K[j] || [];
+        K[j][i] = val;
+      }
     }
   }
 
-  // Solve via Cholesky-like approach for small n (≤ 8)
-  // Use Gaussian elimination with partial pivoting
+  // Solve via Gaussian elimination with partial pivoting (n ≤ 8)
   const A = K.map((row) => [...row]);
   const b = [...trainY];
 
@@ -375,11 +384,11 @@ export function solveRepresenter(
     alpha[i] = Math.abs(A[i][i]) > 1e-14 ? sum / A[i][i] : 0;
   }
 
-  // RKHS norm: ‖f‖²_H = αᵀ K₀ α where K₀ is the kernel matrix without regularization
+  // RKHS norm: ‖f‖²_H = αᵀ K₀ α (reuse cached kernel matrix)
   let rkhsNormSq = 0;
   for (let i = 0; i < n; i++) {
     for (let j = 0; j < n; j++) {
-      rkhsNormSq += alpha[i] * alpha[j] * kernel(trainX[i], trainX[j]);
+      rkhsNormSq += alpha[i] * alpha[j] * K0[i][j];
     }
   }
 

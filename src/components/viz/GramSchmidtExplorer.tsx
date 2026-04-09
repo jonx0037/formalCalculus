@@ -1,8 +1,8 @@
 /**
  * GramSchmidtExplorer — viz for Topic 31 (Inner Product & Hilbert Spaces).
  *
- * Step-by-step Gram-Schmidt orthonormalization in ℝ² or ℝ³ (projected):
- *  - 2 or 3 input vectors adjustable via sliders
+ * Step-by-step Gram-Schmidt orthonormalization in ℝ²:
+ *  - 2 input vectors adjustable via sliders
  *  - "Next step" / "Play" / "Reset" controls
  *  - Shows projection being subtracted at each step
  *  - Readout: step description, intermediate vectors, norms

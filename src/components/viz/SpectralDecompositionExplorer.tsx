@@ -85,10 +85,13 @@ export default function SpectralDecompositionExplorer() {
       const panelH = height - margin.top - margin.bottom;
 
       // Auto-scale left panel
-      const maxVal = Math.max(
-        ...imageEllipse.map((p) => Math.max(Math.abs(p.x), Math.abs(p.y))),
-        1.5,
-      );
+      let maxVal = 1.5;
+      for (const p of imageEllipse) {
+        const ax = Math.abs(p.x);
+        const ay = Math.abs(p.y);
+        if (ax > maxVal) maxVal = ax;
+        if (ay > maxVal) maxVal = ay;
+      }
       const ext = maxVal * 1.2;
 
       const xL = d3.scaleLinear().domain([-ext, ext]).range([0, leftW]);
