@@ -1,0 +1,652 @@
+---
+title: "Normed & Banach Spaces"
+subtitle: "Adding algebraic structure to metric spaces — from norms and bounded linear operators through the Baire Category Theorem to the three pillars of functional analysis, with applications to spectral normalization, dual-space optimization, and generalization bounds."
+status: "published"
+difficulty: "advanced"
+prerequisites:
+  - "metric-spaces"
+  - "lp-spaces"
+tags:
+  - "calculus"
+  - "functional-analysis"
+  - "banach-spaces"
+  - "normed-spaces"
+  - "bounded-operators"
+  - "operator-norm"
+  - "baire-category"
+  - "open-mapping"
+  - "closed-graph"
+  - "uniform-boundedness"
+  - "dual-spaces"
+domain: "functional-analysis"
+videoId: null
+notebookPath: "notebooks/banach-spaces/30_banach_spaces.ipynb"
+githubUrl: "https://github.com/jonx0037/formalCalculus/blob/main/src/content/topics/banach-spaces.mdx"
+datePublished: 2026-04-22
+estimatedReadTime: 50
+abstract: "A metric space tells you how far apart points are. A normed space tells you how far apart points are using a notion of length that respects the vector space structure — addition and scalar multiplication. When a normed space is complete (every Cauchy sequence converges), it is a Banach space, and a remarkable trio of theorems becomes available. The Baire Category Theorem — a complete metric space cannot be 'thin' — is the engine behind three pillars of linear functional analysis: the Uniform Boundedness Principle (pointwise-bounded families of operators are uniformly bounded), the Open Mapping Theorem (surjective bounded operators between Banach spaces map open sets to open sets), and the Closed Graph Theorem (a closed-graph linear operator between Banach spaces is automatically bounded). These are not abstract curiosities. The operator norm controls Lipschitz constants of neural network layers — spectral normalization enforces this directly. Dual spaces and bounded linear functionals power Fenchel conjugates and mirror descent. The Uniform Boundedness Principle underlies generalization bounds in statistical learning. This topic builds the Banach space infrastructure that modern optimization theory and machine learning assume."
+formalmlConnections:
+  - topic: "gradient-descent"
+    site: "formalml"
+    relationship: "Operator norms bound Lipschitz constants of gradient maps. The Open Mapping Theorem guarantees bounded inverses of surjective linear layers, controlling gradient flow through deep networks."
+  - topic: "generative-modeling"
+    site: "formalml"
+    relationship: "Spectral normalization constrains neural network weight matrices to have operator norm at most 1, enforcing Lipschitz continuity for stable Wasserstein GAN training."
+  - topic: "kernel-methods"
+    site: "formalml"
+    relationship: "RKHS is a Hilbert space (hence Banach). The representer theorem exploits dual-space structure: bounded linear functionals on RKHS correspond to kernel evaluations via the Riesz representation theorem developed in Topic 31."
+  - topic: "pac-learning"
+    site: "formalml"
+    relationship: "The Uniform Boundedness Principle is the functional-analytic backbone of uniform convergence. Generalization bounds in PAC learning require function-class boundedness — a UBP consequence."
+  - topic: "optimization-theory"
+    site: "formalml"
+    relationship: "Mirror descent operates in Banach spaces with Bregman divergences. The dual-space geometry — Fenchel conjugates, subgradients in X* — extends gradient descent beyond Hilbert spaces."
+connections:
+  - topic: "metric-spaces"
+    relationship: "Topic 29 established the metric space framework — completeness, compactness, and continuity in abstract spaces. Topic 30 adds algebraic structure (vector space + norm) and delivers the Baire Category Theorem and its three consequences, all deferred from Topic 29."
+  - topic: "lp-spaces"
+    relationship: "Topic 27 proved Lp spaces are complete normed spaces (Riesz-Fischer) and sketched the duality (Lp)* = Lq. Topic 30 provides the abstract Banach space theory that Lp spaces exemplify, and cites the duality result as the canonical dual-space computation."
+  - topic: "radon-nikodym"
+    relationship: "Topic 28 proved the Radon-Nikodym theorem, which Topic 27 used in the duality proof sketch. The (Lp)* = Lq isomorphism cited in Topic 30 depends on Radon-Nikodym."
+  - topic: "uniform-convergence"
+    relationship: "Topic 4 established C([a,b]) with the sup-norm as a natural function space. Topic 30 identifies C([a,b]) as a Banach space and uses it as a key example throughout."
+  - topic: "approximation-theory"
+    relationship: "Topic 20 used density of polynomials in C[a,b] under the sup-norm. Topic 30 formalizes best approximation in normed spaces and connects density to separability."
+  - topic: "completeness-compactness"
+    relationship: "Topic 3 established completeness of R. The Baire Category Theorem in Topic 30 generalizes this: R is not a countable union of nowhere-dense sets, and neither is any complete metric space."
+references:
+  - type: "book"
+    title: "Functional Analysis"
+    authors: "Kreyszig"
+    year: 1978
+    note: "Chapters 2-4 (normed spaces, Banach spaces, fundamental theorems). Excellent pedagogy for the advanced reader."
+  - type: "book"
+    title: "Principles of Mathematical Analysis"
+    authors: "Rudin"
+    year: 1976
+    note: "Chapter 5 (differentiation and the Baire category theorem in the real-analysis context)."
+  - type: "book"
+    title: "Real Analysis: Modern Techniques and Their Applications"
+    authors: "Folland"
+    year: 1999
+    note: "Chapter 5 (elements of functional analysis). Clean treatment of the three pillars."
+  - type: "book"
+    title: "Functional Analysis, Sobolev Spaces and Partial Differential Equations"
+    authors: "Brezis"
+    year: 2011
+    note: "Chapters 1-2 (Hahn-Banach, uniform boundedness, open mapping). Modern presentation with applications."
+  - type: "book"
+    title: "Real and Complex Analysis"
+    authors: "Rudin"
+    year: 1987
+    note: "Chapter 5 (examples of Banach spaces, Baire category). The canonical graduate reference."
+---
+
+import TheoremBlock from '../../components/ui/TheoremBlock.astro';
+import OperatorNormExplorer from '../../components/viz/OperatorNormExplorer.tsx';
+import BaireCategoryExplorer from '../../components/viz/BaireCategoryExplorer.tsx';
+import DualSpaceExplorer from '../../components/viz/DualSpaceExplorer.tsx';
+
+## 1. Overview and Motivation
+
+Consider a single layer of a neural network: $f(x) = Wx + b$, where $W$ is a weight matrix and $b$ is a bias vector. This map takes an input vector $x$ and produces an output vector — it is a **linear operator** between two vector spaces. The question that spectral normalization asks is: *how much can this layer stretch its input?* That stretching factor is the **operator norm** $\|W\|_{\text{op}}$, and controlling it is essential for stable GAN training.
+
+To make this precise, we need more than the metric-space framework from [Topic 29](/topics/metric-spaces). A metric tells us distances, but it does not know about addition or scalar multiplication — we cannot ask "how does $T$ stretch vectors?" in a plain metric space, because there are no vectors to stretch. We need a **normed space**: a vector space equipped with a notion of length (a norm) that interacts with the algebraic operations. When that normed space is also complete — every Cauchy sequence converges — we have a **Banach space**, and a remarkable collection of theorems becomes available.
+
+The arc of this topic follows a natural staircase of structure:
+
+1. **Normed spaces** (Section 2): vector spaces with a notion of length.
+2. **Banach spaces** (Section 4): complete normed spaces — the "good" spaces where analysis works.
+3. **Bounded linear operators** (Section 5): the morphisms that respect both the algebraic and metric structure.
+4. **The Baire Category Theorem** (Section 6): the deep consequence of completeness that powers everything.
+5. **The three pillars** (Sections 7–9): Uniform Boundedness, Open Mapping, Closed Graph — all consequences of Baire, all load-bearing in functional analysis.
+6. **Dual spaces** (Section 10): the space of bounded linear functionals, where optimization lives.
+
+This is the second topic in Track 8 (Functional Analysis Essentials). [Topic 29](/topics/metric-spaces) built the metric infrastructure — completeness, compactness, the Banach fixed-point theorem, Arzelà–Ascoli. Topic 30 adds algebra: **metric + vector space = Banach space**, and the algebraic compatibility unlocks theorems that have no analog in plain metric spaces.
+
+---
+
+## 2. Normed Vector Spaces
+
+<TheoremBlock type="definition" number={1} title="Normed Vector Space">
+A **normed vector space** (or **normed space**) is a pair $(X, \|\cdot\|)$ where $X$ is a vector space over $\mathbb{R}$ (or $\mathbb{C}$) and $\|\cdot\|: X \to [0, \infty)$ satisfies:
+
+1. **Positive definiteness:** $\|x\| = 0$ if and only if $x = 0$.
+2. **Absolute homogeneity:** $\|\alpha x\| = |\alpha| \, \|x\|$ for all scalars $\alpha$ and all $x \in X$.
+3. **Triangle inequality:** $\|x + y\| \leq \|x\| + \|y\|$ for all $x, y \in X$.
+
+Every norm induces a metric $d(x, y) = \|x - y\|$. This metric is **translation-invariant** ($d(x + z, y + z) = d(x, y)$) and **absolutely homogeneous** ($d(\alpha x, \alpha y) = |\alpha| \, d(x, y)$) — properties that a general metric need not have.
+</TheoremBlock>
+
+The key insight: a norm carries *more information* than a metric. It knows about the vector-space structure. This algebraic compatibility is what makes bounded linear operators and dual spaces possible.
+
+<TheoremBlock type="example" number={1} title="ℝⁿ with ℓᵖ Norms">
+For $1 \leq p \leq \infty$, the $\ell^p$ norm on $\mathbb{R}^n$ is:
+
+$$\|x\|_p = \left(\sum_{i=1}^n |x_i|^p\right)^{1/p}$$
+
+with $\|x\|_\infty = \max_i |x_i|$. Each gives a valid normed space. The unit balls change shape: a diamond for $p = 1$, a circle for $p = 2$, a square for $p = \infty$. All three norms are equivalent on $\mathbb{R}^n$ (Theorem 1 below), but this equivalence fails spectacularly in infinite dimensions.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={2} title="C([a,b]) with the Sup-Norm">
+The space of continuous functions on $[a,b]$ with $\|f\|_\infty = \sup_{x \in [a,b]} |f(x)|$ is a normed space. [Topic 29](/topics/metric-spaces) (Theorem 2) proved that this space is complete under this norm — it is our first infinite-dimensional Banach space.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={3} title="Lᵖ(μ) Spaces">
+For a measure space $(X, \mathcal{M}, \mu)$ and $1 \leq p \leq \infty$, the $L^p$ norm $\|f\|_p = \left(\int |f|^p \, d\mu\right)^{1/p}$ makes $L^p(\mu)$ a normed space. Minkowski's inequality ([Topic 27](/topics/lp-spaces), Theorem 3) is the triangle inequality; positive definiteness requires the equivalence-class quotient $f = 0$ a.e. ([Topic 27](/topics/lp-spaces), Remark 6).
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={1} title="Lᵖ Vocabulary Refresh">
+If you completed Track 7 (Topics 25–28) some time ago, here is a quick refresher. $L^p(\mu)$ consists of (equivalence classes of) measurable functions with finite $\|f\|_p$. The key results we will cite: Hölder's inequality $\left|\int fg\right| \leq \|f\|_p \|g\|_q$ with $1/p + 1/q = 1$ ([Topic 27](/topics/lp-spaces), Theorem 2), the Riesz-Fischer completeness theorem ([Topic 27](/topics/lp-spaces), Theorem 5), and the duality $(L^p)^* \cong L^q$ ([Topic 27](/topics/lp-spaces), Theorem 8; full proof via Radon-Nikodym in [Topic 28](/topics/radon-nikodym)).
+</TheoremBlock>
+
+<TheoremBlock type="example" number={4} title="ℓᵖ Sequence Spaces">
+The discrete analog of $L^p$: $\ell^p = \{(x_n)_{n=1}^\infty : \sum_{n=1}^\infty |x_n|^p < \infty\}$ with $\|(x_n)\|_p = \left(\sum |x_n|^p\right)^{1/p}$. These are $L^p$ spaces over $(\mathbb{N}, \text{counting measure})$. They are simpler to compute with and serve as test cases for every abstract theorem in this topic.
+</TheoremBlock>
+
+---
+
+## 3. Equivalence of Norms in Finite Dimensions
+
+In $\mathbb{R}^n$, all norms are equivalent — they induce the same topology, the same convergent sequences, the same Cauchy sequences. This is a finite-dimensional luxury that fails dramatically in infinite dimensions.
+
+<TheoremBlock type="theorem" number={1} title="Equivalence of Norms on ℝⁿ">
+Any two norms $\|\cdot\|_a$ and $\|\cdot\|_b$ on $\mathbb{R}^n$ are **equivalent**: there exist constants $0 < c \leq C < \infty$ such that:
+
+$$c \|x\|_a \leq \|x\|_b \leq C \|x\|_a \quad \text{for all } x \in \mathbb{R}^n$$
+
+Consequently, all norms on $\mathbb{R}^n$ induce the same open sets, the same convergent sequences, and the same Cauchy sequences. Completeness, compactness, and continuity are norm-independent in finite dimensions.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+It suffices to show every norm $\|\cdot\|$ on $\mathbb{R}^n$ is equivalent to $\|\cdot\|_2$.
+
+**Upper bound.** Let $e_1, \ldots, e_n$ be the standard basis. For $x = \sum x_i e_i$:
+
+$$\|x\| = \left\|\sum x_i e_i\right\| \leq \sum |x_i| \, \|e_i\|$$
+
+By Cauchy-Schwarz:
+
+$$\sum |x_i| \, \|e_i\| \leq \left(\sum |x_i|^2\right)^{1/2} \left(\sum \|e_i\|^2\right)^{1/2} = C \|x\|_2$$
+
+where $C = \left(\sum \|e_i\|^2\right)^{1/2}$.
+
+**Lower bound.** The function $x \mapsto \|x\|$ is continuous in the $\|\cdot\|_2$ topology (by the upper bound and the reverse triangle inequality). The unit sphere $S = \{x : \|x\|_2 = 1\}$ is compact in $\mathbb{R}^n$ (Heine-Borel, [Topic 3](/topics/completeness-compactness)). By the extreme value theorem, $\|\cdot\|$ attains a minimum $c > 0$ on $S$. Then for $x \neq 0$:
+
+$$\|x\| = \|x\|_2 \cdot \left\|\frac{x}{\|x\|_2}\right\| \geq c \, \|x\|_2$$
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={2} title="Infinite-Dimensional Failure">
+On $C([0,1])$, the $\|\cdot\|_\infty$ and $\|\cdot\|_2$ norms are NOT equivalent. The sequence $f_n(x) = x^n$ satisfies $\|f_n\|_\infty = 1$ for all $n$, but $\|f_n\|_2 = 1/\sqrt{2n+1} \to 0$. No constant $c > 0$ satisfies $c\|f\|_\infty \leq \|f\|_2$ for all $f$. The proof above fails because the unit sphere in infinite dimensions is NOT compact ([Topic 29](/topics/metric-spaces), Example 8).
+</TheoremBlock>
+
+<figure className="my-6">
+  <img src="/images/topics/banach-spaces/norm-equivalence.png" alt="Norm equivalence in finite and infinite dimensions" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">ℓᵖ unit balls in ℝ² with equivalence constants (left panels), and the infinite-dimensional failure: xⁿ has constant sup-norm but vanishing L² norm (right panel).</figcaption>
+</figure>
+
+---
+
+## 4. Banach Spaces
+
+<TheoremBlock type="definition" number={2} title="Banach Space">
+A **Banach space** is a complete normed vector space — a normed space $(X, \|\cdot\|)$ in which every Cauchy sequence converges (in the norm).
+
+Equivalently: $(X, d)$ is a complete metric space under the metric $d(x, y) = \|x - y\|$ induced by the norm.
+</TheoremBlock>
+
+The following characterization is often more convenient in practice than the Cauchy-sequence definition.
+
+<TheoremBlock type="proposition" number={1} title="Absolute Convergence Implies Convergence">
+A normed space $X$ is a Banach space if and only if every absolutely convergent series converges: whenever $\sum_{n=1}^\infty \|x_n\| < \infty$, the partial sums $S_N = \sum_{n=1}^N x_n$ converge in $X$.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+**($\Rightarrow$)** If $\sum \|x_n\| < \infty$, then for $M > N$:
+
+$$\|S_M - S_N\| = \left\|\sum_{n=N+1}^M x_n\right\| \leq \sum_{n=N+1}^M \|x_n\| \to 0$$
+
+as $N \to \infty$, so $(S_N)$ is Cauchy. By completeness, $S_N$ converges.
+
+**($\Leftarrow$)** Let $(y_n)$ be Cauchy. Choose a subsequence with $\|y_{n_{k+1}} - y_{n_k}\| < 2^{-k}$. Then $x_k = y_{n_{k+1}} - y_{n_k}$ satisfies $\sum \|x_k\| < \infty$. By hypothesis, $\sum x_k$ converges, so the telescoping partial sums $y_{n_K} - y_{n_1} \to L$, giving $y_{n_K} \to L + y_{n_1}$. Since $(y_n)$ is Cauchy with a convergent subsequence, $y_n \to L + y_{n_1}$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={5} title="Catalog of Banach Spaces">
+The reader has already seen these completeness results. Collected here for reference:
+
+- $\mathbb{R}^n$ with any norm — complete (Bolzano-Weierstrass, [Topic 3](/topics/completeness-compactness)).
+- $C([a,b])$ with $\|\cdot\|_\infty$ — complete ([Topic 29](/topics/metric-spaces), Theorem 2). A uniform limit of continuous functions is continuous.
+- $L^p(\mu)$ for $1 \leq p \leq \infty$ — complete (Riesz-Fischer, [Topic 27](/topics/lp-spaces), Theorem 5).
+- $\ell^p$ for $1 \leq p \leq \infty$ — complete (special case of $L^p$ over counting measure).
+- $C([a,b])$ with $\|\cdot\|_2$ — NOT complete ([Topic 29](/topics/metric-spaces), Example 7). Cauchy sequences of continuous functions can converge to a discontinuous $L^2$ function.
+</TheoremBlock>
+
+<figure className="my-6">
+  <img src="/images/topics/banach-spaces/banach-completeness.png" alt="Banach space completeness hierarchy" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">Absolute convergence in ℓ², Cauchy convergence in C([0,1]) under the sup-norm vs. L² norm, and the completeness hierarchy.</figcaption>
+</figure>
+
+---
+
+## 5. Bounded Linear Operators
+
+<TheoremBlock type="definition" number={3} title="Bounded Linear Operator">
+Let $(X, \|\cdot\|_X)$ and $(Y, \|\cdot\|_Y)$ be normed spaces. A linear map $T: X \to Y$ is **bounded** if there exists $M \geq 0$ such that $\|Tx\|_Y \leq M\|x\|_X$ for all $x \in X$.
+
+For linear maps, bounded $\Longleftrightarrow$ continuous $\Longleftrightarrow$ continuous at one point. (The equivalence uses linearity to transfer local behavior to global behavior — a property that nonlinear maps do not enjoy.)
+</TheoremBlock>
+
+<TheoremBlock type="definition" number={4} title="Operator Norm">
+The **operator norm** of a bounded linear operator $T: X \to Y$ is:
+
+$$\|T\|_{\text{op}} = \sup_{\|x\|_X \leq 1} \|Tx\|_Y = \sup_{\|x\|_X = 1} \|Tx\|_Y = \sup_{x \neq 0} \frac{\|Tx\|_Y}{\|x\|_X}$$
+
+All three expressions are equal. The operator norm is the smallest constant $M$ such that $\|Tx\| \leq M\|x\|$ for all $x$.
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={2} title="𝓑(X, Y) Is a Banach Space">
+Let $X$ be a normed space and $Y$ a Banach space. The space $\mathcal{B}(X, Y)$ of bounded linear operators from $X$ to $Y$, equipped with the operator norm, is a Banach space.
+
+In particular, the **dual space** $X^* = \mathcal{B}(X, \mathbb{R})$ is always a Banach space, regardless of whether $X$ itself is complete.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+Let $(T_n)$ be Cauchy in $\mathcal{B}(X, Y)$. For each $x \in X$:
+
+$$\|T_m x - T_n x\|_Y \leq \|T_m - T_n\|_{\text{op}} \, \|x\|_X \to 0$$
+
+So $(T_n x)$ is Cauchy in $Y$. Since $Y$ is Banach, define $Tx = \lim_{n \to \infty} T_n x$.
+
+**$T$ is linear:** $T(\alpha x + \beta y) = \lim T_n(\alpha x + \beta y) = \alpha \lim T_n x + \beta \lim T_n y = \alpha Tx + \beta Ty$.
+
+**$T$ is bounded:** Since $(T_n)$ is Cauchy, it is bounded: $\|T_n\|_{\text{op}} \leq M$ for some $M$. Then $\|Tx\| = \lim \|T_n x\| \leq M\|x\|$.
+
+**$T_n \to T$ in operator norm:** Fix $\varepsilon > 0$. Choose $N$ such that $\|T_m - T_n\|_{\text{op}} < \varepsilon$ for $m, n \geq N$. For any $x$ with $\|x\| \leq 1$:
+
+$$\|T_m x - T_n x\| < \varepsilon$$
+
+Letting $m \to \infty$: $\|Tx - T_n x\| \leq \varepsilon$. Since this holds for all $\|x\| \leq 1$, we get $\|T - T_n\|_{\text{op}} \leq \varepsilon$ for $n \geq N$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={6} title="Operator Norm of a Matrix">
+For $A \in \mathbb{R}^{m \times n}$ viewed as $T: (\mathbb{R}^n, \|\cdot\|_p) \to (\mathbb{R}^m, \|\cdot\|_p)$:
+
+- $\|A\|_{1 \to 1} = \max_j \sum_i |a_{ij}|$ (maximum absolute column sum).
+- $\|A\|_{\infty \to \infty} = \max_i \sum_j |a_{ij}|$ (maximum absolute row sum).
+- $\|A\|_{2 \to 2} = \sigma_1(A)$ (largest singular value). This is the **spectral norm** used in spectral normalization of neural networks.
+</TheoremBlock>
+
+<OperatorNormExplorer client:visible />
+
+<figure className="my-6">
+  <img src="/images/topics/banach-spaces/operator-norm.png" alt="Operator norm geometry" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">Unit ball images under different operators: the operator norm is the radius of the smallest circle containing the image.</figcaption>
+</figure>
+
+---
+
+## 6. The Baire Category Theorem
+
+We now prove the theorem that powers the three pillars of linear functional analysis. This was explicitly deferred from [Topic 29](/topics/metric-spaces) — it is a deep consequence of completeness that goes beyond the fixed-point machinery we developed there.
+
+<TheoremBlock type="definition" number={5} title="Nowhere Dense, Meager, and Residual Sets">
+Let $(X, d)$ be a metric space.
+
+- A set $A \subseteq X$ is **nowhere dense** if its closure $\overline{A}$ has empty interior: $\text{int}(\overline{A}) = \emptyset$. Equivalently, $\overline{A}$ contains no open ball.
+- A set is **meager** (or **of the first category**) if it is a countable union of nowhere-dense sets.
+- A set is **residual** (or **of the second category**) if its complement is meager. Equivalently, it contains a countable intersection of open dense sets.
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={3} title="Baire Category Theorem">
+Let $(X, d)$ be a **complete** metric space. Then $X$ is **not meager in itself**: $X$ cannot be written as a countable union of nowhere-dense sets.
+
+Equivalently: if $\{U_n\}_{n=1}^\infty$ is a countable collection of open dense subsets of $X$, then $\bigcap_{n=1}^\infty U_n$ is dense in $X$.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+We prove the "open dense" formulation. Let $U_1, U_2, \ldots$ be open and dense in $X$. We must show that $\bigcap U_n$ is dense: for every nonempty open set $V \subseteq X$, $V \cap \bigcap U_n \neq \emptyset$.
+
+**Construction.** Since $U_1$ is dense and $V$ is open and nonempty, $V \cap U_1$ is nonempty and open. Choose $x_1 \in V \cap U_1$ and $r_1 > 0$ such that:
+
+$$\overline{B(x_1, r_1)} \subseteq V \cap U_1 \quad \text{and} \quad r_1 < 1$$
+
+Since $U_2$ is dense and $B(x_1, r_1)$ is open and nonempty, $B(x_1, r_1) \cap U_2 \neq \emptyset$. Choose $x_2$ and $r_2 < 1/2$ with:
+
+$$\overline{B(x_2, r_2)} \subseteq B(x_1, r_1) \cap U_2$$
+
+Inductively: choose $x_n$ and $r_n < 1/n$ with:
+
+$$\overline{B(x_n, r_n)} \subseteq B(x_{n-1}, r_{n-1}) \cap U_n$$
+
+**Convergence.** The sequence $(x_n)$ is Cauchy: for $m > n$, $x_m \in B(x_n, r_n)$, so $d(x_m, x_n) < r_n < 1/n \to 0$. By completeness, $x_n \to x^*$ for some $x^* \in X$.
+
+**Membership.** For each $n$: $x^* = \lim_{m \to \infty} x_m \in \overline{B(x_n, r_n)} \subseteq U_n$. Also $x^* \in \overline{B(x_1, r_1)} \subseteq V$. So $x^* \in V \cap \bigcap_{n=1}^\infty U_n$.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={3} title="Why Completeness Is Essential">
+The rational numbers $\mathbb{Q}$ are a countable union of singletons $\{q\}$, each nowhere dense. So $\mathbb{Q}$ is meager in itself. The Baire Category Theorem fails for $\mathbb{Q}$ because $\mathbb{Q}$ is not complete. Every application of Baire to Banach spaces relies on completeness — this is why we work in Banach spaces, not merely normed spaces.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={7} title="The Baire Category Theorem Applied to ℝ">
+$\mathbb{R}$ is complete, so it is not meager in itself. This means $\mathbb{R} \neq \bigcup_{n=1}^\infty F_n$ for any sequence of nowhere-dense sets $F_n$. In particular, $\mathbb{R}$ is uncountable — since every singleton is nowhere dense, this gives a proof of the uncountability of $\mathbb{R}$ that does not use Cantor's diagonal argument.
+</TheoremBlock>
+
+<BaireCategoryExplorer client:visible />
+
+<figure className="my-6">
+  <img src="/images/topics/banach-spaces/baire-category.png" alt="Baire Category Theorem visualization" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">Nowhere-dense sets in [0,1], the nested-ball construction from the proof, and the contrast between ℝ (non-meager) and ℚ (meager).</figcaption>
+</figure>
+
+---
+
+## 7. The Uniform Boundedness Principle
+
+The first consequence of Baire. This closes the deferral from [Topic 29](/topics/metric-spaces), Definition 16 (uniform boundedness of a family of operators).
+
+<TheoremBlock type="theorem" number={4} title="Uniform Boundedness Principle (Banach-Steinhaus)">
+Let $X$ be a **Banach space**, $Y$ a normed space, and $\{T_\alpha\}_{\alpha \in A} \subseteq \mathcal{B}(X, Y)$ a family of bounded linear operators. If the family is **pointwise bounded** — that is, $\sup_{\alpha \in A} \|T_\alpha x\|_Y < \infty$ for every $x \in X$ — then it is **uniformly bounded**:
+
+$$\sup_{\alpha \in A} \|T_\alpha\|_{\text{op}} < \infty$$
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+For each $n \in \mathbb{N}$, define the closed set:
+
+$$F_n = \{x \in X : \sup_\alpha \|T_\alpha x\| \leq n\}$$
+
+By pointwise boundedness, $X = \bigcup_{n=1}^\infty F_n$. By Baire (Theorem 3), since $X$ is a Banach space (complete), some $F_N$ has nonempty interior: there exist $x_0 \in X$ and $r > 0$ with $B(x_0, r) \subseteq F_N$.
+
+For any $x$ with $\|x\| \leq 1$: the point $x_0 + rx \in B(x_0, r) \subseteq F_N$, so $\|T_\alpha(x_0 + rx)\| \leq N$ for all $\alpha$.
+
+Then:
+
+$$\|T_\alpha(rx)\| = \|T_\alpha(x_0 + rx) - T_\alpha(x_0)\| \leq \|T_\alpha(x_0 + rx)\| + \|T_\alpha(x_0)\| \leq N + N = 2N$$
+
+So $\|T_\alpha x\| \leq 2N/r$ for all $\|x\| \leq 1$, giving $\|T_\alpha\|_{\text{op}} \leq 2N/r$ for all $\alpha$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={8} title="Fourier Coefficients and Pointwise Convergence">
+Consider the partial Fourier sum operators $S_n: C([-\pi, \pi]) \to \mathbb{R}$ defined by $S_n f = (S_n f)(0) = \sum_{k=-n}^n \hat{f}(k)$. Each $S_n$ is a bounded linear functional. One can show $\|S_n\|_{\text{op}} \to \infty$ (the Lebesgue constants grow logarithmically). By UBP, if $(S_n f)(0)$ converged for every $f \in C([-\pi, \pi])$, the operator norms would be uniformly bounded — but they are not. So there must exist a continuous function whose Fourier series diverges at 0 (du Bois-Reymond's theorem). This is UBP as an *existence* tool: it proves the existence of a "bad" function without constructing one.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={4} title="UBP and Generalization Bounds">
+In statistical learning theory, a function class $\mathcal{F}$ is "learnable" if empirical risk converges uniformly to population risk: $\sup_{f \in \mathcal{F}} |R_n(f) - R(f)| \to 0$. This is a uniform boundedness condition on the evaluation functionals $\delta_x: f \mapsto f(x)$ restricted to $\mathcal{F}$. The UBP-style reasoning — "pointwise control implies uniform control" — is the conceptual template that PAC learning formalizes combinatorially via VC dimension.
+</TheoremBlock>
+
+<figure className="my-6">
+  <img src="/images/topics/banach-spaces/ubp-illustration.png" alt="Uniform Boundedness Principle illustration" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">Pointwise-bounded operator family and the uniform bound emerging from the Baire argument; Fourier partial sum operator norms growing without bound.</figcaption>
+</figure>
+
+---
+
+## 8. The Open Mapping Theorem
+
+The second consequence of Baire. Surjective bounded linear operators between Banach spaces map open sets to open sets — a result that is both surprising and immensely useful.
+
+<TheoremBlock type="theorem" number={5} title="Open Mapping Theorem (Banach-Schauder)">
+Let $X$ and $Y$ be **Banach spaces** and $T: X \to Y$ a **surjective** bounded linear operator. Then $T$ is an **open mapping**: $T(U)$ is open in $Y$ whenever $U$ is open in $X$.
+
+Equivalently: there exists $\delta > 0$ such that $B_Y(0, \delta) \subseteq T(B_X(0, 1))$ — the image of the unit ball contains a ball.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+**Step 1: The closure of $T(B_X)$ contains a ball.**
+
+Since $T$ is surjective, $Y = \bigcup_{n=1}^\infty T(B_X(0, n)) = \bigcup_{n=1}^\infty n \cdot T(B_X(0, 1))$. By Baire, some $\overline{n \cdot T(B_X(0, 1))}$ has nonempty interior. By scaling, $\overline{T(B_X(0, 1))}$ has nonempty interior. Since the set is symmetric (if $y \in \overline{T(B_X)}$ then $-y \in \overline{T(B_X)}$) and convex, it contains a ball centered at the origin:
+
+$$B_Y(0, 2\eta) \subseteq \overline{T(B_X(0, 1))} \quad \text{for some } \eta > 0$$
+
+**Step 2: Upgrade from closure to $T(B_X)$ itself.**
+
+We show $B_Y(0, \eta) \subseteq T(B_X(0, 1))$. Take $y$ with $\|y\| < \eta$. Since $y \in \overline{T(B_X(0, 1/2))}$ (by scaling), choose $x_1$ with $\|x_1\| < 1/2$ and $\|y - Tx_1\| < \eta/2$.
+
+Then $y - Tx_1 \in \overline{T(B_X(0, 1/4))}$, so choose $x_2$ with $\|x_2\| < 1/4$ and:
+
+$$\|y - Tx_1 - Tx_2\| < \eta/4$$
+
+Inductively: $\|x_n\| < 2^{-n}$ and $\|y - T(\sum_{k=1}^n x_k)\| < \eta \cdot 2^{-n}$.
+
+Since $\sum \|x_n\| < 1$ and $X$ is Banach, $x = \sum x_n$ converges with $\|x\| < 1$, and $Tx = \lim T(\sum_{k=1}^n x_k) = y$.
+</TheoremBlock>
+
+<TheoremBlock type="corollary" number={1} title="Bounded Inverse Theorem">
+If $T: X \to Y$ is a bounded linear bijection between Banach spaces, then $T^{-1}$ is also bounded. That is, a bijective bounded linear operator between Banach spaces is an isomorphism.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+$T$ is surjective and bounded, so by the Open Mapping Theorem, $T$ is open. The inverse map $T^{-1}$ maps open sets to open sets (the preimage under $T^{-1}$ of an open set $U$ is $T(U)$, which is open). So $T^{-1}$ is continuous, hence bounded.
+</TheoremBlock>
+
+<figure className="my-6">
+  <img src="/images/topics/banach-spaces/open-mapping.png" alt="Open Mapping Theorem visualization" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">A surjective operator T maps the unit ball to an image that contains a δ-ball — the two-step proof geometry.</figcaption>
+</figure>
+
+---
+
+## 9. The Closed Graph Theorem
+
+The third consequence of Baire, proved via the Open Mapping Theorem.
+
+<TheoremBlock type="definition" number={6} title="Closed Graph">
+A linear operator $T: X \to Y$ has a **closed graph** if the graph $\text{Graph}(T) = \{(x, Tx) : x \in X\} \subseteq X \times Y$ is closed in the product topology. Equivalently: whenever $x_n \to x$ in $X$ and $Tx_n \to y$ in $Y$, then $y = Tx$.
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={6} title="Closed Graph Theorem">
+Let $X$ and $Y$ be **Banach spaces** and $T: X \to Y$ a **linear** operator. If $T$ has a **closed graph**, then $T$ is **bounded**.
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+Define the product norm $\|(x, y)\|_{X \times Y} = \|x\|_X + \|y\|_Y$ on $X \times Y$. Since $X$ and $Y$ are Banach spaces, $X \times Y$ is a Banach space.
+
+The graph $G = \text{Graph}(T)$ is a closed linear subspace of $X \times Y$, hence itself a Banach space.
+
+The projection $\pi_1: G \to X$ defined by $\pi_1(x, Tx) = x$ is bounded (with $\|\pi_1\| \leq 1$), linear, and bijective (since $T$ is a function).
+
+By the Bounded Inverse Theorem (Corollary 1), $\pi_1^{-1}: X \to G$ is bounded:
+
+$$\|\pi_1^{-1}(x)\|_{X \times Y} = \|x\| + \|Tx\| \leq C\|x\| \quad \text{for some } C$$
+
+Then $\|Tx\| \leq \|x\| + \|Tx\| \leq C\|x\|$, so $T$ is bounded.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={5} title="When to Use the Closed Graph Theorem">
+The CGT is a verification tool: to check that an operator is bounded, show instead that its graph is closed (i.e., check the sequential criterion $x_n \to x, Tx_n \to y \Rightarrow y = Tx$). This is often easier than directly estimating $\|Tx\| \leq M\|x\|$. The CGT is used throughout PDE theory (to show that differential operators with appropriate domains are bounded) and in operator algebras.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={9} title="The Three Pillars in Action">
+The three theorems have a logical dependency:
+
+- **Baire** $\to$ UBP (directly).
+- **Baire** $\to$ Open Mapping Theorem (directly).
+- **Open Mapping** $\to$ Bounded Inverse Theorem $\to$ Closed Graph Theorem.
+
+So the Baire Category Theorem is the single engine: completeness of the space, combined with the algebraic structure of linear operators, produces all three.
+</TheoremBlock>
+
+---
+
+## 10. Dual Spaces and Bounded Linear Functionals
+
+<TheoremBlock type="definition" number={7} title="Dual Space">
+The **dual space** of a normed space $X$ is $X^* = \mathcal{B}(X, \mathbb{R})$ — the Banach space of all bounded linear functionals $\varphi: X \to \mathbb{R}$, equipped with the operator norm:
+
+$$\|\varphi\|_{X^*} = \sup_{\|x\| \leq 1} |\varphi(x)|$$
+
+By Theorem 2, $X^*$ is always a Banach space, even if $X$ is not complete.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={10} title="Dual of ℓᵖ">
+For $1 \leq p < \infty$, the dual of $\ell^p$ is $\ell^q$ where $1/p + 1/q = 1$: every $\varphi \in (\ell^p)^*$ has the form $\varphi(x) = \sum_{n=1}^\infty x_n y_n$ for a unique $y = (y_n) \in \ell^q$, and $\|\varphi\| = \|y\|_q$.
+
+Special cases:
+- $(\ell^2)^* = \ell^2$ — self-dual (this foreshadows the Riesz representation in Topic 31).
+- $(\ell^1)^* = \ell^\infty$ — bounded linear functionals on $\ell^1$ are identified with bounded sequences.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={11} title="Dual of Lᵖ">
+**Citing Topics 27–28.** For $1 < p < \infty$ and $\sigma$-finite $\mu$: $(L^p(\mu))^* \cong L^q(\mu)$ with $1/p + 1/q = 1$ ([Topic 27](/topics/lp-spaces), Theorem 8). The proof uses the Radon-Nikodym theorem ([Topic 28](/topics/radon-nikodym)) to represent the functional $\varphi$ as $\varphi(f) = \int fg \, d\mu$.
+
+$(L^1)^* = L^\infty$ (same proof structure). But $(L^\infty)^*$ is strictly larger than $L^1$ — it contains singular functionals (e.g., Banach limits) that are not representable as integrals. This asymmetry is why $L^\infty$ is "harder" to work with.
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={7} title="Hahn-Banach Extension Theorem (Statement)">
+Let $X$ be a normed space, $M \subseteq X$ a subspace, and $\varphi: M \to \mathbb{R}$ a bounded linear functional on $M$ with $\|\varphi\|_{M^*} = C$. Then $\varphi$ extends to a bounded linear functional $\tilde{\varphi}: X \to \mathbb{R}$ with $\tilde{\varphi}|_M = \varphi$ and $\|\tilde{\varphi}\|_{X^*} = C$.
+
+The extension preserves the norm. The proof uses Zorn's lemma and is not given here — see Kreyszig Chapter 4.3 or Brezis Chapter 1.1.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={6} title="Consequences of Hahn-Banach">
+Hahn-Banach has three immediate consequences that make dual spaces powerful:
+
+1. **Separation:** For every $x \neq 0$ in $X$, there exists $\varphi \in X^*$ with $\varphi(x) = \|x\|$ and $\|\varphi\| = 1$. This means $X^*$ "sees" every nonzero element.
+2. **Norming:** $\|x\| = \sup_{\|\varphi\| \leq 1} |\varphi(x)|$ — the norm is the supremum over the dual unit ball.
+3. **Density detection:** A subspace $M$ is dense in $X$ if and only if the only $\varphi \in X^*$ that vanishes on $M$ is $\varphi = 0$.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={7} title="Reflexivity">
+A Banach space $X$ is **reflexive** if the natural embedding $J: X \hookrightarrow X^{**}$ defined by $(Jx)(\varphi) = \varphi(x)$ is surjective (every element of $X^{**}$ comes from an element of $X$). $J$ is always an isometric embedding; reflexivity asks whether it is also surjective.
+
+$L^p$ for $1 < p < \infty$ is reflexive: $(L^p)^{**} = (L^q)^* = L^p$. But $L^1$ and $L^\infty$ are NOT reflexive. $\ell^1$ is not reflexive (its bidual is $(\ell^\infty)^*$, which is strictly larger than $\ell^1$). Hilbert spaces are always reflexive (Topic 31).
+</TheoremBlock>
+
+<DualSpaceExplorer client:visible />
+
+<figure className="my-6">
+  <img src="/images/topics/banach-spaces/dual-space.png" alt="Primal and dual unit balls" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">Primal ℓᵖ ball and dual ℓᵍ ball for p = 1, 2, ∞. The diamond (p = 1) pairs with the square (q = ∞); the circle (p = 2) is self-dual.</figcaption>
+</figure>
+
+---
+
+## 11. Separability
+
+<TheoremBlock type="definition" number={8} title="Separable Space">
+A normed space $X$ is **separable** if it contains a countable dense subset: there exists a countable set $D \subseteq X$ such that $\overline{D} = X$.
+
+Equivalently, every element of $X$ can be approximated arbitrarily closely by elements of $D$.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={12} title="Separable and Non-Separable Spaces">
+- $\mathbb{R}^n$ is separable ($\mathbb{Q}^n$ is countable and dense).
+- $\ell^p$ for $1 \leq p < \infty$ is separable (finite sequences with rational entries are countable and dense).
+- $C([a,b])$ with $\|\cdot\|_\infty$ is separable (polynomials with rational coefficients, by Weierstrass approximation — [Topic 20](/topics/approximation-theory)).
+- $L^p(\mathbb{R}^n)$ for $1 \leq p < \infty$ is separable.
+- $\ell^\infty$ is **NOT** separable. Consider the uncountable family of sequences $e_S = (\mathbf{1}_{n \in S})_{n \geq 1}$ for $S \subseteq \mathbb{N}$. For $S \neq T$, $\|e_S - e_T\|_\infty = 1$. Any dense subset must have a distinct element within distance $1/2$ of each $e_S$, so it must be uncountable.
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={8} title="Separability and Computability">
+In ML, we work with a finite number of data points and parameters. Separability ensures that the function space can be "reached" by finite approximations — countable dense subsets serve as computational proxies for the full space. Non-separable spaces like $\ell^\infty$ are pathological from a computational perspective: no countable algorithm can approximate all elements.
+</TheoremBlock>
+
+<figure className="my-6">
+  <img src="/images/topics/banach-spaces/separability.png" alt="Separability visualization" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">ℓ² separability (finite-support sequences are dense) vs. ℓ∞ non-separability (uncountably many pairwise-separated points).</figcaption>
+</figure>
+
+---
+
+## 12. Connections to ML
+
+<TheoremBlock type="example" number={13} title="Spectral Normalization and Operator Norms">
+In Wasserstein GANs, the discriminator (critic) must be 1-Lipschitz: $\|f(x) - f(y)\| \leq \|x - y\|$ for all $x, y$. For a linear layer $f(x) = Wx$, this means $\|W\|_{2 \to 2} = \sigma_1(W) \leq 1$ where $\sigma_1$ is the largest singular value. **Spectral normalization** replaces $W$ with $W/\sigma_1(W)$ after each gradient step, enforcing the operator-norm constraint directly.
+
+For deep networks with layers $W_1, \ldots, W_L$, the Lipschitz constant of the composition is at most $\prod_{l=1}^L \|W_l\|_{\text{op}}$ — the operator norm composes multiplicatively. Controlling each layer's operator norm controls the network's global Lipschitz constant.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={14} title="Dual Spaces and Fenchel Conjugates">
+The **Fenchel conjugate** (convex conjugate) of $f: X \to \mathbb{R}$ is:
+
+$$f^*(y) = \sup_{x \in X} [\langle y, x \rangle - f(x)]$$
+
+where $y \in X^*$. This is fundamentally a dual-space operation: $f^*$ lives on $X^*$, not on $X$.
+
+**Mirror descent** generalizes gradient descent from Hilbert spaces (where $X = X^*$) to Banach spaces: the update uses the Bregman divergence $D_\Phi$ associated with a convex function $\Phi$, and the gradient maps between $X$ and $X^*$. This is why online learning with the entropic regularizer (KL divergence) works on the probability simplex — the simplex lives in $\ell^1$, and mirror descent uses the dual $\ell^\infty$ geometry.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={15} title="Uniform Boundedness and Generalization">
+The empirical risk functional $R_n(f) = \frac{1}{n}\sum_{i=1}^n \ell(f(x_i), y_i)$ defines, for each data point $(x_i, y_i)$, a bounded linear functional on the function space. Uniform convergence of $R_n$ to the population risk $R(f)$ is a statement about the uniform boundedness of these evaluation functionals restricted to a hypothesis class $\mathcal{F}$.
+
+The UBP's message — "pointwise bounds imply uniform bounds for families of operators on Banach spaces" — is the functional-analytic template for Rademacher complexity bounds and VC-dimension arguments.
+</TheoremBlock>
+
+<TheoremBlock type="example" number={16} title="Banach Spaces in Neural ODE Theory">
+Neural ODEs model the hidden state evolution as $\dot{h}(t) = f_\theta(h(t), t)$ where $f_\theta$ is a neural network. The solution operator $\Phi_t: h(0) \mapsto h(t)$ is a bounded operator, and the theory of existence and uniqueness uses the Banach fixed-point theorem ([Topic 29](/topics/metric-spaces), Theorem 7) in the Banach space $C([0, T]; \mathbb{R}^n)$. Stability analysis requires operator-norm estimates on the Jacobian $\partial f_\theta / \partial h$.
+</TheoremBlock>
+
+<figure className="my-6">
+  <img src="/images/topics/banach-spaces/ml-connections-30.png" alt="ML connections for Banach spaces" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">Four ML connections: (a) spectral normalization, (b) Fenchel conjugate / dual-space geometry, (c) UBP and generalization bounds, (d) Banach-space neural ODE.</figcaption>
+</figure>
+
+---
+
+## 13. Computational Notes
+
+Working Python implementations of the key computational ideas in this topic.
+
+**Computing operator norms.** For a matrix $A$:
+- Spectral norm (ℓ² → ℓ²): `np.linalg.svd(A, compute_uv=False)[0]` returns $\sigma_1$.
+- ℓ¹ → ℓ¹ norm: `np.abs(A).sum(axis=0).max()` (maximum absolute column sum).
+- ℓ∞ → ℓ∞ norm: `np.abs(A).sum(axis=1).max()` (maximum absolute row sum).
+
+**Spectral normalization** (simplified power iteration):
+```python
+# Estimate σ₁(W) via power iteration
+u = np.random.randn(W.shape[0]); u /= np.linalg.norm(u)
+for _ in range(10):
+    v = W.T @ u; v /= np.linalg.norm(v)
+    u = W @ v;   u /= np.linalg.norm(u)
+sigma_1 = u @ W @ v
+W_normalized = W / sigma_1
+```
+
+**Fenchel conjugate** for common cases:
+- Quadratic: $f(x) = \frac{1}{2}\|x\|_2^2$ has $f^*(y) = \frac{1}{2}\|y\|_2^2$.
+- Entropic: $f(x) = \sum x_i \log x_i$ on the simplex has $f^*(y) = \log\sum e^{y_i}$ (log-sum-exp).
+
+---
+
+## 14. Summary and Key Results
+
+The dependency structure of this topic:
+
+**Foundation:** Normed vector spaces (Definition 1) add algebraic structure to metric spaces. Every norm induces a translation-invariant, absolutely homogeneous metric. In finite dimensions, all norms are equivalent (Theorem 1); in infinite dimensions, they are not.
+
+**Completeness:** Banach spaces (Definition 2) are complete normed spaces. Completeness is equivalent to absolute convergence implying convergence (Proposition 1). The operator space $\mathcal{B}(X, Y)$ is Banach when $Y$ is Banach (Theorem 2) — the dual space $X^*$ is always Banach.
+
+**The engine:** The Baire Category Theorem (Theorem 3) — a complete metric space is not meager in itself — is the single result that powers the three pillars.
+
+**The three pillars:**
+- Uniform Boundedness Principle (Theorem 4): pointwise bounded $\Rightarrow$ uniformly bounded.
+- Open Mapping Theorem (Theorem 5): surjective bounded linear operators are open.
+- Closed Graph Theorem (Theorem 6): closed graph $\Rightarrow$ bounded.
+
+**Dual spaces:** $X^*$ is the Banach space of bounded linear functionals (Definition 7). Hahn-Banach (Theorem 7) guarantees norm-preserving extensions. The canonical duality $(\ell^p)^* = \ell^q$ and $(L^p)^* = L^q$ connect to Topics 27–28.
+
+---
+
+## 15. Looking Ahead — From Banach to Hilbert
+
+Every Hilbert space is a Banach space, but the converse fails — $\ell^1$ is Banach but not Hilbert (the parallelogram law fails). The passage from Banach to Hilbert is the addition of an **inner product**: a bilinear form $\langle \cdot, \cdot \rangle$ that induces the norm via $\|x\| = \sqrt{\langle x, x \rangle}$.
+
+This additional structure buys three powerful tools that Banach spaces lack:
+
+1. **Orthogonal projections** — the closest point in a closed convex set. In Banach spaces, closest points may not exist or not be unique; in Hilbert spaces, the projection theorem guarantees both.
+2. **The Riesz representation theorem** — $H^* \cong H$, every Hilbert space is self-dual. This is dramatically simpler than the Banach-space dual structure.
+3. **RKHS foundations** — reproducing kernels as inner-product evaluations, connecting Hilbert space theory to kernel methods in ML.
+
+**Within formalCalculus — upcoming topics in this track:**
+
+- **Inner Product & Hilbert Spaces** *(coming soon)* — Inner products, orthogonal complements, projection theorem, Riesz representation, RKHS foundations.
+- **Calculus of Variations** *(coming soon)* — Optimization of functionals on Banach/Hilbert spaces. The Euler-Lagrange equations, the direct method, and connections to physics-informed neural networks and optimal transport.
+
+**Forward links to formalml.com.** The Banach-space infrastructure developed in this topic connects to several ML applications:
+
+- <a href="https://formalml.com/topics/gradient-descent" class="formalml-badge" target="_blank" rel="noopener">Gradient Descent</a> — Operator norms bound Lipschitz constants of gradient maps. The Open Mapping Theorem guarantees bounded inverses of surjective linear layers, controlling gradient flow through deep networks.
+- <a href="https://formalml.com/topics/generative-modeling" class="formalml-badge" target="_blank" rel="noopener">Generative Modeling</a> — Spectral normalization constrains weight matrices to have operator norm at most 1, enforcing Lipschitz continuity for stable Wasserstein GAN training.
+- <a href="https://formalml.com/topics/kernel-methods" class="formalml-badge" target="_blank" rel="noopener">Kernel Methods</a> — RKHS is a Hilbert space (hence Banach). The representer theorem exploits dual-space structure; bounded linear functionals on RKHS correspond to kernel evaluations.
+- <a href="https://formalml.com/topics/pac-learning" class="formalml-badge" target="_blank" rel="noopener">PAC Learning</a> — The Uniform Boundedness Principle is the functional-analytic backbone of uniform convergence arguments. Generalization bounds require function-class boundedness — a UBP application.
+- <a href="https://formalml.com/topics/optimization-theory" class="formalml-badge" target="_blank" rel="noopener">Optimization Theory</a> — Mirror descent operates in Banach spaces with Bregman divergences. The dual-space geometry (Fenchel conjugates, subgradients in $X^*$) extends gradient descent beyond Hilbert spaces.
