@@ -1,0 +1,81 @@
+---
+interface Reference {
+  type: 'book' | 'paper';
+  title: string;
+  authors: string;
+  year: number;
+  url?: string;
+  note?: string;
+}
+
+interface Props {
+  references: Reference[];
+}
+
+const { references } = Astro.props;
+
+// Sort: books first (by year asc), then papers (by year asc)
+const sorted = [...references].sort((a, b) => {
+  if (a.type !== b.type) return a.type === 'book' ? -1 : 1;
+  return a.year - b.year;
+});
+---
+
+<section class="mt-16 pt-8 border-t" style="border-color: var(--color-border);">
+  <h2
+    class="text-xl font-bold mb-6"
+    style="font-family: var(--font-serif); color: var(--color-text-heading);"
+  >
+    References
+  </h2>
+
+  <ol class="list-decimal pl-6 space-y-4">
+    {sorted.map((ref) => (
+      <li class="text-sm leading-relaxed" style="color: var(--color-text);">
+        <span
+          class="inline-block text-[0.65rem] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded mr-1.5 align-middle"
+          style={`background: var(--color-surface-alt); color: var(--color-text-muted);`}
+        >
+          {ref.type}
+        </span>
+
+        <strong>{ref.authors}</strong>{' '}
+        ({ref.year}).{' '}
+
+        {ref.type === 'book' ? (
+          ref.url ? (
+            <a
+              href={ref.url}
+              target="_blank"
+              rel="noopener"
+              class="hover:underline"
+              style="color: var(--color-primary);"
+            >
+              <em>{ref.title}</em>
+            </a>
+          ) : (
+            <em>{ref.title}</em>
+          )
+        ) : (
+          ref.url ? (
+            <a
+              href={ref.url}
+              target="_blank"
+              rel="noopener"
+              class="hover:underline"
+              style="color: var(--color-primary);"
+            >
+              &ldquo;{ref.title}&rdquo;
+            </a>
+          ) : (
+            <span>&ldquo;{ref.title}&rdquo;</span>
+          )
+        )}
+
+        {ref.note && (
+          <span style="color: var(--color-text-muted);"> {ref.note}</span>
+        )}
+      </li>
+    ))}
+  </ol>
+</section>
