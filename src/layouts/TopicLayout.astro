@@ -1,5 +1,6 @@
 ---
 import BaseLayout from './BaseLayout.astro';
+import ReferencesSection from '../components/ui/ReferencesSection.astro';
 
 interface Props {
   frontmatter: {
@@ -15,6 +16,14 @@ interface Props {
       topic: string;
       site: string;
       relationship: string;
+    }>;
+    references: Array<{
+      type: 'book' | 'paper';
+      title: string;
+      authors: string;
+      year: number;
+      url?: string;
+      note?: string;
     }>;
   };
 }
@@ -113,5 +122,10 @@ const domainLabels: Record<string, string> = {
     <div class="topic-content">
       <slot />
     </div>
+
+    <!-- Structured references from frontmatter -->
+    {frontmatter.references && frontmatter.references.length > 0 && (
+      <ReferencesSection references={frontmatter.references} />
+    )}
   </article>
 </BaseLayout>
