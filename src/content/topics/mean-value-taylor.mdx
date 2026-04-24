@@ -507,26 +507,3 @@ For Newton's method in practice, SciPy provides `scipy.optimize.minimize(f, x0, 
 
 ![Taylor polynomial accuracy vs. degree and distance from center](/images/topics/mean-value-taylor/numerical-taylor.png)
 
-## Connections & Further Reading
-
-### Within formalCalculus
-
-This topic builds directly on:
-- [**The Derivative & Chain Rule**](/topics/derivative) — the derivative definition, differentiation rules, and chain rule that are the raw material for Rolle's theorem, MVT, and Taylor expansion.
-- [**Completeness & Compactness**](/topics/completeness-compactness) — the Extreme Value Theorem (via Heine-Borel) that powers Rolle's theorem.
-- [**Sequences, Limits & Convergence**](/topics/sequences-limits) — the convergence framework for Taylor remainder analysis and Newton's method error sequences.
-- [**Epsilon-Delta & Continuity**](/topics/epsilon-delta) — the continuity hypotheses in Rolle's and MVT, and the limit machinery for L'Hôpital's Rule.
-
-### Coming next
-
-- [**The Riemann Integral & FTC**](/topics/riemann-integral) — the Fundamental Theorem of Calculus uses the MVT in its proof. Taylor's theorem provides the integral form of the remainder $R_n(x) = \int_a^x \frac{f^{(n+1)}(t)}{n!}(x-t)^n \, dt$.
-- [**Improper Integrals & Special Functions**](/topics/improper-integrals) — Taylor expansion of integrands near singularities, Stirling's approximation for the Gamma function.
-- [**Power Series & Taylor Series**](/topics/power-taylor-series) — Taylor polynomials are finite truncations of Taylor series. This topic provided the approximation theory; the series topic addresses convergence of the infinite sum.
-- [**Partial Derivatives & the Gradient**](/topics/gradient) — the MVT generalizes to the multivariable setting. The descent lemma in $\mathbb{R}^n$ uses the multivariable second-order Taylor expansion.
-- **The Hessian & Second-Order Analysis** *(coming soon)* — Newton's method in $\mathbb{R}^n$ uses the Hessian matrix $\nabla^2 f$, the multivariable analog of $f''$, in the local quadratic Taylor model.
-
-### Forward links to formalML
-
-- <a href="https://formalml.com/topics/gradient-descent" target="_blank" rel="noopener">Gradient Descent</a> → formalML — descent lemma, convergence rates, and the role of Taylor expansion in optimization analysis.
-- <a href="https://formalml.com/topics/proximal-methods" target="_blank" rel="noopener">Proximal Methods</a> → formalML — proximal operators as quadratic Taylor models with regularization.
-- <a href="https://formalml.com/topics/smooth-manifolds" target="_blank" rel="noopener">Smooth Manifolds</a> → formalML — Taylor expansion on manifolds, smooth bump functions, and partition of unity.

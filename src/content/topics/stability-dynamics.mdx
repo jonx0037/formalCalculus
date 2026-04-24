@@ -632,7 +632,10 @@ A **constant learning rate** must satisfy $\eta < 2/\lambda_{\max}$ everywhere a
 
 This topic is the **theoretical peak** of the ODE track — the point where linear algebra (eigenvalues, matrix exponential) becomes predictive for nonlinear systems through linearization, and where energy methods (Lyapunov functions) provide an alternative path that doesn't require solving the ODE.
 
+<div class="topic-callout topic-callout--internal">
+
 **Within formalCalculus:**
+
 - [Linear Systems & Matrix Exponential](/topics/linear-systems) — the eigenvalue classification of linear phase portraits is the engine that drives the linearization stability theorem
 - [The Hessian & Second-Order Analysis](/topics/hessian) — positive-definiteness tests for the Lyapunov function $V$ and the loss landscape Hessian $\nabla^2 L$
 - [The Jacobian & Linear Approximation](/topics/jacobian) — computing the Jacobian of $\mathbf{f}$ at an equilibrium is the first step of linearization
@@ -641,8 +644,15 @@ This topic is the **theoretical peak** of the ODE track — the point where line
 - [The Inverse & Implicit Function Theorems](/topics/inverse-implicit) — the IFT determines when equilibria persist under perturbation, the foundation of bifurcation theory
 - [Numerical Methods for ODEs](/topics/numerical-odes) — numerical stability of ODE solvers mirrors continuous-time stability; stiffness detection uses the eigenvalue spread of the Jacobian
 
+</div>
+
+<div class="topic-callout topic-callout--formalml">
+
 **Forward to formalml.com:**
+
 - [Gradient Descent](https://formalml.com/topics/gradient-descent) — convergence analysis is stability of the gradient flow ODE
 - [Information Geometry](https://formalml.com/topics/information-geometry) — natural gradient stability via the Fisher-preconditioned Hessian
 - [Smooth Manifolds](https://formalml.com/topics/smooth-manifolds) — stable/unstable manifolds as immersed submanifolds; Poincaré-Bendixson on compact 2-manifolds
 - [Spectral Theorem](https://formalml.com/topics/spectral-theorem) — Lyapunov equation solvability via spectral conditions on $A$ and $-A^T$
+
+</div>

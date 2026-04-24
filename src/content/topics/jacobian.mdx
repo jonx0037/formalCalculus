@@ -422,15 +422,3 @@ so bounding the Jacobian norm bounds the Lipschitz constant. This appears in adv
 
 ![Normalizing flows: a Gaussian base density transformed through an invertible map f, with the Jacobian determinant providing the volume correction for the output density.](/images/topics/jacobian/normalizing-flows-jacobian.png)
 
-## Connections & Further Reading
-
-**Within formalCalculus:**
-- [Partial Derivatives & the Gradient](/topics/gradient) — The gradient is the $m = 1$ special case of the Jacobian. The total derivative, $C^1$ criterion, and tangent plane from Topic 9 extend directly to vector-valued functions.
-- [The Derivative & Chain Rule](/topics/derivative) — The single-variable chain rule $(f \circ g)' = f' \cdot g'$ is the $1 \times 1$ case of $J_{f \circ g} = J_f \cdot J_g$.
-- [Epsilon-Delta & Continuity](/topics/epsilon-delta) — The total derivative definition uses a multivariable limit, and the chain rule proof requires careful handling of error terms.
-- [Completeness & Compactness](/topics/completeness-compactness) — Compactness in $\mathbb{R}^n$ ensures continuous functions on closed bounded sets achieve their extrema.
-- [The Hessian & Second-Order Analysis](/topics/hessian) — The Hessian is the Jacobian of the gradient: $H_f = J(\nabla f)$. Second-order analysis builds directly on the chain rule and Jacobian framework developed here.
-- [**Inverse & Implicit Function Theorems**](/topics/inverse-implicit) — $\det J_f(a) \neq 0$ implies $f$ is locally invertible near $a$. The Implicit Function Theorem expresses part of the Jacobian as a function of the rest.
-- [**Change of Variables & the Jacobian Determinant**](/topics/change-of-variables) — The Jacobian determinant $|\det J_\phi|$ appears as the volume scaling factor in the substitution formula for multiple integrals.
-
-![A gallery of grid deformations: four vector fields applied to a regular grid, each with the Jacobian matrix and determinant at a sample point.](/images/topics/jacobian/grid-deformation-gallery.png)

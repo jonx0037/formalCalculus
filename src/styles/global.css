@@ -155,12 +155,49 @@ h1, h2, h3, h4, h5, h6 {
 .topic-content pre {
   font-family: var(--font-mono);
   font-size: 0.875rem;
-  background-color: var(--color-surface-code);
   padding: 1rem;
   border-radius: 0.5rem;
   overflow-x: auto;
   margin-bottom: 1.5rem;
   border: 1px solid var(--color-border);
+}
+
+/* Shiki dual-theme (Astro emits `.astro-code` with --shiki-light / --shiki-dark
+   custom properties on every token). With defaultColor:false, Astro doesn't set
+   a default color — we drive both light and dark from CSS below.
+
+   Precedence:
+   - Light mode: both .astro-code (background) and its spans (token colors) read --shiki-light.
+   - Dark mode: swap to --shiki-dark when [data-theme="dark"] is set OR when
+     prefers-color-scheme:dark is active and the user hasn't overridden to light.
+*/
+/* Light mode: use site's --color-surface-code (#F3F4F6 soft grey) so code blocks
+   visually separate from the white page body. Token colors come from Shiki's light theme. */
+.astro-code {
+  color: var(--shiki-light);
+  background-color: var(--color-surface-code) !important;
+}
+.astro-code span {
+  color: var(--shiki-light);
+}
+
+/* Dark mode: swap to Shiki's github-dark-dimmed bg and tokens for a coherent palette. */
+html[data-theme="dark"] .astro-code,
+html[data-theme="dark"] .astro-code span {
+  color: var(--shiki-dark) !important;
+}
+html[data-theme="dark"] .astro-code {
+  background-color: var(--shiki-dark-bg) !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme="light"]) .astro-code,
+  html:not([data-theme="light"]) .astro-code span {
+    color: var(--shiki-dark) !important;
+  }
+  html:not([data-theme="light"]) .astro-code {
+    background-color: var(--shiki-dark-bg) !important;
+  }
 }
 
 /* ============================================================
@@ -176,6 +213,66 @@ h1, h2, h3, h4, h5, h6 {
   overflow-x: auto;
   overflow-y: hidden;
   padding: 0.5rem 0;
+}
+
+/* ============================================================
+   Inline topic callouts — "Within formalCalculus", "Forward to formalML"
+   ============================================================ */
+
+.topic-content .topic-callout {
+  margin: 2rem 0;
+  padding: 1rem 1.25rem;
+  border-radius: 0.5rem;
+  border-left: 4px solid var(--color-border-strong);
+  background-color: var(--color-surface-alt);
+}
+
+.topic-content .topic-callout > p:first-child {
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+}
+
+.topic-content .topic-callout > p:first-child strong {
+  font-weight: 600;
+}
+
+.topic-content .topic-callout ul,
+.topic-content .topic-callout ol {
+  margin-bottom: 0;
+  padding-left: 1.25rem;
+}
+
+.topic-content .topic-callout li {
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.topic-content .topic-callout li:last-child {
+  margin-bottom: 0;
+}
+
+/* Variant: internal links (within formalCalculus) — green accent */
+.topic-content .topic-callout--internal {
+  border-left-color: var(--color-theorem-border);
+  background-color: var(--color-theorem-bg);
+}
+.topic-content .topic-callout--internal > p:first-child {
+  color: var(--color-theorem-border);
+}
+
+/* Variant: formalML forward refs — blue accent */
+.topic-content .topic-callout--formalml {
+  border-left-color: var(--color-primary);
+  background-color: var(--color-definition-bg);
+}
+.topic-content .topic-callout--formalml > p:first-child {
+  color: var(--color-primary);
 }
 
 /* ============================================================

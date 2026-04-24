@@ -14,6 +14,6 @@ const { topic } = Astro.props;
 const { Content } = await render(topic);
 ---
 
-<TopicLayout frontmatter={topic.data}>
+<TopicLayout slug={topic.id} frontmatter={topic.data}>
   <Content />
 </TopicLayout>

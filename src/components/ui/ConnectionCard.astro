@@ -1,0 +1,54 @@
+---
+type Variant = 'prereq' | 'internal' | 'formalml';
+
+interface Props {
+  title: string;
+  href: string;
+  relationship?: string;
+  variant: Variant;
+  external?: boolean;
+}
+
+const { title, href, relationship, variant, external = false } = Astro.props;
+
+const variantStyles: Record<Variant, { bg: string; border: string; accent: string }> = {
+  prereq: {
+    bg: 'var(--color-proof-bg)',
+    border: 'var(--color-proof-border)',
+    accent: 'var(--color-text-muted)',
+  },
+  internal: {
+    bg: 'var(--color-theorem-bg)',
+    border: 'var(--color-theorem-border)',
+    accent: 'var(--color-theorem-border)',
+  },
+  formalml: {
+    bg: 'var(--color-definition-bg)',
+    border: 'var(--color-definition-border)',
+    accent: 'var(--color-primary)',
+  },
+};
+
+const style = variantStyles[variant];
+---
+
+<a
+  href={href}
+  target={external ? '_blank' : undefined}
+  rel={external ? 'noopener noreferrer' : undefined}
+  class="group block rounded-md border-l-4 p-3 transition-all hover:shadow-sm hover:translate-x-0.5 no-underline"
+  style={`background: ${style.bg}; border-left-color: ${style.border};`}
+>
+  <p
+    class="font-semibold text-sm mb-1 group-hover:underline"
+    style={`color: ${style.accent};`}
+  >
+    {title}
+    {external && <span class="ml-1 opacity-70 text-xs">↗</span>}
+  </p>
+  {relationship && (
+    <p class="text-xs leading-relaxed" style="color: var(--color-text);">
+      {relationship}
+    </p>
+  )}
+</a>

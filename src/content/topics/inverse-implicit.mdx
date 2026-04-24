@@ -888,33 +888,3 @@ If $\kappa(J_f) = 10^{16}$ and you are working in double precision (about 16 dig
 The rule: **never compute $J_f^{-1}$ explicitly**. Instead, solve $J_f \cdot v = b$ using `np.linalg.solve` (LU decomposition) or iterative methods. This is more numerically stable and often faster.
 </TheoremBlock>
 
-## Connections & Further Reading
-
-This topic connects the entire Multivariable Differential Calculus track into a unified framework:
-
-| Topic | Connection |
-|-------|-----------|
-| [Epsilon-Delta Continuity](/topics/epsilon-delta) | The IFT proof requires $\varepsilon$-$\delta$ control of the neighborhood size. The $C^1$ hypothesis ensures continuity of $J_f$, which is used to guarantee $\|DT_y(x)\| < 1/2$. |
-| [Partial Derivatives & the Gradient](/topics/gradient) | The gradient $\nabla f$ is the constraint surface normal. The ImFT applied to $f(x) = c$ recovers gradient orthogonality to level sets. |
-| [The Jacobian & Multivariate Chain Rule](/topics/jacobian) | The Jacobian $J_f(a)$ is the central hypothesis of the IFT. The chain rule gives $J_{f^{-1}} = [J_f]^{-1}$. |
-| [The Hessian & Second-Order Analysis](/topics/hessian) | The Hessian $H_f = J(\nabla f)$. Non-singularity of $H_f$ at a critical point is the IFT condition applied to the gradient map: critical points are isolated when the Hessian is non-singular. |
-| [Completeness & Compactness](/topics/completeness-compactness) | The Contraction Mapping Theorem uses completeness of $\mathbb{R}^n$: the iterates form a Cauchy sequence that converges because the space is complete. |
-
-**Prerequisites met:**
-
-This topic assumes familiarity with:
-- [The Jacobian & Multivariate Chain Rule](/topics/jacobian) — for the Jacobian matrix, chain rule, and determinant
-- [The Hessian & Second-Order Analysis](/topics/hessian) — for second-order structure at critical points
-- [Completeness & Compactness](/topics/completeness-compactness) — for the completeness of $\mathbb{R}^n$ used in the contraction mapping proof
-
-**Within formalCalculus — forward references:**
-
-- [**Change of Variables & the Jacobian Determinant**](/topics/change-of-variables) — the IFT provides the theoretical foundation for the substitution formula $\int_{\phi(U)} f = \int_U (f \circ \phi)|\det J_\phi|$
-- [**First-Order ODEs & Existence Theorems**](/topics/first-order-odes) — existence and uniqueness of ODE solutions via the contraction mapping principle (Picard-Lindelöf theorem)
-- [**Metric Spaces & Topology**](/topics/metric-spaces) — the Banach Contraction Mapping Theorem in abstract metric spaces, with the IFT argument from this topic appearing as Example 11
-
-**Forward links to formalML:**
-
-- <a href="https://formalml.com/topics/gradient-descent" target="_blank" rel="noopener">Gradient Descent → formalML</a> — the IFT guarantees local convergence near non-degenerate critical points; the Hessian condition number governs convergence rate
-- <a href="https://formalml.com/topics/smooth-manifolds" target="_blank" rel="noopener">Smooth Manifolds → formalML</a> — the Regular Value Theorem (Theorem 5) is the primary tool for constructing smooth manifolds from level sets
-- <a href="https://formalml.com/topics/information-geometry" target="_blank" rel="noopener">Information Geometry → formalML</a> — the Fisher information matrix as Hessian of the KL divergence; the IFT guarantees reparametrization invariance when the Fisher matrix is non-singular

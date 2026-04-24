@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { tracks } from '../data/curriculum';
+import CurriculumGraph from '../components/viz/CurriculumGraph.tsx';
 ---
 
 <BaseLayout title="formalCalculus">
@@ -49,22 +50,54 @@ import { tracks } from '../data/curriculum';
     </h2>
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {tracks.map((track) => (
-        <div
-          class="rounded-lg border p-4"
+        <a
+          href={`/paths#${track.domain}`}
+          class="group rounded-lg border p-4 transition-all hover:shadow-md hover:-translate-y-0.5 no-underline"
           style="background: var(--color-surface-alt); border-color: var(--color-border);"
         >
-          <h3 class="font-semibold mb-1" style="color: var(--color-text-heading);">
+          <h3
+            class="font-semibold mb-1 transition-colors group-hover:text-[var(--color-primary)]"
+            style="color: var(--color-text-heading);"
+          >
             {track.title}
           </h3>
           <p class="text-sm mb-2" style="color: var(--color-text-muted);">
             {track.description}
           </p>
-          <p class="text-xs" style="color: var(--color-text-muted);">
-            {track.published.length} published · {track.planned.length} planned
+          <p
+            class="text-xs flex items-center justify-between"
+            style="color: var(--color-text-muted);"
+          >
+            <span>{track.published.length} published · {track.planned.length} planned</span>
+            <span
+              class="opacity-0 group-hover:opacity-100 transition-opacity font-semibold"
+              style="color: var(--color-primary);"
+            >
+              Explore →
+            </span>
           </p>
-        </div>
+        </a>
       ))}
     </div>
+  </section>
+
+  <!-- Curriculum graph preview -->
+  <section class="max-w-6xl mx-auto px-4 sm:px-6 pb-16">
+    <h2
+      class="text-2xl font-bold mb-2 text-center"
+      style="font-family: var(--font-serif); color: var(--color-text-heading);"
+    >
+      How the topics connect
+    </h2>
+    <p
+      class="text-base mb-8 text-center max-w-2xl mx-auto"
+      style="color: var(--color-text-muted);"
+    >
+      The full prerequisite graph — every arrow is a concept you'll want before the next.
+      Hover a node for details, or
+      <a href="/paths" class="text-[var(--color-primary)] hover:underline">view the full curriculum</a>.
+    </p>
+    <CurriculumGraph client:visible />
   </section>
 
   <!-- Bridge to formalML -->

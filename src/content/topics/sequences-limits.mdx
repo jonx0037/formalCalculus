@@ -511,22 +511,3 @@ result = minimize(lambda x: x[0]**2 + x[1]**2, x0=[3.0, 4.0],
 # iterates now contains the full optimization path
 ```
 
-## Connections & Further Reading
-
-### Where this leads within formalCalculus
-
-- [**Epsilon-Delta & Continuity**](/topics/epsilon-delta) extends the $\varepsilon$-$N$ framework to function limits and continuity. The $\varepsilon$-$\delta$ definition is the function-level analogue of what we did here for sequences.
-- [**The Riemann Integral & FTC**](/topics/riemann-integral) defines the integral as a limit of Riemann sums — each sum is a term in a sequence, and convergence of that sequence *is* the integral.
-- [**Series Convergence & Tests**](/topics/series-convergence) treats partial sums of infinite series as sequences. The Robbins-Monro conditions from §8 are formalized as series convergence criteria.
-- [**Completeness & Compactness**](/topics/completeness-compactness) — elevates the Bolzano-Weierstrass theorem and Cauchy completeness from useful results to consequences of a single structural axiom: the completeness of ℝ.
-- [**Uniform Convergence**](/topics/uniform-convergence) — extends convergence from sequences of numbers to sequences of functions, with the Cauchy criterion for uniform convergence as the function-space analog of Cauchy sequences.
-
-### Where this leads in machine learning
-
-The convergence theory developed here is the direct foundation for:
-
-- <a href="https://formalml.com/topics/gradient-descent" class="formalml-badge" target="_blank" rel="noopener">formalML</a> **Gradient Descent** — convergence rates, step size conditions, and strong convexity.
-- <a href="https://formalml.com/topics/pac-learning" class="formalml-badge" target="_blank" rel="noopener">formalML</a> **PAC Learning** — uniform convergence of empirical processes.
-- <a href="https://formalml.com/topics/random-walks" class="formalml-badge" target="_blank" rel="noopener">formalML</a> **Random Walks & MCMC** — mixing time as a convergence rate.
-- <a href="https://formalml.com/topics/concentration-inequalities" class="formalml-badge" target="_blank" rel="noopener">formalML</a> **Concentration Inequalities** — quantitative convergence bounds.
-- <a href="https://formalml.com/topics/measure-theoretic-probability" class="formalml-badge" target="_blank" rel="noopener">formalML</a> **Measure-Theoretic Probability** — modes of convergence (a.s., in probability, in distribution).

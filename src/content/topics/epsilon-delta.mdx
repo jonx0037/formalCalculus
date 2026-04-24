@@ -519,19 +519,3 @@ root, iters = bisection(lambda x: x**3 - 2*x - 2, 0, 3)
 print(f"Root: {root:.10f} (found in {iters} iterations)")
 ```
 
-## Connections & Further Reading
-
-### Where this leads within formalCalculus
-
-- [**Sequences, Limits & Convergence**](/topics/sequences-limits) — the prerequisite. The ε-N definition that this topic extends, and the Bolzano-Weierstrass Theorem that powers the EVT proof.
-- [**Completeness & Compactness**](/topics/completeness-compactness) — reproves EVT and Heine-Cantor as consequences of compactness, revealing the structural reason these theorems hold.
-- [**Uniform Convergence**](/topics/uniform-convergence) — the Uniform Limit Theorem uses ε-δ continuity to prove that uniform convergence preserves continuity, and equicontinuity generalizes uniform continuity to families of functions.
-- [**The Derivative & Chain Rule**](/topics/derivative) — differentiability implies continuity (but not conversely — ReLU is continuous but not differentiable at 0). The derivative is itself a limit.
-- [**The Riemann Integral & FTC**](/topics/riemann-integral) — continuous functions on $[a, b]$ are Riemann integrable. Continuity is the "easy" sufficient condition.
-- [**Mean Value Theorem & Taylor Expansion**](/topics/mean-value-taylor) — MVT requires continuity on $[a, b]$ and differentiability on $(a, b)$.
-
-### Where this leads in machine learning
-
-- <a href="https://formalml.com/topics/convex-analysis" class="formalml-badge" target="_blank" rel="noopener">formalML</a> **Convex Analysis** — continuity of convex functions, semicontinuity, Lipschitz gradient conditions.
-- <a href="https://formalml.com/topics/gradient-descent" class="formalml-badge" target="_blank" rel="noopener">formalML</a> **Gradient Descent** — the Lipschitz gradient assumption controls convergence rates.
-- <a href="https://formalml.com/topics/pac-learning" class="formalml-badge" target="_blank" rel="noopener">formalML</a> **PAC Learning** — continuous hypothesis classes and uniform convergence of empirical processes.

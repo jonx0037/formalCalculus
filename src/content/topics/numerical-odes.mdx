@@ -663,12 +663,22 @@ This is the **fourth and final topic** in Track 6 — Ordinary Differential Equa
 
 The conceptual arc of the track: Topic 21 asked *does a solution exist?* Topic 22 asked *what does it look like for linear systems?* Topic 23 asked *how does it behave qualitatively for nonlinear systems?* Topic 24 asks *how do we actually compute it?* Each question depends on the previous ones, and each answer brings us closer to the computational reality that ML practitioners actually face.
 
+<div class="topic-callout topic-callout--internal">
+
 **Within formalCalculus:**
+
 - [First-Order ODEs & Existence Theorems](/topics/first-order-odes) — Euler's method and RK4 were introduced here as computational tools. This topic provides the full error analysis (Theorems 1 and 2), explains why RK4 is order 4, and proves convergence via the Lax equivalence theorem.
 - [Linear Systems & Matrix Exponential](/topics/linear-systems) — exact solutions $e^{At} \mathbf{y}_0$ serve as benchmarks for measuring numerical accuracy (Examples 14 and 15), and the test equation $y' = \lambda y$ is the foundation of all stability analysis (Section 5).
 - [Stability & Dynamical Systems](/topics/stability-dynamics) — numerical stability mirrors continuous-time stability. The stiffness ratio is computed from the Jacobian eigenvalues using the same tools as the linearization stability theorem; the `stiffnessDetector` function in `odes.ts` literally reuses `eigenDecomposition2x2` from Topic 22.
 - [Mean Value Theorem & Taylor Expansion](/topics/mean-value-taylor) — Taylor expansion is the fundamental engine for deriving the local truncation error of every method, including the explicit calculation $\tau_n = (h^2/2) y''(\xi_n)$ for Euler (Section 2) and the order conditions for RK4 (Section 3).
 - [**Metric Spaces & Topology**](/topics/metric-spaces) — the abstract Banach Contraction Mapping Theorem, which generalizes the Newton-iteration convergence argument used for implicit methods in this topic. Topic 29's Example 10 is precisely the implicit-method calculation from Section 7 viewed from the abstract side.
 
+</div>
+
+<div class="topic-callout topic-callout--formalml">
+
 **Forward to formalml.com:**
+
 - [Random Walks](https://formalml.com/topics/random-walks) — discrete-time approximation of continuous diffusion processes. The convergence theory developed here (consistency, stability, Lax equivalence) is the analytical framework for understanding when discrete random walks approximate continuous SDEs and at what rate. The numerical analysis of stochastic ODEs (Euler-Maruyama, Milstein, stochastic Runge-Kutta) is a direct generalization of the deterministic theory in this topic, with extra care for the fact that Brownian increments scale like $\sqrt{h}$ rather than $h$.
+
+</div>
