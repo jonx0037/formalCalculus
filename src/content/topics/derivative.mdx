@@ -463,19 +463,3 @@ The tradeoff: smaller $h$ reduces truncation error but increases floating-point 
 
 ![Numerical differentiation: error vs h for forward, central, and Richardson](/images/topics/derivative/numerical-differentiation.png)
 
-## What Comes Next
-
-The derivative gives us rates of change and the chain rule gives us gradients through compositions. Here is where these ideas lead:
-
-**Within formalCalculus:**
-
-- [**Mean Value Theorem & Taylor Expansion**](/topics/mean-value-taylor) — If $f$ is differentiable on $[a, b]$, there exists $c \in (a, b)$ with $f'(c) = \frac{f(b)-f(a)}{b-a}$. Taylor's theorem extends linear approximation to polynomial approximation of arbitrary degree.
-- [**The Riemann Integral & FTC**](/topics/riemann-integral) — The Fundamental Theorem of Calculus ties differentiation and integration: if $F'(x) = f(x)$, then $\int_a^b f(x)\,dx = F(b) - F(a)$.
-- [**Partial Derivatives & the Gradient**](/topics/gradient) — The gradient $\nabla f = (\partial f/\partial x_1, \ldots, \partial f/\partial x_n)$ generalizes the single-variable derivative to $\mathbb{R}^n$.
-- [**The Jacobian & Multivariate Chain Rule**](/topics/jacobian) — The Jacobian matrix generalizes the scalar derivative, and the multivariate chain rule $J_{f \circ g} = J_f \cdot J_g$ is what backpropagation actually computes in multi-dimensional networks.
-
-**Forward to formalML:**
-
-- <a href="https://formalml.com/topics/gradient-descent" target="_blank" rel="noopener">Gradient Descent</a> — The derivative is the engine of optimization. Single-variable gradient descent $\theta_{t+1} = \theta_t - \eta f'(\theta_t)$ is the prototype for SGD, Adam, and all gradient methods.
-- <a href="https://formalml.com/topics/shannon-entropy" target="_blank" rel="noopener">Shannon Entropy</a> — Derivatives of entropy $H(p) = -\sum p_i \log p_i$ and cross-entropy loss drive information-theoretic ML objectives.
-- <a href="https://formalml.com/topics/smooth-manifolds" target="_blank" rel="noopener">Smooth Manifolds</a> — The derivative as a linear map between tangent spaces. The chain rule becomes functoriality of the tangent functor.

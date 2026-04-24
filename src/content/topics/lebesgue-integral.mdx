@@ -754,19 +754,33 @@ This is the **second topic** in Track 7 — Measure & Integration — and the se
 
 If the convergence-theorem proofs felt harder than the proofs in Topic 25, that is accurate, and it is the natural difficulty step-up of moving from "set-theoretic reasoning about measures" to "limit-of-integrals manipulations." The MCT proof technique (the scaled cutoff $\alpha < 1$, the increasing exhaustion $E_n \uparrow \Omega$, the diagonal sup over simple functions) is the prototype for almost every proof in measure-theoretic real analysis from this point forward.
 
+<div class="topic-callout topic-callout--internal">
+
 **Within formalCalculus:**
 
 - [Sigma-Algebras & Measures](/topics/sigma-algebras) — Every concept used here was built in Topic 25: sigma-algebras, measures, measurable functions, simple functions, null sets, "almost everywhere," product sigma-algebras, and the simple-function approximation theorem. Topic 26 is a direct continuation of Topic 25; if any of those tools is unfamiliar, Topic 25 is the place to refresh.
 - [The Riemann Integral & FTC](/topics/riemann-integral) — Section 8 proves that every Riemann-integrable function is Lebesgue-integrable with the same value. Lebesgue's criterion (Theorem 7) is the cleanest possible characterization of Riemann-integrability, and it is a measure-theoretic statement: the discontinuity set must have measure zero.
 - [Multiple Integrals & Fubini's Theorem](/topics/multiple-integrals) — Section 9's measure-theoretic Fubini-Tonelli generalizes the Riemann-integral version from Topic 13. Same statement, broader domain.
 
+</div>
+
+<div class="topic-callout topic-callout--internal">
+
 **Successor topic now published:**
 
 - [$L^p$ Spaces](/topics/lp-spaces) — Banach spaces of measurable functions where $\|f\|_p = (\int |f|^p \, d\mu)^{1/p} < \infty$. Equivalence classes under a.e.-equality. The completeness theorem (Riesz-Fischer) is a direct application of the Dominated Convergence Theorem from Section 7 — the $L^p$ norm is exactly the right tool to make the convergence-theorem machinery into a complete metric space structure on functions.
 
+</div>
+
+<div class="topic-callout topic-callout--internal">
+
 **Successor topics within formalCalculus:**
 
 - [**Radon-Nikodym & Probability Densities**](/topics/radon-nikodym) — Characterizes when one measure $\nu$ has a density $f = d\nu/d\mu$ with respect to another measure $\mu$. The bridge from measure theory to probability densities, conditional expectation, and Bayesian inference. The KL-divergence and importance-sampling formulas from Section 11 of this topic are special cases that we formalize there.
+
+</div>
+
+<div class="topic-callout topic-callout--formalml">
 
 **Forward to formalml.com:**
 
@@ -774,6 +788,8 @@ If the convergence-theorem proofs felt harder than the proofs in Topic 25, that 
 - <a href="https://formalml.com/topics/gradient-descent" class="formalml-badge" target="_blank" rel="noopener">Gradient Descent</a> — The interchange $\nabla_\theta E[L(\theta, X)] = E[\nabla_\theta L(\theta, X)]$ is the single most-cited DCT application in machine learning. Every SGD convergence proof in the optimization literature implicitly invokes the Dominated Convergence Theorem from Section 7 of this topic.
 - <a href="https://formalml.com/topics/information-geometry" class="formalml-badge" target="_blank" rel="noopener">Information Geometry</a> — KL divergence $D_{\mathrm{KL}}(P \,\|\, Q) = \int \log(dP/dQ) \, dP$ and cross-entropy are Lebesgue integrals against probability measures. Their analytic properties (non-negativity via Jensen, convexity, lower semicontinuity) are integral inequalities provable inside the framework of this topic.
 - <a href="https://formalml.com/topics/variational-inference" class="formalml-badge" target="_blank" rel="noopener">Variational Inference</a> — The evidence lower bound is Jensen's inequality applied to a Lebesgue integral. The tightness gap is a KL divergence, which is itself a Lebesgue integral. The entire variational machinery is integral inequalities on Lebesgue integrals.
+
+</div>
 
 **References:**
 

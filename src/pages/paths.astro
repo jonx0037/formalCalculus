@@ -63,7 +63,7 @@ for (const node of graphData.nodes) {
     {tracks.map((track) => {
       const nodes = nodesByDomain.get(track.domain) || [];
       return (
-        <section class="mb-12">
+        <section class="mb-12 scroll-mt-20" id={track.domain}>
           <h2
             class="text-xl font-bold mb-1"
             style="font-family: var(--font-serif); color: var(--color-text-heading);"

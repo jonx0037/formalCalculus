@@ -832,11 +832,17 @@ This topic opens **Track 8: Functional Analysis Essentials**, a four-topic arc t
 
 The refinement sequence is **metric → normed → inner product → optimization**. Every Hilbert space is a Banach space; every Banach space is a metric space. The additional structure at each step buys additional theorems: metric spaces give us continuity and contraction arguments, normed spaces add linear operators and duality, inner product spaces add orthogonal projection, and the optimization layer turns projection into the Euler–Lagrange machinery.
 
+<div class="topic-callout topic-callout--internal">
+
 **Within formalCalculus — upcoming topics in this track:**
 
 - [**Normed & Banach Spaces**](/topics/banach-spaces) — Adds algebraic structure (vector space + norm) to metric spaces. The Baire Category Theorem, Open Mapping Theorem, Closed Graph Theorem, and Uniform Boundedness Principle — all deferred from this topic — are proved there.
 - [**Inner Product & Hilbert Spaces**](/topics/hilbert-spaces) — Inner products, angles, orthogonality, the projection theorem, Riesz representation, RKHS construction, and kernel methods.
 - [**Calculus of Variations**](/topics/calculus-of-variations) — The Euler-Lagrange equation, second variation, direct method for existence of minimizers via weak compactness, and compactness arguments (Arzelà-Ascoli in Sobolev spaces).
+
+</div>
+
+<div class="topic-callout topic-callout--formalml">
 
 **Forward links to formalml.com.** Every topic in Track 8 has downstream machine-learning applications, and Topic 29 already touches several:
 
@@ -845,4 +851,6 @@ The refinement sequence is **metric → normed → inner product → optimizatio
 - <a href="https://formalml.com/topics/metric-learning" class="formalml-badge" target="_blank" rel="noopener">Metric Learning</a> — Siamese networks, triplet loss, and contrastive learning all learn metrics on embedding spaces. The metric space axioms are exactly the constraints those training losses enforce.
 - <a href="https://formalml.com/topics/kernel-methods" class="formalml-badge" target="_blank" rel="noopener">Kernel Methods</a> — Every positive-definite kernel induces a metric on its feature space. The RKHS norm is a metric-space distance, and Topic 31 will make the full construction rigorous.
 - <a href="https://formalml.com/topics/embedding-spaces" class="formalml-badge" target="_blank" rel="noopener">Embedding Spaces</a> — Word2Vec, BERT, and graph embeddings all live in metric spaces where Euclidean or cosine distance measures semantic proximity. The triangle inequality constrains the possible geometry of embeddings.
+
+</div>
 

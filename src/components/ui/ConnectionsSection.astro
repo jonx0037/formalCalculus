@@ -1,0 +1,127 @@
+---
+import { getPrerequisites, getDownstream, type ConnectionAnnotation } from '../../lib/connections';
+import ConnectionCard from './ConnectionCard.astro';
+
+interface Props {
+  slug: string;
+  connections?: ConnectionAnnotation[];
+  // The schema's `site: 'formalml'` literal is carried on the content side but
+  // the component doesn't need it here — every entry renders as a formalML card.
+  formalmlConnections?: Array<{
+    topic: string;
+    title?: string;
+    relationship: string;
+  }>;
+}
+
+const { slug, connections = [], formalmlConnections = [] } = Astro.props;
+
+const prereqs = getPrerequisites(slug, connections);
+const downstream = getDownstream(slug);
+
+const hasAny =
+  prereqs.length > 0 || downstream.length > 0 || formalmlConnections.length > 0;
+
+// ML / analysis jargon that should stay uppercase. Extend as needed.
+const ACRONYMS = new Set([
+  'ai', 'ml', 'ai', 'pac', 'rkhs', 'kl', 'sgd', 'mcmc', 'vae', 'gan',
+  'ode', 'pde', 'sde', 'fft', 'dft', 'rl', 'nn', 'cnn', 'rnn', 'lstm',
+  'dkw', 'ubp', 'ftc', 'ivt', 'evt',
+]);
+
+function titleize(id: string, explicit?: string): string {
+  if (explicit) return explicit;
+  return id
+    .split('-')
+    .map((w) =>
+      ACRONYMS.has(w.toLowerCase())
+        ? w.toUpperCase()
+        : w.charAt(0).toUpperCase() + w.slice(1),
+    )
+    .join(' ');
+}
+---
+
+{
+  hasAny && (
+    <section class="mt-16 pt-8 border-t" style="border-color: var(--color-border);">
+      <h2
+        class="text-xl font-bold mb-6"
+        style="font-family: var(--font-serif); color: var(--color-text-heading);"
+      >
+        Connections
+      </h2>
+
+      {prereqs.length > 0 && (
+        <div class="mb-8">
+          <h3
+            class="text-xs font-semibold mb-3 uppercase tracking-wider flex items-center gap-2"
+            style="color: var(--color-text-muted);"
+          >
+            <span
+              class="inline-block w-1 h-4 rounded"
+              style="background: var(--color-proof-border);"
+            />
+            Prerequisites — topics you need first
+          </h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {prereqs.map((p) => (
+              <ConnectionCard
+                title={p.label}
+                href={p.url}
+                relationship={p.relationship}
+                variant="prereq"
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {downstream.length > 0 && (
+        <div class="mb-8">
+          <h3
+            class="text-xs font-semibold mb-3 uppercase tracking-wider flex items-center gap-2"
+            style="color: var(--color-theorem-border);"
+          >
+            <span
+              class="inline-block w-1 h-4 rounded"
+              style="background: var(--color-theorem-border);"
+            />
+            Where this leads — next in formalCalculus
+          </h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {downstream.map((d) => (
+              <ConnectionCard title={d.label} href={d.url} variant="internal" />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {formalmlConnections.length > 0 && (
+        <div class="mb-8">
+          <h3
+            class="text-xs font-semibold mb-3 uppercase tracking-wider flex items-center gap-2"
+            style="color: var(--color-primary);"
+          >
+            <span
+              class="inline-block w-1 h-4 rounded"
+              style="background: var(--color-primary);"
+            />
+            On to formalML — where this calculus powers ML
+          </h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {formalmlConnections.map((c) => (
+              <ConnectionCard
+                title={titleize(c.topic, c.title)}
+                href={`https://formalml.com/topics/${c.topic}`}
+                relationship={c.relationship}
+                variant="formalml"
+                external
+              />
+            ))}
+          </div>
+        </div>
+      )}
+    </section>
+  )
+}

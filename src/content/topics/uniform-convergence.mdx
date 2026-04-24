@@ -497,21 +497,3 @@ for n in [100, 1000, 10000]:
     print(f"n={n:5d}: KS = {ks:.4f}, DKW 95% bound = {dkw_bound:.4f}")
 ```
 
-## Connections & Further Reading
-
-### Within formalCalculus
-
-- [**Sequences, Limits & Convergence**](/topics/sequences-limits) — the ε-N convergence framework for numerical sequences. Pointwise convergence of $f_n(x)$ at each fixed $x$ is literally a collection of numerical sequence convergence problems. The Cauchy criterion for uniform convergence (Proposition 2) is the function-space analog of the Cauchy sequence criterion. The Bolzano-Weierstrass theorem is the engine of the diagonal argument in the Arzelà-Ascoli proof.
-- [**Epsilon-Delta & Continuity**](/topics/epsilon-delta) — the ε-δ continuity framework used in the Uniform Limit Theorem proof (the ε/3 argument). Uniform continuity from Topic 2 is the single-function version of the equicontinuity concept. The Lipschitz hierarchy reappears: a family with bounded Lipschitz constants is equicontinuous.
-- [**Completeness & Compactness**](/topics/completeness-compactness) — the Heine-Borel theorem is the finite-dimensional analog of Arzelà-Ascoli. Equicontinuity + pointwise boundedness plays the role that closed + bounded plays in Heine-Borel. Completeness of $\mathbb{R}$ underlies the Cauchy criterion proof.
-- [**Series Convergence & Tests**](/topics/series-convergence) — the Weierstrass M-test applied to specific series; absolute vs. conditional convergence for function series.
-- [**Power Series & Taylor Series**](/topics/power-taylor-series) — power series converge uniformly on compact subsets of the radius of convergence; term-by-term differentiation and integration are direct applications of the interchange theorems.
-- [**Metric Spaces & Topology**](/topics/metric-spaces) — $C([a,b])$ with the sup-norm is proved complete, and the Arzelà–Ascoli theorem is proved in full via the diagonal subsequence argument, closing both promises from this topic.
-- [**Normed & Banach Spaces**](/topics/banach-spaces) — $C([a,b])$ is a Banach space (complete normed vector space); completeness is the Cauchy criterion for uniform convergence.
-- [**Approximation Theory & Convergence Rates**](/topics/approximation-theory) — Stone-Weierstrass theorem (polynomials are dense in $C([a,b])$ under the sup-norm); rates of uniform approximation.
-
-### Forward to formalML
-
-- <a href="https://formalml.com/topics/pac-learning" class="formalml-badge" target="_blank" rel="noopener">formalML</a> **PAC Learning** — uniform convergence of empirical risk to true risk; VC dimension controls the rate.
-- <a href="https://formalml.com/topics/concentration-inequalities" class="formalml-badge" target="_blank" rel="noopener">formalML</a> **Concentration Inequalities** — Glivenko-Cantelli, DKW inequality, uniform bounds over function classes.
-- <a href="https://formalml.com/topics/measure-theoretic-probability" class="formalml-badge" target="_blank" rel="noopener">formalML</a> **Measure-Theoretic Probability** — modes of convergence in probability extend the pointwise/uniform distinction to random functions.

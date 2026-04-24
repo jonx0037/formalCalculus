@@ -1,8 +1,10 @@
 ---
 import BaseLayout from './BaseLayout.astro';
 import ReferencesSection from '../components/ui/ReferencesSection.astro';
+import ConnectionsSection from '../components/ui/ConnectionsSection.astro';
 
 interface Props {
+  slug: string;
   frontmatter: {
     title: string;
     subtitle: string;
@@ -12,11 +14,17 @@ interface Props {
     domain: string;
     datePublished: Date;
     tags: string[];
-    formalmlConnections?: Array<{
+    connections: Array<{
       topic: string;
-      site: string;
       relationship: string;
     }>;
+    formalmlConnections?: Array<{
+      topic: string;
+      title?: string;
+      site: 'formalml';
+      relationship: string;
+    }>;
+    hideAutomaticConnections?: boolean;
     references: Array<{
       type: 'book' | 'paper';
       title: string;
@@ -28,7 +36,7 @@ interface Props {
   };
 }
 
-const { frontmatter } = Astro.props;
+const { slug, frontmatter } = Astro.props;
 
 const difficultyColors = {
   foundational: 'bg-green-100 text-green-800 border-green-300',
@@ -91,37 +99,21 @@ const domainLabels: Record<string, string> = {
       </p>
     </div>
 
-    <!-- formalML forward links -->
-    {frontmatter.formalmlConnections && frontmatter.formalmlConnections.length > 0 && (
-      <div
-        class="mb-10 p-4 rounded-lg border"
-        style="background: var(--color-definition-bg); border-color: var(--color-primary);"
-      >
-        <p class="text-sm font-semibold mb-2" style="color: var(--color-primary);">
-          Where this leads → formalML
-        </p>
-        <ul class="text-sm space-y-1" style="color: var(--color-text);">
-          {frontmatter.formalmlConnections.map((conn) => (
-            <li>
-              <a
-                href={`https://formalml.com/topics/${conn.topic}`}
-                class="formalml-badge"
-                target="_blank"
-                rel="noopener"
-              >
-                formalML
-              </a>{' '}
-              {conn.relationship}
-            </li>
-          ))}
-        </ul>
-      </div>
-    )}
-
     <!-- Topic content (MDX) -->
     <div class="topic-content">
       <slot />
     </div>
+
+    <!-- Structured connections: prerequisites, downstream topics, formalML forward refs.
+         Suppressed when frontmatter.hideAutomaticConnections = true (for topics that
+         author their own in-content callouts with richer prose). -->
+    {!frontmatter.hideAutomaticConnections && (
+      <ConnectionsSection
+        slug={slug}
+        connections={frontmatter.connections}
+        formalmlConnections={frontmatter.formalmlConnections}
+      />
+    )}
 
     <!-- Structured references from frontmatter -->
     {frontmatter.references && frontmatter.references.length > 0 && (

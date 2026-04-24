@@ -436,19 +436,3 @@ The gradient is the most operationally important object in machine learning opti
 
 ![Learning rate effects: too small, just right, and too large](/images/topics/gradient/gradient-descent-learning-rate.png)
 
-## Connections & Further Reading
-
-### Within formalCalculus
-
-- [**The Derivative & Chain Rule**](/topics/derivative) — Partial derivatives are single-variable derivatives applied coordinate-by-coordinate. The chain rule proof (Theorem 1 above) directly uses the single-variable chain rule from Topic 5.
-- [**Epsilon-Delta & Continuity**](/topics/epsilon-delta) — The total derivative definition uses a multivariable limit ($\|h\| \to 0$ in $\mathbb{R}^n$). The $C^1$ criterion uses continuity of partial derivatives in the $\varepsilon$-$\delta$ sense.
-- [**Completeness & Compactness**](/topics/completeness-compactness) — Compactness in $\mathbb{R}^n$ (Heine-Borel generalizes) ensures continuous functions on compact domains achieve extrema — the multivariable Extreme Value Theorem that motivates gradient-based search.
-- [**The Jacobian & Multivariate Chain Rule**](/topics/jacobian) — The Jacobian matrix generalizes the gradient to vector-valued functions $f: \mathbb{R}^n \to \mathbb{R}^m$. Where the gradient is a single row of partials, the Jacobian stacks $m$ rows. The multivariate chain rule $J_{f \circ g}(a) = J_f(g(a)) \cdot J_g(a)$ is the backbone of backpropagation.
-- [**The Hessian & Second-Order Analysis**](/topics/hessian) — The Hessian matrix $H_{ij} = \frac{\partial^2 f}{\partial x_i \partial x_j}$ classifies critical points (where $\nabla f = 0$) as minima, maxima, or saddle points. The second-order Taylor expansion in $\mathbb{R}^n$ builds on the gradient as its first-order term.
-- [**Inverse & Implicit Function Theorems**](/topics/inverse-implicit) — The Inverse Function Theorem requires the Jacobian (built from partial derivatives) to be invertible. The Implicit Function Theorem uses $\nabla g$ at the constraint surface.
-
-### Forward to formalML
-
-- <a href="https://formalml.com/topics/gradient-descent" target="_blank" rel="noopener">Gradient Descent</a> — The gradient is the engine: $\theta_{t+1} = \theta_t - \eta \nabla L(\theta_t)$. Everything in this topic — the gradient's definition, steepest ascent, orthogonality to level sets — explains *why gradient descent works geometrically*.
-- <a href="https://formalml.com/topics/convex-analysis" target="_blank" rel="noopener">Convex Analysis</a> — For convex $f$, the first-order condition $f(y) \ge f(x) + \nabla f(x)^T(y - x)$ says the tangent hyperplane lies below the graph — the gradient provides a global lower bound.
-- <a href="https://formalml.com/topics/smooth-manifolds" target="_blank" rel="noopener">Smooth Manifolds</a> — The gradient of a constraint function $g$ is normal to the level set $g^{-1}(c)$, the starting point for Lagrange multipliers and the theory of smooth submanifolds.

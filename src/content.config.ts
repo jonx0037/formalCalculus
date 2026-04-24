@@ -30,6 +30,10 @@ const topics = defineCollection({
       .array(
         z.object({
           topic: z.string(),
+          // Optional override for the card title when titleize() produces a
+          // wrong capitalization (e.g. "pac-learning" → "Pac Learning" instead
+          // of "PAC Learning"). Omit when titleize is correct.
+          title: z.string().optional(),
           site: z.literal('formalml'),
           relationship: z.string(),
         }),
@@ -41,6 +45,10 @@ const topics = defineCollection({
         relationship: z.string(),
       }),
     ),
+    // Opt-out for topics that author their own in-content Connections callouts
+    // (with richer prose than the auto-rendered section can express).
+    // When true, <ConnectionsSection> does not render below the MDX.
+    hideAutomaticConnections: z.boolean().optional(),
     references: z.array(
       z.object({
         type: z.enum(['book', 'paper']),
