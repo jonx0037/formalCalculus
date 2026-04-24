@@ -53,6 +53,15 @@ connections:
     relationship: "For surfaces defined implicitly by F(x,y,z) = 0, the normal vector is ∇F/‖∇F‖ (Topic 12, implicit function theorem). This provides an alternative to parameterization for computing surface integrals on level sets."
   - topic: "riemann-integral"
     relationship: "After parameterization, every surface integral reduces to a double Riemann integral over the parameter domain. The existence of the surface integral follows from the integrability theory in Topic 7 applied to the composite function."
+downstreamConnections:
+  - topic: "stability-dynamics"
+    relationship: "Lyapunov stability analysis uses the divergence theorem to establish energy conservation and dissipation — the flux of energy through a surface bounds the rate of change of energy in the interior."
+  - topic: "sigma-algebras"
+    relationship: "Surface measures and the co-area formula generalize the surface integral to the measure-theoretic setting — the abstract framework formalizes what this topic does concretely on parameterized surfaces."
+  - topic: "hilbert-spaces"
+    relationship: "Sobolev spaces — the natural domain for weak derivatives of functions on surfaces — are Hilbert spaces when p = 2. The inner-product machinery there generalizes the integration on surfaces developed here."
+  - topic: "calculus-of-variations"
+    relationship: "The Euler-Lagrange equation for area-minimizing surfaces, Sobolev spaces as the natural domain for weak solutions, and the connection to minimal surfaces — where the variational and integral perspectives meet."
 references:
   - type: "book"
     title: "Calculus on Manifolds"
@@ -937,32 +946,7 @@ In regions where $\Delta L > 0$ (the Hessian has positive trace — the loss is 
 
 ![ML connections: Stein's identity, PINNs conservation, flow-matching continuity, gradient flow divergence](/images/topics/surface-integrals/ml-connections.png)
 
-## 11. Connections & Further Reading
-
-### Prerequisites Used
-
-- [**Multiple Integrals & Fubini's Theorem**](/topics/multiple-integrals) — Surface integrals reduce to double integrals over the parameter domain. The divergence theorem converts surface integrals to triple integrals. The Fubini evaluation strategy is used in every computation.
-- [**Change of Variables & the Jacobian Determinant**](/topics/change-of-variables) — The surface area element $dS = \|\mathbf{r}_u \times \mathbf{r}_v\|\,du\,dv$ is the Gram determinant, the 2D generalization of the Jacobian determinant. Spherical and cylindrical coordinates from Topic 14 evaluate the volume integrals.
-- [**Line Integrals & Conservative Fields**](/topics/line-integrals) — Green's theorem is the 2D case of Stokes' theorem. The 2D curl generalizes to the full 3D curl. Stokes' theorem relates a line integral to a surface integral of the curl, extending the boundary-interior principle.
-- [**The Gradient & Directional Derivatives**](/topics/gradient) — The gradient, curl, and divergence are all built from the same differential operator $\nabla$. The exact sequence $\nabla \to \nabla\times \to \nabla\cdot$ with $d^2 = 0$ unifies the theory.
-- [**The Jacobian & Multivariate Chain Rule**](/topics/jacobian) — The Jacobian matrix $J_{\mathbf{r}}$ of the parameterization determines the surface normal and area element via the Gram determinant $\sqrt{\det(J_{\mathbf{r}}^T J_{\mathbf{r}})}$.
-- [**The Inverse & Implicit Function Theorems**](/topics/inverse-implicit) — Implicit surfaces $F(x,y,z) = 0$ have normal $\nabla F / \|\nabla F\|$, providing an alternative to parameterization for surface integrals on level sets.
-- [**The Riemann Integral**](/topics/riemann-integral) — After parameterization, every surface integral reduces to a double Riemann integral. Existence follows from the integrability theory of Topic 7.
-
-### What Comes Next
-
-- [**Series Convergence & Tests**](/topics/series-convergence) and [**Uniform Convergence**](/topics/uniform-convergence) — Fourier coefficients are computed via inner products that involve surface integrals in higher dimensions. The divergence theorem appears in the theory of Fourier series on domains.
-- [Stability & Dynamical Systems](/topics/stability-dynamics) — Lyapunov stability analysis uses the divergence theorem to establish energy conservation and dissipation: the flux of energy through a surface bounds the rate of change of energy in the interior.
-- **Sigma-Algebras & Measures** *(coming soon)* — Surface measures and the co-area formula generalize the surface integral to the measure-theoretic setting.
-- [**Inner Product & Hilbert Spaces**](/topics/hilbert-spaces) — Hilbert space structure for Sobolev spaces. Weak derivatives and Sobolev spaces are developed in [Calculus of Variations](/topics/calculus-of-variations).
-- [**Calculus of Variations**](/topics/calculus-of-variations) — The Euler-Lagrange equation for area-minimizing surfaces, Sobolev spaces as the natural domain for weak solutions, and the connection to minimal surfaces.
-
-### Forward Links to formalML
-
-- -> [Gradient Descent](https://formalml.com/topics/gradient-descent) — The divergence theorem connects the Laplacian of the loss to the convergence geometry of gradient flow.
-- -> [Measure-Theoretic Probability](https://formalml.com/topics/measure-theoretic-probability) — Stein's identity via the divergence theorem; kernel Stein discrepancy and SVGD.
-- -> [Smooth Manifolds](https://formalml.com/topics/smooth-manifolds) — The generalized Stokes' theorem $\int_M d\omega = \int_{\partial M}\omega$ unifies all classical integral theorems.
-- -> [Information Geometry](https://formalml.com/topics/information-geometry) — Fisher-Rao volume form, surface integrals on the statistical manifold, natural gradient flow conservation.
+## 11. Closing Reflection — The Multivariable Integral Track Complete
 
 ### Prerequisite DAG
 

@@ -42,6 +42,13 @@ connections:
     relationship: "The Riemann integral's limitations — and the explicit failure on the Dirichlet function — are the entry point for the entire measure-theoretic story. Riemann-integrable functions are a strict subclass of Lebesgue-integrable functions."
   - topic: "series-convergence"
     relationship: "Countable additivity is defined via convergent series of measures, and the first Borel-Cantelli lemma is a series convergence test recast as a measure-theoretic statement about tail events."
+downstreamConnections:
+  - topic: "lebesgue-integral"
+    relationship: "Builds the integral ∫ f dμ for non-negative measurable f as the supremum of integrals of approximating simple functions, then extends to general measurable functions. Proves the Monotone, Fatou, and Dominated Convergence theorems, plus Fubini-Tonelli for product measures."
+  - topic: "lp-spaces"
+    relationship: "Banach spaces of measurable functions where ‖f‖_p = (∫|f|^p dμ)^(1/p) < ∞. Equivalence classes under a.e.-equality use the null-set concept defined here as essential infrastructure."
+  - topic: "radon-nikodym"
+    relationship: "Characterizes when one measure ν has a density f = dν/dμ with respect to another measure μ. The bridge from measure theory to densities, conditional expectation, and Bayesian inference."
 references:
   - type: "book"
     title: "Real Analysis"
@@ -727,46 +734,8 @@ The Kolmogorov-Smirnov distance $D_N = \sup_t |\hat{F}_N(t) - F(t)|$ shrinks lik
 
 ![Empirical CDF convergence at N = 10, 100, 1000, 10000 samples — Glivenko-Cantelli in action](/images/topics/sigma-algebras/empirical-measure-convergence.png)
 
-## 12. Connections & Further Reading
+## 12. Closing Reflection — Opening the Measure & Integration Track
 
-This is the **first topic** in Track 7 — Measure & Integration — and the first **advanced** topic in formalCalculus. It builds the framework that the next three topics in the track will populate: the [Lebesgue integral](/topics/lebesgue-integral) is built from simple functions and measures defined here; $L^p$ spaces (Topic 27) are equivalence classes of measurable functions identified up to a.e.-equality; the Radon-Nikodym theorem (Topic 28) characterizes when one measure has a density with respect to another. Without the sigma-algebra and measure framework constructed in this topic, none of the next three topics has a foundation to stand on.
+This is the **first topic** in Track 7 — Measure & Integration — and the first **advanced** topic in formalCalculus. It builds the framework that the next three topics in the track will populate: the Lebesgue integral is built from simple functions and measures defined here; $L^p$ spaces are equivalence classes of measurable functions identified up to a.e.-equality; the Radon-Nikodym theorem characterizes when one measure has a density with respect to another. Without the sigma-algebra and measure framework constructed in this topic, none of the next three topics has a foundation to stand on.
 
-The topic is also a bridge from classical calculus to modern probability. The measure-theoretic vocabulary built here — sigma-algebras as families of events, measures as probability assignments, measurable functions as random variables, "almost everywhere" as "with probability 1" — is exactly the vocabulary of probability theory. Every theorem in <a href="https://formalml.com/topics/probability-spaces" class="formalml-badge" target="_blank" rel="noopener">Probability Spaces</a> on formalml.com starts from a measure space.
-
-<div class="topic-callout topic-callout--internal">
-
-**Within formalCalculus:**
-
-- [Completeness & Compactness](/topics/completeness-compactness) — Completeness of $\mathbb{R}$ powers the closure-under-countable-operations arguments behind the Borel sigma-algebra (Section 2). Compactness of $[a, b]$ via Heine-Borel is the engine behind $\lambda([a, b]) = b - a$ in Section 4. The uncountability of $\mathbb{R}$ from Topic 3, together with the axiom of choice, is what makes the Vitali construction work in Section 8.
-- [The Riemann Integral & FTC](/topics/riemann-integral) — The Riemann integral's failure on the Dirichlet function (Section 1) is the entire motivation for measure theory. Every Riemann-integrable function is Lebesgue-integrable, and the integrals agree (Remark 4) — so the new theory is a strict extension of the old.
-- [Series Convergence & Tests](/topics/series-convergence) — Countable additivity is defined via convergent series of measures (Definition 4), and the first Borel-Cantelli lemma (Theorem 7) is a series convergence test recast as a measure-theoretic statement about tail events.
-
-</div>
-
-<div class="topic-callout topic-callout--internal">
-
-**Successor topics now published:**
-
-- [The Lebesgue Integral](/topics/lebesgue-integral) — builds the integral $\int f \, d\mu$ for non-negative measurable $f$ as the supremum of integrals of approximating simple functions, then extends to general measurable functions via $f = f^+ - f^-$. Proves the Monotone, Fatou, and Dominated Convergence theorems, plus Fubini-Tonelli for product measures.
-- [$L^p$ Spaces](/topics/lp-spaces) — Banach spaces of measurable functions where $\|f\|_p = (\int |f|^p \, d\mu)^{1/p} < \infty$. Equivalence classes under a.e.-equality (the "null set" concept from Section 7 is essential).
-
-</div>
-
-<div class="topic-callout topic-callout--internal">
-
-**Successor topics within formalCalculus:**
-
-- [**Radon-Nikodym & Probability Densities**](/topics/radon-nikodym) — when one measure $\nu$ has a density $f = d\nu/d\mu$ with respect to another measure $\mu$. Characterizes absolute continuity. The bridge from measure theory to densities, conditional expectation, and Bayesian inference.
-
-</div>
-
-<div class="topic-callout topic-callout--formalml">
-
-**Forward to formalml.com:**
-
-- <a href="https://formalml.com/topics/probability-spaces" class="formalml-badge" target="_blank" rel="noopener">Probability Spaces</a> — A probability space $(\Omega, \mathcal{F}, P)$ is exactly a measure space with $P(\Omega) = 1$. Sigma-algebras formalize observable events; filtrations $(\mathcal{F}_t)$ model information flow in stochastic processes. Random variables are measurable functions $\Omega \to \mathbb{R}$. Independence is product measure structure.
-- <a href="https://formalml.com/topics/gradient-descent" class="formalml-badge" target="_blank" rel="noopener">Gradient Descent</a> — "SGD avoids saddle points with probability 1" is a statement about Lebesgue measure on initialization space. The set of bad initial conditions has measure zero in $\mathbb{R}^d$, so the algorithm succeeds for almost every starting point.
-- <a href="https://formalml.com/topics/normalizing-flows" class="formalml-badge" target="_blank" rel="noopener">Normalizing Flows</a> — Pushforward measures: a flow $T: \mathbb{R}^d \to \mathbb{R}^d$ transforms a base measure $\mu_X$ into $\mu_Y = T_* \mu_X$ via change of variables. The change-of-variables formula for densities is a Radon-Nikodym computation on the pushforward.
-- <a href="https://formalml.com/topics/concentration-inequalities" class="formalml-badge" target="_blank" rel="noopener">Concentration Inequalities</a> — Markov, Chebyshev, Hoeffding, Bernstein: all are upper bounds on the measure $P(\{|X - \mathbb{E}[X]| > t\})$ of a tail set. Every concentration result is a statement about how much measure can lie far from the mean.
-
-</div>
+The topic is also a bridge from classical calculus to modern probability. The measure-theoretic vocabulary built here — sigma-algebras as families of events, measures as probability assignments, measurable functions as random variables, "almost everywhere" as "with probability 1" — is exactly the vocabulary of probability theory. Every theorem in measure-theoretic probability starts from a measure space.

@@ -1,10 +1,18 @@
 ---
-import { getPrerequisites, getDownstream, type ConnectionAnnotation } from '../../lib/connections';
+import { getCollection } from 'astro:content';
+import {
+  getPrerequisites,
+  getDownstream,
+  type ConnectionAnnotation,
+  type ConnectedTopic,
+} from '../../lib/connections';
+import { domainLabel, type Difficulty } from '../../lib/topicMeta';
 import ConnectionCard from './ConnectionCard.astro';
 
 interface Props {
   slug: string;
   connections?: ConnectionAnnotation[];
+  downstreamConnections?: ConnectionAnnotation[];
   // The schema's `site: 'formalml'` literal is carried on the content side but
   // the component doesn't need it here — every entry renders as a formalML card.
   formalmlConnections?: Array<{
@@ -14,10 +22,15 @@ interface Props {
   }>;
 }
 
-const { slug, connections = [], formalmlConnections = [] } = Astro.props;
+const {
+  slug,
+  connections = [],
+  downstreamConnections = [],
+  formalmlConnections = [],
+} = Astro.props;
 
 const prereqs = getPrerequisites(slug, connections);
-const downstream = getDownstream(slug);
+const downstream = getDownstream(slug, downstreamConnections);
 
 const hasAny =
   prereqs.length > 0 || downstream.length > 0 || formalmlConnections.length > 0;
@@ -40,6 +53,39 @@ function titleize(id: string, explicit?: string): string {
     )
     .join(' ');
 }
+
+// Pull difficulty + read-time from the content collection so cards can show
+// them alongside the graph data. ConnectionCard stays "dumb" — enrichment is
+// scoped to this orchestration component.
+type TopicMeta = {
+  difficulty: Difficulty;
+  estimatedReadTime: number;
+};
+
+const topics = hasAny ? await getCollection('topics') : [];
+const metaMap = new Map<string, TopicMeta>(
+  topics.map((t) => [
+    t.id,
+    {
+      difficulty: t.data.difficulty,
+      estimatedReadTime: t.data.estimatedReadTime,
+    },
+  ]),
+);
+
+type EnrichedCard = ConnectedTopic & Partial<TopicMeta> & { domainLabel?: string };
+
+function enrichCards(cards: ConnectedTopic[]): EnrichedCard[] {
+  return cards.map((c) => ({
+    ...c,
+    difficulty: metaMap.get(c.id)?.difficulty,
+    estimatedReadTime: metaMap.get(c.id)?.estimatedReadTime,
+    domainLabel: domainLabel(c.domain),
+  }));
+}
+
+const prereqCards = enrichCards(prereqs);
+const downstreamCards = enrichCards(downstream);
 ---
 
 {
@@ -49,10 +95,10 @@ function titleize(id: string, explicit?: string): string {
         class="text-xl font-bold mb-6"
         style="font-family: var(--font-serif); color: var(--color-text-heading);"
       >
-        Connections
+        Connections & Further Reading
       </h2>
 
-      {prereqs.length > 0 && (
+      {prereqCards.length > 0 && (
         <div class="mb-8">
           <h3
             class="text-xs font-semibold mb-3 uppercase tracking-wider flex items-center gap-2"
@@ -61,23 +107,27 @@ function titleize(id: string, explicit?: string): string {
             <span
               class="inline-block w-1 h-4 rounded"
               style="background: var(--color-proof-border);"
+              aria-hidden="true"
             />
             Prerequisites — topics you need first
           </h3>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {prereqs.map((p) => (
+            {prereqCards.map((p) => (
               <ConnectionCard
                 title={p.label}
                 href={p.url}
                 relationship={p.relationship}
                 variant="prereq"
+                difficulty={p.difficulty}
+                domainLabel={p.domainLabel}
+                readTime={p.estimatedReadTime}
               />
             ))}
           </div>
         </div>
       )}
 
-      {downstream.length > 0 && (
+      {downstreamCards.length > 0 && (
         <div class="mb-8">
           <h3
             class="text-xs font-semibold mb-3 uppercase tracking-wider flex items-center gap-2"
@@ -86,12 +136,21 @@ function titleize(id: string, explicit?: string): string {
             <span
               class="inline-block w-1 h-4 rounded"
               style="background: var(--color-theorem-border);"
+              aria-hidden="true"
             />
             Where this leads — next in formalCalculus
           </h3>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {downstream.map((d) => (
-              <ConnectionCard title={d.label} href={d.url} variant="internal" />
+            {downstreamCards.map((d) => (
+              <ConnectionCard
+                title={d.label}
+                href={d.url}
+                relationship={d.relationship}
+                variant="internal"
+                difficulty={d.difficulty}
+                domainLabel={d.domainLabel}
+                readTime={d.estimatedReadTime}
+              />
             ))}
           </div>
         </div>
@@ -106,6 +165,7 @@ function titleize(id: string, explicit?: string): string {
             <span
               class="inline-block w-1 h-4 rounded"
               style="background: var(--color-primary);"
+              aria-hidden="true"
             />
             On to formalML — where this calculus powers ML
           </h3>

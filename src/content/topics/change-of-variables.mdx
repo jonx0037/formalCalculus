@@ -50,6 +50,13 @@ connections:
     relationship: "The Gaussian integral ∫e^{-x²}dx = √π, previewed in Topic 8, is proved here via polar coordinates."
   - topic: "completeness-compactness"
     relationship: "Compactness of the integration domain ensures the partition of unity is finite in the general proof."
+downstreamConnections:
+  - topic: "surface-integrals"
+    relationship: "Surface parameterization requires the Jacobian of the parameterization map; the surface area element involves the cross product of tangent vectors, which is the 2D analog of the Jacobian determinant."
+  - topic: "lebesgue-integral"
+    relationship: "The Lebesgue change of variables theorem generalizes the Riemann version here, relaxing the diffeomorphism requirement to almost-everywhere injectivity."
+  - topic: "sigma-algebras"
+    relationship: "Pushforward measures and the change-of-variables formula for Lebesgue integrals depend on the Jacobian determinant — the measure-theoretic framework formalizes what this topic does concretely."
 references:
   - type: "book"
     title: "Calculus on Manifolds"
@@ -417,25 +424,3 @@ In variational autoencoders, we need $\nabla_{\mu, \sigma} \mathbb{E}_{q_\phi(z)
 
 ![Multi-layer normalizing flow diagram showing densities at each stage](/images/topics/change-of-variables/ml-normalizing-flows.png)
 
-## 10. Connections & Further Reading
-
-**This topic resolves forward references from:**
-- [The Riemann Integral & FTC](/topics/riemann-integral) — The substitution rule (§2) generalizes $u$-substitution to multiple variables.
-- [The Jacobian & Multivariate Chain Rule](/topics/jacobian) — The Jacobian determinant, introduced as an abstract volume scaling factor in Topic 10, now does concrete computational work in every integral.
-- [Multiple Integrals & Fubini's Theorem](/topics/multiple-integrals) — The painful disk integral (Example 7) is resolved by polar coordinates (§4). The Gaussian integral preview (§10) is proved in full (§5).
-- [Improper Integrals & Special Functions](/topics/improper-integrals) — The Gaussian integral $\int e^{-x^2}\,dx = \sqrt{\pi}$, previewed in Topic 8, is proved here.
-
-**Prerequisites used:**
-- [Multiple Integrals & Fubini's Theorem](/topics/multiple-integrals) — Every integral in this topic is a multiple integral evaluated via Fubini.
-- [Inverse & Implicit Function Theorems](/topics/inverse-implicit) — The IFT guarantees that $\varphi$ is a local diffeomorphism when $\det J_\varphi \neq 0$.
-
-**What comes next within formalCalculus:**
-- [**Surface Integrals & the Divergence Theorem**](/topics/surface-integrals) — Surface parameterization requires the Jacobian of the parameterization map; the surface area element involves the cross product of tangent vectors, which is the 2D analog of the Jacobian determinant.
-- **The Lebesgue Integral** (coming soon) — The Lebesgue change of variables theorem generalizes the Riemann version, relaxing the diffeomorphism requirement to almost-everywhere injectivity.
-- **Sigma-Algebras & Measures** (coming soon) — Pushforward measures and the change-of-variables formula for Lebesgue integrals depend on the Jacobian determinant.
-
-**Connections to formalML:**
-- [Gradient Descent](https://formalml.com/topics/gradient-descent) → formalML — The reparameterization trick in variational inference is a change of variables applied to make gradients tractable.
-- [Measure-Theoretic Probability](https://formalml.com/topics/measure-theoretic-probability) → formalML — The density transformation formula is the probabilistic form of the change of variables theorem.
-- [Smooth Manifolds](https://formalml.com/topics/smooth-manifolds) → formalML — The partition-of-unity argument in the general proof connects to manifold integration.
-- [Information Geometry](https://formalml.com/topics/information-geometry) → formalML — The Fisher information matrix transforms under reparameterization via the Jacobian.

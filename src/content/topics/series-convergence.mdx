@@ -50,6 +50,15 @@ connections:
     relationship: "Absolute convergence implies convergence because ℝ is complete: the partial sums of |aₙ| form a bounded monotone sequence (hence Cauchy), and the partial sums of aₙ are then Cauchy because |Sₘ - Sₙ| ≤ ∑|aₖ|. Without completeness, this argument fails."
   - topic: "riemann-integral"
     relationship: "Riemann sums ∑f(xₖ*)Δxₖ are finite series that converge to the integral as the partition refines. The integral test reverses this relationship: it uses the integral to determine whether the related series converges."
+downstreamConnections:
+  - topic: "power-taylor-series"
+    relationship: "The ratio and root tests determine the radius of convergence; absolute convergence on the interior of the interval is established using the tests developed here."
+  - topic: "fourier-series"
+    relationship: "Convergence of Fourier coefficients requires summability methods that generalize the convergence tests here — Bessel's inequality is a series-convergence statement about coefficient sequences."
+  - topic: "approximation-theory"
+    relationship: "Stone-Weierstrass and uniform convergence of approximating series. The convergence rates of Bernstein and Chebyshev expansions invoke the comparison and ratio tools developed here."
+  - topic: "sigma-algebras"
+    relationship: "Countable additivity of measures is defined via convergent series; the Borel-Cantelli lemma is a series convergence test recast as a probabilistic statement about tail events."
 references:
   - type: "book"
     title: "Principles of Mathematical Analysis"
@@ -521,23 +530,3 @@ The first Borel-Cantelli lemma: if $\sum_{n=1}^\infty P(A_n) < \infty$, then $P(
 <LearningRateSeriesExplorer client:visible />
 
 ![ML connections](/images/topics/series-convergence/ml-connections.png)
-
-## 12. Connections & Further Reading
-
-**Prerequisites (live links):**
-
-- [Sequences, Limits & Convergence](/topics/sequences-limits) — partial sums are sequences; every convergence test reduces to sequence convergence.
-- [Uniform Convergence](/topics/uniform-convergence) — the Weierstrass M-test is a series-convergence test; this topic provides the numerical tools to verify that $\sum M_k < \infty$.
-
-**Cross-track connections (live links):**
-
-- [Improper Integrals & Special Functions](/topics/improper-integrals) — the integral test bridges series and improper integrals.
-- [Completeness & Compactness](/topics/completeness-compactness) — absolute convergence implies convergence *because* $\mathbb{R}$ is complete.
-- [The Riemann Integral & FTC](/topics/riemann-integral) — Riemann sums are finite series converging to the integral.
-
-**Forward references (planned topics):**
-
-- [Power Series & Taylor Series](/topics/power-taylor-series) — the ratio and root tests determine the radius of convergence; absolute convergence on the interior of the interval.
-- [**Fourier Series & Orthogonal Expansions**](/topics/fourier-series) — convergence of Fourier coefficients requires summability methods that generalize the convergence tests here.
-- [**Approximation Theory**](/topics/approximation-theory) — Stone-Weierstrass and uniform convergence of approximating series.
-- [**Sigma-Algebras & Measures**](/topics/sigma-algebras) — countable additivity of measures is defined via convergent series; the Borel-Cantelli lemma is a series convergence test for probability.

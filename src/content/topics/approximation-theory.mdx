@@ -48,6 +48,15 @@ connections:
     relationship: "The L² best approximation norm ||f − p||₂ = √(∫(f−p)²dx) requires Riemann integration. Jackson's theorem uses the modulus of continuity ω(f; δ), which connects to uniform continuity on compact intervals. The Bernstein polynomial Bₙ(f; x) = E[f(Sₙ/n)] can be interpreted as an integration (expectation) against the binomial distribution."
   - topic: "series-convergence"
     relationship: "The convergence rate of Bernstein polynomials — ||Bₙ(f) − f||∞ = O(ω(f; 1/√n)) — involves series-like decay estimates. Jackson's theorem bounds the best-approximation error Eₙ(f) using techniques that parallel the convergence rate analysis from Topic 17."
+downstreamConnections:
+  - topic: "metric-spaces"
+    relationship: "Density of polynomials in C[a,b] under the sup-norm is a statement about metric-space topology; the contraction mapping theorem sheds light on Bernstein operator iteration."
+  - topic: "banach-spaces"
+    relationship: "C[a,b] and L²[a,b] as Banach spaces; best approximation in normed spaces; the equioscillation theorem as a characterization in the dual space."
+  - topic: "hilbert-spaces"
+    relationship: "Best L² approximation as orthogonal projection; Legendre polynomials as an orthonormal basis; RKHS approximation theory."
+  - topic: "calculus-of-variations"
+    relationship: "Best approximation as optimization over function spaces. The direct method provides the general existence principle."
 references:
   - type: "book"
     title: "Principles of Mathematical Analysis"
@@ -436,9 +445,7 @@ In kernel-based ML (Gaussian processes, support vector machines), the function s
 
 ![Computational verification — Bernstein vs. Chebyshev approximation error comparison and Chebyshev coefficient decay](/images/topics/approximation-theory/computational-verification.png)
 
-## 10. Connections & Further Reading
-
-### Track 5 completion
+## 10. Track 5 Completion
 
 This topic completes the Sequences, Series & Approximation track. The four topics form a natural progression:
 
@@ -452,24 +459,3 @@ The thread connecting them all is the question: *how well can we approximate fun
 ### Comparing three approximation methods
 
 <ApproximationErrorExplorer client:visible />
-
-### Prerequisites used in this topic
-
-- **[Fourier Series & Orthogonal Expansions](/topics/fourier-series)** — Best $L^2$ approximation in the trigonometric basis, coefficient decay $\leftrightarrow$ approximation rate connection, Gibbs phenomenon as the Fourier analog of the Runge phenomenon.
-- **[Uniform Convergence](/topics/uniform-convergence)** — Uniform convergence of Bernstein polynomials, the distinction between pointwise and uniform convergence, interchange theorems used in Stone-Weierstrass.
-- **[Power Series & Taylor Series](/topics/power-taylor-series)** — Local vs. global approximation contrast, Taylor remainder vs. Jackson's theorem, the approximation triptych.
-- **[The Riemann Integral & FTC](/topics/riemann-integral)** — $L^2$ norm computation, modulus of continuity, the Bernstein expectation interpretation as integration against the binomial distribution.
-
-### Forward references (planned topics)
-
-- [**Metric Spaces & Topology**](/topics/metric-spaces) — density of polynomials in $C[a,b]$ under the sup-norm is a statement about metric-space topology; the contraction mapping theorem sheds light on Bernstein operator iteration.
-- [**Normed & Banach Spaces**](/topics/banach-spaces) — $C[a,b]$ and $L^2[a,b]$ as Banach spaces; best approximation in normed spaces; the equioscillation theorem as a characterization in the dual space.
-- [**Inner Product & Hilbert Spaces**](/topics/hilbert-spaces) — Best $L^2$ approximation as orthogonal projection; Legendre polynomials as an orthonormal basis; RKHS approximation theory.
-- [**Calculus of Variations**](/topics/calculus-of-variations) — Best approximation as optimization over function spaces. The direct method provides the general existence principle.
-
-### Forward links to formalML
-
-- **[PAC Learning](https://formalml.com/topics/pac-learning)** → formalML — The universal approximation theorem and Barron's theorem on neural network approximation rates.
-- **[Gradient Descent](https://formalml.com/topics/gradient-descent)** → formalML — Polynomial approximation of activation functions for homomorphic encryption.
-- **[Spectral Theorem](https://formalml.com/topics/spectral-theorem)** → formalML — Stone-Weierstrass gives the continuous functional calculus for self-adjoint operators.
-- **[Riemannian Geometry](https://formalml.com/topics/riemannian-geometry)** → formalML — RKHS approximation theory for kernel regression and Gaussian processes.

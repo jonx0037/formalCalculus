@@ -54,6 +54,11 @@ connections:
     relationship: "Topic 20 used density of polynomials in C[a,b] under the sup-norm. Topic 30 formalizes best approximation in normed spaces and connects density to separability."
   - topic: "completeness-compactness"
     relationship: "Topic 3 established completeness of R. The Baire Category Theorem in Topic 30 generalizes this: R is not a countable union of nowhere-dense sets, and neither is any complete metric space."
+downstreamConnections:
+  - topic: "hilbert-spaces"
+    relationship: "Every Hilbert space is a Banach space with an extra inner-product structure. That extra structure unlocks orthogonal projections, the Riesz representation theorem (H* ≅ H, self-duality), and RKHS foundations — tools that Banach spaces alone cannot provide."
+  - topic: "calculus-of-variations"
+    relationship: "Optimization of functionals on Banach and Sobolev spaces. The direct method exploits weak compactness and lower semicontinuity in reflexive spaces — the Banach-space machinery from this topic is the infrastructure variational problems run on."
 references:
   - type: "book"
     title: "Functional Analysis"
@@ -642,24 +647,3 @@ This additional structure buys three powerful tools that Banach spaces lack:
 1. **Orthogonal projections** — the closest point in a closed convex set. In Banach spaces, closest points may not exist or not be unique; in Hilbert spaces, the projection theorem guarantees both.
 2. **The Riesz representation theorem** — $H^* \cong H$, every Hilbert space is self-dual. This is dramatically simpler than the Banach-space dual structure.
 3. **RKHS foundations** — reproducing kernels as inner-product evaluations, connecting Hilbert space theory to kernel methods in ML.
-
-<div class="topic-callout topic-callout--internal">
-
-**Within formalCalculus — upcoming topics in this track:**
-
-- [**Inner Product & Hilbert Spaces**](/topics/hilbert-spaces) — Inner products, orthogonal complements, projection theorem, Riesz representation, RKHS foundations.
-- [**Calculus of Variations**](/topics/calculus-of-variations) — Optimization of functionals on Banach and Sobolev spaces. The direct method uses weak compactness and lower semicontinuity in reflexive spaces.
-
-</div>
-
-<div class="topic-callout topic-callout--formalml">
-
-**Forward links to formalml.com.** The Banach-space infrastructure developed in this topic connects to several ML applications:
-
-- <a href="https://formalml.com/topics/gradient-descent" class="formalml-badge" target="_blank" rel="noopener">Gradient Descent</a> — Operator norms bound Lipschitz constants of gradient maps. The Open Mapping Theorem guarantees bounded inverses of surjective linear layers, controlling gradient flow through deep networks.
-- <a href="https://formalml.com/topics/generative-modeling" class="formalml-badge" target="_blank" rel="noopener">Generative Modeling</a> — Spectral normalization constrains weight matrices to have operator norm at most 1, enforcing Lipschitz continuity for stable Wasserstein GAN training.
-- <a href="https://formalml.com/topics/kernel-methods" class="formalml-badge" target="_blank" rel="noopener">Kernel Methods</a> — RKHS is a Hilbert space (hence Banach). The representer theorem exploits dual-space structure; bounded linear functionals on RKHS correspond to kernel evaluations.
-- <a href="https://formalml.com/topics/pac-learning" class="formalml-badge" target="_blank" rel="noopener">PAC Learning</a> — The Uniform Boundedness Principle is the functional-analytic backbone of uniform convergence arguments. Generalization bounds require function-class boundedness — a UBP application.
-- <a href="https://formalml.com/topics/optimization-theory" class="formalml-badge" target="_blank" rel="noopener">Optimization Theory</a> — Mirror descent operates in Banach spaces with Bregman divergences. The dual-space geometry (Fenchel conjugates, subgradients in $X^*$) extends gradient descent beyond Hilbert spaces.
-
-</div>
