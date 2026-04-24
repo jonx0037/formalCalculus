@@ -162,41 +162,40 @@ h1, h2, h3, h4, h5, h6 {
   border: 1px solid var(--color-border);
 }
 
-/* Shiki dual-theme (Astro emits `.astro-code` with --shiki-light / --shiki-dark
-   custom properties on every token). With defaultColor:false, Astro doesn't set
-   a default color — we drive both light and dark from CSS below.
+/* Shiki dual-theme. Astro emits `.astro-code` blocks with --shiki-light and
+   --shiki-dark custom properties on each token. With defaultColor:false, those
+   are custom-property declarations only — no direct color/background-color is
+   inline-styled — so CSS selectors can drive theming without !important.
 
-   Precedence:
-   - Light mode: both .astro-code (background) and its spans (token colors) read --shiki-light.
-   - Dark mode: swap to --shiki-dark when [data-theme="dark"] is set OR when
+   - Light mode (default): tokens + bg read from --shiki-light / --color-surface-code.
+     We use --color-surface-code (the site's soft grey) rather than Shiki's white
+     so code blocks visually separate from the page body.
+   - Dark mode: swap to --shiki-dark when [data-theme="dark"] is set or when
      prefers-color-scheme:dark is active and the user hasn't overridden to light.
 */
-/* Light mode: use site's --color-surface-code (#F3F4F6 soft grey) so code blocks
-   visually separate from the white page body. Token colors come from Shiki's light theme. */
 .astro-code {
   color: var(--shiki-light);
-  background-color: var(--color-surface-code) !important;
+  background-color: var(--color-surface-code);
 }
 .astro-code span {
   color: var(--shiki-light);
 }
 
-/* Dark mode: swap to Shiki's github-dark-dimmed bg and tokens for a coherent palette. */
 html[data-theme="dark"] .astro-code,
 html[data-theme="dark"] .astro-code span {
-  color: var(--shiki-dark) !important;
+  color: var(--shiki-dark);
 }
 html[data-theme="dark"] .astro-code {
-  background-color: var(--shiki-dark-bg) !important;
+  background-color: var(--shiki-dark-bg);
 }
 
 @media (prefers-color-scheme: dark) {
   html:not([data-theme="light"]) .astro-code,
   html:not([data-theme="light"]) .astro-code span {
-    color: var(--shiki-dark) !important;
+    color: var(--shiki-dark);
   }
   html:not([data-theme="light"]) .astro-code {
-    background-color: var(--shiki-dark-bg) !important;
+    background-color: var(--shiki-dark-bg);
   }
 }
 

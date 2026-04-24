@@ -14,15 +14,17 @@ interface Props {
     domain: string;
     datePublished: Date;
     tags: string[];
-    connections?: Array<{
+    connections: Array<{
       topic: string;
-      relationship?: string;
+      relationship: string;
     }>;
     formalmlConnections?: Array<{
       topic: string;
-      site: string;
+      title?: string;
+      site: 'formalml';
       relationship: string;
     }>;
+    hideAutomaticConnections?: boolean;
     references: Array<{
       type: 'book' | 'paper';
       title: string;
@@ -102,12 +104,16 @@ const domainLabels: Record<string, string> = {
       <slot />
     </div>
 
-    <!-- Structured connections: prerequisites, downstream topics, formalML forward refs -->
-    <ConnectionsSection
-      slug={slug}
-      connections={frontmatter.connections}
-      formalmlConnections={frontmatter.formalmlConnections}
-    />
+    <!-- Structured connections: prerequisites, downstream topics, formalML forward refs.
+         Suppressed when frontmatter.hideAutomaticConnections = true (for topics that
+         author their own in-content callouts with richer prose). -->
+    {!frontmatter.hideAutomaticConnections && (
+      <ConnectionsSection
+        slug={slug}
+        connections={frontmatter.connections}
+        formalmlConnections={frontmatter.formalmlConnections}
+      />
+    )}
 
     <!-- Structured references from frontmatter -->
     {frontmatter.references && frontmatter.references.length > 0 && (

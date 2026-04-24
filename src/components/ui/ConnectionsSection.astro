@@ -5,9 +5,11 @@ import ConnectionCard from './ConnectionCard.astro';
 interface Props {
   slug: string;
   connections?: ConnectionAnnotation[];
+  // The schema's `site: 'formalml'` literal is carried on the content side but
+  // the component doesn't need it here — every entry renders as a formalML card.
   formalmlConnections?: Array<{
     topic: string;
-    site: string;
+    title?: string;
     relationship: string;
   }>;
 }
@@ -20,10 +22,22 @@ const downstream = getDownstream(slug);
 const hasAny =
   prereqs.length > 0 || downstream.length > 0 || formalmlConnections.length > 0;
 
-function titleize(id: string): string {
+// ML / analysis jargon that should stay uppercase. Extend as needed.
+const ACRONYMS = new Set([
+  'ai', 'ml', 'ai', 'pac', 'rkhs', 'kl', 'sgd', 'mcmc', 'vae', 'gan',
+  'ode', 'pde', 'sde', 'fft', 'dft', 'rl', 'nn', 'cnn', 'rnn', 'lstm',
+  'dkw', 'ubp', 'ftc', 'ivt', 'evt',
+]);
+
+function titleize(id: string, explicit?: string): string {
+  if (explicit) return explicit;
   return id
     .split('-')
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .map((w) =>
+      ACRONYMS.has(w.toLowerCase())
+        ? w.toUpperCase()
+        : w.charAt(0).toUpperCase() + w.slice(1),
+    )
     .join(' ');
 }
 ---
@@ -98,7 +112,7 @@ function titleize(id: string): string {
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {formalmlConnections.map((c) => (
               <ConnectionCard
-                title={titleize(c.topic)}
+                title={titleize(c.topic, c.title)}
                 href={`https://formalml.com/topics/${c.topic}`}
                 relationship={c.relationship}
                 variant="formalml"

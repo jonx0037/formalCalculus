@@ -13,8 +13,23 @@ export interface ConnectionAnnotation {
   relationship?: string;
 }
 
-function findNode(id: string) {
-  return graphData.nodes.find((n) => n.id === id);
+type GraphNode = (typeof graphData.nodes)[number];
+
+const nodeMap: Map<string, GraphNode> = new Map(
+  graphData.nodes.map((n) => [n.id, n]),
+);
+
+const prereqMap: Map<string, string[]> = new Map();
+const downstreamMap: Map<string, string[]> = new Map();
+
+for (const edge of graphData.edges) {
+  const prereqs = prereqMap.get(edge.target);
+  if (prereqs) prereqs.push(edge.source);
+  else prereqMap.set(edge.target, [edge.source]);
+
+  const downstream = downstreamMap.get(edge.source);
+  if (downstream) downstream.push(edge.target);
+  else downstreamMap.set(edge.source, [edge.target]);
 }
 
 function enrich(
@@ -24,7 +39,7 @@ function enrich(
   const annotationMap = new Map(annotations.map((a) => [a.topic, a.relationship]));
   return ids
     .map((id) => {
-      const node = findNode(id);
+      const node = nodeMap.get(id);
       if (!node) return null;
       return {
         id: node.id,
@@ -41,15 +56,12 @@ export function getPrerequisites(
   slug: string,
   annotations: ConnectionAnnotation[] = [],
 ): ConnectedTopic[] {
-  const incomingIds = graphData.edges
-    .filter((e) => e.target === slug)
-    .map((e) => e.source);
-  return enrich(incomingIds, annotations);
+  const graphPrereqs = prereqMap.get(slug) ?? [];
+  const annotationTopics = annotations.map((a) => a.topic);
+  const allIds = [...new Set([...graphPrereqs, ...annotationTopics])];
+  return enrich(allIds, annotations);
 }
 
 export function getDownstream(slug: string): ConnectedTopic[] {
-  const outgoingIds = graphData.edges
-    .filter((e) => e.source === slug)
-    .map((e) => e.target);
-  return enrich(outgoingIds);
+  return enrich(downstreamMap.get(slug) ?? []);
 }
