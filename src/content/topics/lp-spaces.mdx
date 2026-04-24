@@ -47,6 +47,13 @@ connections:
     relationship: "The Riesz-Fischer proof extracts a convergent subsequence from a Cauchy sequence — the same technique as Bolzano-Weierstrass from Topic 3, now applied in function space."
   - topic: "fourier-series"
     relationship: "L² convergence of Fourier series is the statement that partial Fourier sums converge in the L² norm — not pointwise, but in the function-space distance defined here."
+downstreamConnections:
+  - topic: "radon-nikodym"
+    relationship: "Densities dν/dμ live in L¹(μ). The Radon-Nikodym proof uses L² projection onto closed subspaces of measure differences — an Lᵖ technique applied to a measure-theoretic problem."
+  - topic: "banach-spaces"
+    relationship: "Lᵖ is the canonical example of a Banach space (a complete normed vector space). The abstract theory — bounded operators, operator norms, the Baire Category Theorem and its three consequences, dual spaces — generalizes this topic's concrete Lᵖ results."
+  - topic: "hilbert-spaces"
+    relationship: "L² is the canonical Hilbert space. Orthogonal projection, the Riesz representation theorem (the general version of Section 10's special case), and the spectral theorem all generalize properties we saw in L² here."
 references:
   - type: "book"
     title: "Real Analysis"
@@ -822,49 +829,9 @@ since the Fourier coefficients of $f$ are square-summable (Parseval's identity).
 
 </TheoremBlock>
 
-## 13. Connections & Further Reading
+## 13. Closing Reflection — From Functions to Function Spaces
 
 This is the **third topic** in Track 7 — Measure & Integration — and the third **advanced** topic in formalCalculus. Topics 25 and 26 built the framework and the integral; this topic built the function spaces. The combination is the foundation that the next several topics across measure theory, functional analysis, and probability rest on. The Riesz–Fischer completeness theorem proved here is what makes everything downstream possible: without completeness of $L^p$, there is no Banach space theory, no Hilbert space theory, no Radon–Nikodym theorem, no functional-analytic optimization. Topic 27 is the smallest topic that the rest of modern analysis depends on.
 
 The central editorial pivot in this topic was *from individual functions to spaces of functions*. Topic 26 asked "does this function have a finite integral?" and Topic 27 asks "how far apart are these two functions?" Both questions are about measurable functions, but the second one requires organizing functions into a vector space with a norm — and that organization is exactly what makes function-space methods feel like linear algebra. Once $L^p$ is in place, the analogies between $\mathbb{R}^n$ and function spaces (vectors / functions, dot products / integrals, projections / regression, completeness / convergence guarantees) become *literal* identities rather than loose metaphors.
-
-<div class="topic-callout topic-callout--internal">
-
-**Within formalCalculus:**
-
-- [The Lebesgue Integral](/topics/lebesgue-integral) — The $L^p$ norm $\|f\|_p = (\int |f|^p \, d\mu)^{1/p}$ is a Lebesgue integral, and the Riesz–Fischer proof uses the Dominated Convergence Theorem from Topic 26 as its closing tool. Without the convergence theorems from Topic 26, the Riesz–Fischer proof would not close.
-- [Sigma-Algebras & Measures](/topics/sigma-algebras) — Measurable functions, the a.e.-equivalence relation, simple functions, and the simple-function approximation theorem are all from Topic 25. The density-of-simple-functions theorem in Section 8 is a direct application of the Topic 25 simple-function approximation result.
-- [Completeness & Compactness](/topics/completeness-compactness) — The Riesz–Fischer subsequence-extraction technique (extract a fast-decaying subsequence, sum the differences, recover an a.e. limit) is the same kind of move as the Bolzano–Weierstrass extraction from Topic 3, applied in function space rather than in $\mathbb{R}$.
-- [Fourier Series](/topics/fourier-series) — The $L^2$ convergence of Fourier series (Example 14) is a special case of the general orthonormal-system theory that we previewed in Section 9. Topic 22's geometric statements about Fourier series being "basis expansions" are made rigorous by the Hilbert space structure of $L^2$ developed here.
-
-</div>
-
-<div class="topic-callout topic-callout--internal">
-
-**Successor topics within formalCalculus:**
-
-- [**Radon-Nikodym & Probability Densities**](/topics/radon-nikodym) — Densities $d\nu / d\mu$ live in $L^1(\mu)$. The Radon-Nikodym proof uses $L^2$ projection onto closed subspaces of measure differences — an $L^p$ technique applied to a measure-theoretic problem.
-- [**Normed & Banach Spaces**](/topics/banach-spaces) — $L^p$ is the canonical example of a Banach space (a complete normed vector space). Topic 30 develops the abstract theory — bounded operators, operator norms, the Baire Category Theorem and its three consequences, dual spaces — that this topic's concrete $L^p$ results exemplify.
-- [**Inner Product & Hilbert Spaces**](/topics/hilbert-spaces) — $L^2$ is the canonical Hilbert space. Topic 31 develops orthogonal projection, the Riesz representation theorem (the general version of Section 10's special case), and the spectral theorem — all of which generalize properties we saw in $L^2$ here.
-
-</div>
-
-<div class="topic-callout topic-callout--formalml">
-
-**Forward to formalml.com:**
-
-- <a href="https://formalml.com/topics/regression" class="formalml-badge" target="_blank" rel="noopener">Regression</a> — Least-squares regression is exactly $L^2$ projection onto a closed subspace. The existence and uniqueness of the OLS estimator follows from the projection theorem previewed in Section 9. The normal equations are the orthogonality condition.
-- <a href="https://formalml.com/topics/fourier-neural-operators" class="formalml-badge" target="_blank" rel="noopener">Fourier Neural Operators</a> — FNOs learn mappings $L^2(\mathbb{R}^d) \to L^2(\mathbb{R}^d)$ between function spaces. The completeness of $L^2$ from Riesz–Fischer is what makes the optimization well-posed.
-- <a href="https://formalml.com/topics/score-matching" class="formalml-badge" target="_blank" rel="noopener">Score Matching</a> — Score matching minimizes the $L^2(p_{\text{data}})$ distance between model and data score functions. The well-posedness of the objective requires both scores to live in $L^2$.
-- <a href="https://formalml.com/topics/wasserstein-distances" class="formalml-badge" target="_blank" rel="noopener">Wasserstein Distances</a> — The Kantorovich dual formulation of Wasserstein distances uses the $(L^p)^* = L^q$ duality from Section 10. The Lipschitz constraint on the dual side is an $L^\infty$ subspace.
-- <a href="https://formalml.com/topics/kernel-methods" class="formalml-badge" target="_blank" rel="noopener">Kernel Methods</a> — Reproducing kernel Hilbert spaces (RKHS) are subspaces of $L^2$. Kernel evaluations are $L^2$ inner products, and the representer theorem is a finite-dimensional projection within an infinite-dimensional Hilbert space — making essential use of the $L^2$ completeness from Riesz–Fischer.
-
-</div>
-
-**References:**
-
-- Royden, H. L. & Fitzpatrick, P. M. *Real Analysis* (4th ed., 2010), Chapter 7 (Lp spaces on $\mathbb{R}$) and Chapter 19 (general measure spaces). Closest match to our exposition order, with the same seminorm-then-quotient construction in Section 2.
-- Folland, G. B. *Real Analysis: Modern Techniques and Their Applications* (2nd ed., 1999), Chapter 6. Concise and rigorous treatment of Hölder, Minkowski, completeness, density, and duality. Reference for the duality proof sketch in Section 10.
-- Brezis, H. *Functional Analysis, Sobolev Spaces and Partial Differential Equations* (2011), Chapter 4. Excellent for the density results and the $\sigma$-finiteness condition in the dual space characterization. Brezis is also where many readers first see the $L^p$/Sobolev space theory in the form ML practitioners actually use it.
-- Stein, E. M. & Shakarchi, R. *Real Analysis: Measure Theory, Integration, and Hilbert Spaces* (2005), Chapter 2. Elegant treatment that connects $L^p$ theory directly to the Hilbert space theory of $L^2$. The geometric instinct in Stein & Shakarchi is closest to the philosophy of this curriculum.
 

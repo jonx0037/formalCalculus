@@ -48,6 +48,15 @@ connections:
     relationship: "Bessel's inequality says Σ(aₙ² + bₙ²) converges — a series convergence statement about the coefficient sequence. The comparison test bounds the decay rates of coefficient sequences. The Riemann-Lebesgue lemma (aₙ → 0) is the Fourier analog of the divergence test's necessary condition."
   - topic: "improper-integrals"
     relationship: "The Riemann-Lebesgue lemma connects to improper integrals: ∫₋∞^∞ f(x)cos(ωx)dx → 0 as ω → ∞ for absolutely integrable f. Fourier coefficients on [−π,π] are the periodic version of this principle."
+downstreamConnections:
+  - topic: "approximation-theory"
+    relationship: "Weierstrass approximation, Stone-Weierstrass, and best approximation in L² and C[a,b] — the theoretical home of the trigonometric approximation results sketched here."
+  - topic: "stability-dynamics"
+    relationship: "Fourier modes as eigenfunctions of the Laplacian — the spectral gap determines the convergence rate of diffusion on the circle, and the orthogonal decomposition makes stability analysis modal."
+  - topic: "lp-spaces"
+    relationship: "L² completeness (Riesz-Fischer) is what makes Fourier series rigorous orthogonal expansions in Hilbert space. The coefficients developed here are coordinates in an infinite-dimensional inner-product space."
+  - topic: "hilbert-spaces"
+    relationship: "The inner product defined here on L²[-π, π] is the prototype for abstract Hilbert space theory. The projection theorem generalizes the best-L²-approximation result from Section 5."
 references:
   - type: "book"
     title: "Principles of Mathematical Analysis"
@@ -471,39 +480,3 @@ Convolutional neural networks process signals in the spatial domain, but the con
 **Gibbs mitigation.** Cesàro (Fejér) summation replaces $S_n$ with $\sigma_n = (S_0 + S_1 + \cdots + S_n)/(n+1)$, which converges uniformly even at discontinuities — the Gibbs overshoot is smoothed out by averaging. The Lanczos sigma factor provides another smoothing approach. These techniques are used in spectral methods for PDEs where Gibbs oscillations corrupt numerical solutions.
 
 ![Computational verification — FFT coefficients vs analytic, and convergence rates for different smoothness classes](/images/topics/fourier-series/computational-verification.png)
-
-## 13. Connections & Further Reading
-
-<div class="topic-callout">
-
-**Prerequisites (live links):**
-
-- [Power Series & Taylor Series](/topics/power-taylor-series) — monomial basis $\{x^n\}$ for local approximation; Fourier series use trigonometric basis $\{1, \cos nx, \sin nx\}$ for global periodic approximation.
-- [The Riemann Integral & FTC](/topics/riemann-integral) — Fourier coefficients are Riemann integrals; the inner product $\langle f, g \rangle = (1/\pi)\int f\,g$ is defined via the integral.
-- [Uniform Convergence](/topics/uniform-convergence) — the Weierstrass M-test establishes uniform convergence of Fourier series; interchange theorems justify term-by-term integration.
-- [Series Convergence & Tests](/topics/series-convergence) — Bessel's inequality is a series convergence statement; comparison tests bound coefficient decay rates.
-- [Improper Integrals & Special Functions](/topics/improper-integrals) — the Riemann-Lebesgue lemma connects to improper integrals on $\mathbb{R}$.
-
-</div>
-
-<div class="topic-callout topic-callout--internal">
-
-**Downstream within formalCalculus:**
-
-- [**Approximation Theory**](/topics/approximation-theory) — Weierstrass approximation, Stone-Weierstrass, best approximation in $L^2$ and $C[a,b]$.
-- [Stability & Dynamical Systems](/topics/stability-dynamics) — Fourier modes as eigenfunctions of the Laplacian, spectral gap, and convergence rates.
-- **$L^p$ Spaces** *(coming soon)* — $L^2$ completeness and Fourier series as orthogonal expansions in Hilbert space.
-- [**Inner Product & Hilbert Spaces**](/topics/hilbert-spaces) — the inner product defined here on $L^2[-\pi, \pi]$ is the prototype for abstract Hilbert space theory.
-
-</div>
-
-<div class="topic-callout topic-callout--formalml">
-
-**Forward links to formalml.com:**
-
-- → [Gradient Descent](https://formalml.com/topics/gradient-descent) — Random Fourier Features for kernel approximation
-- → [Spectral Theorem](https://formalml.com/topics/spectral-theorem) — Fourier decomposition as prototype of the spectral theorem
-- → [Information Geometry](https://formalml.com/topics/information-geometry) — orthogonal decomposition on statistical manifolds
-- → [PAC Learning](https://formalml.com/topics/pac-learning) — Fourier analysis on Boolean functions
-
-</div>

@@ -18,6 +18,10 @@ interface Props {
       topic: string;
       relationship: string;
     }>;
+    downstreamConnections?: Array<{
+      topic: string;
+      relationship: string;
+    }>;
     formalmlConnections?: Array<{
       topic: string;
       title?: string;
@@ -39,9 +43,12 @@ interface Props {
 const { slug, frontmatter } = Astro.props;
 
 const difficultyColors = {
-  foundational: 'bg-green-100 text-green-800 border-green-300',
-  intermediate: 'bg-blue-100 text-blue-800 border-blue-300',
-  advanced: 'bg-purple-100 text-purple-800 border-purple-300',
+  foundational:
+    'bg-green-100 text-green-800 border-green-300 dark:bg-green-900/30 dark:text-green-200 dark:border-green-700',
+  intermediate:
+    'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900/30 dark:text-blue-200 dark:border-blue-700',
+  advanced:
+    'bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-900/30 dark:text-purple-200 dark:border-purple-700',
 };
 
 const domainLabels: Record<string, string> = {
@@ -111,6 +118,7 @@ const domainLabels: Record<string, string> = {
       <ConnectionsSection
         slug={slug}
         connections={frontmatter.connections}
+        downstreamConnections={frontmatter.downstreamConnections}
         formalmlConnections={frontmatter.formalmlConnections}
       />
     )}

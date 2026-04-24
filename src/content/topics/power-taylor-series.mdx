@@ -49,6 +49,13 @@ connections:
     relationship: "Term-by-term integration of power series produces antiderivatives expressed as power series. The integral ∫₀ˣ 1/(1+t²)dt = arctan(x) can be computed by integrating the geometric series 1/(1+t²) = ∑(-1)ⁿt²ⁿ term by term, yielding the Leibniz formula arctan(x) = ∑(-1)ⁿx^(2n+1)/(2n+1)."
   - topic: "improper-integrals"
     relationship: "Power series with infinite radius of convergence (eˣ, sin x, cos x) define entire functions whose improper integrals are computed via term-by-term integration. The Gaussian integral ∫e^(−x²)dx is evaluated by expanding e^(−x²) as a power series and integrating term by term."
+downstreamConnections:
+  - topic: "fourier-series"
+    relationship: "Trigonometric series as a generalization of power series using sin and cos instead of monomials — the two approximation paradigms (local analytic vs. global periodic) are unified in approximation theory."
+  - topic: "approximation-theory"
+    relationship: "Weierstrass approximation theorem and non-Taylor polynomial approximations — the theoretical ceiling that Taylor expansion reaches toward but doesn't always hit."
+  - topic: "linear-systems"
+    relationship: "The matrix exponential e^(At) = Σ (At)^k/k! is a power series solution to ẋ = Ax — everything about convergence and term-by-term manipulation here carries over directly."
 references:
   - type: "book"
     title: "Principles of Mathematical Analysis"
@@ -473,32 +480,3 @@ is a power series in $t$ with matrix coefficients. It converges for all $t$ (sin
 
 ![Computational verification — Horner's method and radius estimation from finite coefficients](/images/topics/power-taylor-series/computational-verification.png)
 
-## 11. Connections & Further Reading
-
-**Prerequisites used in this topic:**
-
-| Topic | What we used |
-|-------|-------------|
-| [Series Convergence & Tests](/topics/series-convergence) | Ratio test, root test, comparison test, alternating series test for endpoint analysis and Cauchy-Hadamard formula |
-| [Mean Value Theorem & Taylor Expansion](/topics/mean-value-taylor) | Taylor polynomials, Lagrange remainder, smooth-but-not-analytic example |
-| [Uniform Convergence](/topics/uniform-convergence) | Weierstrass M-test, interchange theorems for differentiation and integration |
-
-**Also connected:**
-
-| Topic | Connection |
-|-------|-----------|
-| [Riemann Integral](/topics/riemann-integral) | Term-by-term integration produces antiderivatives as power series |
-| [Improper Integrals](/topics/improper-integrals) | Entire functions ($R = \infty$) and term-by-term integration of improper integrals |
-
-**Downstream within formalCalculus:**
-
-- [**Fourier Series & Orthogonal Expansions**](/topics/fourier-series) — trigonometric series as a generalization of power series using $\sin$ and $\cos$ instead of monomials
-- [**Approximation Theory**](/topics/approximation-theory) — Weierstrass approximation theorem and non-Taylor polynomial approximations
-- [**Linear Systems & Matrix Exponential**](/topics/linear-systems) — matrix exponential $e^{At} = \sum (At)^k/k!$ as a power series solution to $\dot{x} = Ax$
-
-**Forward links to formalML:**
-
-- [Gradient Descent](https://formalml.com/topics/gradient-descent) — descent lemma via second-order Taylor, Newton's method via quadratic Taylor model
-- [Convex Analysis](https://formalml.com/topics/convex-analysis) — convexity characterized by Taylor remainder sign
-- [Information Geometry](https://formalml.com/topics/information-geometry) — Fisher information via Taylor expansion of KL divergence
-- [Smooth Manifolds](https://formalml.com/topics/smooth-manifolds) — smooth ($C^\infty$) vs. analytic ($C^\omega$) on manifolds

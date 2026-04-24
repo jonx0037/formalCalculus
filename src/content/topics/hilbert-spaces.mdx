@@ -52,6 +52,7 @@ connections:
     relationship: "Conditional expectation is the orthogonal projection of an L^2 random variable onto a sub-σ-algebra. The projection theorem provides the existence and uniqueness."
   - topic: "metric-spaces"
     relationship: "Topic 29 built the metric foundation (completeness, compactness). Topic 31 adds inner-product structure on top of the normed (Topic 30) and metric (Topic 29) layers."
+downstreamConnections:
   - topic: "calculus-of-variations"
     relationship: "The direct method of the calculus of variations operates in Hilbert (and reflexive Banach) spaces. Weak convergence, the projection theorem, and Riesz representation are all essential."
 references:
@@ -665,23 +666,7 @@ All of the algorithms in this topic have efficient numerical implementations.
 
 ---
 
-## 13. Connections and Further Reading
-
-| Topic | Connection |
-|-------|-----------|
-| [Metric Spaces](/topics/metric-spaces) | Completeness and compactness foundations. Inner product spaces add geometry to the metric layer. |
-| [Banach Spaces](/topics/banach-spaces) | Every Hilbert space is Banach. The inner product replaces Baire-powered arguments with projection-based ones. |
-| [$L^p$ Spaces](/topics/lp-spaces) | $L^2$ is the canonical Hilbert space. Duality $(L^p)^* \cong L^q$ becomes the simpler $H^* \cong H$ via Riesz. |
-| [Fourier Series](/topics/fourier-series) | Trigonometric functions as an ONB for $L^2[-\pi, \pi]$. Parseval's identity as energy conservation. |
-| [Approximation Theory](/topics/approximation-theory) | Best $L^2$ approximation = orthogonal projection. Legendre polynomials as an ONB. |
-| [Radon-Nikodym](/topics/radon-nikodym) | Conditional expectation as $L^2$ projection onto a sub-$\sigma$-algebra. |
-| <a href="https://formalml.com/topics/kernel-methods" target="_blank" rel="noopener noreferrer">Kernel Methods</a> (formalML) | RKHS is a Hilbert space. Representer theorem via Riesz. |
-| <a href="https://formalml.com/topics/gradient-descent" target="_blank" rel="noopener noreferrer">Gradient Descent</a> (formalML) | Riesz identification: gradients as descent directions in the primal space. |
-| <a href="https://formalml.com/topics/spectral-methods" target="_blank" rel="noopener noreferrer">Spectral Methods</a> (formalML) | PCA and spectral clustering via the spectral theorem. |
-
----
-
-## 14. Summary
+## 13. Summary
 
 | Concept | Key Result | Why It Matters |
 |---------|-----------|---------------|
@@ -697,7 +682,7 @@ All of the algorithms in this topic have efficient numerical implementations.
 
 ---
 
-## 15. Looking Ahead
+## 14. Looking Ahead
 
 The next and final topic in Track 8 is [**Calculus of Variations**](/topics/calculus-of-variations) — the study of functionals defined on function spaces, and the search for functions that minimize (or maximize) them. The Euler-Lagrange equation, the direct method for existence of minimizers, and weak solutions to PDEs all rely on the Hilbert space infrastructure we have built here. The projection theorem provides existence of minimizers in reflexive spaces; the Riesz representation theorem turns the weak formulation of PDEs into a Hilbert-space problem; and Sobolev spaces — the natural domains for variational problems — are Hilbert spaces when $p = 2$.
 

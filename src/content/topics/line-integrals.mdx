@@ -51,6 +51,15 @@ connections:
     relationship: "Compactness of the curve image r([a,b]) ensures that continuous vector fields are bounded on C and that the line integral is well-defined as a finite number."
   - topic: "riemann-integral"
     relationship: "After parameterization, every line integral reduces to a single-variable Riemann integral ∫_a^b g(t) dt. The existence and properties of line integrals follow from the 1D theory in Topic 7."
+downstreamConnections:
+  - topic: "surface-integrals"
+    relationship: "Stokes' theorem generalizes Green's theorem from 2D to 3D: ∮_C F · dr = ∬_S (∇ × F) · dS. The divergence theorem relates surface integrals to volume integrals."
+  - topic: "first-order-odes"
+    relationship: "Exact differential equations M dx + N dy = 0 are exact when M_y = N_x — the same criterion as conservative fields. The integrating factor technique corresponds to finding a potential function."
+  - topic: "metric-spaces"
+    relationship: "The topological vocabulary — open sets, continuity via preimages, homeomorphism, fundamental groups — underlies simply connected vs. non-simply-connected domains and the topological obstruction to conservativeness."
+  - topic: "calculus-of-variations"
+    relationship: "Functionals J[γ] = ∫_a^b L(γ, γ', t) dt are line integrals over path space. Extremal paths satisfy the Euler-Lagrange equation — the direct descendant of this topic's variational structure."
 references:
   - type: "book"
     title: "Calculus on Manifolds"
@@ -579,27 +588,3 @@ This is a scalar line integral (Definition 3) with the arc length element of the
 
 ![Four-panel: gradient flow path, energy-based model landscape, natural gradient vs. Euclidean gradient, discrete vs. continuous paths](/images/topics/line-integrals/ml-connections.png)
 
-## 11. Connections & Further Reading
-
-### Prerequisites Used
-
-- [**Multiple Integrals & Fubini's Theorem**](/topics/multiple-integrals) — Green's theorem converts line integrals to double integrals using the Fubini machinery.
-- [**The Gradient & Directional Derivatives**](/topics/gradient) — The Gradient Theorem is $\int_C \nabla f \cdot d\mathbf{r} = f(\mathbf{b}) - f(\mathbf{a})$. Conservative fields are gradient fields.
-- [**The Derivative & the Chain Rule**](/topics/derivative) — The chain rule $\frac{d}{dt}f(\mathbf{r}(t)) = \nabla f \cdot \mathbf{r}'(t)$ is the key step in the Gradient Theorem proof.
-- [**The Jacobian & Multivariate Chain Rule**](/topics/jacobian) — Parameterization independence of line integrals follows from the substitution rule, which is the 1D Jacobian.
-- [**The Riemann Integral**](/topics/riemann-integral) — After parameterization, every line integral is a 1D Riemann integral.
-- [**Epsilon-Delta Continuity**](/topics/epsilon-delta) — Continuity of $\mathbf{F}$ along the curve is the hypothesis that makes the integral well-defined.
-- [**Completeness & Compactness**](/topics/completeness-compactness) — Compactness of the curve image $\mathbf{r}([a,b])$ ensures $\mathbf{F}$ is bounded on $C$.
-
-### What Comes Next
-
-- [**Surface Integrals & the Divergence Theorem**](/topics/surface-integrals) — Stokes' theorem generalizes Green's theorem from 2D to 3D: $\oint_C \mathbf{F} \cdot d\mathbf{r} = \iint_S (\nabla \times \mathbf{F}) \cdot d\mathbf{S}$. The divergence theorem relates surface integrals to volume integrals.
-- [**First-Order ODEs & Existence Theorems**](/topics/first-order-odes) — Exact differential equations $M\,dx + N\,dy = 0$ are exact when $M_y = N_x$, the same criterion as conservative fields. The integrating factor technique corresponds to finding a potential function.
-- [**Metric Spaces & Topology**](/topics/metric-spaces) — the topological vocabulary (open sets, continuity via preimages, homeomorphism, fundamental groups) underlying simply connected vs. non-simply-connected domains.
-- [**Calculus of Variations**](/topics/calculus-of-variations) — Functionals $J[\gamma] = \int_a^b L(\gamma, \gamma', t)\,dt$ are line integrals over path space. Extremal paths satisfy the Euler-Lagrange equation.
-
-### Forward Links to formalML
-
-- → [Gradient Descent](https://formalml.com/topics/gradient-descent) — Gradient flow as continuous-time optimization.
-- → [Smooth Manifolds](https://formalml.com/topics/smooth-manifolds) — Differential 1-forms, closed vs. exact, de Rham cohomology.
-- → [Information Geometry](https://formalml.com/topics/information-geometry) — Fisher-Rao metric, natural gradient, geodesics on the statistical manifold.

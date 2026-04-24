@@ -41,6 +41,11 @@ connections:
     relationship: "Every Riemann-integrable function is Lebesgue-integrable with the same integral value. The Lebesgue integral strictly extends the Riemann integral to a larger class of functions."
   - topic: "multiple-integrals"
     relationship: "Fubini's theorem provides the measure-theoretic foundation for the iterated integration techniques from Topic 13. The Fubini-Tonelli theorem generalizes Fubini's theorem for Riemann integrals to arbitrary product measure spaces."
+downstreamConnections:
+  - topic: "lp-spaces"
+    relationship: "Banach spaces of measurable functions where ‖f‖_p = (∫|f|^p dμ)^(1/p) < ∞. The completeness theorem (Riesz-Fischer) is a direct application of the Dominated Convergence Theorem from Section 7 — the Lᵖ norm is exactly the right tool to make the convergence-theorem machinery into a complete metric space structure on functions."
+  - topic: "radon-nikodym"
+    relationship: "Characterizes when one measure ν has a density f = dν/dμ with respect to another measure μ. The bridge to probability densities, conditional expectation, and Bayesian inference. The KL-divergence and importance-sampling formulas from Section 11 are special cases formalized there."
 references:
   - type: "book"
     title: "Real Analysis"
@@ -748,52 +753,9 @@ The constant $M$ is finite. The constant function $g(x) = M$ is integrable with 
 
 ![Four-panel ML connections: expected value, KL divergence, gradient-expectation swap, and the ELBO](/images/topics/lebesgue-integral/ml-connections-26.png)
 
-## 12. Connections & Further Reading
+## 12. Closing Reflection — From Framework to Integral
 
 This is the **second topic** in Track 7 — Measure & Integration — and the second **advanced** topic in formalCalculus. Topic 25 built the framework; this topic built the integral. The combination is what makes measure theory a usable tool, not just a piece of mathematical infrastructure: every theorem in this topic is the rigorous version of an everyday calculation in probability theory or machine learning. The next two topics in the track will build the function spaces ($L^p$) and the change-of-measure machinery (Radon-Nikodym) that complete the foundation for modern probability.
 
 If the convergence-theorem proofs felt harder than the proofs in Topic 25, that is accurate, and it is the natural difficulty step-up of moving from "set-theoretic reasoning about measures" to "limit-of-integrals manipulations." The MCT proof technique (the scaled cutoff $\alpha < 1$, the increasing exhaustion $E_n \uparrow \Omega$, the diagonal sup over simple functions) is the prototype for almost every proof in measure-theoretic real analysis from this point forward.
-
-<div class="topic-callout topic-callout--internal">
-
-**Within formalCalculus:**
-
-- [Sigma-Algebras & Measures](/topics/sigma-algebras) — Every concept used here was built in Topic 25: sigma-algebras, measures, measurable functions, simple functions, null sets, "almost everywhere," product sigma-algebras, and the simple-function approximation theorem. Topic 26 is a direct continuation of Topic 25; if any of those tools is unfamiliar, Topic 25 is the place to refresh.
-- [The Riemann Integral & FTC](/topics/riemann-integral) — Section 8 proves that every Riemann-integrable function is Lebesgue-integrable with the same value. Lebesgue's criterion (Theorem 7) is the cleanest possible characterization of Riemann-integrability, and it is a measure-theoretic statement: the discontinuity set must have measure zero.
-- [Multiple Integrals & Fubini's Theorem](/topics/multiple-integrals) — Section 9's measure-theoretic Fubini-Tonelli generalizes the Riemann-integral version from Topic 13. Same statement, broader domain.
-
-</div>
-
-<div class="topic-callout topic-callout--internal">
-
-**Successor topic now published:**
-
-- [$L^p$ Spaces](/topics/lp-spaces) — Banach spaces of measurable functions where $\|f\|_p = (\int |f|^p \, d\mu)^{1/p} < \infty$. Equivalence classes under a.e.-equality. The completeness theorem (Riesz-Fischer) is a direct application of the Dominated Convergence Theorem from Section 7 — the $L^p$ norm is exactly the right tool to make the convergence-theorem machinery into a complete metric space structure on functions.
-
-</div>
-
-<div class="topic-callout topic-callout--internal">
-
-**Successor topics within formalCalculus:**
-
-- [**Radon-Nikodym & Probability Densities**](/topics/radon-nikodym) — Characterizes when one measure $\nu$ has a density $f = d\nu/d\mu$ with respect to another measure $\mu$. The bridge from measure theory to probability densities, conditional expectation, and Bayesian inference. The KL-divergence and importance-sampling formulas from Section 11 of this topic are special cases that we formalize there.
-
-</div>
-
-<div class="topic-callout topic-callout--formalml">
-
-**Forward to formalml.com:**
-
-- <a href="https://formalml.com/topics/probability-spaces" class="formalml-badge" target="_blank" rel="noopener">Probability Spaces</a> — Expected value $E[X] = \int X \, dP$ is the central operation in probability theory, and it is exactly the Lebesgue integral built in this topic. Every moment, MGF, characteristic function, and conditional expectation in probability theory is an instance of this integral.
-- <a href="https://formalml.com/topics/gradient-descent" class="formalml-badge" target="_blank" rel="noopener">Gradient Descent</a> — The interchange $\nabla_\theta E[L(\theta, X)] = E[\nabla_\theta L(\theta, X)]$ is the single most-cited DCT application in machine learning. Every SGD convergence proof in the optimization literature implicitly invokes the Dominated Convergence Theorem from Section 7 of this topic.
-- <a href="https://formalml.com/topics/information-geometry" class="formalml-badge" target="_blank" rel="noopener">Information Geometry</a> — KL divergence $D_{\mathrm{KL}}(P \,\|\, Q) = \int \log(dP/dQ) \, dP$ and cross-entropy are Lebesgue integrals against probability measures. Their analytic properties (non-negativity via Jensen, convexity, lower semicontinuity) are integral inequalities provable inside the framework of this topic.
-- <a href="https://formalml.com/topics/variational-inference" class="formalml-badge" target="_blank" rel="noopener">Variational Inference</a> — The evidence lower bound is Jensen's inequality applied to a Lebesgue integral. The tightness gap is a KL divergence, which is itself a Lebesgue integral. The entire variational machinery is integral inequalities on Lebesgue integrals.
-
-</div>
-
-**References:**
-
-- Royden, H. L. & Fitzpatrick, P. M. *Real Analysis* (4th ed., 2010), Chapters 4 and 18. The closest match to our exposition order — Chapter 4 covers Lebesgue integration on $\mathbb{R}$ with the same supremum-of-simple-functions construction we used in Section 3, and Chapter 18 generalizes to abstract measure spaces.
-- Folland, G. B. *Real Analysis: Modern Techniques and Their Applications* (2nd ed., 1999), Chapters 2 and 3. The reference for the Tonelli/Fubini proof sketch in Section 9. Concise, rigorous, graduate-level.
-- Tao, T. *An Introduction to Measure Theory*, Chapters 1.4–1.6. Free PDF, written with the same geometric-first instinct that drives this curriculum.
 - Billingsley, P. *Probability and Measure* (3rd ed., 1995), Chapters 3–4. The probability-flavored treatment, closest to our ML-connection sections.

@@ -45,6 +45,18 @@ const topics = defineCollection({
         relationship: z.string(),
       }),
     ),
+    // Annotated downstream topics — the auto section already lists everything
+    // downstream from the curriculum graph; entries here layer prose onto
+    // specific ids so those cards carry context. Un-annotated graph downstreams
+    // still render, just without relationship text.
+    downstreamConnections: z
+      .array(
+        z.object({
+          topic: z.string(),
+          relationship: z.string(),
+        }),
+      )
+      .optional(),
     // Opt-out for topics that author their own in-content Connections callouts
     // (with richer prose than the auto-rendered section can express).
     // When true, <ConnectionsSection> does not render below the MDX.

@@ -44,6 +44,11 @@ connections:
     relationship: "The single-variable second derivative f''(a) from Topic 5 is the 1 × 1 case of the Hessian. The second derivative test (f''(a) > 0 → local min, f''(a) < 0 → local max) generalizes to the eigenvalue criterion: positive definite Hessian → local min, negative definite → local max."
   - topic: "mean-value-taylor"
     relationship: "Taylor's theorem from Topic 6 provides the single-variable version of the second-order expansion f(a+h) = f(a) + f'(a)h + ½f''(a)h² + O(h³). The multivariable second-order Taylor expansion in this topic replaces f''(a)h² with the quadratic form h^T H_f(a) h."
+downstreamConnections:
+  - topic: "inverse-implicit"
+    relationship: "The Hessian analyzes the local structure of constraint surfaces near critical points — the inverse and implicit function theorems handle the regularity conditions under which those surfaces are smooth manifolds where second-order analysis applies."
+  - topic: "stability-dynamics"
+    relationship: "Eigenvalue analysis of the Hessian of a Lyapunov function determines equilibrium stability — the same curvature machinery used to classify optimization critical points classifies equilibria of dynamical systems."
 references:
   - type: "book"
     title: "Analysis on Manifolds"
@@ -502,25 +507,6 @@ Empirical studies of neural network loss surfaces show that the Hessian spectrum
 The Gauss-Newton approximation $G = J^T J$ (where $J$ is the Jacobian of the residuals) is always positive semidefinite and provides a useful approximation to the Hessian for least-squares problems, avoiding the indefiniteness issue of the full Hessian.
 
 ![Three panels showing the full Hessian H, the Gauss-Newton approximation J^T J, and their difference H − J^T J, for a nonlinear least-squares problem.](/images/topics/hessian/gauss-newton-approximation.png)
-
-<div class="topic-callout topic-callout--formalml">
-
-**Forward links:**
-
-- <a href="https://formalml.com/topics/gradient-descent" target="_blank" rel="noopener">Gradient Descent</a> on formalML — second-order optimization, convergence rate analysis, adaptive methods
-- <a href="https://formalml.com/topics/convex-analysis" target="_blank" rel="noopener">Convex Analysis</a> on formalML — positive semidefinite Hessian as the second-order certificate of convexity
-- <a href="https://formalml.com/topics/information-geometry" target="_blank" rel="noopener">Information Geometry</a> on formalML — Fisher information as the expected Hessian of the negative log-likelihood
-
-</div>
-
-<div class="topic-callout topic-callout--internal">
-
-**Within formalCalculus:**
-
-- [**Inverse & Implicit Function Theorems**](/topics/inverse-implicit) — uses the Hessian to analyze the local structure of constraint surfaces near critical points
-- [Stability & Dynamical Systems](/topics/stability-dynamics) — eigenvalue analysis of the Hessian of a Lyapunov function determines equilibrium stability
-
-</div>
 
 ![Heatmap of the condition number κ(H_f) over the domain for the Rosenbrock function, showing the narrow high-κ valley where gradient descent struggles most.](/images/topics/hessian/condition-number-heatmap.png)
 

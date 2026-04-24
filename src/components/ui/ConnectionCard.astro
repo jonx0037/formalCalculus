@@ -1,5 +1,6 @@
 ---
 type Variant = 'prereq' | 'internal' | 'formalml';
+type Difficulty = 'foundational' | 'intermediate' | 'advanced';
 
 interface Props {
   title: string;
@@ -7,9 +8,21 @@ interface Props {
   relationship?: string;
   variant: Variant;
   external?: boolean;
+  difficulty?: Difficulty;
+  domainLabel?: string;
+  readTime?: number;
 }
 
-const { title, href, relationship, variant, external = false } = Astro.props;
+const {
+  title,
+  href,
+  relationship,
+  variant,
+  external = false,
+  difficulty,
+  domainLabel,
+  readTime,
+} = Astro.props;
 
 const variantStyles: Record<Variant, { bg: string; border: string; accent: string }> = {
   prereq: {
@@ -30,24 +43,69 @@ const variantStyles: Record<Variant, { bg: string; border: string; accent: strin
 };
 
 const style = variantStyles[variant];
+
+// Badge colors mirror TopicLayout.astro for consistency across the site.
+const difficultyColors: Record<Difficulty, string> = {
+  foundational:
+    'bg-green-100 text-green-800 border-green-300 dark:bg-green-900/30 dark:text-green-200 dark:border-green-700',
+  intermediate:
+    'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900/30 dark:text-blue-200 dark:border-blue-700',
+  advanced:
+    'bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-900/30 dark:text-purple-200 dark:border-purple-700',
+};
+
+const hasMeta = Boolean(difficulty || domainLabel || readTime);
 ---
 
 <a
   href={href}
   target={external ? '_blank' : undefined}
   rel={external ? 'noopener noreferrer' : undefined}
-  class="group block rounded-md border-l-4 p-3 transition-all hover:shadow-sm hover:translate-x-0.5 no-underline"
+  class="group block rounded-md border-l-4 p-4 transition-all hover:shadow-sm hover:-translate-y-px no-underline"
   style={`background: ${style.bg}; border-left-color: ${style.border};`}
 >
-  <p
-    class="font-semibold text-sm mb-1 group-hover:underline"
-    style={`color: ${style.accent};`}
-  >
-    {title}
-    {external && <span class="ml-1 opacity-70 text-xs">↗</span>}
-  </p>
+  {hasMeta && (
+    <div class="flex flex-wrap items-center gap-2 mb-2 text-[0.65rem] uppercase tracking-wider">
+      {difficulty && (
+        <span
+          class={`px-1.5 py-0.5 rounded-full border font-semibold ${difficultyColors[difficulty]}`}
+        >
+          {difficulty}
+        </span>
+      )}
+      {domainLabel && (
+        <span class="font-medium" style="color: var(--color-text-muted);">
+          {domainLabel}
+        </span>
+      )}
+      {readTime && (
+        <>
+          <span style="color: var(--color-border);" aria-hidden="true">·</span>
+          <span style="color: var(--color-text-muted);">{readTime} min</span>
+        </>
+      )}
+    </div>
+  )}
+
+  <div class="flex items-start justify-between gap-2">
+    <p
+      class="font-semibold text-sm leading-snug"
+      style={`color: ${style.accent};`}
+    >
+      {title}
+      {external && <span class="ml-1 opacity-70 text-xs" aria-hidden="true">↗</span>}
+    </p>
+    {!external && (
+      <span
+        class="shrink-0 text-sm opacity-0 -translate-x-1 transition-all group-hover:opacity-70 group-hover:translate-x-0"
+        style={`color: ${style.accent};`}
+        aria-hidden="true"
+      >→</span>
+    )}
+  </div>
+
   {relationship && (
-    <p class="text-xs leading-relaxed" style="color: var(--color-text);">
+    <p class="mt-1.5 text-xs leading-relaxed" style="color: var(--color-text);">
       {relationship}
     </p>
   )}

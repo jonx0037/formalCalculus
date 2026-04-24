@@ -37,7 +37,7 @@ function enrich(
   annotations: ConnectionAnnotation[] = [],
 ): ConnectedTopic[] {
   const annotationMap = new Map(annotations.map((a) => [a.topic, a.relationship]));
-  return ids
+  const enriched = ids
     .map((id) => {
       const node = nodeMap.get(id);
       if (!node) return null;
@@ -50,6 +50,14 @@ function enrich(
       };
     })
     .filter((n): n is ConnectedTopic => n !== null);
+
+  // Stable sort: annotated entries first, graph-only entries after.
+  // Authors annotate the cards worth prose — they deserve the visual priority.
+  return enriched.sort((a, b) => {
+    const aHas = a.relationship ? 0 : 1;
+    const bHas = b.relationship ? 0 : 1;
+    return aHas - bHas;
+  });
 }
 
 export function getPrerequisites(
@@ -62,6 +70,12 @@ export function getPrerequisites(
   return enrich(allIds, annotations);
 }
 
-export function getDownstream(slug: string): ConnectedTopic[] {
-  return enrich(downstreamMap.get(slug) ?? []);
+export function getDownstream(
+  slug: string,
+  annotations: ConnectionAnnotation[] = [],
+): ConnectedTopic[] {
+  const graphDownstream = downstreamMap.get(slug) ?? [];
+  const annotationTopics = annotations.map((a) => a.topic);
+  const allIds = [...new Set([...graphDownstream, ...annotationTopics])];
+  return enrich(allIds, annotations);
 }
