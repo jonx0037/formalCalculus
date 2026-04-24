@@ -33,6 +33,13 @@ formalmlConnections:
   - topic: "gradient-descent"
     site: "formalml"
     relationship: "The existence of minimizers for regularized objectives (L(θ) + λ‖θ‖²) follows from compactness arguments: the regularization term makes the effective objective coercive, so sublevel sets are compact, and the EVT guarantees a minimizer exists."
+formalstatisticsConnections:
+  - topic: "empirical-processes"
+    site: "formalstatistics"
+    relationship: "Prokhorov's theorem (tightness ⇔ precompactness in distribution) is the probabilistic lift of Heine–Borel / Bolzano–Weierstrass. Donsker's theorem is proven via finite-dimensional CLT plus tightness; tightness is the compactness half of the argument."
+  - topic: "kernel-density-estimation"
+    site: "formalstatistics"
+    relationship: "Uniform consistency proofs for KDEs (sup_x |f̂_n(x) - f(x)| → 0) use Arzelà–Ascoli-style equicontinuity and compactness arguments on the class of kernel-convolved densities."
 connections:
   - topic: "sequences-limits"
     relationship: "Completeness was introduced informally via Cauchy sequences and the Bolzano-Weierstrass Theorem. This topic elevates those results from 'useful theorems' to 'structural consequences of a single axiom' — the least upper bound property."

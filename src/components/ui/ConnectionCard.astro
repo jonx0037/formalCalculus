@@ -1,7 +1,7 @@
 ---
 import { DIFFICULTY_BADGE_CLASSES, type Difficulty } from '../../lib/topicMeta';
 
-type Variant = 'prereq' | 'internal' | 'formalml';
+type Variant = 'prereq' | 'internal' | 'formalml' | 'formalstatistics';
 
 interface Props {
   title: string;
@@ -40,6 +40,11 @@ const variantStyles: Record<Variant, { bg: string; border: string; accent: strin
     bg: 'var(--color-definition-bg)',
     border: 'var(--color-definition-border)',
     accent: 'var(--color-primary)',
+  },
+  formalstatistics: {
+    bg: 'var(--color-statistics-bg)',
+    border: 'var(--color-warning)',
+    accent: 'var(--color-warning)',
   },
 };
 

@@ -35,6 +35,19 @@ formalmlConnections:
   - topic: "bayesian-nonparametrics"
     site: "formalml"
     relationship: "Posterior computation requires integrating likelihood × prior over the parameter space. When conjugacy is unavailable, numerical quadrature (trapezoidal, Simpson's, Gaussian quadrature) provides the computational backbone. Understanding integration error bounds from this topic informs the accuracy of these approximations."
+formalstatisticsConnections:
+  - topic: "expectation-moments"
+    site: "formalstatistics"
+    relationship: "The expected value E[g(X)] = ∫ g(x) f(x) dx is the defining integral of probability. Variance, covariance, and all moments are expected values — hence all are integrals. The linearity and monotonicity of the Riemann integral are the algebraic foundations of moment computations."
+  - topic: "maximum-likelihood"
+    site: "formalstatistics"
+    relationship: "The expected log-likelihood E[log f(X|θ)] = ∫ log f(x|θ) · f(x|θ_0) dx is an integral; the score and Fisher information involve integrals over the parameter-indexed density. Integration by parts and differentiation under the integral sign drive the asymptotic theory."
+  - topic: "bayesian-computation-and-mcmc"
+    site: "formalstatistics"
+    relationship: "The posterior p(θ|x) = p(x|θ)π(θ) / ∫ p(x|θ)π(θ) dθ has an integral normalizing constant. Bayesian estimators, credible intervals, and posterior predictives are all posterior expectations — hence integrals. MCMC is fundamentally an integral-approximation method."
+  - topic: "sufficient-statistics"
+    site: "formalstatistics"
+    relationship: "The Fisher–Neyman factorization theorem L(θ; x) = g(T(x), θ) · h(x) is an identity about how the likelihood (an integrand) factors through the sufficient statistic. Establishing sufficiency in continuous models requires integrating the conditional density and verifying that θ drops out — a Riemann/Lebesgue integration argument."
 connections:
   - topic: "sequences-limits"
     relationship: "The Riemann integral is defined as a limit — specifically, the limit of Riemann sums as the partition mesh tends to zero. The convergence theory from Topic 1 provides the framework: the sequence of Riemann sums converges, and the integral is its limit."
@@ -543,6 +556,22 @@ Simpson's rule fits a parabola through every three consecutive points $(x_{i-1},
 <NumericalIntegrationExplorer client:visible />
 
 ![Log-log convergence plot: error vs n for left, trapezoidal, and Simpson rules](/images/topics/riemann-integral/quadrature-error.png)
+
+## Connections to Statistics
+
+The Riemann integral is the analytical engine for every probabilistic computation involving a continuous distribution. Densities, expectations, moments, posteriors — they are integrals.
+
+### Expectation as an integral
+
+$E[g(X)] = \int g(x) f(x) \, dx$ is the defining integral of probability. Variance, covariance, and all moments are expected values, hence all are integrals; the linearity, monotonicity, and additivity properties developed here are the algebraic foundations of moment computations. See <a href="https://formalstatistics.com/topics/expectation-moments" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Expectation & Moments**.
+
+### Likelihood and Fisher information
+
+The expected log-likelihood $E[\log f(X|\theta)] = \int \log f(x|\theta) f(x|\theta_0) \, dx$ is an integral over the data distribution. The score and Fisher information are integrals against the parameter-indexed density; integration by parts and differentiation under the integral sign drive the asymptotic theory of maximum likelihood. See <a href="https://formalstatistics.com/topics/maximum-likelihood" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Maximum Likelihood**.
+
+### Bayesian posteriors as integrals
+
+The posterior $p(\theta \mid x) = p(x \mid \theta)\pi(\theta) / \int p(x \mid \theta)\pi(\theta) \, d\theta$ has an integral normalizing constant. Bayesian estimators, credible intervals, and posterior predictives are all posterior expectations. MCMC is fundamentally an integral-approximation method for cases when the closed form fails. See <a href="https://formalstatistics.com/topics/bayesian-computation-and-mcmc" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Bayesian Computation & MCMC**.
 
 ## Connections to ML
 

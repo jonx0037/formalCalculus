@@ -29,6 +29,12 @@ interface Props {
       site: 'formalml';
       relationship: string;
     }>;
+    formalstatisticsConnections?: Array<{
+      topic: string;
+      title?: string;
+      site: 'formalstatistics';
+      relationship: string;
+    }>;
     hideAutomaticConnections?: boolean;
     references: Array<{
       type: 'book' | 'paper';
@@ -102,6 +108,7 @@ const { slug, frontmatter } = Astro.props;
         connections={frontmatter.connections}
         downstreamConnections={frontmatter.downstreamConnections}
         formalmlConnections={frontmatter.formalmlConnections}
+        formalstatisticsConnections={frontmatter.formalstatisticsConnections}
       />
     )}
 

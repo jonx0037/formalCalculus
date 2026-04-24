@@ -36,6 +36,25 @@ formalmlConnections:
   - topic: "measure-theoretic-probability"
     site: "formalml"
     relationship: "Modes of convergence in probability (a.s., in probability, in distribution, in Lᵖ) generalize the sequence convergence concepts introduced here to random variable sequences."
+formalstatisticsConnections:
+  - topic: "modes-of-convergence"
+    site: "formalstatistics"
+    relationship: "Every mode of convergence of random variables (in probability, almost surely, in L^p, in distribution) is a sequence-limit statement. The ε-N definitions here are exactly what those probabilistic convergence modes specialize."
+  - topic: "law-of-large-numbers"
+    site: "formalstatistics"
+    relationship: "The (weak and strong) LLN is a sequence-limit theorem for random variables: the sample mean converges to the population mean as n→∞. The proof techniques directly generalize the Cauchy-criterion and monotone-convergence arguments from this topic."
+  - topic: "central-limit-theorem"
+    site: "formalstatistics"
+    relationship: "The CLT is a convergence-in-distribution statement — a sequence of CDFs F_n converging pointwise to Φ at every continuity point. The ε-N framework is what makes 'converges in distribution' precise."
+  - topic: "maximum-likelihood"
+    site: "formalstatistics"
+    relationship: "Consistency of the MLE (θ̂_n → θ_0) is a sequence-limit statement; asymptotic normality is a convergence-in-distribution statement. Both rest on the sequence-convergence foundations from this topic."
+  - topic: "bootstrap"
+    site: "formalstatistics"
+    relationship: "Bootstrap consistency asserts that the bootstrap distribution of √n(θ̂* − θ̂) converges in distribution to the limit law of √n(θ̂ − θ) — a sequence limit of empirical measures, with the same machinery generalized to random distributions."
+  - topic: "empirical-processes"
+    site: "formalstatistics"
+    relationship: "The empirical process √n(F_n − F) is a sequence of random functions; Donsker's theorem is the infinite-dimensional limit statement. Sequence-limit foundations generalize to function-valued sequences via tightness and finite-dimensional convergence."
 connections: []
 references:
   - type: "book"
@@ -399,6 +418,22 @@ Newton's method for solving $f'(x) = 0$ near a root achieves $|x_{t+1} - x^*| \l
 </TheoremBlock>
 
 ![Convergence rates on a log scale](/images/topics/sequences-limits/convergence-rates.png)
+
+## Connections to Statistics
+
+This topic is the most heavily-cited prerequisite across all of formalStatistics: every limit theorem and every consistency result is a sequence-limit statement at heart.
+
+### Convergence of estimators
+
+The (weak and strong) Law of Large Numbers $\bar{X}_n \to \mu$ is a sequence-limit theorem for random variables. Consistency of the MLE — $\hat{\theta}_n \to \theta_0$ — is a sequence-limit statement using the same Cauchy-criterion and monotone-convergence arguments developed here. See <a href="https://formalstatistics.com/topics/law-of-large-numbers" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Law of Large Numbers** and <a href="https://formalstatistics.com/topics/maximum-likelihood" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Maximum Likelihood**.
+
+### Convergence in distribution
+
+The CLT is a convergence-in-distribution statement: the CDFs $F_n$ converge pointwise to $\Phi$ at every continuity point. The ε-N framework here is what makes "converges in distribution" precise. The same machinery underwrites every mode of probabilistic convergence: in probability, almost surely, in $L^p$, in distribution. See <a href="https://formalstatistics.com/topics/modes-of-convergence" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Modes of Convergence** and <a href="https://formalstatistics.com/topics/central-limit-theorem" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Central Limit Theorem**.
+
+### Bootstrap and empirical processes
+
+Bootstrap consistency asserts that the bootstrap distribution of $\sqrt{n}(\hat{\theta}^* - \hat{\theta})$ converges in distribution to the limit of $\sqrt{n}(\hat{\theta} - \theta)$ — a sequence limit of empirical measures. Donsker's theorem extends this to function-valued sequences (the empirical process $\sqrt{n}(F_n - F)$). See <a href="https://formalstatistics.com/topics/bootstrap" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Bootstrap** and <a href="https://formalstatistics.com/topics/empirical-processes" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Empirical Processes**.
 
 ## Connections to ML
 

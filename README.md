@@ -2,7 +2,7 @@
 
 **The calculus and analysis foundations behind modern machine learning.**
 
-Deep-dive explainers combining rigorous mathematics, interactive visualizations, and working code. The prequel to [formalML](https://formalml.com) — building the calculus machinery that ML assumes you already have.
+Deep-dive explainers combining rigorous mathematics, interactive visualizations, and working code. The prequel to [formalStatistics](https://formalstatistics.com) and [formalML](https://formalml.com) — building the calculus machinery that probability, inference, and ML assume you already have.
 
 [www.formalcalculus.com](https://www.formalcalculus.com)
 
@@ -18,11 +18,13 @@ formalCalculus is a curated collection of long-form explainers on the calculus a
 
 The site exists because the gap between "I took Calc I–III" and "I understand why gradient descent converges" is wider than it needs to be.
 
-### Relationship to formalML
+### Relationship to formalStatistics and formalML
 
-formalCalculus is the **prequel**. Where formalML covers the mathematical machinery *of* machine learning (topology, optimization, information theory, category theory), formalCalculus covers the calculus and analysis that those topics *assume*. The two sites share an editorial voice, tech stack, and design philosophy, but are independent projects.
+formalCalculus is the **prequel** to both downstream sites. [formalStatistics](https://formalstatistics.com) covers rigorous probability, distributions, estimation, hypothesis testing, regression, and Bayesian inference — every formalStatistics topic cites the calculus it depends on. [formalML](https://formalml.com) covers the mathematical machinery *of* machine learning (topology, optimization, information theory). formalCalculus covers what they both assume.
 
-Every formalCalculus topic includes forward links to the formalML topics it enables, so you always know where the math leads.
+The three sites share editorial voice, tech stack, and design philosophy, but are independent projects.
+
+Every formalCalculus topic includes forward links to the formalStatistics and formalML topics it enables, so you always know where the math leads next.
 
 ## Curriculum
 
@@ -100,6 +102,21 @@ Every formalCalculus topic includes forward links to the formalML topics it enab
 | Inner Product & Hilbert Spaces | Advanced | Orthogonality, projections, Riesz representation — kernel methods, RKHS foundations |
 | Calculus of Variations | Advanced | Functionals and Euler-Lagrange — the optimization framework behind physics and ML |
 
+### Forward Links to formalStatistics
+
+Every track that feeds into rigorous probability and statistics connects forward to specific formalStatistics topics:
+
+| formalCalculus Track | Enables (on formalstatistics.com) |
+|---------------------|----------------------------------|
+| Limits & Continuity | Modes of Convergence, LLN, CLT, Empirical Processes |
+| Single-Variable Calculus | Expectation & Moments, MLE, Bayesian Computation |
+| Multivariable Differential | MLE, GLMs, Regularization, Hierarchical Bayes |
+| Multivariable Integral | Multivariate Distributions, Bayesian Foundations, KDE |
+| Series & Approximation | CLT, Edgeworth Expansions, KDE, Bootstrap |
+| ODEs | Bayesian Computation & MCMC (HMC, Langevin) |
+| Measure & Integration | Every formalStatistics track; foundational throughout |
+| Functional Analysis | Linear Regression, KDE, Empirical Processes |
+
 ### Forward Links to formalML
 
 Every track connects forward to specific formalML topics:
@@ -172,7 +189,7 @@ pnpm preview
 
 - GitHub: [@jonx0037](https://github.com/jonx0037)
 - Consultancy: [DataSalt LLC](https://datasalt.ai)
-- Sister project: [formalML](https://formalml.com)
+- Sister projects: [formalStatistics](https://formalstatistics.com) · [formalML](https://formalml.com)
 
 ## License
 

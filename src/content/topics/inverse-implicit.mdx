@@ -29,6 +29,16 @@ formalmlConnections:
   - topic: "information-geometry"
     site: "formalml"
     relationship: "The statistical manifold of a parametric family is locally diffeomorphic to ℝⁿ via the IFT when the Fisher information matrix is non-singular. Reparametrization invariance relies on the IFT to guarantee that coordinate changes on the parameter space are locally invertible."
+formalstatisticsConnections:
+  - topic: "maximum-likelihood"
+    site: "formalstatistics"
+    relationship: "The implicit function theorem justifies differentiating θ̂(x) with respect to x (needed for Jackknife and influence-function calculations). The condition — non-singular Hessian at θ_0 — is exactly the identifiability condition."
+  - topic: "method-of-moments"
+    site: "formalstatistics"
+    relationship: "Solving the moment equations E_θ[g(X)] = n⁻¹ Σ g(X_i) for θ is an instance of solving F(θ, x̄) = 0 for θ. The implicit function theorem gives conditions under which the solution θ̂(x̄) exists and is differentiable; its Jacobian w.r.t. x̄ drives the asymptotic variance."
+  - topic: "confidence-intervals-and-duality"
+    site: "formalstatistics"
+    relationship: "Inverting a hypothesis test to construct a confidence interval — CI(x) = {θ : test does not reject at x} — is an implicit-function operation: we solve the equation 'test statistic equals critical value' for θ as a function of x."
 connections:
   - topic: "hessian"
     relationship: "The Hessian H_f(a) = J(∇f)(a) is the Jacobian of the gradient map. Non-singularity of the Hessian at a critical point — the condition that makes the second derivative test conclusive — is exactly the IFT condition applied to ∇f: the gradient map is locally invertible, so the critical point is isolated."
@@ -695,6 +705,22 @@ After $k = 50$ iterations: $0.8415^{50} \approx 1.5 \times 10^{-4}$, giving abou
 <ContractionMappingExplorer client:visible />
 
 ![The Contraction Mapping Principle: iterating T(x) = cos(x) from any starting point produces a sequence that converges to the unique fixed point x* ≈ 0.739. The cobweb diagram (left) and error plot (right) show the geometric convergence rate.](/images/topics/inverse-implicit/contraction-mapping.png)
+
+## Connections to Statistics
+
+The inverse and implicit function theorems are the technical backbone of differentiating estimators and inverting tests in statistical inference.
+
+### Differentiating the MLE
+
+The implicit function theorem justifies differentiating $\hat{\theta}(x)$ with respect to $x$ — needed for jackknife and influence-function calculations. The condition (non-singular Hessian at $\theta_0$) is exactly the identifiability condition. See <a href="https://formalstatistics.com/topics/maximum-likelihood" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Maximum Likelihood**.
+
+### Method of moments
+
+Solving the moment equations $E_\theta[g(X)] = n^{-1} \sum g(X_i)$ for $\theta$ is an instance of solving $F(\theta, \bar{x}) = 0$ for $\theta$. The implicit function theorem gives conditions under which the solution $\hat{\theta}(\bar{x})$ exists and is differentiable; its Jacobian w.r.t. $\bar{x}$ drives the asymptotic variance calculation. See <a href="https://formalstatistics.com/topics/method-of-moments" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Method of Moments**.
+
+### Test inversion → confidence intervals
+
+Inverting a hypothesis test to construct a confidence interval — $\mathrm{CI}(x) = \{\theta : \text{test does not reject at } x\}$ — is an implicit-function operation: we solve the equation "test statistic equals critical value" for $\theta$ as a function of $x$. See <a href="https://formalstatistics.com/topics/confidence-intervals-and-duality" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Confidence Intervals & Duality**.
 
 ## Connections to ML
 

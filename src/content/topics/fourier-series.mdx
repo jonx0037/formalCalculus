@@ -37,6 +37,16 @@ formalmlConnections:
   - topic: "pac-learning"
     site: "formalml"
     relationship: "Fourier analysis on Boolean functions {−1,1}ⁿ uses Fourier coefficients f̂(S) = E[f(x)χ_S(x)] — the discrete analog of the continuous Fourier coefficients developed here. The KKL inequality and noise sensitivity bounds are proved via Fourier-analytic methods."
+formalstatisticsConnections:
+  - topic: "central-limit-theorem"
+    site: "formalstatistics"
+    relationship: "Characteristic functions φ_X(t) = E[e^(itX)] are Fourier transforms of densities. Lévy's continuity theorem — convergence of characteristic functions implies convergence in distribution — is an application of Fourier inversion. The CLT is cleanest to prove via characteristic functions because Fourier analysis handles convolutions (sums of random variables) diagonally."
+  - topic: "kernel-density-estimation"
+    site: "formalstatistics"
+    relationship: "The KDE's characteristic function is the product of the data's empirical characteristic function and the kernel's Fourier transform. Plancherel's identity ∫|f|² = ∫|F(f)|² converts the MISE spatial integral into a Fourier-side integral, clarifying bandwidth-selection asymptotics."
+  - topic: "continuous-distributions"
+    site: "formalstatistics"
+    relationship: "Every continuous distribution on ℝ is characterized by its Fourier transform (characteristic function). The Normal's characteristic function e^(-σ²t²/2) is itself Gaussian — the analytical fact that makes the CLT proof so clean."
 connections:
   - topic: "power-taylor-series"
     relationship: "Power series use the monomial basis {xⁿ} for local approximation around a center c with radius of convergence R. Fourier series use the trigonometric basis {1, cos(nx), sin(nx)} for global periodic approximation on [−π, π]. The conceptual shift from local to global is the central theme of Topic 19."
@@ -439,7 +449,23 @@ $$f(x) \sim \sum_{n=-\infty}^{\infty} c_n e^{inx} \qquad \text{where} \quad c_n 
 The complex form is more compact and connects directly to the **Fourier transform** (the non-periodic analog, extending this to all of $\mathbb{R}$). In the complex form, Parseval's identity becomes $\sum_{n=-\infty}^{\infty}|c_n|^2 = \frac{1}{2\pi}\int_{-\pi}^{\pi}|f(x)|^2\,dx$.
 </TheoremBlock>
 
-## 11. Connections to ML — Positional Encodings, Spectral Methods, Signal Processing
+## 11. Connections to Statistics
+
+Fourier analysis is the language of characteristic functions, kernel methods, and density estimation in the frequency domain. Every continuous distribution on $\mathbb{R}$ is determined by its Fourier transform.
+
+### Characteristic functions and the CLT
+
+Characteristic functions $\varphi_X(t) = E[e^{itX}]$ are Fourier transforms of densities. Lévy's continuity theorem — convergence of characteristic functions implies convergence in distribution — is an application of Fourier inversion. The CLT is cleanest to prove via characteristic functions because Fourier analysis handles convolutions (sums of independent random variables) diagonally. See <a href="https://formalstatistics.com/topics/central-limit-theorem" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Central Limit Theorem**.
+
+### KDE in the Fourier domain
+
+The KDE's characteristic function is the product of the data's empirical characteristic function and the kernel's Fourier transform. Plancherel's identity $\int |f|^2 = \int |\mathcal{F}(f)|^2$ converts the MISE spatial integral into a Fourier-side integral, clarifying bandwidth-selection asymptotics. See <a href="https://formalstatistics.com/topics/kernel-density-estimation" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Kernel Density Estimation**.
+
+### Continuous distributions
+
+Every continuous distribution on $\mathbb{R}$ is characterized by its Fourier transform. The Normal's characteristic function $e^{-\sigma^2 t^2 / 2}$ is itself Gaussian — the analytical fact that makes the CLT proof so clean. See <a href="https://formalstatistics.com/topics/continuous-distributions" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Continuous Distributions**.
+
+## 12. Connections to ML — Positional Encodings, Spectral Methods, Signal Processing
 
 ### 11.1. Sinusoidal positional encodings in transformers
 
@@ -471,7 +497,7 @@ Convolutional neural networks process signals in the spatial domain, but the con
 
 ![ML connections — positional encodings, random Fourier features, spectral normalization, FFT convolution](/images/topics/fourier-series/ml-connections.png)
 
-## 12. Computational Notes
+## 13. Computational Notes
 
 **Fourier coefficient computation.** For explicit functions, compute $a_n$ and $b_n$ analytically when possible; otherwise, use numerical quadrature. The trapezoidal rule is especially accurate for periodic functions — it converges *exponentially* for smooth periodic integrands, a fact that is itself a consequence of Fourier theory (the quadrature error depends on the Fourier coefficient decay of the integrand).
 

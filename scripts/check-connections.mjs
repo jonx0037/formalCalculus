@@ -68,12 +68,19 @@ for (const file of files) {
 
   const graphDownstream = downstreamMap.get(slug) ?? new Set();
 
-  for (const field of ['connections', 'downstreamConnections', 'formalmlConnections']) {
+  for (const field of [
+    'connections',
+    'downstreamConnections',
+    'formalmlConnections',
+    'formalstatisticsConnections',
+  ]) {
     const entries = fm?.[field] ?? [];
     if (!Array.isArray(entries)) continue;
     for (const entry of entries) {
       if (!entry || typeof entry !== 'object' || !entry.topic) continue;
-      if (field !== 'formalmlConnections' && !validSlugs.has(entry.topic)) {
+      const isCrossSite =
+        field === 'formalmlConnections' || field === 'formalstatisticsConnections';
+      if (!isCrossSite && !validSlugs.has(entry.topic)) {
         errors.push([slug, `${field}: unknown slug "${entry.topic}"`]);
       }
       const prose = typeof entry.relationship === 'string' ? entry.relationship : '';

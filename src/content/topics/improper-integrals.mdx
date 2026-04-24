@@ -37,6 +37,19 @@ formalmlConnections:
   - topic: "concentration-inequalities"
     site: "formalml"
     relationship: "Tail bounds P(X > t) = \u222B\u1D57\u221E f(x) dx are improper integrals. The decay rate (exponential vs. polynomial tails) determines sub-Gaussian vs. heavy-tailed behavior. Stirling\u2019s approximation appears in sharp bounds for binomial tails via the entropy method."
+formalstatisticsConnections:
+  - topic: "continuous-distributions"
+    site: "formalstatistics"
+    relationship: "The Gamma function Γ(s) = ∫₀^∞ t^(s-1) e^(-t) dt normalizes the Gamma, Chi-squared, and Student-t distributions. The Beta function normalizes Beta distributions. The Gaussian integral ∫ e^(-x²) dx = √π normalizes the Normal. Every continuous distribution on unbounded support is defined via an improper integral."
+  - topic: "bayesian-foundations-and-prior-selection"
+    site: "formalstatistics"
+    relationship: "Conjugate priors (Beta-Binomial, Gamma-Poisson, Normal-Normal) are constructed so the posterior normalizer reduces to a ratio of Gamma or Beta functions. Improper priors (Jeffreys, flat) require the improper-integral machinery to verify posterior propriety."
+  - topic: "large-deviations"
+    site: "formalstatistics"
+    relationship: "Tail probabilities P(X > t) = ∫_t^∞ f(x) dx are improper integrals. The rate-function asymptotics in Cramér's theorem control the exponential decay of these tail integrals."
+  - topic: "expectation-moments"
+    site: "formalstatistics"
+    relationship: "Moment existence for heavy-tailed distributions is an improper-integral convergence question: E[X^k] = ∫ x^k f(x) dx exists iff the integral converges, which depends on the tail decay rate relative to the power k."
 connections:
   - topic: "riemann-integral"
     relationship: "The Riemann integral defined on bounded functions on bounded intervals is the starting point. Improper integrals extend this via limits: \u222B\u2081\u221E f = lim_{b\u2192\u221E} \u222B\u2081\u1D47 f. The FTC, linearity, monotonicity, and comparison properties of the integral are used throughout."
@@ -575,6 +588,22 @@ erf(1.0)      # 0.8427...
 **Rule of thumb:** Never compute $\Gamma(n)$ or $n!$ directly for large $n$. Always work with $\log\Gamma$ and exponentiate only at the end, if needed.
 
 ![Numerical convergence of truncated improper integrals](/images/topics/improper-integrals/numerical-convergence.png)
+
+## Connections to Statistics
+
+Improper integrals are the workhorses of statistical theory: every continuous distribution on an unbounded support is defined via a normalizing improper integral, and tail probabilities, moments, and Bayesian normalizing constants all reduce to such integrals.
+
+### Special functions as normalizing constants
+
+The Gamma function $\Gamma(s) = \int_0^\infty t^{s-1} e^{-t} \, dt$ normalizes the Gamma, Chi-squared, and Student-$t$ distributions. The Beta function normalizes Beta distributions. The Gaussian integral $\int_{-\infty}^\infty e^{-x^2} dx = \sqrt{\pi}$ normalizes the Normal. Every continuous distribution on an unbounded support is defined via an improper integral; conjugate priors (Beta-Binomial, Gamma-Poisson, Normal-Normal) are constructed precisely so the posterior normalizer reduces to a ratio of these special functions. See <a href="https://formalstatistics.com/topics/continuous-distributions" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Continuous Distributions** and <a href="https://formalstatistics.com/topics/bayesian-foundations-and-prior-selection" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Bayesian Foundations & Prior Selection**.
+
+### Tail probabilities and large deviations
+
+Tail probabilities $P(X > t) = \int_t^\infty f(x) \, dx$ are improper integrals. The decay rate (exponential vs. polynomial) determines whether the distribution is sub-Gaussian or heavy-tailed. The Cramér rate function in large-deviation theory controls the exponential rate at which these tail integrals shrink. See <a href="https://formalstatistics.com/topics/large-deviations" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Large Deviations**.
+
+### Moment existence
+
+For heavy-tailed distributions, $E[X^k] = \int x^k f(x) \, dx$ is an improper-integral convergence question: the moment exists iff the integral converges, which depends on the tail decay rate relative to the power $k$. The Cauchy distribution, with $f(x) \propto 1/(1+x^2)$, has no finite mean — a fact that is purely about whether $\int x \cdot 1/(1+x^2) \, dx$ converges. See <a href="https://formalstatistics.com/topics/expectation-moments" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Expectation & Moments**.
 
 ## Connections to ML
 

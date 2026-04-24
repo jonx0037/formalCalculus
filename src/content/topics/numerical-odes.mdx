@@ -27,6 +27,10 @@ formalmlConnections:
   - topic: "random-walks"
     site: "formalml"
     relationship: "The convergence theory developed here — consistency, stability, and the Lax equivalence theorem — provides the analytical framework for understanding when discrete random walks approximate continuous diffusions, and at what rate."
+formalstatisticsConnections:
+  - topic: "bayesian-computation-and-mcmc"
+    site: "formalstatistics"
+    relationship: "The leapfrog integrator in HMC is a 2nd-order symplectic numerical ODE scheme. Its volume-preservation and reversibility are exactly the properties that make HMC's Metropolis-Hastings correction a Bernoulli variable with computable acceptance probability. Step-size tuning (the h parameter) is the bias–computational-cost tradeoff familiar from numerical ODE analysis."
 connections:
   - topic: "first-order-odes"
     relationship: "Euler's method and RK4 were introduced computationally in Topic 21. This topic provides the full error analysis and explains why RK4 is O(h⁴) and what conditions guarantee convergence."
@@ -614,7 +618,13 @@ Pass `dense_output=True` to get an interpolation function $y(t)$ defined on the 
 
 **A common pitfall:** training a neural ODE with too-loose tolerance can introduce *biased gradients*. The adjoint method computes gradients by solving a backward ODE, and if the forward solver was inaccurate, the backward solver inherits that error. Set `rtol` and `atol` tight enough that the gradient noise from solver error is smaller than the gradient noise from the data. A good starting point: $\text{rtol} = 10^{-5}$, $\text{atol} = 10^{-7}$.
 
-## 11. Connections to ML
+## 11. Connections to Statistics
+
+### Symplectic integration in HMC
+
+The leapfrog integrator in Hamiltonian Monte Carlo is a 2nd-order symplectic numerical ODE scheme. Its volume-preservation and reversibility are exactly the properties that make HMC's Metropolis–Hastings correction a Bernoulli variable with computable acceptance probability. Step-size tuning (the $h$ parameter) is the bias–computational-cost tradeoff familiar from numerical ODE analysis: too large and the energy error grows, lowering the acceptance rate; too small and computation is wasted. See <a href="https://formalstatistics.com/topics/bayesian-computation-and-mcmc" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Bayesian Computation & MCMC**.
+
+## 12. Connections to ML
 
 The numerical methods of this topic are not just mathematical curiosities — they are the computational engine of several active areas of deep learning. Four connections, each substantive enough to be its own research program.
 
@@ -660,7 +670,7 @@ The field of optimization is rediscovering numerical analysis lessons from the 1
 
 <NeuralODEExplorer client:visible />
 
-## 12. Closing Reflection — The ODE Track Complete
+## 13. Closing Reflection — The ODE Track Complete
 
 This is the **fourth and final topic** in Track 6 — Ordinary Differential Equations. With this topic the entire ODE track is published: existence (Picard-Lindelöf), structure (matrix exponential), qualitative behavior (Lyapunov, bifurcation), and now computation (Runge-Kutta, adaptive solvers, implicit methods, convergence theory). The shared `odes.ts` utility module reaches its final form with 39 exports — 17 interfaces and 22 functions — that powered every interactive visualization across all four topics.
 

@@ -20,6 +20,12 @@ interface Props {
     title?: string;
     relationship: string;
   }>;
+  // Same shape as formalmlConnections — separate render block, distinct accent.
+  formalstatisticsConnections?: Array<{
+    topic: string;
+    title?: string;
+    relationship: string;
+  }>;
 }
 
 const {
@@ -27,13 +33,17 @@ const {
   connections = [],
   downstreamConnections = [],
   formalmlConnections = [],
+  formalstatisticsConnections = [],
 } = Astro.props;
 
 const prereqs = getPrerequisites(slug, connections);
 const downstream = getDownstream(slug, downstreamConnections);
 
 const hasAny =
-  prereqs.length > 0 || downstream.length > 0 || formalmlConnections.length > 0;
+  prereqs.length > 0 ||
+  downstream.length > 0 ||
+  formalmlConnections.length > 0 ||
+  formalstatisticsConnections.length > 0;
 
 // ML / analysis jargon that should stay uppercase. Extend as needed.
 const ACRONYMS = new Set([
@@ -150,6 +160,33 @@ const downstreamCards = enrichCards(downstream);
                 difficulty={d.difficulty}
                 domainLabel={d.domainLabel}
                 readTime={d.estimatedReadTime}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {formalstatisticsConnections.length > 0 && (
+        <div class="mb-8">
+          <h3
+            class="text-xs font-semibold mb-3 uppercase tracking-wider flex items-center gap-2"
+            style="color: var(--color-warning);"
+          >
+            <span
+              class="inline-block w-1 h-4 rounded"
+              style="background: var(--color-warning);"
+              aria-hidden="true"
+            />
+            On to formalStatistics — where this calculus powers inference
+          </h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {formalstatisticsConnections.map((c) => (
+              <ConnectionCard
+                title={titleize(c.topic, c.title)}
+                href={`https://formalstatistics.com/topics/${c.topic}`}
+                relationship={c.relationship}
+                variant="formalstatistics"
+                external
               />
             ))}
           </div>

@@ -39,6 +39,19 @@ formalmlConnections:
   - topic: "measure-theoretic-probability"
     site: "formalml"
     relationship: "The Borel-Cantelli lemma — if ∑P(Aₙ) < ∞ then P(limsup Aₙ) = 0 — is a direct application of series convergence to probability theory. Countable additivity of measures is defined via convergent series of set measures."
+formalstatisticsConnections:
+  - topic: "modes-of-convergence"
+    site: "formalstatistics"
+    relationship: "Borel–Cantelli — if Σ P(A_n) < ∞ then P(A_n i.o.) = 0 — is a series-convergence statement translated into probability. Almost-sure convergence proofs routinely reduce to showing an appropriate series converges."
+  - topic: "discrete-distributions"
+    site: "formalstatistics"
+    relationship: "The probability generating function G_X(s) = E[s^X] = Σ p_k s^k is a power series whose coefficients are the PMF values. Moment generating functions and cumulant generating functions are Laurent/Taylor series whose coefficients encode the distribution."
+  - topic: "central-limit-theorem"
+    site: "formalstatistics"
+    relationship: "Edgeworth expansions give higher-order corrections to the CLT: F_n(x) = Φ(x) + n^(-1/2) p_1(x) φ(x) + n^(-1) p_2(x) φ(x) + ... — an asymptotic series whose convergence properties determine when higher-order approximations (including the bootstrap) are accurate."
+  - topic: "large-deviations"
+    site: "formalstatistics"
+    relationship: "The cumulant generating function Λ(t) = log E[e^(tX)] is a power series (when convergent) whose coefficients are the cumulants. Cramér's theorem uses Λ and its Legendre transform; series convergence determines the domain of the rate function."
 connections:
   - topic: "sequences-limits"
     relationship: "Series convergence is sequence convergence. The partial sums Sₙ = ∑ₖ₌₁ⁿ aₖ form a sequence, and the series converges iff this sequence converges. Every convergence test reduces to applying the sequence theorems from Topic 1 — Monotone Convergence, Cauchy criterion, comparison — to the partial-sum sequence."
@@ -497,7 +510,23 @@ In practice, we compute partial sums with NumPy and verify convergence tests num
 
 **Riemann rearrangement.** Alternating between positive and negative terms of the harmonic series, targeting a value $S$: the algorithm described in Theorem 11's proof is directly implementable and converges to any target $S$ within $1/n$ after using $n$ terms.
 
-## 11. Connections to ML
+## 11. Connections to Statistics
+
+Series convergence is the analytical engine for almost-sure convergence proofs, generating-function methods, and large-deviation asymptotics.
+
+### Borel–Cantelli and almost-sure convergence
+
+The Borel–Cantelli lemma — if $\sum P(A_n) < \infty$ then $P(A_n \text{ i.o.}) = 0$ — is a series-convergence statement translated into probability. Almost-sure convergence proofs in statistics routinely reduce to showing an appropriate series converges. See <a href="https://formalstatistics.com/topics/modes-of-convergence" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Modes of Convergence**.
+
+### Generating functions
+
+The probability generating function $G_X(s) = E[s^X] = \sum p_k s^k$ is a power series whose coefficients are the PMF values. Moment generating functions and cumulant generating functions are Laurent/Taylor series whose coefficients encode the distribution; whether they exist on a neighborhood of $0$ is exactly a series-convergence question. See <a href="https://formalstatistics.com/topics/discrete-distributions" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Discrete Distributions**.
+
+### Edgeworth expansions and rate functions
+
+Edgeworth expansions give higher-order corrections to the CLT — asymptotic series whose convergence properties determine when higher-order approximations (including the bootstrap) are accurate. In large-deviation theory, $\Lambda(t) = \log E[e^{tX}]$ is a power series whose Legendre transform is the rate function; series convergence determines its domain. See <a href="https://formalstatistics.com/topics/central-limit-theorem" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Central Limit Theorem** and <a href="https://formalstatistics.com/topics/large-deviations" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Large Deviations**.
+
+## 12. Connections to ML
 
 Series convergence appears in ML through four distinct paths.
 

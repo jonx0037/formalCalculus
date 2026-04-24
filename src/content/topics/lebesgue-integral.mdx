@@ -34,6 +34,19 @@ formalmlConnections:
   - topic: "variational-inference"
     site: "formalml"
     relationship: "The ELBO is an integral identity derived from Jensen's inequality applied to a Lebesgue integral: log p(x) ≥ ∫ q(z) log[p(x,z)/q(z)] dz."
+formalstatisticsConnections:
+  - topic: "expectation-moments"
+    site: "formalstatistics"
+    relationship: "E[X] = ∫ X dP is a Lebesgue integral of the random variable w.r.t. the probability measure. Linearity, monotonicity, and the convergence theorems (MCT, DCT, Fatou) are exactly the tools used to prove every expectation identity in the course."
+  - topic: "modes-of-convergence"
+    site: "formalstatistics"
+    relationship: "Dominated Convergence, Monotone Convergence, and Fatou's lemma are the trinity that justify interchanging limit and expectation. They appear in every convergence-of-estimator proof: 'by DCT, lim E[X_n] = E[lim X_n] = E[X].'"
+  - topic: "law-of-large-numbers"
+    site: "formalstatistics"
+    relationship: "The strong LLN X̄_n → μ a.s. is a statement about the Lebesgue integral ∫X dP: the time-average along a single sample path equals the ensemble average. The proof (Etemadi, Kolmogorov) uses Lebesgue-integral tools throughout."
+  - topic: "maximum-likelihood"
+    site: "formalstatistics"
+    relationship: "Consistency and asymptotic normality proofs for the MLE invoke DCT to interchange differentiation and integration (Fisher-information identities) and to pass limits through the log-likelihood."
 connections:
   - topic: "sigma-algebras"
     relationship: "The Lebesgue integral is constructed on the measure-theoretic framework from Topic 25: sigma-algebras, measures, measurable functions, and simple functions are all prerequisites."
@@ -704,7 +717,27 @@ print(estimate)  # ≈ 0.5
 The convergence rate $1/\sqrt{N}$ is independent of dimension, which is why the same script generalizes — without modification — to estimating $E[g(X_1, \ldots, X_d)]$ for $d = 100$ or $d = 10{,}000$.
 </TheoremBlock>
 
-## 11. Connections to ML
+## 11. Connections to Statistics
+
+Measure-theoretic probability and the Lebesgue integral are inseparable: $E[X] = \int X \, dP$ is the foundational identity, and the convergence theorems are the mathematical justification for almost every asymptotic argument in statistics.
+
+### Expectation as a Lebesgue integral
+
+$E[X] = \int X \, dP$ is a Lebesgue integral of the random variable with respect to the probability measure. Linearity, monotonicity, and the convergence theorems built in this topic are exactly the tools used to prove every expectation identity in statistics. See <a href="https://formalstatistics.com/topics/expectation-moments" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Expectation & Moments**.
+
+### Modes of convergence
+
+Dominated Convergence, Monotone Convergence, and Fatou's lemma form the trinity that justifies interchanging limit and expectation. They appear in every convergence-of-estimator proof: "by DCT, $\lim E[X_n] = E[\lim X_n] = E[X]$." This single move is what licenses essentially every asymptotic result in statistics. See <a href="https://formalstatistics.com/topics/modes-of-convergence" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Modes of Convergence**.
+
+### The Strong Law of Large Numbers
+
+The strong LLN $\bar{X}_n \to \mu$ almost surely is a statement about the Lebesgue integral $\int X \, dP$: the time-average along a single sample path equals the ensemble average. The proof (Etemadi, Kolmogorov) uses Lebesgue-integral tools throughout — without Lebesgue's framework, even stating the SLLN rigorously is awkward. See <a href="https://formalstatistics.com/topics/law-of-large-numbers" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Law of Large Numbers**.
+
+### Maximum likelihood asymptotics
+
+Consistency and asymptotic normality proofs for the MLE invoke DCT to interchange differentiation and integration (Fisher-information identities) and to pass limits through the log-likelihood. The technical apparatus of measure theory is what underwrites the textbook formula $\sqrt{n}(\hat{\theta} - \theta_0) \Rightarrow N(0, I(\theta_0)^{-1})$. See <a href="https://formalstatistics.com/topics/maximum-likelihood" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Maximum Likelihood**.
+
+## 12. Connections to ML
 
 Four big connections, each substantial enough to be its own research thread.
 
@@ -753,7 +786,7 @@ The constant $M$ is finite. The constant function $g(x) = M$ is integrable with 
 
 ![Four-panel ML connections: expected value, KL divergence, gradient-expectation swap, and the ELBO](/images/topics/lebesgue-integral/ml-connections-26.png)
 
-## 12. Closing Reflection — From Framework to Integral
+## 13. Closing Reflection — From Framework to Integral
 
 This is the **second topic** in Track 7 — Measure & Integration — and the second **advanced** topic in formalCalculus. Topic 25 built the framework; this topic built the integral. The combination is what makes measure theory a usable tool, not just a piece of mathematical infrastructure: every theorem in this topic is the rigorous version of an everyday calculation in probability theory or machine learning. The next two topics in the track will build the function spaces ($L^p$) and the change-of-measure machinery (Radon-Nikodym) that complete the foundation for modern probability.
 

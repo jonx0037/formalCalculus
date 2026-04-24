@@ -38,6 +38,25 @@ formalmlConnections:
   - topic: "smooth-manifolds"
     site: "formalml"
     relationship: "The smooth-vs-analytic distinction developed here is foundational: analytic functions are locally representable by convergent power series in coordinate charts, while smooth functions form the more general C^∞ category used in differential geometry."
+formalstatisticsConnections:
+  - topic: "central-limit-theorem"
+    site: "formalstatistics"
+    relationship: "The characteristic-function proof of the CLT expands log φ_{X_i}(t/√n) as a Taylor series in t. The dominant terms give the Gaussian characteristic function e^(-σ²t²/2); the remainder terms vanish as n → ∞."
+  - topic: "expectation-moments"
+    site: "formalstatistics"
+    relationship: "The delta method: if √n(θ̂ - θ) ⟹ N(0, σ²) and g is differentiable, then √n(g(θ̂) - g(θ)) ⟹ N(0, [g'(θ)]² σ²). The proof is a 1st-order Taylor expansion g(θ̂) = g(θ) + g'(θ)(θ̂ - θ) + o_p(1/√n)."
+  - topic: "bayesian-model-comparison-and-bma"
+    site: "formalstatistics"
+    relationship: "Laplace approximation Taylor-expands the log-posterior to second order around the MAP. The resulting Gaussian approximation has covariance matrix (-∇²ℓ)⁻¹. BIC's asymptotic derivation rests on the higher-order error term of this expansion."
+  - topic: "kernel-density-estimation"
+    site: "formalstatistics"
+    relationship: "The KDE bias expansion E[f̂_n(x)] - f(x) = (h²/2) f''(x) μ_2(K) + O(h⁴) is a Taylor series in the bandwidth h. The dominant bias term gives the asymptotic MSE; the optimal bandwidth h* balances bias² against variance."
+  - topic: "bootstrap"
+    site: "formalstatistics"
+    relationship: "The Edgeworth expansion of √n(θ̂_n - θ) uses Taylor series in the characteristic function. Bootstrap higher-order accuracy — O(n⁻¹) vs. the CLT's O(n^(-1/2)) — follows from matching Edgeworth terms between the bootstrap and true distributions."
+  - topic: "order-statistics-and-quantiles"
+    site: "formalstatistics"
+    relationship: "The Bahadur representation of sample quantiles, ξ̂_p = ξ_p - (F_n(ξ_p) - p)/f(ξ_p) + o_p(n^{-1/2}), is a Taylor-series-flavored asymptotic — a first-order linearization of the inverse-CDF map around the true quantile."
 connections:
   - topic: "series-convergence"
     relationship: "Power series are series whose terms are functions aₙ(x−c)ⁿ rather than fixed numbers. The ratio test gives R = lim|aₙ/aₙ₊₁|, the root test gives R = 1/limsup|aₙ|^(1/n) (Cauchy-Hadamard), and endpoint analysis uses comparison and alternating series tests — all from Topic 17."
@@ -432,7 +451,23 @@ In a precise sense (Baire category), "most" smooth functions are not analytic. Y
 
 ![Analytic vs. smooth — Taylor series converging to f (left) vs. converging to the wrong function (right)](/images/topics/power-taylor-series/analytic-vs-smooth.png)
 
-## 9. Connections to ML — Taylor Expansions in Optimization and Inference
+## 9. Connections to Statistics
+
+Taylor series are the asymptotic backbone of statistical theory: characteristic-function CLT proofs, asymptotic normality of the MLE, Laplace approximation, the delta method, and the bias expansions for nonparametric estimators all expand to second order around a critical point and bound the remainder.
+
+### Characteristic functions and the CLT
+
+The characteristic-function proof of the CLT expands $\log \varphi_{X_i}(t/\sqrt{n})$ as a Taylor series in $t$. The dominant terms give the Gaussian characteristic function $e^{-\sigma^2 t^2 / 2}$; the remainder vanishes as $n \to \infty$. See <a href="https://formalstatistics.com/topics/central-limit-theorem" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Central Limit Theorem**.
+
+### Delta method and Laplace approximation
+
+The delta method — $\sqrt{n}(g(\hat{\theta}) - g(\theta)) \Rightarrow N(0, [g'(\theta)]^2 \sigma^2)$ — is a 1st-order Taylor expansion. Laplace approximation Taylor-expands the log-posterior to 2nd order around the MAP, producing a Gaussian approximation with covariance $(-\nabla^2 \ell)^{-1}$ and the BIC penalty as its asymptotic form. See <a href="https://formalstatistics.com/topics/expectation-moments" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Expectation & Moments** and <a href="https://formalstatistics.com/topics/bayesian-model-comparison-and-bma" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Bayesian Model Comparison & BMA**.
+
+### KDE bias and Edgeworth expansions
+
+The KDE bias expansion $E[\hat{f}_n(x)] - f(x) = (h^2/2) f''(x) \mu_2(K) + O(h^4)$ is a Taylor series in the bandwidth $h$. Bootstrap higher-order accuracy — $O(n^{-1})$ vs. the CLT's $O(n^{-1/2})$ — follows from matching Edgeworth (Taylor) terms between the bootstrap and true distributions. See <a href="https://formalstatistics.com/topics/kernel-density-estimation" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Kernel Density Estimation** and <a href="https://formalstatistics.com/topics/bootstrap" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Bootstrap**.
+
+## 10. Connections to ML — Taylor Expansions in Optimization and Inference
 
 ### 9.1 The descent lemma and gradient descent
 
@@ -472,7 +507,7 @@ is a power series in $t$ with matrix coefficients. It converges for all $t$ (sin
 
 ![ML connections — descent lemma, Laplace approximation, GELU, and matrix exponential](/images/topics/power-taylor-series/ml-connections.png)
 
-## 10. Computational Notes
+## 11. Computational Notes
 
 - **Power series evaluation: Horner's method.** Evaluating $\sum_{k=0}^{n} a_k x^k$ naively requires $O(n^2)$ multiplications. Horner's method rewrites $a_0 + a_1 x + a_2 x^2 + \cdots + a_n x^n = a_0 + x(a_1 + x(a_2 + \cdots + x \cdot a_n))$ and evaluates from the inside out in $O(n)$ with minimal round-off. Use `numpy.polynomial.polynomial.polyval` for numerical stability.
 - **Radius of convergence estimation.** For tabulated coefficients, compute $|a_n|^{1/n}$ for large $n$ and look for convergence to $1/R$. The tail average of this sequence gives a reliable numerical estimate.

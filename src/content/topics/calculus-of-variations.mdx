@@ -33,6 +33,10 @@ formalmlConnections:
   - topic: "generative-modeling"
     site: "formalml"
     relationship: "Variational autoencoders minimize the ELBO — a variational objective over encoder-decoder function pairs. Diffusion models minimize score-matching losses with variational structure."
+formalstatisticsConnections:
+  - topic: "kernel-density-estimation"
+    site: "formalstatistics"
+    relationship: "Optimal bandwidth and adaptive estimator selection can be framed as variational problems — minimizing a smoothness-penalized L² risk functional over a function space. The Euler–Lagrange equations characterize critical points of the risk."
 connections:
   - topic: "hilbert-spaces"
     relationship: "The projection theorem, Riesz representation, and spectral theory from Topic 31 provide the Hilbert-space infrastructure on which the direct method and Lax-Milgram theorem operate."
@@ -686,7 +690,15 @@ The variational characterization of eigenvalues is the bridge between the spectr
 
 ---
 
-## 11. Connections to ML
+## 11. Connections to Statistics
+
+Variational problems show up in nonparametric statistics whenever an optimal estimator is defined by minimizing a risk functional over a smoothness class.
+
+### Bandwidth selection as a variational problem
+
+Optimal bandwidth and adaptive estimator selection for kernel density estimation can be framed as variational problems — minimizing a smoothness-penalized $L^2$ risk functional over a function space. The Euler–Lagrange equations characterize critical points of the risk; the direct method (lower semicontinuity + weak compactness in a Sobolev space) guarantees a minimizer exists. See <a href="https://formalstatistics.com/topics/kernel-density-estimation" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Kernel Density Estimation**.
+
+## 12. Connections to ML
 
 The calculus of variations is not just classical mathematics — it is the mathematical language of modern machine learning at its most fundamental.
 
@@ -738,7 +750,7 @@ Across PINNs, optimal transport, VAEs, and diffusion models, the pattern is the 
 
 ---
 
-## 12. Computational Notes
+## 13. Computational Notes
 
 The Euler-Lagrange equation can be solved numerically via finite differences or finite elements. Here is a minimal example for the Dirichlet energy minimization $-u'' = f$ on $[0,1]$ with $u(0) = u(1) = 0$:
 
@@ -778,7 +790,7 @@ print(f"λ₁ ≈ {1/lam:.6f} (exact: {np.pi**2:.6f})")
 
 ---
 
-## 13. Track 8 Summary
+## 14. Track 8 Summary
 
 The Functional Analysis Essentials track progressed through four levels of abstraction:
 
@@ -791,7 +803,7 @@ Each level added one axiom and gained enormous power. The staircase is now compl
 
 ---
 
-## 14. Summary
+## 15. Summary
 
 | Element | Statement |
 |---------|-----------|
@@ -819,7 +831,7 @@ Each level added one axiom and gained enormous power. The staircase is now compl
 
 ---
 
-## 15. Closing Reflection
+## 16. Closing Reflection
 
 We have reached the summit.
 

@@ -35,6 +35,22 @@ formalmlConnections:
   - topic: "information-geometry"
     site: "formalml"
     relationship: "The Fisher information matrix I(θ) equals the expected Hessian of the negative log-likelihood E[-H_{log p(x|θ)}] under regularity conditions. The natural gradient I(θ)⁻¹ ∇L(θ) is Newton's method adapted to the Riemannian geometry of the statistical manifold — the curvature here is the Hessian of the KL divergence."
+formalstatisticsConnections:
+  - topic: "maximum-likelihood"
+    site: "formalstatistics"
+    relationship: "Expected Fisher information I(θ) = -E[∇²_θ log L] and observed information J(θ̂) = -∇²_θ log L(θ̂) are Hessians of the negative log-likelihood. The asymptotic variance of the MLE is I(θ_0)⁻¹. Positive-definiteness of I governs identifiability and curvature."
+  - topic: "bayesian-model-comparison-and-bma"
+    site: "formalstatistics"
+    relationship: "Laplace approximation: ∫ exp(ℓ(θ)) dθ ≈ exp(ℓ(θ̂)) · (2π)^(d/2) · |det(-∇²ℓ(θ̂))|^(-1/2). The determinant of the Hessian at the MAP is the volume correction; BIC -2·ℓ(θ̂) + d·log(n) is the asymptotic form of this expansion."
+  - topic: "generalized-linear-models"
+    site: "formalstatistics"
+    relationship: "The GLM information matrix H(β) = -X^T W(β) X is a Hessian. Newton-Raphson / IRLS uses this to compute the update step. Positive-definiteness (from positive W diagonal entries) gives local convexity of the negative log-likelihood."
+  - topic: "regularization-and-penalized-estimation"
+    site: "formalstatistics"
+    relationship: "Convexity of the penalized objective L(β) + λ P(β) is a positive-semidefinite-Hessian condition. Ridge adds λI to the Hessian, strictly improving conditioning. Lasso's subdifferential structure replaces the Hessian at non-smooth points."
+  - topic: "model-selection-and-information-criteria"
+    site: "formalstatistics"
+    relationship: "TIC (Takeuchi IC) replaces the AIC penalty 2d with tr(J · I⁻¹) where J, I are observed/expected Fisher information — both Hessians. BIC's asymptotic derivation uses the log-determinant of the Hessian at the MLE."
 connections:
   - topic: "jacobian"
     relationship: "The Hessian is the Jacobian of the gradient: H_f(a) = J(∇f)(a). This is the foundational identity — it says the Hessian is not a new concept but the Jacobian machinery from Topic 10 applied to the specific vector-valued function ∇f. The chain rule from Topic 10 also enables the second-order chain rule for composed functions."
@@ -467,6 +483,26 @@ This is why second-order methods in practice often use *modified* Newton methods
 <NewtonMethodExplorer client:visible />
 
 ![Side-by-side contour trajectories: gradient descent zigzags on an ill-conditioned surface while Newton's method converges in a few direct steps. The convergence curve comparison shows linear (GD) vs quadratic (Newton) convergence on a log scale.](/images/topics/hessian/newton-vs-gd.png)
+
+## Connections to Statistics
+
+The Hessian is the central object of Fisher information, asymptotic variance of the MLE, the curvature of penalized objectives, and the Laplace approximation. Wherever uncertainty quantification or second-order optimization shows up in statistics, the Hessian is doing the work.
+
+### Fisher information
+
+Expected Fisher information $I(\theta) = -E[\nabla^2_\theta \log L]$ and observed information $J(\hat{\theta}) = -\nabla^2_\theta \log L(\hat{\theta})$ are Hessians of the negative log-likelihood. The asymptotic variance of the MLE is $I(\theta_0)^{-1}$. Positive-definiteness of $I$ governs identifiability and curvature. See <a href="https://formalstatistics.com/topics/maximum-likelihood" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Maximum Likelihood**.
+
+### Laplace approximation and BIC
+
+$\int \exp(\ell(\theta)) \, d\theta \approx \exp(\ell(\hat{\theta})) \cdot (2\pi)^{d/2} |\det(-\nabla^2 \ell(\hat{\theta}))|^{-1/2}$. The determinant of the Hessian at the MAP is the volume correction; BIC $-2 \ell(\hat{\theta}) + d \log n$ is the asymptotic form of this expansion. See <a href="https://formalstatistics.com/topics/bayesian-model-comparison-and-bma" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Bayesian Model Comparison & BMA**.
+
+### GLMs and penalized convexity
+
+The GLM information matrix $H(\beta) = -X^\top W(\beta) X$ is a Hessian. Ridge adds $\lambda I$ to the Hessian, strictly improving conditioning; convexity of the penalized objective is a positive-semidefinite-Hessian condition. See <a href="https://formalstatistics.com/topics/generalized-linear-models" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Generalized Linear Models** and <a href="https://formalstatistics.com/topics/regularization-and-penalized-estimation" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Regularization & Penalized Estimation**.
+
+### Information criteria
+
+TIC replaces the AIC penalty $2d$ with $\mathrm{tr}(J \cdot I^{-1})$ where $J$ and $I$ are observed/expected Fisher information — both Hessians. BIC's asymptotic derivation uses the log-determinant of the Hessian at the MLE. See <a href="https://formalstatistics.com/topics/model-selection-and-information-criteria" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Model Selection & Information Criteria**.
 
 ## Connections to ML
 

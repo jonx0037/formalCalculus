@@ -34,6 +34,19 @@ formalmlConnections:
   - topic: "smooth-manifolds"
     site: "formalml"
     relationship: "Taylor expansion on manifolds generalizes via the exponential map. The MVT extends to curves on manifolds, and Taylor approximation in local coordinates is the foundation for Riemannian optimization."
+formalstatisticsConnections:
+  - topic: "central-limit-theorem"
+    site: "formalstatistics"
+    relationship: "The characteristic-function proof of the CLT expands log φ_X(t) to second order in t near 0: log φ_X(t) = iμt - σ²t²/2 + o(t²). Summing and rescaling gives the Gaussian characteristic function in the limit — pure Taylor expansion plus an MVT-controlled remainder."
+  - topic: "bayesian-model-comparison-and-bma"
+    site: "formalstatistics"
+    relationship: "Laplace approximation approximates ∫ exp(ℓ(θ)) dθ ≈ exp(ℓ(θ̂)) · (2π)^(d/2) / √det(-∇²ℓ(θ̂)) — a 2nd-order Taylor expansion of the log-posterior around the MAP. The BIC penalty falls out of this expansion."
+  - topic: "maximum-likelihood"
+    site: "formalstatistics"
+    relationship: "Asymptotic normality of the MLE √n(θ̂ - θ_0) ⟹ N(0, I⁻¹) follows from a Taylor expansion of the score: 0 = U_n(θ̂) ≈ U_n(θ_0) + H_n(θ_0)(θ̂ - θ_0), solved for (θ̂ - θ_0) and rescaled."
+  - topic: "exponential-families"
+    site: "formalstatistics"
+    relationship: "The cumulant generating function K(t) = log M_X(t) has Taylor coefficients equal to the cumulants κ_n: K(t) = Σ κ_n t^n/n!. The exponential-family structure makes these derivatives tractable in closed form."
 connections:
   - topic: "derivative"
     relationship: "The derivative definition and differentiation rules from Topic 5 are the raw material. Rolle's theorem and MVT are statements about the derivative — they assert the existence of points where f' takes specific values. Taylor's theorem builds polynomial approximations from higher-order derivatives f', f'', ..., f⁽ⁿ⁾."
@@ -436,6 +449,28 @@ In practice, loss functions in ML are typically compositions of analytic functio
 </TheoremBlock>
 
 ![The function exp(-1/x squared) and its Taylor series (identically zero)](/images/topics/mean-value-taylor/smooth-not-analytic.png)
+
+## Connections to Statistics
+
+Taylor expansion is the analytical engine behind almost every asymptotic result in statistics. The CLT, the asymptotic normality of the MLE, Laplace approximation, the delta method — all are second-order Taylor stories with carefully controlled remainders.
+
+### The CLT via characteristic functions
+
+The characteristic-function proof of the Central Limit Theorem expands $\log \varphi_X(t)$ to second order in $t$ near $0$: $\log \varphi_X(t) = i\mu t - \sigma^2 t^2/2 + o(t^2)$. Summing $n$ independent terms and rescaling gives the Gaussian characteristic function $e^{-\sigma^2 t^2 / 2}$ in the limit. The Mean Value Theorem controls the remainder. See <a href="https://formalstatistics.com/topics/central-limit-theorem" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Central Limit Theorem**.
+
+### Laplace approximation and BIC
+
+Laplace approximation expands the log-posterior to second order around the MAP $\hat{\theta}$:
+$$\int \exp(\ell(\theta)) \, d\theta \approx \exp(\ell(\hat{\theta})) \cdot \frac{(2\pi)^{d/2}}{\sqrt{\det(-\nabla^2 \ell(\hat{\theta}))}}.$$
+The Bayesian Information Criterion $-2\ell(\hat{\theta}) + d \log n$ is the asymptotic form of this expansion. See <a href="https://formalstatistics.com/topics/bayesian-model-comparison-and-bma" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Bayesian Model Comparison & BMA**.
+
+### Asymptotic normality of the MLE
+
+$\sqrt{n}(\hat{\theta} - \theta_0) \Rightarrow N(0, I(\theta_0)^{-1})$ follows from a Taylor expansion of the score: $0 = U_n(\hat{\theta}) \approx U_n(\theta_0) + H_n(\theta_0)(\hat{\theta} - \theta_0)$. Solving for $(\hat{\theta} - \theta_0)$ and rescaling produces the limit distribution. See <a href="https://formalstatistics.com/topics/maximum-likelihood" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Maximum Likelihood**.
+
+### Cumulants from the cumulant generating function
+
+The cumulant generating function $K(t) = \log M_X(t)$ has Taylor coefficients equal to the cumulants $\kappa_n$: $K(t) = \sum_n \kappa_n t^n / n!$. The exponential-family structure makes these derivatives tractable in closed form; the cumulants are the natural moments of choice for both inference and asymptotic expansions. See <a href="https://formalstatistics.com/topics/exponential-families" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Exponential Families**.
 
 ## Connections to ML — Taylor Expansion in Optimization
 

@@ -34,6 +34,25 @@ formalmlConnections:
   - topic: "gradient-descent"
     site: "formalml"
     relationship: "The expected risk is a double integral over the joint distribution. Each SGD mini-batch is a Monte Carlo estimate. Monte Carlo error bounds inform stochastic gradient variance."
+formalstatisticsConnections:
+  - topic: "multivariate-distributions"
+    site: "formalstatistics"
+    relationship: "A joint density f(x_1,...,x_n) integrates to 1 over ℝⁿ — a multivariate integral. Marginalizing f_i(x_i) = ∫ f(x_1,...,x_n) dx_{-i} is an iterated integral (justified by Fubini). The multivariate Normal normalizer (2π)^(d/2) √det Σ comes from the multivariate Gaussian integral."
+  - topic: "bayesian-foundations-and-prior-selection"
+    site: "formalstatistics"
+    relationship: "The posterior p(θ|x) = p(x|θ)π(θ) / ∫ p(x|θ)π(θ) dθ has a normalizing integral over the full parameter space. In d dimensions this is a d-dimensional integral; Fubini justifies iterated computation when possible."
+  - topic: "bayesian-computation-and-mcmc"
+    site: "formalstatistics"
+    relationship: "MCMC is a strategy for approximating d-dimensional integrals when d is too large for deterministic quadrature. The target is always an expectation ∫ g(θ) p(θ|x) dθ, and the sampler converts this into an ergodic-average approximation."
+  - topic: "hierarchical-bayes-and-partial-pooling"
+    site: "formalstatistics"
+    relationship: "The hierarchical-model marginal likelihood p(x|φ) = ∫ p(x|θ) p(θ|φ) dθ integrates over the individual-level parameter θ. Full Bayes integrates further over φ. These nested integrals define the partial-pooling structure."
+  - topic: "kernel-density-estimation"
+    site: "formalstatistics"
+    relationship: "The MISE E[∫ (f̂_n(x) - f(x))² dx] is a multi-dimensional integral over the support. The bias-variance decomposition uses Fubini to swap expectation and spatial integration."
+  - topic: "order-statistics-and-quantiles"
+    site: "formalstatistics"
+    relationship: "Joint densities of order statistics are multi-dimensional integrals; computing E[X_{(k)}] requires integrating over the (n-1)-simplex of order constraints. Marginal densities of individual order statistics fall out of these multivariate integrals via Fubini."
 connections:
   - topic: "riemann-integral"
     relationship: "The double integral generalizes the 1D Riemann sum construction. Fubini reduces double integrals to nested single integrals. All proofs rely on 1D integral properties."
@@ -494,6 +513,22 @@ This is exactly why **stochastic gradient descent** (SGD) uses random mini-batch
 <MonteCarloExplorer client:visible />
 
 ![Monte Carlo estimation of π: scatter plots at N=500 and N=5000, plus log-log convergence plot with O(1/√N) reference line](/images/topics/multiple-integrals/monte-carlo-convergence.png)
+
+## Connections to Statistics
+
+Joint densities, marginal distributions, posterior normalizing constants, MISE — every multivariable probabilistic computation is a multiple integral. Fubini and the change-of-variables theorem do the work behind the scenes.
+
+### Joint and marginal densities
+
+A joint density $f(x_1, \ldots, x_n)$ integrates to $1$ over $\mathbb{R}^n$ — a multivariate integral. Marginalizing $f_i(x_i) = \int f(x_1, \ldots, x_n) \, dx_{-i}$ is an iterated integral (justified by Fubini). The multivariate Normal normalizer $(2\pi)^{d/2} \sqrt{\det \Sigma}$ comes from the multivariate Gaussian integral. See <a href="https://formalstatistics.com/topics/multivariate-distributions" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Multivariate Distributions**.
+
+### Bayesian normalizing constants and MCMC
+
+The posterior $p(\theta \mid x) = p(x \mid \theta) \pi(\theta) / \int p(x \mid \theta) \pi(\theta) \, d\theta$ has a normalizing integral over the parameter space. In $d$ dimensions this is a $d$-dimensional integral; MCMC is the strategy for approximating it when $d$ is too large for deterministic quadrature. See <a href="https://formalstatistics.com/topics/bayesian-foundations-and-prior-selection" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Bayesian Foundations & Prior Selection** and <a href="https://formalstatistics.com/topics/bayesian-computation-and-mcmc" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Bayesian Computation & MCMC**.
+
+### Hierarchical models and KDE
+
+Hierarchical-model marginal likelihoods $p(x \mid \phi) = \int p(x \mid \theta) p(\theta \mid \phi) \, d\theta$ integrate over the individual-level parameter. The KDE MISE $E[\int (\hat{f}_n(x) - f(x))^2 \, dx]$ is a multi-dimensional integral whose bias-variance decomposition uses Fubini to swap expectation and spatial integration. See <a href="https://formalstatistics.com/topics/hierarchical-bayes-and-partial-pooling" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Hierarchical Bayes & Partial Pooling** and <a href="https://formalstatistics.com/topics/kernel-density-estimation" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Kernel Density Estimation**.
 
 ## Connections to ML
 

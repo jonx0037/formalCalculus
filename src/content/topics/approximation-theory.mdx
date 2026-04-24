@@ -37,6 +37,16 @@ formalmlConnections:
   - topic: "riemannian-geometry"
     site: "formalml"
     relationship: "RKHS approximation theory provides error bounds for kernel regression and Gaussian processes. The representer theorem is an approximation-theoretic result about best approximation in RKHS — the kernel analog of best polynomial approximation in C[a,b]."
+formalstatisticsConnections:
+  - topic: "kernel-density-estimation"
+    site: "formalstatistics"
+    relationship: "KDE is a function-approximation problem — approximating the unknown density f by convolution with a kernel at bandwidth h. Consistency rates depend on the smoothness class of f (Hölder, Sobolev). Minimax rates for density estimation are approximation-theory results."
+  - topic: "empirical-processes"
+    site: "formalstatistics"
+    relationship: "Bracketing numbers and covering numbers — approximation-theoretic measures of the 'size' of a function class — control the uniform convergence rate √n(P_n - P) over function classes. Donsker classes are exactly those whose bracketing integral converges."
+  - topic: "bootstrap"
+    site: "formalstatistics"
+    relationship: "The bootstrap approximates the true sampling distribution of an estimator by the bootstrap sampling distribution. The validity proof is an approximation statement: the bootstrap empirical process converges to the same Gaussian limit as the true empirical process."
 connections:
   - topic: "fourier-series"
     relationship: "Fourier partial sums are the best L² approximation among trigonometric polynomials (projection onto the trig subspace). Topic 20 asks: Can we do the same with algebraic polynomials? The answer is yes — the Weierstrass theorem — and the two approximation paradigms (L² vs. uniform, trig vs. polynomial) are unified by Stone-Weierstrass."

@@ -35,6 +35,16 @@ formalmlConnections:
   - topic: "measure-theoretic-probability"
     site: "formalml"
     relationship: "Modes of convergence in probability — almost sure convergence, convergence in probability, convergence in distribution — extend the pointwise/uniform distinction from deterministic function sequences to sequences of random variables. Uniform integrability, the probabilistic analog of equicontinuity, controls interchange of limits and expectations."
+formalstatisticsConnections:
+  - topic: "empirical-processes"
+    site: "formalstatistics"
+    relationship: "Glivenko–Cantelli (sup_x |F_n(x) - F(x)| →_a.s. 0) is the canonical uniform LLN. Donsker's theorem lifts this to a CLT uniform over function classes. The pointwise-vs-uniform distinction is the foundation of the entire field."
+  - topic: "bootstrap"
+    site: "formalstatistics"
+    relationship: "Bootstrap validity rests on Glivenko–Cantelli — uniform convergence of F_n to F. The bootstrap samples from F_n, and uniform closeness of F_n to F underwrites the consistency of bootstrap estimates."
+  - topic: "law-of-large-numbers"
+    site: "formalstatistics"
+    relationship: "The Uniform LLN (uniform over a parameter θ ∈ Θ) is required for consistency of M-estimators: θ̂_n = argmin M_n(θ) converges to argmin M(θ) only when M_n → M uniformly."
 connections:
   - topic: "sequences-limits"
     relationship: "Pointwise and uniform convergence of function sequences extend the epsilon-N convergence of numerical sequences from Topic 1. The Cauchy criterion for uniform convergence is the function-space analog of the Cauchy criterion for sequences. Convergence rates (sublinear, linear, quadratic) reappear as rates of uniform convergence over function classes."
@@ -364,6 +374,22 @@ The Arzelà-Ascoli proof uses the same **diagonal argument** that appears in Can
 ![The Arzelà-Ascoli theorem](/images/topics/uniform-convergence/arzela-ascoli.png)
 
 <ArzelaAscoliExplorer client:visible />
+
+## Connections to Statistics
+
+Uniform convergence is the foundation of empirical-process theory and of every consistency result for M-estimators in statistics.
+
+### Glivenko–Cantelli and Donsker
+
+The Glivenko–Cantelli theorem $\sup_x |F_n(x) - F(x)| \to_{a.s.} 0$ is the canonical uniform Law of Large Numbers — the empirical CDF converges uniformly to the true CDF. Donsker's theorem lifts this to a CLT-style statement uniform over function classes. The pointwise-vs-uniform distinction developed here is the entire foundation of empirical-process theory. See <a href="https://formalstatistics.com/topics/empirical-processes" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Empirical Processes**.
+
+### Bootstrap validity
+
+Bootstrap consistency rests on Glivenko–Cantelli: the bootstrap samples from $F_n$, and uniform closeness of $F_n$ to $F$ underwrites the consistency of bootstrap estimates. Without uniform convergence, bootstrap distributions could agree pointwise with the truth yet miss it sup-norm-wise — exactly the kind of gap GC closes. See <a href="https://formalstatistics.com/topics/bootstrap" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Bootstrap**.
+
+### M-estimator consistency
+
+The Uniform LLN over a parameter set $\theta \in \Theta$ is required for consistency of M-estimators: $\hat{\theta}_n = \arg\min M_n(\theta)$ converges to $\arg\min M(\theta)$ only when $M_n \to M$ uniformly. This is precisely why textbooks insist on uniform — not pointwise — convergence in the consistency theorem for the MLE. See <a href="https://formalstatistics.com/topics/law-of-large-numbers" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Law of Large Numbers**.
 
 ## Connections to ML
 

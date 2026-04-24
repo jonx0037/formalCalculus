@@ -31,6 +31,10 @@ formalmlConnections:
   - topic: "information-geometry"
     site: "formalml"
     relationship: "Natural gradient descent θ̇ = −F⁻¹∇L defines a linear system in the tangent space of the statistical manifold. The Fisher information matrix F acts as the metric tensor, and the matrix exponential e^{−F⁻¹∇²L·t} describes local training dynamics in natural gradient coordinates."
+formalstatisticsConnections:
+  - topic: "bayesian-computation-and-mcmc"
+    site: "formalstatistics"
+    relationship: "Gaussian state-space models dx = Ax dt + dW are linear stochastic ODEs. The Kalman filter is the exact posterior recursion for such systems. HMC for Gaussian targets is exactly a linear Hamiltonian ODE whose trajectories preserve the target measure."
 connections:
   - topic: "first-order-odes"
     relationship: "The scalar linear ODE y' + p(t)y = q(t) from Topic 21 is the 1×1 case of y' = Ay + g(t). The integrating factor e^{∫p(t)dt} becomes the matrix exponential e^{At}. The Picard-Lindelöf theorem extends to vector IVPs with the same proof — the Lipschitz constant is the operator norm ‖A‖."

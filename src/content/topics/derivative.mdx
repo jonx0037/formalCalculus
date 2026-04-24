@@ -32,6 +32,16 @@ formalmlConnections:
   - topic: "smooth-manifolds"
     site: "formalml"
     relationship: "The single-variable derivative is the 1D prototype for the pushforward map between tangent spaces. Differentiable functions are the morphisms of smooth manifolds — the chain rule becomes functoriality of the tangent functor."
+formalstatisticsConnections:
+  - topic: "maximum-likelihood"
+    site: "formalstatistics"
+    relationship: "The score function U(θ) = ∂/∂θ log L(θ) is literally the derivative of the log-likelihood; Fisher information I(θ) = -E[∂²/∂θ² log L] is the second derivative. The MLE θ̂ solves U(θ̂) = 0 — a derivative-equals-zero condition."
+  - topic: "likelihood-ratio-tests-and-np"
+    site: "formalstatistics"
+    relationship: "The score test statistic U(θ_0)²/I(θ_0) and the Wald statistic (θ̂ - θ_0)²·I(θ̂) are both built from first and second derivatives of the log-likelihood. The asymptotic chi-squared distribution follows from a Taylor expansion around θ_0."
+  - topic: "point-estimation"
+    site: "formalstatistics"
+    relationship: "The Cramér–Rao lower bound differentiates under the integral sign — a manoeuvre justified by dominated-convergence conditions. The delta method for estimators of the form g(θ̂) is a first-order Taylor expansion: g(θ̂) ≈ g(θ) + g'(θ)(θ̂ - θ)."
 connections:
   - topic: "sequences-limits"
     relationship: "The derivative is defined as a limit. The convergence theory from Topic 1 — the ε-N definition, limit uniqueness, the algebra of limits — provides the rigorous foundation for the difference quotient limit that defines f'(a)."
@@ -408,6 +418,22 @@ The Weierstrass function shows that pathology can be extreme — continuous ever
 </TheoremBlock>
 
 ![Four types of non-differentiability: corner, cusp, vertical tangent, Weierstrass](/images/topics/derivative/non-differentiable-functions.png)
+
+## Connections to Statistics
+
+The derivative is the foundation of every optimization-based estimator in statistics. The score function, Fisher information, Cramér–Rao bound, and the asymptotic theory of maximum likelihood are all built from first and second derivatives of the log-likelihood.
+
+### The score and the MLE
+
+The score function $U(\theta) = \frac{\partial}{\partial \theta} \log L(\theta)$ is literally the derivative of the log-likelihood; Fisher information $I(\theta) = -E\!\left[\frac{\partial^2}{\partial \theta^2} \log L\right]$ is the second derivative. The MLE $\hat{\theta}$ solves $U(\hat{\theta}) = 0$ — a derivative-equals-zero condition — and its asymptotic variance is $I(\theta_0)^{-1}$. See <a href="https://formalstatistics.com/topics/maximum-likelihood" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Maximum Likelihood**.
+
+### Score and Wald tests
+
+The score test statistic $U(\theta_0)^2 / I(\theta_0)$ and the Wald statistic $(\hat{\theta} - \theta_0)^2 \cdot I(\hat{\theta})$ are both built from first and second derivatives of the log-likelihood. Their asymptotic chi-squared distributions follow from a Taylor expansion of the log-likelihood around $\theta_0$. See <a href="https://formalstatistics.com/topics/likelihood-ratio-tests-and-np" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Likelihood Ratio Tests & Neyman–Pearson**.
+
+### Delta method and the Cramér–Rao bound
+
+The Cramér–Rao lower bound differentiates under the integral sign — a manoeuvre justified by dominated-convergence conditions. The delta method for estimators of the form $g(\hat{\theta})$ is a first-order Taylor expansion: $g(\hat{\theta}) \approx g(\theta) + g'(\theta)(\hat{\theta} - \theta)$, giving asymptotic variance $[g'(\theta)]^2 \sigma^2$. See <a href="https://formalstatistics.com/topics/point-estimation" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Point Estimation**.
 
 ## Connections to ML — Backpropagation & Automatic Differentiation
 

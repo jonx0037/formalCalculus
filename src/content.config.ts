@@ -39,6 +39,16 @@ const topics = defineCollection({
         }),
       )
       .optional(),
+    formalstatisticsConnections: z
+      .array(
+        z.object({
+          topic: z.string(),
+          title: z.string().optional(),
+          site: z.literal('formalstatistics'),
+          relationship: z.string(),
+        }),
+      )
+      .optional(),
     // Prereq annotations. The auto section already reads graph predecessors
     // from curriculum-graph.json; entries here layer prose onto specific ids.
     // Optional and defaults to [] so topics with no curated annotations don't
