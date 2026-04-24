@@ -60,6 +60,15 @@ function enrich(
   });
 }
 
+/**
+ * Returns the prereqs (and annotations) for a topic.
+ *
+ * Semantics: we union graph edges with annotation topics. An annotation that
+ * references a topic not in `graphPrereqs` still renders as a card — this is
+ * intentional so authors can highlight *conceptual* predecessors the graph
+ * doesn't explicitly encode as edges. The `scripts/check-connections.mjs`
+ * validator surfaces such entries as warnings so typos are caught.
+ */
 export function getPrerequisites(
   slug: string,
   annotations: ConnectionAnnotation[] = [],
@@ -70,6 +79,15 @@ export function getPrerequisites(
   return enrich(allIds, annotations);
 }
 
+/**
+ * Returns the downstream topics (and annotations) for a topic.
+ *
+ * Same union semantics as `getPrerequisites`: annotations that reference a
+ * non-successor topic still render — useful for leaf topics (e.g.
+ * surface-integrals, approximation-theory) that have no direct graph
+ * successors but are conceptually followed by topics in other tracks. The
+ * validator warns on these so typos don't silently produce cards.
+ */
 export function getDownstream(
   slug: string,
   annotations: ConnectionAnnotation[] = [],

@@ -39,12 +39,18 @@ const topics = defineCollection({
         }),
       )
       .optional(),
-    connections: z.array(
-      z.object({
-        topic: z.string(),
-        relationship: z.string(),
-      }),
-    ),
+    // Prereq annotations. The auto section already reads graph predecessors
+    // from curriculum-graph.json; entries here layer prose onto specific ids.
+    // Optional and defaults to [] so topics with no curated annotations don't
+    // need to ship an empty array.
+    connections: z
+      .array(
+        z.object({
+          topic: z.string(),
+          relationship: z.string(),
+        }),
+      )
+      .default([]),
     // Annotated downstream topics — the auto section already lists everything
     // downstream from the curriculum graph; entries here layer prose onto
     // specific ids so those cards carry context. Un-annotated graph downstreams

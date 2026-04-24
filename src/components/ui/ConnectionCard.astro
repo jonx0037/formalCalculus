@@ -1,6 +1,7 @@
 ---
+import { DIFFICULTY_BADGE_CLASSES, type Difficulty } from '../../lib/topicMeta';
+
 type Variant = 'prereq' | 'internal' | 'formalml';
-type Difficulty = 'foundational' | 'intermediate' | 'advanced';
 
 interface Props {
   title: string;
@@ -44,16 +45,6 @@ const variantStyles: Record<Variant, { bg: string; border: string; accent: strin
 
 const style = variantStyles[variant];
 
-// Badge colors mirror TopicLayout.astro for consistency across the site.
-const difficultyColors: Record<Difficulty, string> = {
-  foundational:
-    'bg-green-100 text-green-800 border-green-300 dark:bg-green-900/30 dark:text-green-200 dark:border-green-700',
-  intermediate:
-    'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900/30 dark:text-blue-200 dark:border-blue-700',
-  advanced:
-    'bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-900/30 dark:text-purple-200 dark:border-purple-700',
-};
-
 const hasMeta = Boolean(difficulty || domainLabel || readTime);
 ---
 
@@ -68,7 +59,7 @@ const hasMeta = Boolean(difficulty || domainLabel || readTime);
     <div class="flex flex-wrap items-center gap-2 mb-2 text-[0.65rem] uppercase tracking-wider">
       {difficulty && (
         <span
-          class={`px-1.5 py-0.5 rounded-full border font-semibold ${difficultyColors[difficulty]}`}
+          class={`px-1.5 py-0.5 rounded-full border font-semibold ${DIFFICULTY_BADGE_CLASSES[difficulty]}`}
         >
           {difficulty}
         </span>

@@ -6,6 +6,7 @@ import {
   type ConnectionAnnotation,
   type ConnectedTopic,
 } from '../../lib/connections';
+import { domainLabel, type Difficulty } from '../../lib/topicMeta';
 import ConnectionCard from './ConnectionCard.astro';
 
 interface Props {
@@ -53,23 +54,11 @@ function titleize(id: string, explicit?: string): string {
     .join(' ');
 }
 
-// Human-readable domain labels mirror TopicLayout.astro.
-const domainLabels: Record<string, string> = {
-  'limits-continuity': 'Limits & Continuity',
-  'single-variable': 'Single-Variable Calculus',
-  'multivar-differential': 'Multivariable Differential',
-  'multivar-integral': 'Multivariable Integral',
-  'series-approximation': 'Series & Approximation',
-  odes: 'ODEs',
-  'measure-integration': 'Measure & Integration',
-  'functional-analysis': 'Functional Analysis',
-};
-
 // Pull difficulty + read-time from the content collection so cards can show
 // them alongside the graph data. ConnectionCard stays "dumb" — enrichment is
 // scoped to this orchestration component.
 type TopicMeta = {
-  difficulty: 'foundational' | 'intermediate' | 'advanced';
+  difficulty: Difficulty;
   estimatedReadTime: number;
 };
 
@@ -91,7 +80,7 @@ function enrichCards(cards: ConnectedTopic[]): EnrichedCard[] {
     ...c,
     difficulty: metaMap.get(c.id)?.difficulty,
     estimatedReadTime: metaMap.get(c.id)?.estimatedReadTime,
-    domainLabel: domainLabels[c.domain] ?? c.domain,
+    domainLabel: domainLabel(c.domain),
   }));
 }
 
