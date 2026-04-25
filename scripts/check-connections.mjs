@@ -25,6 +25,8 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import matter from 'gray-matter';
 
+const CROSS_SITE_FIELDS = new Set(['formalmlConnections', 'formalstatisticsConnections']);
+
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(scriptDir, '..');
 const topicsDir = join(repoRoot, 'src/content/topics');
@@ -68,19 +70,12 @@ for (const file of files) {
 
   const graphDownstream = downstreamMap.get(slug) ?? new Set();
 
-  for (const field of [
-    'connections',
-    'downstreamConnections',
-    'formalmlConnections',
-    'formalstatisticsConnections',
-  ]) {
+  for (const field of ['connections', 'downstreamConnections', ...CROSS_SITE_FIELDS]) {
     const entries = fm?.[field] ?? [];
     if (!Array.isArray(entries)) continue;
     for (const entry of entries) {
       if (!entry || typeof entry !== 'object' || !entry.topic) continue;
-      const isCrossSite =
-        field === 'formalmlConnections' || field === 'formalstatisticsConnections';
-      if (!isCrossSite && !validSlugs.has(entry.topic)) {
+      if (!CROSS_SITE_FIELDS.has(field) && !validSlugs.has(entry.topic)) {
         errors.push([slug, `${field}: unknown slug "${entry.topic}"`]);
       }
       const prose = typeof entry.relationship === 'string' ? entry.relationship : '';

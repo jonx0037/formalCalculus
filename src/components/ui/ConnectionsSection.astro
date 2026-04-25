@@ -13,17 +13,16 @@ interface Props {
   slug: string;
   connections?: ConnectionAnnotation[];
   downstreamConnections?: ConnectionAnnotation[];
-  // The schema's `site: 'formalml'` literal is carried on the content side but
-  // the component doesn't need it here — every entry renders as a formalML card.
   formalmlConnections?: Array<{
     topic: string;
     title?: string;
+    site: 'formalml';
     relationship: string;
   }>;
-  // Same shape as formalmlConnections — separate render block, distinct accent.
   formalstatisticsConnections?: Array<{
     topic: string;
     title?: string;
+    site: 'formalstatistics';
     relationship: string;
   }>;
 }
