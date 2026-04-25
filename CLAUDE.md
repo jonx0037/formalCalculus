@@ -2,10 +2,10 @@
 
 ## Project Overview
 
-formalCalculus is a static site of long-form calculus and analysis explainers for ML practitioners, grad students, and researchers. It fills the gap between standard calculus courses and the mathematical foundations assumed by [formalML](https://formalml.com) — providing the rigorous calculus and analysis machinery that modern machine learning relies on. Every topic gets three pillars: rigorous math, interactive visualization, and working code.
+formalCalculus is a static site of long-form calculus and analysis explainers for ML practitioners, grad students, and researchers. It fills the gap between standard calculus courses and the mathematical foundations assumed by both [formalStatistics](https://formalstatistics.com) (rigorous probability, inference, Bayesian methods) and [formalML](https://formalml.com) (the math of machine learning) — providing the rigorous calculus and analysis machinery they both rely on. Every topic gets three pillars: rigorous math, interactive visualization, and working code.
 
 Live site: https://formalcalculus.com
-Sister site: https://formalml.com
+Sister sites: https://formalstatistics.com · https://formalml.com
 
 ## Tech Stack
 
@@ -98,14 +98,20 @@ Calculus visualizations have unique requirements that geometry and algebra visua
 - Track definitions in `src/data/curriculum.ts`
 - When adding a new topic, update both files and add cross-links in related topics
 
-### Relationship to formalml.com
+### Relationship to formalStatistics and formalML
 
-formalCalculus is the prequel to formalML. The relationship is:
+formalCalculus is the prequel to **both** formalStatistics and formalML. The relationship is:
 
-- formalCalculus topics can reference formalml.com topics as "where this leads" — external links with a visual indicator (e.g., → formalML badge).
-- formalCalculus should never assume knowledge from formalml.com topics (no circular dependencies).
-- formalml.com topics may eventually add "prerequisite refresher" links back to formalcalculus.com, but that update lives in the formalML repo.
-- The two sites share a tech stack and editorial voice but are independent codebases and deployments.
+- formalCalculus topics can reference formalstatistics.com and formalml.com topics as "where this leads" — external links with visual indicators (→ formalStats badge in amber, → formalML badge in blue).
+- formalCalculus never assumes knowledge from either downstream site (no circular dependencies).
+- formalstatistics.com and formalml.com may eventually add "prerequisite refresher" links back to formalcalculus.com, but those updates live in their respective repos.
+- The three sites share a tech stack and editorial voice but are independent codebases and deployments.
+
+Cross-site linking convention (frontmatter):
+- `formalstatisticsConnections` for forward-links to formalstatistics.com (rendered as amber cards in the auto-section, and `<a class="formalstatistics-badge">` in inline prose).
+- `formalmlConnections` for forward-links to formalml.com (rendered as blue cards, `<a class="formalml-badge">`).
+- Both arrays mirror the same schema: `{ topic, title?, site: 'formalstatistics' | 'formalml', relationship }`.
+- In-prose convention: a `## Connections to Statistics` section immediately before the existing `## Connections to ML` section, when there are stats forward-links worth narrating. Skip when the array is empty.
 
 ## Code Style
 

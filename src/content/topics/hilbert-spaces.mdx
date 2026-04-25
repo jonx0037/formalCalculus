@@ -39,6 +39,16 @@ formalmlConnections:
   - topic: "optimization-theory"
     site: "formalml"
     relationship: "Hilbert-space gradient descent converges because the Riesz identification turns dual-space gradients into primal-space descent directions — no dual-space bookkeeping needed."
+formalstatisticsConnections:
+  - topic: "linear-regression"
+    site: "formalstatistics"
+    relationship: "OLS is the orthogonal projection of y onto col(X) in ℝⁿ as Hilbert space. The Pythagorean decomposition ‖y‖² = ‖ŷ‖² + ‖y - ŷ‖² underlies the ANOVA identity SST = SSR + SSE. The normal equations XᵀXβ̂ = Xᵀy express the orthogonality of residuals to the column space."
+  - topic: "kernel-density-estimation"
+    site: "formalstatistics"
+    relationship: "Mercer's theorem expresses positive-definite kernels as inner products in a feature Hilbert space. The reproducing property ⟨K(·,x), f⟩ = f(x) in an RKHS is the kernel-methods workhorse. Gaussian-process and RKHS methods for smoothing are Hilbert-space regression."
+  - topic: "bayesian-foundations-and-prior-selection"
+    site: "formalstatistics"
+    relationship: "Gaussian-process priors over functions are specified by a mean and covariance kernel — a Hilbert-space structure. The Cameron–Martin space associated with a GP prior is the RKHS of the kernel; posterior contractions happen in this Hilbert-space geometry."
 connections:
   - topic: "banach-spaces"
     relationship: "Every Hilbert space is a Banach space. Topic 30 provides normed spaces, completeness, bounded operators, and dual spaces — Topic 31 adds the inner product that makes all of these dramatically simpler."
@@ -625,7 +635,23 @@ The representer theorem turns an infinite-dimensional optimization problem into 
 
 ---
 
-## 11. Connections to ML
+## 11. Connections to Statistics
+
+Hilbert-space geometry — projections, orthogonality, RKHS — is the natural language of regression, kernel methods, and Gaussian processes.
+
+### OLS as orthogonal projection
+
+OLS is the orthogonal projection of $y$ onto $\mathrm{col}(X)$ in $\mathbb{R}^n$ as a Hilbert space. The Pythagorean decomposition $\|y\|^2 = \|\hat{y}\|^2 + \|y - \hat{y}\|^2$ underlies the ANOVA identity $\mathrm{SST} = \mathrm{SSR} + \mathrm{SSE}$. The normal equations $X^\top X \hat{\beta} = X^\top y$ express the orthogonality of residuals to the column space. See <a href="https://formalstatistics.com/topics/linear-regression" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Linear Regression**.
+
+### Kernel methods and KDE
+
+Mercer's theorem expresses positive-definite kernels as inner products in a feature Hilbert space. The reproducing property $\langle K(\cdot, x), f \rangle = f(x)$ in an RKHS is the kernel-methods workhorse. Gaussian-process and RKHS methods for smoothing are Hilbert-space regression. See <a href="https://formalstatistics.com/topics/kernel-density-estimation" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Kernel Density Estimation**.
+
+### Gaussian-process priors
+
+GP priors over functions are specified by a mean and covariance kernel — a Hilbert-space structure. The Cameron–Martin space associated with a GP prior is the RKHS of the kernel; posterior contractions happen in this Hilbert-space geometry. See <a href="https://formalstatistics.com/topics/bayesian-foundations-and-prior-selection" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Bayesian Foundations & Prior Selection**.
+
+## 12. Connections to ML
 
 <TheoremBlock type="example" number={13} title="Kernel Methods and SVMs">
 Support vector machines solve a classification problem by finding a maximum-margin hyperplane in an RKHS. The SVM dual problem involves only kernel evaluations $K(x_i, x_j)$ — the representer theorem guarantees the optimal classifier is $f^*(x) = \sum_i \alpha_i K(x_i, x)$, where the $\alpha_i$ are the Lagrange multipliers (support vector coefficients). See <a href="https://formalml.com/topics/kernel-methods" target="_blank" rel="noopener noreferrer">Kernel Methods</a> on formalML.
@@ -650,7 +676,7 @@ In the transformer attention mechanism, the output for a query $q$ is $\text{Att
 
 ---
 
-## 12. Computational Notes
+## 13. Computational Notes
 
 All of the algorithms in this topic have efficient numerical implementations.
 
@@ -666,7 +692,7 @@ All of the algorithms in this topic have efficient numerical implementations.
 
 ---
 
-## 13. Summary
+## 14. Summary
 
 | Concept | Key Result | Why It Matters |
 |---------|-----------|---------------|
@@ -682,7 +708,7 @@ All of the algorithms in this topic have efficient numerical implementations.
 
 ---
 
-## 14. Looking Ahead
+## 15. Looking Ahead
 
 The next and final topic in Track 8 is [**Calculus of Variations**](/topics/calculus-of-variations) — the study of functionals defined on function spaces, and the search for functions that minimize (or maximize) them. The Euler-Lagrange equation, the direct method for existence of minimizers, and weak solutions to PDEs all rely on the Hilbert space infrastructure we have built here. The projection theorem provides existence of minimizers in reflexive spaces; the Riesz representation theorem turns the weak formulation of PDEs into a Hilbert-space problem; and Sobolev spaces — the natural domains for variational problems — are Hilbert spaces when $p = 2$.
 

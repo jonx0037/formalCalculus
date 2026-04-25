@@ -35,6 +35,10 @@ formalmlConnections:
   - topic: "spectral-theorem"
     site: "formalml"
     relationship: "The Lyapunov equation A^T P + PA = -Q is a Sylvester equation whose solvability depends on the spectra of A and -A^T. The spectral theorem guarantees P is symmetric positive-definite when A is Hurwitz."
+formalstatisticsConnections:
+  - topic: "bayesian-computation-and-mcmc"
+    site: "formalstatistics"
+    relationship: "Ergodicity of a Markov chain — convergence of the chain to its stationary distribution regardless of starting point — is the discrete-time analog of global stability of a dynamical system. Spectral gap analysis (second-largest eigenvalue of the transition operator) mirrors linear stability analysis of ODE equilibria."
 connections:
   - topic: "linear-systems"
     relationship: "Phase portrait classification and eigenvalue methods from linear systems are the foundation of linearization stability analysis. The trace-determinant classification carries directly into the nonlinear Jacobian analysis."
@@ -586,7 +590,13 @@ print("Eigenvalues of P:", np.linalg.eigvalsh(P))  # Should be positive
 
 **Lyapunov function construction via SDP.** For polynomial systems, the search for a polynomial Lyapunov function can be cast as a semidefinite program (SDP): find $P \succeq 0$ such that $V(\mathbf{y}) = \mathbf{p}(\mathbf{y})^T P \,\mathbf{p}(\mathbf{y})$ satisfies $\dot{V} \leq 0$, where $\mathbf{p}(\mathbf{y})$ is a vector of monomials. Tools like SOSTOOLS (MATLAB) and DSOS/SDSOS (Julia) automate this.
 
-## 11. Connections to ML — Stability of Learning
+## 11. Connections to Statistics
+
+### MCMC ergodicity as dynamical-systems stability
+
+Ergodicity of a Markov chain — convergence of the chain to its stationary distribution regardless of starting point — is the discrete-time analog of global stability of a dynamical system. Spectral gap analysis (second-largest eigenvalue of the transition operator) mirrors linear stability analysis of ODE equilibria. Lyapunov-function arguments for chain stability are the same arguments used here, transposed from continuous to discrete time. See <a href="https://formalstatistics.com/topics/bayesian-computation-and-mcmc" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Bayesian Computation & MCMC**.
+
+## 12. Connections to ML — Stability of Learning
 
 The stability theory developed in this topic is the mathematical language of optimization dynamics. Here we make the connections explicit.
 
@@ -631,6 +641,6 @@ A **constant learning rate** must satisfy $\eta < 2/\lambda_{\max}$ everywhere a
 
 <TrainingStabilityExplorer client:visible />
 
-## 12. Closing Reflection — The Qualitative Peak
+## 13. Closing Reflection — The Qualitative Peak
 
 This topic is the **theoretical peak** of the ODE track — the point where linear algebra (eigenvalues, matrix exponential) becomes predictive for nonlinear systems through linearization, and where energy methods (Lyapunov functions) provide an alternative path that doesn't require solving the ODE.

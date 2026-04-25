@@ -33,6 +33,19 @@ formalmlConnections:
   - topic: "information-geometry"
     site: "formalml"
     relationship: "The Fisher information matrix transforms under reparametrization φ via I(φ(η)) = J_φᵀ I(η) J_φ — a Jacobian sandwich expressing how the natural Riemannian metric on a statistical manifold changes under coordinate transforms."
+formalstatisticsConnections:
+  - topic: "random-variables"
+    site: "formalstatistics"
+    relationship: "Transformations Y = g(X) of continuous random variables use the change-of-variables formula f_Y(y) = f_X(g⁻¹(y)) · |det J_{g⁻¹}(y)|. The Jacobian determinant is the local volume-scaling factor that makes the density transformation law work."
+  - topic: "multivariate-distributions"
+    site: "formalstatistics"
+    relationship: "The multivariate change-of-variables formula for densities requires the Jacobian of the transformation. Polar-to-Cartesian, spherical coordinates, and linear transformations of the multivariate Normal all invoke Jacobian determinants."
+  - topic: "bayesian-computation-and-mcmc"
+    site: "formalstatistics"
+    relationship: "Non-centered parameterization (θ = μ + σ·z with z ~ N(0,1)) decouples the posterior geometry of hierarchical models. The reparameterization introduces a trivial Jacobian (σ), making the sampler more efficient. Volume-preservation of leapfrog integration in HMC is a Jacobian-determinant-equals-1 statement."
+  - topic: "generalized-linear-models"
+    site: "formalstatistics"
+    relationship: "The GLM score involves ∂μ/∂η (Jacobian of the mean w.r.t. the linear predictor), and the IRLS weight matrix W contains (∂μ/∂η)² terms. Under the canonical link these simplify, but the Jacobian structure is what makes IRLS general."
 connections:
   - topic: "gradient"
     relationship: "The gradient ∇f(a) of a scalar-valued function is a special case of the Jacobian: when m = 1, the Jacobian is a 1 × n row matrix, and its transpose is the gradient vector. Everything from Topic 9 — partial derivatives, the total derivative, the C¹ criterion — extends directly to the vector-valued setting."
@@ -375,6 +388,22 @@ grad = vjp_fn(w)
 ```
 
 ![Comparison of Jacobian computation methods: numerical central differences, forward-mode AD (JVPs), and reverse-mode AD (VJPs), with cost annotations.](/images/topics/jacobian/forward-vs-reverse-mode.png)
+
+## Connections to Statistics
+
+The Jacobian determinant is the volume-scaling factor that makes the change-of-variables formula work for densities. Every transformation of a continuous random variable, every reparameterization of an MCMC sampler, and every score equation in a GLM passes through a Jacobian.
+
+### Density transformations
+
+The pushforward formula $f_Y(y) = f_X(g^{-1}(y)) \cdot |\det J_{g^{-1}}(y)|$ is a direct application of the multivariate change-of-variables theorem. This is how every transformation of a continuous random variable is analyzed. See <a href="https://formalstatistics.com/topics/random-variables" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Random Variables** and <a href="https://formalstatistics.com/topics/multivariate-distributions" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Multivariate Distributions**.
+
+### MCMC reparameterization
+
+Non-centered parameterization $\theta = \mu + \sigma \cdot z$ with $z \sim N(0,1)$ decouples the posterior geometry of hierarchical models. The reparameterization introduces a trivial Jacobian ($\sigma$), making the sampler more efficient. Volume-preservation of leapfrog integration in HMC is a Jacobian-determinant-equals-1 statement. See <a href="https://formalstatistics.com/topics/bayesian-computation-and-mcmc" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Bayesian Computation & MCMC**.
+
+### GLM score and IRLS
+
+The GLM score involves $\partial \mu / \partial \eta$ (Jacobian of the mean w.r.t. the linear predictor), and the IRLS weight matrix $W$ contains $(\partial \mu / \partial \eta)^2$ terms. Under the canonical link these simplify, but the Jacobian structure is what makes IRLS general. See <a href="https://formalstatistics.com/topics/generalized-linear-models" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Generalized Linear Models**.
 
 ## Connections to ML — Backpropagation & Normalizing Flows
 

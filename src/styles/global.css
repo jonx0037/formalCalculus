@@ -53,6 +53,9 @@
   --color-example-bg: #ECFDF5;
   --color-example-border: #10B981;
 
+  /* formalStatistics cross-site link palette (amber, distinct from formalML blue) */
+  --color-statistics-bg: #FEF3C7;
+
   /* Viz */
   --color-viz-bg: #FFFFFF;
   --color-viz-grid: #F3F4F6;
@@ -84,6 +87,8 @@
     --color-remark-bg: #1E1527;
     --color-example-bg: #14231A;
 
+    --color-statistics-bg: #2A1E0E;
+
     --color-viz-bg: #1F2937;
     --color-viz-grid: #374151;
   }
@@ -107,6 +112,8 @@
   --color-lemma-bg: #1C1917;
   --color-remark-bg: #1E1527;
   --color-example-bg: #14231A;
+
+  --color-statistics-bg: #2A1E0E;
 
   --color-viz-bg: #1F2937;
   --color-viz-grid: #374151;
@@ -245,5 +252,33 @@ html[data-theme="dark"] .astro-code {
 }
 
 .formalml-badge::before {
+  content: '→';
+}
+
+/* ============================================================
+   formalStatistics forward-link badge (amber, parallel to formalML)
+   ============================================================ */
+
+.formalstatistics-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-warning);
+  background-color: var(--color-statistics-bg);
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  text-decoration: none;
+  border: 1px solid var(--color-warning);
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+
+.formalstatistics-badge:hover {
+  opacity: 1;
+}
+
+.formalstatistics-badge::before {
   content: '→';
 }

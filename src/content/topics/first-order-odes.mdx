@@ -33,6 +33,10 @@ formalmlConnections:
   - topic: "measure-theoretic-probability"
     site: "formalml"
     relationship: "Stochastic differential equations dX_t = f(X_t)dt + σ(X_t)dW_t extend deterministic ODEs by adding Brownian noise. Itô's existence theorem is the stochastic analog of Picard-Lindelöf, using the same Lipschitz condition and contraction argument in a space of stochastic processes."
+formalstatisticsConnections:
+  - topic: "bayesian-computation-and-mcmc"
+    site: "formalstatistics"
+    relationship: "Hamiltonian Monte Carlo simulates Hamilton's equations (a first-order ODE system) to propose samples. Langevin dynamics dθ = ∇log p(θ|x) dt + √2 dW is a stochastic ODE whose stationary distribution is the target posterior. The deterministic ODE theory from this topic is the first-principles foundation for these MCMC samplers."
 connections:
   - topic: "derivative"
     relationship: "An ODE y' = f(t, y) is an equation involving the derivative — the foundational object from Topic 5. The product rule drives the integrating factor method, implicit differentiation verifies solutions obtained by separation, and the chain rule underpins the conversion between implicit and explicit solution forms."

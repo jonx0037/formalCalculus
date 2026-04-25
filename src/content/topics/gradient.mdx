@@ -33,6 +33,22 @@ formalmlConnections:
   - topic: "smooth-manifolds"
     site: "formalml"
     relationship: "The gradient of a constraint function g is normal to the level set g⁻¹(c). This geometric fact — that ∇g is perpendicular to the constraint surface — is the starting point for Lagrange multipliers and the theory of smooth submanifolds of ℝⁿ."
+formalstatisticsConnections:
+  - topic: "maximum-likelihood"
+    site: "formalstatistics"
+    relationship: "The score vector U(θ) = ∇_θ log L is the gradient of the log-likelihood. Gradient ascent on the log-likelihood, the geometry of the likelihood surface, and the steepest-ascent interpretation all apply directly to MLE."
+  - topic: "bayesian-computation-and-mcmc"
+    site: "formalstatistics"
+    relationship: "Hamiltonian Monte Carlo (HMC) and the No-U-Turn Sampler require evaluating ∇_θ log p(θ|x) at every leapfrog step. Langevin MCMC uses the gradient of the log-density as a drift term. Gradient availability is the practical distinction between HMC and random-walk Metropolis."
+  - topic: "generalized-linear-models"
+    site: "formalstatistics"
+    relationship: "The IRLS algorithm for fitting GLMs is Newton's method on the gradient of the log-likelihood. The score ∇_β ℓ(β) and its Hessian are the engines of the fitting procedure."
+  - topic: "regularization-and-penalized-estimation"
+    site: "formalstatistics"
+    relationship: "Ridge and lasso are ∇_β L(β) + ∇_β P(β) = 0 problems — penalized gradient equations. Coordinate descent and proximal methods for lasso are all gradient-adjacent optimization schemes."
+  - topic: "hierarchical-bayes-and-partial-pooling"
+    site: "formalstatistics"
+    relationship: "Empirical-Bayes estimation of hyperparameters uses gradient-based optimization of the marginal likelihood. Full Bayes via HMC needs gradients of the hierarchical log-posterior, whose group-vs-individual structure shapes the geometry."
 connections:
   - topic: "derivative"
     relationship: "Partial derivatives are single-variable derivatives in disguise: hold all variables except one fixed and apply the limit definition from Topic 5. Every concept here — the limit definition, differentiability vs. continuity, linear approximation — is the multivariable extension of its Topic 5 counterpart."
@@ -417,6 +433,22 @@ grad_f(jnp.array([1.0, 1.0]))  # → [2.0, 2.0]
 This computes the exact gradient at cost proportional to a single function evaluation, regardless of the number of variables $n$. Automatic differentiation is the computational backbone of modern deep learning — we will see how it works in detail when we reach the Jacobian and the multivariate chain rule.
 
 ![Gradient computation comparison: analytical vs. finite-difference, with error analysis](/images/topics/gradient/gradient-computation-comparison.png)
+
+## Connections to Statistics
+
+The gradient is the engine behind almost every estimator and sampler in modern statistics. Score functions, Newton/IRLS updates, HMC dynamics, ridge/lasso optimality conditions — all of them are gradient operations.
+
+### Maximum likelihood
+
+The score vector $U(\theta) = \nabla_\theta \log L$ is the gradient of the log-likelihood. Gradient ascent on the log-likelihood, the geometry of the likelihood surface, and the steepest-ascent interpretation all apply directly to MLE. See <a href="https://formalstatistics.com/topics/maximum-likelihood" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Maximum Likelihood**.
+
+### HMC and Langevin dynamics
+
+Hamiltonian Monte Carlo and the No-U-Turn Sampler require evaluating $\nabla_\theta \log p(\theta \mid x)$ at every leapfrog step. Langevin MCMC uses the gradient of the log-density as a drift term. Gradient availability is the practical distinction between HMC and random-walk Metropolis. See <a href="https://formalstatistics.com/topics/bayesian-computation-and-mcmc" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Bayesian Computation & MCMC**.
+
+### GLMs and penalized regression
+
+The IRLS algorithm for fitting generalized linear models is Newton's method on the gradient of the log-likelihood. Ridge and lasso are $\nabla_\beta L(\beta) + \nabla_\beta P(\beta) = 0$ problems — penalized gradient equations. See <a href="https://formalstatistics.com/topics/generalized-linear-models" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Generalized Linear Models** and <a href="https://formalstatistics.com/topics/regularization-and-penalized-estimation" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Regularization & Penalized Estimation**.
 
 ## Connections to ML
 

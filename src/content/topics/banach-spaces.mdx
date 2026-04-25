@@ -41,6 +41,13 @@ formalmlConnections:
   - topic: "optimization-theory"
     site: "formalml"
     relationship: "Mirror descent operates in Banach spaces with Bregman divergences. The dual-space geometry — Fenchel conjugates, subgradients in X* — extends gradient descent beyond Hilbert spaces."
+formalstatisticsConnections:
+  - topic: "empirical-processes"
+    site: "formalstatistics"
+    relationship: "The empirical process X_n: 𝓕 → ℝ lives in ℓ^∞(𝓕), the Banach space of bounded functions on 𝓕 with the sup norm. Donsker's theorem is a Banach-valued CLT: √n(P_n - P) converges in distribution (in ℓ^∞(𝓕)) to a Gaussian process."
+  - topic: "linear-regression"
+    site: "formalstatistics"
+    relationship: "The projection of y onto col(X) — the OLS fit — is a bounded linear operator on ℝⁿ (a finite-dimensional Banach/Hilbert space). The operator-theoretic view generalizes to infinite-dimensional regression problems."
 connections:
   - topic: "metric-spaces"
     relationship: "Topic 29 established the metric space framework — completeness, compactness, and continuity in abstract spaces. Topic 30 adds algebraic structure (vector space + norm) and delivers the Baire Category Theorem and its three consequences, all deferred from Topic 29."
@@ -558,7 +565,19 @@ In ML, we work with a finite number of data points and parameters. Separability 
 
 ---
 
-## 12. Connections to ML
+## 12. Connections to Statistics
+
+Banach-space machinery underlies empirical-process theory and the operator-theoretic view of regression.
+
+### Empirical processes as Banach-valued
+
+The empirical process $X_n: \mathcal{F} \to \mathbb{R}$ lives in $\ell^\infty(\mathcal{F})$, the Banach space of bounded functions on $\mathcal{F}$ with the sup norm. Donsker's theorem is a Banach-valued CLT: $\sqrt{n}(P_n - P)$ converges in distribution (in $\ell^\infty(\mathcal{F})$) to a Gaussian process indexed by $\mathcal{F}$. See <a href="https://formalstatistics.com/topics/empirical-processes" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Empirical Processes**.
+
+### Regression as bounded linear projection
+
+The OLS projection of $y$ onto $\mathrm{col}(X)$ is a bounded linear operator on $\mathbb{R}^n$ (a finite-dimensional Banach/Hilbert space). The operator-theoretic view generalizes cleanly to infinite-dimensional regression problems — splines, Gaussian processes, and functional regression all sit on this Banach-space foundation. See <a href="https://formalstatistics.com/topics/linear-regression" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Linear Regression**.
+
+## 13. Connections to ML
 
 <TheoremBlock type="example" number={13} title="Spectral Normalization and Operator Norms">
 In Wasserstein GANs, the discriminator (critic) must be 1-Lipschitz: $\|f(x) - f(y)\| \leq \|x - y\|$ for all $x, y$. For a linear layer $f(x) = Wx$, this means $\|W\|_{2 \to 2} = \sigma_1(W) \leq 1$ where $\sigma_1$ is the largest singular value. **Spectral normalization** replaces $W$ with $W/\sigma_1(W)$ after each gradient step, enforcing the operator-norm constraint directly.
@@ -593,7 +612,7 @@ Neural ODEs model the hidden state evolution as $\dot{h}(t) = f_\theta(h(t), t)$
 
 ---
 
-## 13. Computational Notes
+## 14. Computational Notes
 
 Working Python implementations of the key computational ideas in this topic.
 
@@ -619,7 +638,7 @@ W_normalized = W / sigma_1
 
 ---
 
-## 14. Summary and Key Results
+## 15. Summary and Key Results
 
 The dependency structure of this topic:
 
@@ -638,7 +657,7 @@ The dependency structure of this topic:
 
 ---
 
-## 15. Looking Ahead — From Banach to Hilbert
+## 16. Looking Ahead — From Banach to Hilbert
 
 Every Hilbert space is a Banach space, but the converse fails — $\ell^1$ is Banach but not Hilbert (the parallelogram law fails). The passage from Banach to Hilbert is the addition of an **inner product**: a bilinear form $\langle \cdot, \cdot \rangle$ that induces the norm via $\|x\| = \sqrt{\langle x, x \rangle}$.
 

@@ -31,6 +31,13 @@ formalmlConnections:
   - topic: "pac-learning"
     site: "formalml"
     relationship: "Continuous hypothesis classes and the uniform convergence of empirical risk to true risk rely on continuity and compactness arguments developed here."
+formalstatisticsConnections:
+  - topic: "modes-of-convergence"
+    site: "formalstatistics"
+    relationship: "Convergence in distribution F_n ⟹ F requires pointwise convergence at every continuity point of F. The ε-δ definition of continuity is what this 'continuity point' qualifier means. The Continuous Mapping Theorem directly composes ε-δ continuity with probabilistic convergence."
+  - topic: "empirical-processes"
+    site: "formalstatistics"
+    relationship: "The functional delta method and continuous mapping arguments in empirical-process theory are ε-δ statements lifted to Banach-valued random elements. Continuity of functionals T: D[0,1] → ℝ in the sup-norm metric is the key hypothesis."
 connections:
   - topic: "sequences-limits"
     relationship: "The ε-δ definition of function limits extends the ε-N definition of sequence convergence. The Bolzano-Weierstrass Theorem (from sequences-limits) is used in the proof of the Extreme Value Theorem, and the sequential characterization of continuity bridges both frameworks."
@@ -418,6 +425,18 @@ The Heine-Cantor theorem explains why **compactness** is so important for optimi
 Drag the point along the function to see the Lipschitz cone follow. Adjust $K$ to see how the constraint tightens. For $\sqrt{x}$, notice how the cone fails near $x = 0$ — the slope blows up, so no finite $K$ works.
 
 <LipschitzExplorer client:visible />
+
+## Connections to Statistics
+
+The ε-δ definition of continuity is what makes the Continuous Mapping Theorem and the functional delta method work — small probabilistic technicalities that turn out to be load-bearing.
+
+### Convergence in distribution and continuity points
+
+Convergence in distribution $F_n \Rightarrow F$ requires pointwise convergence at every *continuity point* of $F$. The ε-δ definition is precisely what this qualifier means. The Continuous Mapping Theorem — if $X_n \to X$ in probability and $g$ is continuous at $X$, then $g(X_n) \to g(X)$ — directly composes ε-δ continuity with probabilistic convergence. See <a href="https://formalstatistics.com/topics/modes-of-convergence" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Modes of Convergence**.
+
+### The functional delta method
+
+The functional delta method and continuous mapping arguments in empirical-process theory are ε-δ statements lifted to Banach-valued random elements. Continuity of functionals $T: D[0,1] \to \mathbb{R}$ in the sup-norm metric is the key hypothesis that makes the delta method extend from real-valued to function-valued estimators. See <a href="https://formalstatistics.com/topics/empirical-processes" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Empirical Processes**.
 
 ## Connections to ML
 
