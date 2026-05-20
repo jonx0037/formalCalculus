@@ -41,7 +41,7 @@ formalstatisticsConnections:
     relationship: "The score test statistic U(θ_0)²/I(θ_0) and the Wald statistic (θ̂ - θ_0)²·I(θ̂) are both built from first and second derivatives of the log-likelihood. The asymptotic chi-squared distribution follows from a Taylor expansion around θ_0."
   - topic: "point-estimation"
     site: "formalstatistics"
-    relationship: "The Cramér–Rao lower bound differentiates under the integral sign — a manoeuvre justified by dominated-convergence conditions. The delta method for estimators of the form g(θ̂) is a first-order Taylor expansion: g(θ̂) ≈ g(θ) + g'(θ)(θ̂ - θ)."
+    relationship: "The Cramér–Rao lower bound differentiates under the integral sign — a maneuver justified by dominated-convergence conditions. The delta method for estimators of the form g(θ̂) is a first-order Taylor expansion: g(θ̂) ≈ g(θ) + g'(θ)(θ̂ - θ)."
   - topic: "central-limit-theorem"
     site: "formalstatistics"
     relationship: "Topic 11's MGF-based CLT proof Taylor-expands the MGF to extract the limiting characteristic function; the remainder bound from differentiation theory is the source of the o(1) error. The delta method √n(g(X̄_n) − g(μ)) → N(0, g'(μ)²σ²) is a first-order Taylor expansion requiring g to be differentiable."
@@ -56,7 +56,7 @@ formalstatisticsConnections:
     relationship: "Topic 12's Chernoff bound optimizes over the tilting parameter t via first-order conditions; the Cramér rate function I(x) = sup_t(tx − log M(t)) is a convex conjugate (Legendre transform) requiring differentiation to evaluate. Taylor expansion enters the Hoeffding lemma's bound for bounded random variables."
   - topic: "method-of-moments"
     site: "formalstatistics"
-    relationship: "Topic 15's delta method uses the Jacobian of the moment-to-parameter map (a multivariate chain rule); the M-estimator sandwich variance A⁻¹BA⁻¹ᵀ uses partial derivatives of the estimating function ψ(x; θ) with respect to θ."
+    relationship: "Topic 15's delta method uses the Jacobian of the moment-to-parameter map (a multivariate chain rule); the M-estimator sandwich variance A⁻¹BA⁻¹^T uses partial derivatives of the estimating function ψ(x; θ) with respect to θ."
   - topic: "sufficient-statistics"
     site: "formalstatistics"
     relationship: "Topic 16's Pitman–Koopman–Darmois proof cross-differentiates the log-factorization in the data argument and the parameter — equality of mixed partial derivatives reveals the separable structure that characterizes exponential families."
@@ -451,7 +451,7 @@ The score test statistic $U(\theta_0)^2 / I(\theta_0)$ and the Wald statistic $(
 
 ### Delta method and the Cramér–Rao bound
 
-The Cramér–Rao lower bound differentiates under the integral sign — a manoeuvre justified by dominated-convergence conditions. The delta method for estimators of the form $g(\hat{\theta})$ is a first-order Taylor expansion: $g(\hat{\theta}) \approx g(\theta) + g'(\theta)(\hat{\theta} - \theta)$, giving asymptotic variance $[g'(\theta)]^2 \sigma^2$. See <a href="https://formalstatistics.com/topics/point-estimation" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Point Estimation**.
+The Cramér–Rao lower bound differentiates under the integral sign — a maneuver justified by dominated-convergence conditions. The delta method for estimators of the form $g(\hat{\theta})$ is a first-order Taylor expansion: $g(\hat{\theta}) \approx g(\theta) + g'(\theta)(\hat{\theta} - \theta)$, giving asymptotic variance $[g'(\theta)]^2 \sigma^2$. See <a href="https://formalstatistics.com/topics/point-estimation" class="formalstatistics-badge" target="_blank" rel="noopener">formalStatistics</a> **Point Estimation**.
 
 ## Connections to ML — Backpropagation & Automatic Differentiation
 
