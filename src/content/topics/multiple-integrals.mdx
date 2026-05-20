@@ -46,6 +46,12 @@ formalmlConnections:
   - topic: "local-regression"
     site: "formalml"
     relationship: "Multivariate-integration substrate for the §4 bias-variance computations and the §8 multivariate full-degree expansion. The change-of-variables $u = (z - x)/h$ that converts kernel-weighted moments into kernel-moment integrals, and the boundary-truncated form $\\mu_j^{(c)} = \\int_{-c}^{\\infty}$, are standard multivariate-integration moves used throughout the bias derivations."
+  - topic: "sparse-bayesian-priors"
+    site: "formalml"
+    relationship: "Sparse-Bayesian-priors' §2 scale-mixture-of-Normals representation marginalizes local scales $\\lambda_j$ out of the joint prior — a multivariable Lebesgue integral over the $(\\lambda_1, \\ldots, \\lambda_p, \\tau)$ hyperparameter space. The Polson–Scott sparsity characterization (Theorem 1) of $p(\\beta_j)$ presupposes the iterated-integral identity developed here."
+  - topic: "statistical-depth"
+    site: "formalml"
+    relationship: "Statistical-depth's halfspace mass $F(H)$ and functional-band mass $F(B)$ are concrete multivariable integrals over closed halfspaces and bands; the §§2–5 derivations and Proposition 1's convexity proof use Fubini-style iterated integration over those regions."
 formalstatisticsConnections:
   - topic: "multivariate-distributions"
     site: "formalstatistics"
@@ -65,6 +71,9 @@ formalstatisticsConnections:
   - topic: "order-statistics-and-quantiles"
     site: "formalstatistics"
     relationship: "Joint densities of order statistics are multi-dimensional integrals; computing E[X_{(k)}] requires integrating over the (n-1)-simplex of order constraints. Marginal densities of individual order statistics fall out of these multivariate integrals via Fubini."
+  - topic: "bayesian-model-comparison-and-bma"
+    site: "formalstatistics"
+    relationship: "Topic 27's Laplace expansion of the marginal likelihood $m(\\mathbf{y}) = \\int L(\\theta)\\pi(\\theta)\\,d\\theta$ uses multivariate Gaussian integration over a neighborhood of the posterior mode (a $d$-dimensional integral); §27.6 Proof 2 invokes the iterated-integral / determinant machinery developed here."
 connections:
   - topic: "riemann-integral"
     relationship: "The double integral generalizes the 1D Riemann sum construction. Fubini reduces double integrals to nested single integrals. All proofs rely on 1D integral properties."

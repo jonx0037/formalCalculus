@@ -53,6 +53,9 @@ formalmlConnections:
     site: "formalml"
     relationship: "§3's Laplace approximation is a second-order Taylor expansion of $\\log p(x, \\theta)$ around the MAP, with the remainder term controlling asymptotic accuracy. Tierney–Kadane's (1986) refined Laplace approximation uses higher-order Taylor terms for marginal-density accuracy beyond the leading-order Schwarz form."
 formalstatisticsConnections:
+  - topic: "kernel-density-estimation"
+    site: "formalstatistics"
+    relationship: "Topic 30's KDE bias derivation (§30.4) Taylor-expands the unknown density $f$ around $x$ to second order; §30.6's bandwidth optimization Taylor-expands AMISE around $h^\\ast$. Both invoke the second-order Taylor theorem with Lagrange/Peano remainder developed here."
   - topic: "central-limit-theorem"
     site: "formalstatistics"
     relationship: "The characteristic-function proof of the CLT expands log φ_X(t) to second order in t near 0: log φ_X(t) = iμt - σ²t²/2 + o(t²). Summing and rescaling gives the Gaussian characteristic function in the limit — pure Taylor expansion plus an MVT-controlled remainder."

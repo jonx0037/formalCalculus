@@ -35,6 +35,12 @@ formalmlConnections:
   - topic: "normalizing-flows"
     site: "formalml"
     relationship: "The inverse-function theorem underpins the local-invertibility argument that justifies parameterizing flows by their forward direction: if $\\det \\partial T/\\partial z > 0$ everywhere, $T$ is locally a diffeomorphism with smooth inverse, and the algebraic invertibility of the layer parameterization (§4.5) extends this to global invertibility."
+  - topic: "meta-learning"
+    site: "formalml"
+    relationship: "Implicit MAML (Rajeswaran et al. 2019) bypasses recursive autograd by inverting the inner-loop fixed point via the implicit function theorem. The §3.5 meta-gradient computation — equation (3.8) — is a direct application of the inverse-and-implicit calculus developed here."
+  - topic: "riemann-manifold-hmc"
+    site: "formalml"
+    relationship: "RMHMC's generalized leapfrog integrator has implicit momentum and position updates whose well-posedness (existence and uniqueness of the fixed point at small step size) is a direct IFT application: at ε = 0 the map is the identity, and the IFT extends invertibility to a neighborhood of ε = 0."
 formalstatisticsConnections:
   - topic: "maximum-likelihood"
     site: "formalstatistics"
