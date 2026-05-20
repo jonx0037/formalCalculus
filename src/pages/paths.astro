@@ -12,6 +12,8 @@ const domainLabels: Record<string, string> = {
   'multivar-integral': 'Multivariable Integral',
   'series-approximation': 'Series & Approximation',
   'odes': 'ODEs',
+  'linear-algebra': 'Linear Algebra',
+  'probability-foundations': 'Probability Foundations',
   'measure-integration': 'Measure & Integration',
   'functional-analysis': 'Functional Analysis',
 };
@@ -25,7 +27,7 @@ for (const node of graphData.nodes) {
 }
 ---
 
-<BaseLayout title="Curriculum" description="The full formalCalculus curriculum — 32 topics across 8 tracks.">
+<BaseLayout title="Curriculum" description="The full formalCalculus curriculum — 32 topics across 10 tracks, with 4 planned.">
   <div class="max-w-5xl mx-auto px-4 sm:px-6 py-12">
     <header class="mb-12 text-center">
       <h1
@@ -35,7 +37,7 @@ for (const node of graphData.nodes) {
         Curriculum
       </h1>
       <p class="text-lg" style="color: var(--color-text-muted);">
-        32 topics across 8 tracks — from limits to functional analysis.
+        32 topics across 10 tracks (4 planned) — from limits to functional analysis.
       </p>
       <p class="text-sm mt-2" style="color: var(--color-text-muted);">
         Every topic connects forward to
@@ -73,31 +75,50 @@ for (const node of graphData.nodes) {
           <p class="text-sm mb-4" style="color: var(--color-text-muted);">
             {track.description}
           </p>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {nodes.map((node) => (
-              <TopicCard
-                title={node.label}
-                description=""
-                url={node.url}
-                difficulty={
-                  node.id.includes('inverse') || node.id.includes('surface') ||
-                  node.id.includes('approximation') || node.id.includes('sigma') ||
-                  node.id.includes('lebesgue') || node.id.includes('lp-') ||
-                  node.id.includes('radon') || node.id.includes('banach') ||
-                  node.id.includes('hilbert') || node.id.includes('calculus-of')
-                    ? 'advanced'
-                    : node.id.includes('sequences') || node.id.includes('epsilon-delta') ||
-                      node.id.includes('derivative') || node.id.includes('riemann') ||
-                      node.id.includes('gradient') || node.id.includes('series-conv') ||
-                      node.id.includes('first-order')
-                    ? 'foundational'
-                    : 'intermediate'
-                }
-                domain={node.domain}
-                status={node.status as 'published' | 'planned'}
-              />
-            ))}
-          </div>
+          {nodes.length > 0 ? (
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {nodes.map((node) => (
+                <TopicCard
+                  title={node.label}
+                  description=""
+                  url={node.url}
+                  difficulty={
+                    node.id.includes('inverse') || node.id.includes('surface') ||
+                    node.id.includes('approximation') || node.id.includes('sigma') ||
+                    node.id.includes('lebesgue') || node.id.includes('lp-') ||
+                    node.id.includes('radon') || node.id.includes('banach') ||
+                    node.id.includes('hilbert') || node.id.includes('calculus-of')
+                      ? 'advanced'
+                      : node.id.includes('sequences') || node.id.includes('epsilon-delta') ||
+                        node.id.includes('derivative') || node.id.includes('riemann') ||
+                        node.id.includes('gradient') || node.id.includes('series-conv') ||
+                        node.id.includes('first-order')
+                      ? 'foundational'
+                      : 'intermediate'
+                  }
+                  domain={node.domain}
+                  status={node.status as 'published' | 'planned'}
+                />
+              ))}
+            </div>
+          ) : track.planned.length > 0 ? (
+            <div
+              class="rounded-lg border border-dashed p-5"
+              style="border-color: var(--color-border); background: var(--color-surface-alt);"
+            >
+              <p class="text-sm font-semibold mb-2" style="color: var(--color-text-heading);">
+                Planned topics
+              </p>
+              <ul class="text-sm space-y-1" style="color: var(--color-text-muted);">
+                {track.planned.map((title) => (
+                  <li>· {title}</li>
+                ))}
+              </ul>
+              <p class="text-xs mt-3" style="color: var(--color-text-muted); opacity: 0.75;">
+                In active drafting — see the Tier 1A expansion roadmap.
+              </p>
+            </div>
+          ) : null}
         </section>
       );
     })}

@@ -31,6 +31,8 @@ export const domainColorScale = d3
     'multivar-integral',
     'series-approximation',
     'odes',
+    'linear-algebra',
+    'probability-foundations',
     'measure-integration',
     'functional-analysis',
   ])
@@ -41,6 +43,8 @@ export const domainColorScale = d3
     '#D97706', // amber
     '#DC2626', // red
     '#0891B2', // cyan
+    '#0D9488', // teal — linear algebra
+    '#C026D3', // fuchsia — probability foundations
     '#4F46E5', // indigo
     '#BE185D', // pink
   ]);

@@ -57,6 +57,22 @@ export const tracks: Track[] = [
     planned: [],
   },
   {
+    id: 'linear-algebra',
+    title: 'Linear Algebra',
+    description: 'Vector spaces, linear maps, matrix algebra, and spectral theory — the algebraic backbone of optimization, statistics, and ML.',
+    domain: 'linear-algebra',
+    published: [],
+    planned: ['Linear Algebra', 'Eigenvalues & Eigenvectors'],
+  },
+  {
+    id: 'probability-foundations',
+    title: 'Probability Foundations',
+    description: 'Kolmogorov axioms, conditional probability, the union bound — a concrete-probability ramp to the measure-theoretic foundations.',
+    domain: 'probability-foundations',
+    published: [],
+    planned: ['Probability & The Union Bound'],
+  },
+  {
     id: 'measure-integration',
     title: 'Measure & Integration',
     description: 'Sigma-algebras, Lebesgue integral, Lp spaces, and the Radon-Nikodym theorem — the rigorous foundation of probability.',
@@ -75,6 +91,6 @@ export const tracks: Track[] = [
     description: 'Metric spaces, Banach and Hilbert spaces, calculus of variations.',
     domain: 'functional-analysis',
     published: ['Metric Spaces & Topology', 'Normed & Banach Spaces', 'Inner Product & Hilbert Spaces', 'Calculus of Variations'],
-    planned: [],
+    planned: ['Convex Optimization'],
   },
 ];
