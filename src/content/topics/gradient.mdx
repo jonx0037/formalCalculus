@@ -33,6 +33,9 @@ formalmlConnections:
   - topic: "smooth-manifolds"
     site: "formalml"
     relationship: "The gradient of a constraint function g is normal to the level set g⁻¹(c). This geometric fact — that ∇g is perpendicular to the constraint surface — is the starting point for Lagrange multipliers and the theory of smooth submanifolds of ℝⁿ."
+  - topic: "clustering"
+    site: "formalml"
+    relationship: "The clustering topic uses partial-derivative machinery for the mean-shift derivation (§3 chain rule on the KDE estimate ∇f̂_h) and the §4 convergence proof (multivariate Taylor expansion around a mode). Mode-seeking algorithms reduce to gradient ascent on the density estimate."
 formalstatisticsConnections:
   - topic: "maximum-likelihood"
     site: "formalstatistics"
@@ -49,6 +52,12 @@ formalstatisticsConnections:
   - topic: "hierarchical-bayes-and-partial-pooling"
     site: "formalstatistics"
     relationship: "Empirical-Bayes estimation of hyperparameters uses gradient-based optimization of the marginal likelihood. Full Bayes via HMC needs gradients of the hierarchical log-posterior, whose group-vs-individual structure shapes the geometry."
+  - topic: "bayesian-foundations-and-prior-selection"
+    site: "formalstatistics"
+    relationship: "Topic 25's Bernstein–von Mises proof (§25.8 Proof 3) Taylor-expands the log-posterior around θ̂_MLE in multiple dimensions — the leading Gaussian term comes from the first- and second-order terms of the multivariate expansion. Laplace approximation is multivariate Taylor with a Hessian determinant."
+  - topic: "model-selection-and-information-criteria"
+    site: "formalstatistics"
+    relationship: "Topic 24's AIC derivation (§24.3 Proof 1) Taylor-expands ℓ(θ) around θ_0 in (p+1) dimensions; the BIC-Laplace proof (§24.4 Proof 2) does multivariate Laplace with a Hessian determinant. Both rely on the second-order multivariate Taylor expansion developed here."
 connections:
   - topic: "derivative"
     relationship: "Partial derivatives are single-variable derivatives in disguise: hold all variables except one fixed and apply the limit definition from Topic 5. Every concept here — the limit definition, differentiability vs. continuity, linear approximation — is the multivariable extension of its Topic 5 counterpart."
