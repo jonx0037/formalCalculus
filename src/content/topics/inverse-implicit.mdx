@@ -29,6 +29,12 @@ formalmlConnections:
   - topic: "information-geometry"
     site: "formalml"
     relationship: "The statistical manifold of a parametric family is locally diffeomorphic to ℝⁿ via the IFT when the Fisher information matrix is non-singular. Reparametrization invariance relies on the IFT to guarantee that coordinate changes on the parameter space are locally invertible."
+  - topic: "causal-inference-methods"
+    site: "formalml"
+    relationship: "§9's instrumental-variables identification argument relies on the implicit-function theorem to ensure the first-stage map $e(Z) \\to D$ is locally invertible when the relevance condition $\\operatorname{Cov}(Z, D) \\neq 0$ holds. The rank condition for IV identification is an inverse/implicit-function existence claim at the population level."
+  - topic: "normalizing-flows"
+    site: "formalml"
+    relationship: "The inverse-function theorem underpins the local-invertibility argument that justifies parameterizing flows by their forward direction: if $\\det \\partial T/\\partial z > 0$ everywhere, $T$ is locally a diffeomorphism with smooth inverse, and the algebraic invertibility of the layer parameterization (§4.5) extends this to global invertibility."
 formalstatisticsConnections:
   - topic: "maximum-likelihood"
     site: "formalstatistics"
