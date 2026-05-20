@@ -35,6 +35,9 @@ formalmlConnections:
   - topic: "information-geometry"
     site: "formalml"
     relationship: "The Fisher information matrix I(θ) equals the expected Hessian of the negative log-likelihood E[-H_{log p(x|θ)}] under regularity conditions. The natural gradient I(θ)⁻¹ ∇L(θ) is Newton's method adapted to the Riemannian geometry of the statistical manifold — the curvature here is the Hessian of the KL divergence."
+  - topic: "variational-bayes-for-model-selection"
+    site: "formalml"
+    relationship: "§3's Laplace approximation evaluates the negative Hessian of $\\log p(x, \\theta)$ at the MAP as the posterior precision matrix; the determinant of that Hessian appears in the Laplace volume element and produces the BIC penalty when $n$ grows. The relationship between Hessian curvature and Bayesian-evidence concentration is the geometric content of §3."
 formalstatisticsConnections:
   - topic: "maximum-likelihood"
     site: "formalstatistics"

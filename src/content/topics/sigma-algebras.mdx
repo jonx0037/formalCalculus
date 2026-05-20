@@ -23,12 +23,12 @@ datePublished: 2026-04-06
 estimatedReadTime: 45
 abstract: "Measure theory is where analysis leaves the realm of pictures and becomes structural. The Riemann integral fails on important functions — the indicator of the rationals on [0,1] has no Riemann integral at all. To build a more powerful integral theory, we first need a more powerful notion of 'size.' A sigma-algebra tells us which sets we are allowed to measure; a measure assigns a non-negative number to each of those sets, respecting countable additivity. The Lebesgue measure on ℝ extends the intuitive notion of length to a far richer collection of sets than intervals — but the Vitali construction shows that not every subset of ℝ can be assigned a consistent measure. The measurable functions with respect to a sigma-algebra are precisely the functions for which integration will be defined. These concepts are the mathematical language of probability: a probability space is a measure space with total measure 1, and every density function, expectation, and convergence theorem in ML rests on this foundation."
 formalmlConnections:
-  - topic: "probability-spaces"
-    site: "formalml"
-    relationship: "A probability space (Ω, F, P) is a measure space with P(Ω) = 1. Sigma-algebras formalize observable events; filtrations model information flow."
   - topic: "gradient-descent"
     site: "formalml"
-    relationship: "The set of initial conditions that converge to saddle points has Lebesgue measure zero — 'gradient descent avoids saddle points with probability 1' is a measure-theoretic statement."
+    relationship: "The set of initial conditions that converge to saddle points has Lebesgue measure zero — 'gradient descent avoids saddle points with probability 1' (Lee–Simchowitz–Jordan–Recht, 2016) is a measure-theoretic statement at base."
+  - topic: "semiparametric-inference"
+    site: "formalml"
+    relationship: "The conditional-expectation machinery used throughout — $\\mathbb{E}[Y \\mid X]$ as the $L^2(P)$ projection onto the $X$-measurable subspace, MAR's $Y \\perp R \\mid X$ conditional-independence statement, the EIF's pathwise-derivative computations against conditionally-centered scores — requires the $\\sigma$-algebra foundations developed in this prereq."
   - topic: "normalizing-flows"
     site: "formalml"
     relationship: "Normalizing flows are pushforward measures: T*μ_X = μ_Y. The change-of-variables formula for densities is a Radon-Nikodym derivative of the pushforward."
