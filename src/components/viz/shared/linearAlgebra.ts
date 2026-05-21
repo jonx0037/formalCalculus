@@ -182,14 +182,25 @@ export function identity(n: number): Matrix {
 // ── Solving and decomposition ───────────────────────────────
 
 /**
- * Internal: row-reduce a copy of A to upper triangular form using Gaussian
+ * Internal: row-reduce a copy of A to row-echelon form using Gaussian
  * elimination with partial pivoting. Returns the reduced matrix, the sign
- * tracker (±1 per row swap), and the number of pivot columns found. Singular
- * matrices are detected by a zero pivot column after pivoting.
+ * tracker (±1 per row swap), and the count of pivots found.
  *
- * Used by `determinant`, `rank`, `solve`, and `inverse`.
+ * Tracks `pivotRow` independently of `col` so that a column with all
+ * zeros at and below `pivotRow` is correctly skipped without losing the
+ * slot for the next column's pivot — e.g. `[[0, 1], [0, 0]]` has rank 1
+ * with the pivot at (0, 1), not on the diagonal. A simpler col-based loop
+ * would fail to recognize that pivot and report rank 0.
+ *
+ * Used by `determinant`, `rank`, `solve`, and `inverse`. For square
+ * invertible matrices, pivots end up on the diagonal so `determinant`'s
+ * diagonal-product computation still works. For singular square matrices,
+ * `pivotCount < n` is the detection signal and `determinant` returns 0.
  */
-function rowReduceToTriangular(A: Matrix): {
+function rowReduceToTriangular(
+  A: Matrix,
+  tol: number = 1e-14,
+): {
   reduced: Matrix;
   sign: number;
   pivotCount: number;
@@ -199,38 +210,39 @@ function rowReduceToTriangular(A: Matrix): {
   const n = A[0].length;
   const B: Matrix = A.map((row) => row.slice());
   let sign = 1;
-  let pivotCount = 0;
-  const limit = Math.min(m, n);
-  for (let col = 0; col < limit; col++) {
-    // Partial pivot: find the row at or below `col` with the largest |entry|
-    let pivotRow = col;
-    let pivotMag = Math.abs(B[col]?.[col] ?? 0);
-    for (let r = col + 1; r < m; r++) {
+  let pivotRow = 0;
+  for (let col = 0; col < n && pivotRow < m; col++) {
+    // Partial pivot: find the row at or below `pivotRow` with the largest
+    // |entry| in this column.
+    let bestRow = pivotRow;
+    let pivotMag = Math.abs(B[pivotRow][col]);
+    for (let r = pivotRow + 1; r < m; r++) {
       const mag = Math.abs(B[r][col]);
       if (mag > pivotMag) {
         pivotMag = mag;
-        pivotRow = r;
+        bestRow = r;
       }
     }
-    if (pivotMag < 1e-14) {
-      // No usable pivot in this column — leave it singular and move on.
+    if (pivotMag < tol) {
+      // No usable pivot in this column — move on without advancing
+      // pivotRow, so the next column gets a chance at this row.
       continue;
     }
-    if (pivotRow !== col) {
-      [B[col], B[pivotRow]] = [B[pivotRow], B[col]];
+    if (bestRow !== pivotRow) {
+      [B[pivotRow], B[bestRow]] = [B[bestRow], B[pivotRow]];
       sign = -sign;
     }
     // Eliminate below the pivot.
-    for (let r = col + 1; r < m; r++) {
-      const factor = B[r][col] / B[col][col];
+    for (let r = pivotRow + 1; r < m; r++) {
+      const factor = B[r][col] / B[pivotRow][col];
       if (factor === 0) continue;
       for (let c = col; c < n; c++) {
-        B[r][c] -= factor * B[col][c];
+        B[r][c] -= factor * B[pivotRow][c];
       }
     }
-    pivotCount += 1;
+    pivotRow++;
   }
-  return { reduced: B, sign, pivotCount };
+  return { reduced: B, sign, pivotCount: pivotRow };
 }
 
 /**
@@ -262,18 +274,12 @@ export function determinant(A: Matrix): number {
  * @example
  *   rank([[1, 2, 3], [2, 4, 6], [7, 8, 9]]) // → 2 (rows 1 and 2 are parallel)
  *   rank([[1, 0], [0, 1]]) // → 2
+ *   rank([[0, 1], [0, 0]]) // → 1 (pivot at (0, 1), not on the diagonal)
  */
 export function rank(A: Matrix, tol: number = 1e-10): number {
-  const m = A.length;
-  if (m === 0) return 0;
-  const n = A[0].length;
-  const { reduced } = rowReduceToTriangular(A);
-  let r = 0;
-  const limit = Math.min(m, n);
-  for (let i = 0; i < limit; i++) {
-    if (Math.abs(reduced[i][i]) > tol) r += 1;
-  }
-  return r;
+  if (A.length === 0) return 0;
+  const { pivotCount } = rowReduceToTriangular(A, tol);
+  return pivotCount;
 }
 
 /**
@@ -496,10 +502,12 @@ export function projectToScreen(v: Vector): [number, number] {
   }
   const [x, y, z] = v;
   // Standard isometric: cos 30° ≈ 0.866, sin 30° = 0.5.
+  // ys uses `z - s * (x + y)` so that positive z maps to a larger
+  // screen-y value (upward, after the yScale flip in consuming components).
   const c = Math.cos(Math.PI / 6);
   const s = Math.sin(Math.PI / 6);
   const xs = c * (x - y);
-  const ys = s * (x + y) - z;
+  const ys = z - s * (x + y);
   return [xs, ys];
 }
 

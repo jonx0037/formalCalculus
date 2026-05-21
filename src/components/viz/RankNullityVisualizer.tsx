@@ -27,9 +27,7 @@ import * as d3 from 'd3';
 import { useD3 } from './shared/useD3';
 import { useResizeObserver } from './shared/useResizeObserver';
 import {
-  matMul,
   matVec,
-  parallelogramVertices,
   projectToScreen,
   type Matrix,
   type Vector,
@@ -408,7 +406,3 @@ function supDigit(n: number): string {
   return digits[n] ?? String(n);
 }
 
-// Suppress unused-import lint for matMul/parallelogramVertices — they are
-// imported defensively so this file can grow without re-importing.
-void matMul;
-void parallelogramVertices;
