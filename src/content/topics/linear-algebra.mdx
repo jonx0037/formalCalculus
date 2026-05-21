@@ -4,24 +4,327 @@ subtitle: "Vector spaces, linear maps, and the algebra under every calculation"
 status: draft
 difficulty: foundational
 prerequisites: []
-tags:
-  - "linear-algebra"
-  - "vector-spaces"
-  - "matrices"
-  - "foundations"
 domain: "linear-algebra"
 notebookPath: "notebooks/linear-algebra/33_linear_algebra.ipynb"
 datePublished: 2026-05-20
-estimatedReadTime: 0
+estimatedReadTime: 55
+tags:
+  - "linear-algebra"
+  - "vector-spaces"
+  - "linear-maps"
+  - "matrices"
+  - "determinants"
+  - "rank-nullity"
+  - "inner-products"
+  - "orthogonality"
+  - "gram-schmidt"
+  - "foundations"
 abstract: >-
-  Vector spaces, linear independence, bases and dimension, linear maps, matrix
-  operations (multiplication, transpose, inverse), the rank-nullity theorem, the
-  determinant as signed-volume scaling, and change of basis — the foundational
-  linear-algebra substrate that every later spectral, geometric, and statistical
-  argument quietly relies on.
+  Vector spaces, linear independence, bases and dimension, linear maps and the
+  matrices that represent them, matrix algebra defined as composition,
+  determinants as signed-volume scaling, the rank-nullity theorem, change of
+  basis, and inner products with orthogonality and the Gram-Schmidt process —
+  the foundational linear-algebra substrate that every later spectral,
+  geometric, statistical, and ML argument quietly relies on. We build the
+  subject geometrically: a vector space is whatever adds and scales like arrows,
+  a linear map is whatever sends lines to lines and the origin to itself, a
+  matrix is the coordinate record of a linear map in a chosen basis, and the
+  determinant is the signed volume scaling factor of the unit cube under the
+  map. Composition of linear maps becomes matrix multiplication; orthogonal
+  projection becomes least squares; the Gram-Schmidt construction becomes the
+  QR factorization. The reader leaves this topic with the geometric reading of
+  matrices that the rest of the curriculum — and most of machine learning —
+  assumes silently.
 formalstatisticsConnections:
   - topic: "method-of-moments"
     site: "formalstatistics"
-    relationship: "Sandwich variance formulas of the form A⁻¹BA⁻¹ᵀ in M-estimation depend on the matrix inverse properties, quadratic-form positivity, and rank conditions developed here."
-references: []
+    relationship: "Sandwich variance formulas of the form A⁻¹BA⁻¹ᵀ in M-estimation depend on the matrix inverse properties, quadratic-form positivity, and rank conditions developed here. The inner-product framework supplies the geometry; rank-nullity supplies identifiability."
+  - topic: "covariance-correlation"
+    site: "formalstatistics"
+    relationship: "The covariance matrix Σ of a mean-centered random vector is the Gram matrix XᵀX/n of the centered data. Its rank equals the dimension of the linear span of the observations, and its column space is the subspace the data actually inhabits — both rank-nullity statements."
+  - topic: "linear-regression-inference"
+    site: "formalstatistics"
+    relationship: "The OLS estimator β̂ = (XᵀX)⁻¹Xᵀy is the orthogonal projection of y onto the column space of the design matrix X. Its sampling distribution, the geometry of residuals, and the F-test all read off the inner-product structure and the rank of X established in this topic."
+formalmlConnections:
+  - topic: "neural-network-basics"
+    site: "formalml"
+    relationship: "A feedforward layer x ↦ σ(Wx + b) is the composition of a linear map W with a componentwise nonlinearity. The column space of W is what the layer can output linearly; the rank of W is the number of independent features that survive. Reading layers geometrically is reading matrices as linear maps."
+  - topic: "gradient-descent"
+    site: "formalml"
+    relationship: "Gradient descent θ ← θ − η∇L lives in a finite-dimensional inner-product space. Convergence rates depend on quadratic-form approximations of the loss, which are inner products in disguise; the condition number κ controlling speed is a quadratic-form quantity, not an algebraic one."
+  - topic: "regression-fundamentals"
+    site: "formalml"
+    relationship: "Ordinary least squares is the orthogonal projection of y onto col(X). The closed-form β̂ = (XᵀX)⁻¹Xᵀy is the algebraic shadow of the geometric statement P_col(X) y = Xβ̂, and the residual y − Xβ̂ is orthogonal to every column of X — exactly the orthogonal complement decomposition."
+  - topic: "embeddings"
+    site: "formalml"
+    relationship: "Word2Vec, BERT, and graph-embedding methods produce vectors in ℝᵈ where cosine similarity ⟨u, v⟩ / (‖u‖ ‖v‖) measures semantic proximity. Choosing an embedding is choosing a basis for the latent space; analogies (king − man + woman ≈ queen) are linear-combination statements; PCA and SVD post-processing are spectral operations on the embedding matrix."
+references:
+  - type: "book"
+    title: "Linear Algebra Done Right"
+    authors: "Axler, S."
+    year: 2024
+    edition: "4th"
+    note: "The canonical determinant-free linear-algebra textbook. Chapters 1–6 cover everything in this topic with the geometric, coordinate-free perspective we use here. The eigenvalue-first reordering is influential but not directly followed."
+  - type: "book"
+    title: "Introduction to Linear Algebra"
+    authors: "Strang, G."
+    year: 2023
+    edition: "6th"
+    note: "Strang's column-space-first treatment is the closest published match to our pedagogical line. Chapter 3 (rank, nullspace) and Chapter 4 (orthogonality, projection) are the direct sources for our rank-nullity and least-squares exposition."
+  - type: "book"
+    title: "Finite-Dimensional Vector Spaces"
+    authors: "Halmos, P. R."
+    year: 1958
+    note: "The classical reference for the abstract treatment of finite-dimensional vector spaces. Read for the axiomatic discipline; not for pedagogy."
+  - type: "book"
+    title: "Linear Algebra"
+    authors: "Hoffman, K. & Kunze, R."
+    year: 1971
+    edition: "2nd"
+    note: "Mathematically heaviest of the standard references — full proofs, no shortcuts. Useful for cross-checking rank-nullity and change-of-basis statements."
+  - type: "book"
+    title: "Linear Algebra"
+    authors: "Lang, S."
+    year: 1987
+    edition: "3rd"
+    note: "Lang's treatment is compact and abstract. Chapters on bilinear forms and inner products are the sources for our framing of inner products as a structure on a vector space rather than a derived concept."
+  - type: "book"
+    title: "Matrix Analysis and Applied Linear Algebra"
+    authors: "Meyer, C. D."
+    year: 2000
+    note: "The computational and applied reference. Chapter 5 on orthogonality is the source for the Gram-Schmidt presentation, and the determinant-as-volume framing in §4 is taken almost directly from here."
+  - type: "book"
+    title: "Numerical Linear Algebra"
+    authors: "Trefethen, L. N. & Bau, D."
+    year: 1997
+    note: "Trefethen's columns-as-vectors viewpoint is the cleanest available exposition of matrix-as-linear-map. We borrow the visual framing of matrix multiplication as repeated linear combinations of columns."
 ---
+
+import TheoremBlock from '../../components/ui/TheoremBlock.astro';
+import BasisExplorer from '../../components/viz/BasisExplorer.tsx';
+
+## 1. What Linear Algebra Studies
+
+Pick a function from the plane to itself. What is the simplest possible kind of function it could be? Not constant — that throws away too much information. Not arbitrary — most arbitrary functions are unmanageable. Somewhere in between is a class of functions that respects the geometry of the plane in a very particular way: they send straight lines to straight lines, they send parallel lines to parallel lines, and they leave the origin where it is. We call these functions **linear**, and linear algebra is the systematic study of what they can and cannot do.
+
+Three pictures will set the scene. A *rotation* by some angle around the origin: lines through the origin rotate to other lines through the origin, parallel pairs stay parallel, and the origin stays put. A *uniform stretch* by some factor: every vector is rescaled, but again lines stay lines, parallels stay parallel, and the origin is fixed. A *shear* — imagine taking a deck of cards and pushing the top of the stack sideways while the bottom card stays still — once more, lines, parallels, and the origin all behave. These three transformations look different but share the same defining structure, and that structure is what we are going to name and study.
+
+Contrast these with two non-examples. A *translation* — sliding every point a fixed distance in some direction — sends the origin somewhere else, so it fails the "origin stays put" condition. Translations are *not* linear, even though they look extremely similar to the rotations and shears we just described. We will come back to this distinction; it is the difference between a linear map and an *affine* map, and it is the reason every neural network layer separates a multiplication by a weight matrix from an addition of a bias vector. A *quadratic warp* like $(x, y) \mapsto (x, y + 0.4 x^2)$ bends straight lines into parabolas, so it fails the "lines go to lines" condition. Quadratic warps are not linear either, and the entire reason a neural network is more expressive than a single matrix multiplication is that the nonlinearity $\sigma$ in $\sigma(W \mathbf{x} + \mathbf{b})$ bends lines into curves.
+
+**ML aside.** A neural network layer without the bias term and without the activation function is exactly a linear map. The bias breaks the "origin stays put" condition; the activation breaks the "lines stay lines" condition. When ML papers talk about "the linear part of a layer," they mean the bare matrix multiplication $\mathbf{x} \mapsto W\mathbf{x}$, and that is the object linear algebra is built to study.
+
+The plan for this topic is to take the informal picture above and make it precise. We will define what a vector and a vector space are, what it means for a function to be linear, how to record a linear map as a matrix, how matrices compose, how to read off the rank and the determinant of a matrix from its geometry, and how to choose a basis that makes a particular map look as simple as possible. By the end of the topic the reader should be able to look at a matrix and see, immediately, what it does to space.
+
+## 2. Vector Spaces
+
+Before we can talk about linear maps, we need to talk about the objects they act on. The familiar examples are arrows in the plane — directed segments with a tail at the origin and a head somewhere else — but the same algebraic structure appears in places that look nothing like arrows. The point of the vector-space abstraction is to identify exactly which properties of arrows are the ones that make the algebra work, and to declare any other set with the same properties an honorary vector space.
+
+Start with $\mathbb{R}^2$. A vector here is a pair $(x_1, x_2)$ of real numbers, which we draw as an arrow from $(0, 0)$ to $(x_1, x_2)$. Addition is componentwise,
+
+$$(x_1, x_2) + (y_1, y_2) = (x_1 + y_1, \; x_2 + y_2),$$
+
+and geometrically the result is the head-to-tail or parallelogram sum. Scalar multiplication is also componentwise,
+
+$$c \cdot (x_1, x_2) = (c x_1, \; c x_2),$$
+
+and geometrically the vector is stretched or shrunk (and flipped if $c < 0$). These two operations satisfy eight properties — commutativity and associativity of addition, the existence of a zero vector and additive inverses, two distributive laws, and the rules for combining scalar multiplications — and any time you prove a theorem about arrows using only these eight properties, the theorem applies to any other set with the same operations. That is the move we are about to make.
+
+<TheoremBlock type="definition" number={1} title="Vector Space (over ℝ)">
+
+A **real vector space** is a set $V$ together with two operations,
+
+$$+ \, : V \times V \to V, \qquad \cdot \, : \mathbb{R} \times V \to V,$$
+
+called **addition** and **scalar multiplication**, satisfying the following eight axioms for all $\mathbf{u}, \mathbf{v}, \mathbf{w} \in V$ and $a, b \in \mathbb{R}$:
+
+1. **(Commutativity of $+$)** $\;\mathbf{u} + \mathbf{v} = \mathbf{v} + \mathbf{u}$.
+2. **(Associativity of $+$)** $\;(\mathbf{u} + \mathbf{v}) + \mathbf{w} = \mathbf{u} + (\mathbf{v} + \mathbf{w})$.
+3. **(Zero vector)** $\;$ There exists $\mathbf{0} \in V$ with $\mathbf{v} + \mathbf{0} = \mathbf{v}$ for every $\mathbf{v} \in V$.
+4. **(Additive inverses)** $\;$ For every $\mathbf{v} \in V$ there exists $-\mathbf{v} \in V$ with $\mathbf{v} + (-\mathbf{v}) = \mathbf{0}$.
+5. **(Distributivity over vector addition)** $\;a(\mathbf{u} + \mathbf{v}) = a\mathbf{u} + a\mathbf{v}$.
+6. **(Distributivity over scalar addition)** $\;(a + b)\mathbf{v} = a\mathbf{v} + b\mathbf{v}$.
+7. **(Compatibility of scalar multiplication)** $\;a(b\mathbf{v}) = (ab)\mathbf{v}$.
+8. **(Scalar identity)** $\;1 \cdot \mathbf{v} = \mathbf{v}$.
+
+Elements of $V$ are called **vectors**; real numbers in this context are called **scalars**.
+
+</TheoremBlock>
+
+The list looks intimidating until you notice that every one of the axioms is something you already do without thinking when you manipulate ordinary numbers — the only difference is that on the left side we have vectors instead of numbers. The axioms are not the *content* of the theory; they are the *gatekeeper*. A set with operations is a vector space exactly when all eight conditions check out, and the theorems we are about to prove apply to any such set.
+
+<TheoremBlock type="example" number={1} title="ℝⁿ">
+
+The set $\mathbb{R}^n$ of $n$-tuples $(x_1, x_2, \ldots, x_n)$ of real numbers, with componentwise addition
+
+$$(x_1, \ldots, x_n) + (y_1, \ldots, y_n) = (x_1 + y_1, \ldots, x_n + y_n)$$
+
+and componentwise scalar multiplication
+
+$$c \cdot (x_1, \ldots, x_n) = (c x_1, \ldots, c x_n),$$
+
+is a real vector space. Verifying the eight axioms reduces to verifying them one coordinate at a time, where each verification is an instance of the familiar arithmetic of real numbers. The zero vector is $\mathbf{0} = (0, 0, \ldots, 0)$, and the additive inverse of $\mathbf{v}$ is $-\mathbf{v} = (-v_1, \ldots, -v_n)$. This is the prototype example, and most of the geometric intuition we will develop lives here.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={2} title="Continuous Functions C[a, b]">
+
+Let $V = C[a, b]$ denote the set of continuous functions $f \colon [a, b] \to \mathbb{R}$. Define addition pointwise — $(f + g)(x) = f(x) + g(x)$ — and scalar multiplication pointwise — $(c f)(x) = c \cdot f(x)$. The eight axioms hold because each one reduces to the corresponding axiom for $\mathbb{R}$ applied at every point $x \in [a, b]$. Continuity is preserved because the sum of two continuous functions is continuous and a constant times a continuous function is continuous — facts established once and for all in the [Sequences, Limits & Convergence](/topics/sequences-limits) topic. So $C[a, b]$ is a real vector space whose vectors are functions, not arrows.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={3} title="Polynomials Pₙ">
+
+Let $P_n$ denote the set of polynomials of degree at most $n$ with real coefficients,
+
+$$p(x) = a_0 + a_1 x + a_2 x^2 + \cdots + a_n x^n, \qquad a_i \in \mathbb{R}.$$
+
+Addition is the usual sum-of-coefficients; scalar multiplication multiplies every coefficient by the scalar. Both operations leave the degree at most $n$, so $P_n$ is closed under them, and the eight axioms hold by the same coefficient-by-coefficient argument as for $\mathbb{R}^{n+1}$. The zero vector is the zero polynomial. We will see in a moment that $P_n$ has exactly $n + 1$ "degrees of freedom" — the $n + 1$ coefficients — and that this is what it means for $P_n$ to be "$(n+1)$-dimensional."
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={1} title="Why the abstraction earns its keep">
+
+Three sets that look completely different — arrows in the plane, continuous functions on an interval, and polynomials — are all vector spaces, and we have just listed the eight properties they share. Every theorem we prove from those eight properties alone applies to all three sets at once, with no extra work. That is not a small bookkeeping convenience; it is the entire reason linear algebra is the most reusable piece of mathematics in the sciences. When you encounter a fourth or fifth example — and you will, in nearly every topic on this site — you do not have to redo the theory. You check the axioms, and then everything we are about to prove is yours.
+
+</TheoremBlock>
+
+**ML aside.** When you concatenate a 768-dimensional BERT embedding with a 64-dimensional dense feature vector, you produce an element of the **direct sum** $\mathbb{R}^{768} \oplus \mathbb{R}^{64} \cong \mathbb{R}^{832}$ — a brand-new vector space built from two old ones. When you process a minibatch of $B$ samples, each $d$-dimensional, you work inside $\mathbb{R}^{B \times d}$. None of this is incidental: the reason these constructions compose cleanly across PyTorch and JAX is that the underlying algebra is the vector-space algebra defined above. Once you see linear algebra as the rules for combining vector spaces, every reshape and concatenate operation in ML code becomes a vector-space construction in disguise.
+
+## 3. Linear Independence, Span, Basis, and Dimension
+
+Now we put the abstraction to work. The four concepts in the title of this section — span, linear independence, basis, dimension — are the most-used vocabulary in all of linear algebra, and the right way to introduce them is geometric. Pick two arrows in $\mathbb{R}^2$ that point in different directions. Can you reach any other arrow by adding scaled copies of those two? Yes: the two arrows *span* the plane. Pick a third arrow. Is it redundant — already reachable from the first two? Yes again: the three arrows are *linearly dependent*. A *basis* of the plane is two arrows that span without redundancy, and the number two is the *dimension*. Everything below is making these four sentences precise.
+
+<TheoremBlock type="definition" number={2} title="Linear Combination and Span">
+
+Let $V$ be a vector space and let $\mathbf{v}_1, \mathbf{v}_2, \ldots, \mathbf{v}_k \in V$ be a finite list of vectors. A **linear combination** of these vectors is any vector of the form
+
+$$c_1 \mathbf{v}_1 + c_2 \mathbf{v}_2 + \cdots + c_k \mathbf{v}_k, \qquad c_i \in \mathbb{R}.$$
+
+The **span** of $\{\mathbf{v}_1, \ldots, \mathbf{v}_k\}$, written $\mathrm{span}(\mathbf{v}_1, \ldots, \mathbf{v}_k)$, is the set of all linear combinations:
+
+$$\mathrm{span}(\mathbf{v}_1, \ldots, \mathbf{v}_k) = \bigl\{ c_1 \mathbf{v}_1 + \cdots + c_k \mathbf{v}_k \;\bigm|\; c_1, \ldots, c_k \in \mathbb{R} \bigr\}.$$
+
+</TheoremBlock>
+
+A span is itself a vector space — adding two linear combinations or scaling one gives another linear combination — so the span of any list of vectors is a vector space sitting inside $V$. We call such an inner vector space a **subspace**. The span of one nonzero vector is a line through the origin; the span of two non-parallel vectors in $\mathbb{R}^2$ is the entire plane; the span of three vectors in $\mathbb{R}^3$ that don't all lie in a common plane is the entire 3-space.
+
+<TheoremBlock type="definition" number={3} title="Linear Independence">
+
+The vectors $\mathbf{v}_1, \ldots, \mathbf{v}_k$ in a vector space $V$ are **linearly independent** if the only solution to the equation
+
+$$c_1 \mathbf{v}_1 + c_2 \mathbf{v}_2 + \cdots + c_k \mathbf{v}_k = \mathbf{0}$$
+
+is the trivial one, $c_1 = c_2 = \cdots = c_k = 0$. They are **linearly dependent** if some choice of coefficients that are not all zero produces the zero vector.
+
+</TheoremBlock>
+
+Read the definition geometrically: a list of vectors is linearly dependent exactly when at least one of them can be written as a combination of the others (rearrange the equation to isolate any term with a nonzero coefficient). So "dependent" means *redundant* — one of the vectors carries no new directions — and "independent" means *non-redundant*. In $\mathbb{R}^2$, two vectors are dependent if and only if they are parallel; in $\mathbb{R}^3$, three vectors are dependent if and only if they all lie in a common plane through the origin.
+
+<TheoremBlock type="definition" number={4} title="Basis">
+
+A **basis** of a vector space $V$ is a list of vectors $\{\mathbf{v}_1, \mathbf{v}_2, \ldots, \mathbf{v}_n\}$ that is
+
+1. **linearly independent**, and
+2. **spans $V$**, i.e., $\mathrm{span}(\mathbf{v}_1, \ldots, \mathbf{v}_n) = V$.
+
+</TheoremBlock>
+
+A basis is the Goldilocks list: large enough to span (reach everything) and small enough to be independent (no redundancy). The standard basis of $\mathbb{R}^n$ is $\mathbf{e}_1, \mathbf{e}_2, \ldots, \mathbf{e}_n$, where $\mathbf{e}_i$ is the vector with a $1$ in slot $i$ and $0$s elsewhere; verifying that this list spans and is independent is direct. The basis $\{1, x, x^2, \ldots, x^n\}$ of $P_n$ is the analog for polynomials. There are infinitely many other bases of either space — every rotation of the standard basis of $\mathbb{R}^n$ produces another orthonormal basis, and any independent spanning set works — and we are about to prove that no matter which basis we pick, the *number* of vectors is always the same.
+
+Before that theorem, one fact we will need repeatedly:
+
+<TheoremBlock type="proposition" number={1} title="Unique Representation in a Basis">
+
+Let $\{\mathbf{v}_1, \ldots, \mathbf{v}_n\}$ be a basis of a vector space $V$. Then every $\mathbf{w} \in V$ has a **unique** expression as a linear combination of the basis vectors:
+
+$$\mathbf{w} = c_1 \mathbf{v}_1 + c_2 \mathbf{v}_2 + \cdots + c_n \mathbf{v}_n.$$
+
+The numbers $c_1, \ldots, c_n$ are called the **coordinates** of $\mathbf{w}$ with respect to the basis.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+**Existence.** Because the basis spans $V$, every $\mathbf{w}$ is *some* linear combination of the basis vectors.
+
+**Uniqueness.** Suppose $\mathbf{w}$ has two expressions:
+
+$$\mathbf{w} = c_1 \mathbf{v}_1 + \cdots + c_n \mathbf{v}_n = c_1' \mathbf{v}_1 + \cdots + c_n' \mathbf{v}_n.$$
+
+Subtracting the right side from the left,
+
+$$(c_1 - c_1') \mathbf{v}_1 + (c_2 - c_2') \mathbf{v}_2 + \cdots + (c_n - c_n') \mathbf{v}_n = \mathbf{0}.$$
+
+By linear independence of the basis, the only way a linear combination of $\mathbf{v}_1, \ldots, \mathbf{v}_n$ can equal $\mathbf{0}$ is if every coefficient is zero, so $c_i - c_i' = 0$ for each $i$, which is $c_i = c_i'$. The two expressions are the same.
+
+</TheoremBlock>
+
+Coordinates are how an abstract vector space gets concrete. Once you pick a basis, every vector becomes a column of $n$ numbers — its coordinates — and you can do arithmetic with those numbers. Different bases give different coordinates for the same vector, and switching between them is what §9 of this topic (Change of Basis) will be about. For now, the bookkeeping fact is that the coordinates exist and are unique.
+
+The headline theorem of this section is that any two bases of the same vector space have the same number of vectors. This number is well-defined and earns the name *dimension*.
+
+<TheoremBlock type="theorem" number={1} title="Dimension Theorem (Steinitz Exchange)">
+
+If $\{\mathbf{v}_1, \ldots, \mathbf{v}_n\}$ and $\{\mathbf{w}_1, \ldots, \mathbf{w}_m\}$ are both bases of the same vector space $V$, then $n = m$.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+We prove the theorem by establishing a stronger statement called the **Exchange Lemma**: if $\{\mathbf{v}_1, \ldots, \mathbf{v}_n\}$ spans $V$ and $\{\mathbf{w}_1, \ldots, \mathbf{w}_m\}$ is linearly independent in $V$, then $m \leq n$. Applying this lemma twice — first to the basis $\{\mathbf{v}_i\}$ (which spans) and the basis $\{\mathbf{w}_j\}$ (which is independent), giving $m \leq n$, and then with the roles reversed, giving $n \leq m$ — completes the proof.
+
+We prove the lemma by induction on $k$, where at step $k$ we will have replaced $k$ of the $\mathbf{v}_i$ with the vectors $\mathbf{w}_1, \ldots, \mathbf{w}_k$ while preserving the spanning property.
+
+**Step 1.** Because $\{\mathbf{v}_1, \ldots, \mathbf{v}_n\}$ spans $V$ and $\mathbf{w}_1 \in V$, we can write
+
+$$\mathbf{w}_1 = a_1 \mathbf{v}_1 + a_2 \mathbf{v}_2 + \cdots + a_n \mathbf{v}_n.$$
+
+At least one coefficient $a_i$ is nonzero — otherwise $\mathbf{w}_1 = \mathbf{0}$, which would contradict the linear independence of $\{\mathbf{w}_j\}$ (independent sets never contain the zero vector). Reordering the $\mathbf{v}_i$ if necessary, assume $a_1 \neq 0$. Then we can solve for $\mathbf{v}_1$:
+
+$$\mathbf{v}_1 = \frac{1}{a_1}\bigl(\mathbf{w}_1 - a_2 \mathbf{v}_2 - \cdots - a_n \mathbf{v}_n\bigr).$$
+
+So $\mathbf{v}_1$ is a linear combination of $\mathbf{w}_1, \mathbf{v}_2, \ldots, \mathbf{v}_n$, which means $\{\mathbf{w}_1, \mathbf{v}_2, \ldots, \mathbf{v}_n\}$ still spans $V$: anything previously reachable from the old list is still reachable from the new one.
+
+**Inductive step.** Suppose after $k$ steps we have a spanning list of the form $\{\mathbf{w}_1, \ldots, \mathbf{w}_k, \mathbf{v}_{k+1}, \ldots, \mathbf{v}_n\}$. If $k = m$ we are done — the inductive procedure has consumed all the $\mathbf{w}_j$, so $m$ of the original $\mathbf{v}_i$ have been replaced and in particular $m \leq n$. Otherwise, $k < m$ and we have at least one more $\mathbf{w}_{k+1}$ to insert. Write
+
+$$\mathbf{w}_{k+1} = b_1 \mathbf{w}_1 + \cdots + b_k \mathbf{w}_k + c_{k+1} \mathbf{v}_{k+1} + \cdots + c_n \mathbf{v}_n,$$
+
+using the inductive spanning property. At least one of the $c_i$ must be nonzero, because if every $c_i$ were zero then $\mathbf{w}_{k+1}$ would be a linear combination of $\mathbf{w}_1, \ldots, \mathbf{w}_k$, contradicting the linear independence of $\{\mathbf{w}_j\}$. Reordering the remaining $\mathbf{v}_i$ if necessary, assume $c_{k+1} \neq 0$. Solving for $\mathbf{v}_{k+1}$ as in Step 1, we conclude that $\mathbf{v}_{k+1}$ is a linear combination of the new list $\{\mathbf{w}_1, \ldots, \mathbf{w}_{k+1}, \mathbf{v}_{k+2}, \ldots, \mathbf{v}_n\}$, so the new list still spans $V$. This completes the inductive step.
+
+**Termination.** The induction can run for at most $n$ steps before we exhaust the $\mathbf{v}_i$. If at the end of the inductive procedure we still have $\mathbf{w}_j$ left over — that is, if $m > n$ — then we would have a contradiction at step $n + 1$: after replacing all $n$ of the $\mathbf{v}_i$ we would be trying to express $\mathbf{w}_{n+1}$ as a linear combination of $\{\mathbf{w}_1, \ldots, \mathbf{w}_n\}$, which would violate linear independence. So $m \leq n$, which is the lemma.
+
+</TheoremBlock>
+
+The Steinitz exchange argument is the workhorse of finite-dimensional linear algebra: it is also how one proves that every linearly independent set can be *extended* to a basis (run the exchange in reverse, adding vectors from a known basis until the set spans) and that every spanning set *contains* a basis (run the exchange and discard the redundant vectors). Both facts will be invoked silently in §8 when we prove the rank-nullity theorem.
+
+<TheoremBlock type="definition" number={5} title="Dimension">
+
+The **dimension** of a vector space $V$, written $\dim V$, is the number of vectors in any basis. By the Dimension Theorem, this number does not depend on the choice of basis, so the dimension is well-defined. A vector space is **finite-dimensional** if it has a basis with finitely many elements, and **infinite-dimensional** otherwise.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={4} title="Dimensions of ℝⁿ, Pₙ, and C[a, b]">
+
+For each of our running examples:
+
+- $\dim \mathbb{R}^n = n$, with the standard basis $\mathbf{e}_1, \mathbf{e}_2, \ldots, \mathbf{e}_n$.
+- $\dim P_n = n + 1$, with basis $\{1, x, x^2, \ldots, x^n\}$.
+- $\dim C[a, b] = \infty$. To see this, note that the functions $1, x, x^2, \ldots, x^k$ are linearly independent in $C[a, b]$ for every $k$ (a polynomial of degree at most $k$ has at most $k$ roots, so if a nontrivial linear combination of monomials were the zero function it would have infinitely many roots — impossible). So $C[a, b]$ contains $P_k$ as a subspace for every $k$, and no finite basis can suffice.
+
+</TheoremBlock>
+
+The first vector-space-flavored interactive viz on this site uses these definitions directly. Drag the arrows below to manipulate a candidate basis of $\mathbb{R}^2$; toggle vectors active and inactive; switch between presets. The readout tracks the rank of the active set (the dimension of its span), whether the set is linearly independent, and — when exactly two vectors are active — the determinant of the matrix whose columns are those vectors.
+
+<BasisExplorer client:visible />
+
+A useful exercise once the viz is in hand: configure the three "dependent" vectors so that the determinant of the first two is positive, and watch the determinant flip sign when you swap them. The sign of the determinant tracks the orientation of the basis — a concept §7 will make precise.
+
+<TheoremBlock type="remark" number={2} title="Infinite-Dimensional Vector Spaces">
+
+Most function spaces are infinite-dimensional. The space $C[a, b]$ above is just one example; the space of square-integrable functions $L^2(\mathbb{R})$ is another, and so is the sequence space $\ell^2$ of square-summable real sequences. The theorems we prove in this topic are about finite-dimensional spaces, but the *language* — span, basis, dimension, orthogonality — extends to infinite dimensions with appropriate care for convergence. That extension is the subject of functional analysis, the focus of [Metric Spaces](/topics/metric-spaces), [Normed & Banach Spaces](/topics/banach-spaces), and [Inner Product & Hilbert Spaces](/topics/hilbert-spaces) elsewhere on this site. Finite-dimensional linear algebra is the warm-up; infinite-dimensional linear algebra is the real game.
+
+</TheoremBlock>
+
+**ML aside.** When a paper introduces a model that "projects onto a 128-dimensional latent space," the number 128 is a dimension in exactly the sense above: it is the size of any basis of that latent space. Two architectures with the same latent dimension but different bases are representationally equivalent up to a change of coordinates — which is one reason representational similarity analysis exists, and one reason different word-embedding models with the same dimension can encode the same semantic structure in apparently unrelated coordinates. Choosing a basis for the latent space is what training the embedding layer does; the dimension is a hyperparameter you set, and the basis is a parameter the model learns.
+
+**Where this leads.** We have a vocabulary now: vectors, spans, independent sets, bases, and dimensions. The natural next question — the one that animates the rest of the topic — is what *functions* between vector spaces look like, and the answer is the same answer that motivated this whole development: linear functions. Section 4 below introduces linear maps, and §5 explains why a matrix is exactly the right way to record one. Further out, once we have built the full apparatus, a deeper question will surface: given a linear map $T$ acting on a vector space $V$, can we find a basis of $V$ that makes the matrix of $T$ as simple as possible? For some maps, yes: a basis of "directions the map only stretches without rotating." Those directions have a name — *eigenvectors* — but they belong to the next topic on this track, and we will not introduce them here. For now, every basis is equally good.
