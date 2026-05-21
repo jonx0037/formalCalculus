@@ -1,27 +1,1479 @@
 ---
 title: "Linear Algebra"
 subtitle: "Vector spaces, linear maps, and the algebra under every calculation"
-status: draft
+status: published
 difficulty: foundational
 prerequisites: []
-tags:
-  - "linear-algebra"
-  - "vector-spaces"
-  - "matrices"
-  - "foundations"
 domain: "linear-algebra"
 notebookPath: "notebooks/linear-algebra/33_linear_algebra.ipynb"
 datePublished: 2026-05-20
-estimatedReadTime: 0
+estimatedReadTime: 55
+tags:
+  - "linear-algebra"
+  - "vector-spaces"
+  - "linear-maps"
+  - "matrices"
+  - "determinants"
+  - "rank-nullity"
+  - "inner-products"
+  - "orthogonality"
+  - "gram-schmidt"
+  - "foundations"
 abstract: >-
-  Vector spaces, linear independence, bases and dimension, linear maps, matrix
-  operations (multiplication, transpose, inverse), the rank-nullity theorem, the
-  determinant as signed-volume scaling, and change of basis — the foundational
-  linear-algebra substrate that every later spectral, geometric, and statistical
-  argument quietly relies on.
+  Vector spaces, linear independence, bases and dimension, linear maps and the
+  matrices that represent them, matrix algebra defined as composition,
+  determinants as signed-volume scaling, the rank-nullity theorem, change of
+  basis, and inner products with orthogonality and the Gram-Schmidt process —
+  the foundational linear-algebra substrate that every later spectral,
+  geometric, statistical, and ML argument quietly relies on. We build the
+  subject geometrically: a vector space is whatever adds and scales like arrows,
+  a linear map is whatever sends lines to lines and the origin to itself, a
+  matrix is the coordinate record of a linear map in a chosen basis, and the
+  determinant is the signed volume scaling factor of the unit cube under the
+  map. Composition of linear maps becomes matrix multiplication; orthogonal
+  projection becomes least squares; the Gram-Schmidt construction becomes the
+  QR factorization. The reader leaves this topic with the geometric reading of
+  matrices that the rest of the curriculum — and most of machine learning —
+  assumes silently.
 formalstatisticsConnections:
   - topic: "method-of-moments"
     site: "formalstatistics"
-    relationship: "Sandwich variance formulas of the form A⁻¹BA⁻¹ᵀ in M-estimation depend on the matrix inverse properties, quadratic-form positivity, and rank conditions developed here."
-references: []
+    relationship: "Sandwich variance formulas of the form A⁻¹BA⁻¹ᵀ in M-estimation depend on the matrix inverse properties, quadratic-form positivity, and rank conditions developed here. The inner-product framework supplies the geometry; rank-nullity supplies identifiability."
+  - topic: "covariance-correlation"
+    site: "formalstatistics"
+    relationship: "The covariance matrix Σ of a mean-centered random vector is the Gram matrix XᵀX/n of the centered data. Its rank equals the dimension of the linear span of the observations, and its column space is the subspace the data actually inhabits — both rank-nullity statements."
+  - topic: "linear-regression-inference"
+    site: "formalstatistics"
+    relationship: "The OLS estimator β̂ = (XᵀX)⁻¹Xᵀy is the orthogonal projection of y onto the column space of the design matrix X. Its sampling distribution, the geometry of residuals, and the F-test all read off the inner-product structure and the rank of X established in this topic."
+formalmlConnections:
+  - topic: "neural-network-basics"
+    site: "formalml"
+    relationship: "A feedforward layer x ↦ σ(Wx + b) is the composition of a linear map W with a componentwise nonlinearity. The column space of W is what the layer can output linearly; the rank of W is the number of independent features that survive. Reading layers geometrically is reading matrices as linear maps."
+  - topic: "gradient-descent"
+    site: "formalml"
+    relationship: "Gradient descent θ ← θ − η∇L lives in a finite-dimensional inner-product space. Convergence rates depend on quadratic-form approximations of the loss, which are inner products in disguise; the condition number κ controlling speed is a quadratic-form quantity, not an algebraic one."
+  - topic: "regression-fundamentals"
+    site: "formalml"
+    relationship: "Ordinary least squares is the orthogonal projection of y onto col(X). The closed-form β̂ = (XᵀX)⁻¹Xᵀy is the algebraic shadow of the geometric statement P_col(X) y = Xβ̂, and the residual y − Xβ̂ is orthogonal to every column of X — exactly the orthogonal complement decomposition."
+  - topic: "embeddings"
+    site: "formalml"
+    relationship: "Word2Vec, BERT, and graph-embedding methods produce vectors in ℝᵈ where cosine similarity ⟨u, v⟩ / (‖u‖ ‖v‖) measures semantic proximity. Choosing an embedding is choosing a basis for the latent space; analogies (king − man + woman ≈ queen) are linear-combination statements; PCA and SVD post-processing are spectral operations on the embedding matrix."
+references:
+  - type: "book"
+    title: "Linear Algebra Done Right"
+    authors: "Axler, S."
+    year: 2024
+    edition: "4th"
+    note: "The canonical determinant-free linear-algebra textbook. Chapters 1–6 cover everything in this topic with the geometric, coordinate-free perspective we use here. The eigenvalue-first reordering is influential but not directly followed."
+  - type: "book"
+    title: "Introduction to Linear Algebra"
+    authors: "Strang, G."
+    year: 2023
+    edition: "6th"
+    note: "Strang's column-space-first treatment is the closest published match to our pedagogical line. Chapter 3 (rank, nullspace) and Chapter 4 (orthogonality, projection) are the direct sources for our rank-nullity and least-squares exposition."
+  - type: "book"
+    title: "Finite-Dimensional Vector Spaces"
+    authors: "Halmos, P. R."
+    year: 1958
+    note: "The classical reference for the abstract treatment of finite-dimensional vector spaces. Read for the axiomatic discipline; not for pedagogy."
+  - type: "book"
+    title: "Linear Algebra"
+    authors: "Hoffman, K. & Kunze, R."
+    year: 1971
+    edition: "2nd"
+    note: "Mathematically heaviest of the standard references — full proofs, no shortcuts. Useful for cross-checking rank-nullity and change-of-basis statements."
+  - type: "book"
+    title: "Linear Algebra"
+    authors: "Lang, S."
+    year: 1987
+    edition: "3rd"
+    note: "Lang's treatment is compact and abstract. Chapters on bilinear forms and inner products are the sources for our framing of inner products as a structure on a vector space rather than a derived concept."
+  - type: "book"
+    title: "Matrix Analysis and Applied Linear Algebra"
+    authors: "Meyer, C. D."
+    year: 2000
+    note: "The computational and applied reference. Chapter 5 on orthogonality is the source for the Gram-Schmidt presentation, and the determinant-as-volume framing in §4 is taken almost directly from here."
+  - type: "book"
+    title: "Numerical Linear Algebra"
+    authors: "Trefethen, L. N. & Bau, D."
+    year: 1997
+    note: "Trefethen's columns-as-vectors viewpoint is the cleanest available exposition of matrix-as-linear-map. We borrow the visual framing of matrix multiplication as repeated linear combinations of columns."
 ---
+
+import TheoremBlock from '../../components/ui/TheoremBlock.astro';
+import BasisExplorer from '../../components/viz/BasisExplorer.tsx';
+import LinearMapMatrixBuilder from '../../components/viz/LinearMapMatrixBuilder.tsx';
+import DeterminantVolumeVisualizer from '../../components/viz/DeterminantVolumeVisualizer.tsx';
+import RankNullityVisualizer from '../../components/viz/RankNullityVisualizer.tsx';
+import GramSchmidtAnimator from '../../components/viz/GramSchmidtAnimator.tsx';
+
+## 1. What Linear Algebra Studies
+
+Pick a function from the plane to itself. What is the simplest possible kind of function it could be? Not constant — that throws away too much information. Not arbitrary — most arbitrary functions are unmanageable. Somewhere in between is a class of functions that respects the geometry of the plane in a very particular way: they send straight lines to straight lines, they send parallel lines to parallel lines, and they leave the origin where it is. We call these functions **linear**, and linear algebra is the systematic study of what they can and cannot do.
+
+Three pictures will set the scene. A *rotation* by some angle around the origin: lines through the origin rotate to other lines through the origin, parallel pairs stay parallel, and the origin stays put. A *uniform stretch* by some factor: every vector is rescaled, but again lines stay lines, parallels stay parallel, and the origin is fixed. A *shear* — imagine taking a deck of cards and pushing the top of the stack sideways while the bottom card stays still — once more, lines, parallels, and the origin all behave. These three transformations look different but share the same defining structure, and that structure is what we are going to name and study.
+
+<figure className="my-6">
+  <img src="/images/topics/linear-algebra/linearity-vs-not.png" alt="Three-panel comparison: a linear map preserves the grid, an affine map translates it, a quadratic warp bends straight lines into parabolas" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">The same unit grid under three maps: a linear map (grid stays a grid, origin fixed), an affine map (grid translates), and a quadratic warp (lines bend).</figcaption>
+</figure>
+
+Contrast these with two non-examples. A *translation* — sliding every point a fixed distance in some direction — sends the origin somewhere else, so it fails the "origin stays put" condition. Translations are *not* linear, even though they look extremely similar to the rotations and shears we just described. We will come back to this distinction; it is the difference between a linear map and an *affine* map, and it is the reason every neural network layer separates a multiplication by a weight matrix from an addition of a bias vector. A *quadratic warp* like $(x, y) \mapsto (x, y + 0.4 x^2)$ bends straight lines into parabolas, so it fails the "lines go to lines" condition. Quadratic warps are not linear either, and the entire reason a neural network is more expressive than a single matrix multiplication is that the nonlinearity $\sigma$ in $\sigma(W \mathbf{x} + \mathbf{b})$ bends lines into curves.
+
+**ML aside.** A neural network layer without the bias term and without the activation function is exactly a linear map. The bias breaks the "origin stays put" condition; the activation breaks the "lines stay lines" condition. When ML papers talk about "the linear part of a layer," they mean the bare matrix multiplication $\mathbf{x} \mapsto W\mathbf{x}$, and that is the object linear algebra is built to study.
+
+The plan for this topic is to take the informal picture above and make it precise. We will define what a vector and a vector space are, what it means for a function to be linear, how to record a linear map as a matrix, how matrices compose, how to read off the rank and the determinant of a matrix from its geometry, and how to choose a basis that makes a particular map look as simple as possible. By the end of the topic the reader should be able to look at a matrix and see, immediately, what it does to space.
+
+## 2. Vector Spaces
+
+Before we can talk about linear maps, we need to talk about the objects they act on. The familiar examples are arrows in the plane — directed segments with a tail at the origin and a head somewhere else — but the same algebraic structure appears in places that look nothing like arrows. The point of the vector-space abstraction is to identify exactly which properties of arrows are the ones that make the algebra work, and to declare any other set with the same properties an honorary vector space.
+
+Start with $\mathbb{R}^2$. A vector here is a pair $(x_1, x_2)$ of real numbers, which we draw as an arrow from $(0, 0)$ to $(x_1, x_2)$. Addition is componentwise,
+
+$$(x_1, x_2) + (y_1, y_2) = (x_1 + y_1, \; x_2 + y_2),$$
+
+and geometrically the result is the head-to-tail or parallelogram sum. Scalar multiplication is also componentwise,
+
+$$c \cdot (x_1, x_2) = (c x_1, \; c x_2),$$
+
+and geometrically the vector is stretched or shrunk (and flipped if $c < 0$). These two operations satisfy eight properties — commutativity and associativity of addition, the existence of a zero vector and additive inverses, two distributive laws, and the rules for combining scalar multiplications — and any time you prove a theorem about arrows using only these eight properties, the theorem applies to any other set with the same operations. That is the move we are about to make.
+
+<TheoremBlock type="definition" number={1} title="Vector Space (over ℝ)">
+
+A **real vector space** is a set $V$ together with two operations,
+
+$$+ \, : V \times V \to V, \qquad \cdot \, : \mathbb{R} \times V \to V,$$
+
+called **addition** and **scalar multiplication**, satisfying the following eight axioms for all $\mathbf{u}, \mathbf{v}, \mathbf{w} \in V$ and $a, b \in \mathbb{R}$:
+
+1. **(Commutativity of $+$)** $\;\mathbf{u} + \mathbf{v} = \mathbf{v} + \mathbf{u}$.
+2. **(Associativity of $+$)** $\;(\mathbf{u} + \mathbf{v}) + \mathbf{w} = \mathbf{u} + (\mathbf{v} + \mathbf{w})$.
+3. **(Zero vector)** $\;$ There exists $\mathbf{0} \in V$ with $\mathbf{v} + \mathbf{0} = \mathbf{v}$ for every $\mathbf{v} \in V$.
+4. **(Additive inverses)** $\;$ For every $\mathbf{v} \in V$ there exists $-\mathbf{v} \in V$ with $\mathbf{v} + (-\mathbf{v}) = \mathbf{0}$.
+5. **(Distributivity over vector addition)** $\;a(\mathbf{u} + \mathbf{v}) = a\mathbf{u} + a\mathbf{v}$.
+6. **(Distributivity over scalar addition)** $\;(a + b)\mathbf{v} = a\mathbf{v} + b\mathbf{v}$.
+7. **(Compatibility of scalar multiplication)** $\;a(b\mathbf{v}) = (ab)\mathbf{v}$.
+8. **(Scalar identity)** $\;1 \cdot \mathbf{v} = \mathbf{v}$.
+
+Elements of $V$ are called **vectors**; real numbers in this context are called **scalars**.
+
+</TheoremBlock>
+
+The list looks intimidating until you notice that every one of the axioms is something you already do without thinking when you manipulate ordinary numbers — the only difference is that on the left side we have vectors instead of numbers. The axioms are not the *content* of the theory; they are the *gatekeeper*. A set with operations is a vector space exactly when all eight conditions check out, and the theorems we are about to prove apply to any such set.
+
+<TheoremBlock type="example" number={1} title="ℝⁿ">
+
+The set $\mathbb{R}^n$ of $n$-tuples $(x_1, x_2, \ldots, x_n)$ of real numbers, with componentwise addition
+
+$$(x_1, \ldots, x_n) + (y_1, \ldots, y_n) = (x_1 + y_1, \ldots, x_n + y_n)$$
+
+and componentwise scalar multiplication
+
+$$c \cdot (x_1, \ldots, x_n) = (c x_1, \ldots, c x_n),$$
+
+is a real vector space. Verifying the eight axioms reduces to verifying them one coordinate at a time, where each verification is an instance of the familiar arithmetic of real numbers. The zero vector is $\mathbf{0} = (0, 0, \ldots, 0)$, and the additive inverse of $\mathbf{v}$ is $-\mathbf{v} = (-v_1, \ldots, -v_n)$. This is the prototype example, and most of the geometric intuition we will develop lives here.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={2} title="Continuous Functions C[a, b]">
+
+Let $V = C[a, b]$ denote the set of continuous functions $f \colon [a, b] \to \mathbb{R}$. Define addition pointwise — $(f + g)(x) = f(x) + g(x)$ — and scalar multiplication pointwise — $(c f)(x) = c \cdot f(x)$. The eight axioms hold because each one reduces to the corresponding axiom for $\mathbb{R}$ applied at every point $x \in [a, b]$. Continuity is preserved because the sum of two continuous functions is continuous and a constant times a continuous function is continuous — facts established once and for all in the [Sequences, Limits & Convergence](/topics/sequences-limits) topic. So $C[a, b]$ is a real vector space whose vectors are functions, not arrows.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={3} title="Polynomials Pₙ">
+
+Let $P_n$ denote the set of polynomials of degree at most $n$ with real coefficients,
+
+$$p(x) = a_0 + a_1 x + a_2 x^2 + \cdots + a_n x^n, \qquad a_i \in \mathbb{R}.$$
+
+Addition is the usual sum-of-coefficients; scalar multiplication multiplies every coefficient by the scalar. Both operations leave the degree at most $n$, so $P_n$ is closed under them, and the eight axioms hold by the same coefficient-by-coefficient argument as for $\mathbb{R}^{n+1}$. The zero vector is the zero polynomial. We will see in a moment that $P_n$ has exactly $n + 1$ "degrees of freedom" — the $n + 1$ coefficients — and that this is what it means for $P_n$ to be "$(n+1)$-dimensional."
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={1} title="Why the abstraction earns its keep">
+
+Three sets that look completely different — arrows in the plane, continuous functions on an interval, and polynomials — are all vector spaces, and we have just listed the eight properties they share. Every theorem we prove from those eight properties alone applies to all three sets at once, with no extra work. That is not a small bookkeeping convenience; it is the entire reason linear algebra is the most reusable piece of mathematics in the sciences. When you encounter a fourth or fifth example — and you will, in nearly every topic on this site — you do not have to redo the theory. You check the axioms, and then everything we are about to prove is yours.
+
+</TheoremBlock>
+
+<figure className="my-6">
+  <img src="/images/topics/linear-algebra/vector-space-examples.png" alt="Three vector spaces with the same axioms: arrows in R^2, continuous functions on [0,1], polynomials in P_2" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">Three vector spaces that look completely different but obey the same eight axioms — arrows in the plane, continuous functions on an interval, polynomials of bounded degree.</figcaption>
+</figure>
+
+**ML aside.** When you concatenate a 768-dimensional BERT embedding with a 64-dimensional dense feature vector, you produce an element of the **direct sum** $\mathbb{R}^{768} \oplus \mathbb{R}^{64} \cong \mathbb{R}^{832}$ — a brand-new vector space built from two old ones. When you process a minibatch of $B$ samples, each $d$-dimensional, you work inside $\mathbb{R}^{B \times d}$. None of this is incidental: the reason these constructions compose cleanly across PyTorch and JAX is that the underlying algebra is the vector-space algebra defined above. Once you see linear algebra as the rules for combining vector spaces, every reshape and concatenate operation in ML code becomes a vector-space construction in disguise.
+
+## 3. Linear Independence, Span, Basis, and Dimension
+
+<figure className="my-6">
+  <img src="/images/topics/linear-algebra/basis-and-span.png" alt="Two-panel comparison: two linearly independent vectors span the plane; three linearly dependent vectors still span only the plane because one is redundant" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">Linear independence is about non-redundancy of directions: two LI vectors span the plane; a third redundant vector adds no new directions to the span.</figcaption>
+</figure>
+
+Now we put the abstraction to work. The four concepts in the title of this section — span, linear independence, basis, dimension — are the most-used vocabulary in all of linear algebra, and the right way to introduce them is geometric. Pick two arrows in $\mathbb{R}^2$ that point in different directions. Can you reach any other arrow by adding scaled copies of those two? Yes: the two arrows *span* the plane. Pick a third arrow. Is it redundant — already reachable from the first two? Yes again: the three arrows are *linearly dependent*. A *basis* of the plane is two arrows that span without redundancy, and the number two is the *dimension*. Everything below is making these four sentences precise.
+
+<TheoremBlock type="definition" number={2} title="Linear Combination and Span">
+
+Let $V$ be a vector space and let $\mathbf{v}_1, \mathbf{v}_2, \ldots, \mathbf{v}_k \in V$ be a finite list of vectors. A **linear combination** of these vectors is any vector of the form
+
+$$c_1 \mathbf{v}_1 + c_2 \mathbf{v}_2 + \cdots + c_k \mathbf{v}_k, \qquad c_i \in \mathbb{R}.$$
+
+The **span** of $\{\mathbf{v}_1, \ldots, \mathbf{v}_k\}$, written $\mathrm{span}(\mathbf{v}_1, \ldots, \mathbf{v}_k)$, is the set of all linear combinations:
+
+$$\mathrm{span}(\mathbf{v}_1, \ldots, \mathbf{v}_k) = \bigl\{ c_1 \mathbf{v}_1 + \cdots + c_k \mathbf{v}_k \;\bigm|\; c_1, \ldots, c_k \in \mathbb{R} \bigr\}.$$
+
+</TheoremBlock>
+
+A span is itself a vector space — adding two linear combinations or scaling one gives another linear combination — so the span of any list of vectors is a vector space sitting inside $V$. We call such an inner vector space a **subspace**. The span of one nonzero vector is a line through the origin; the span of two non-parallel vectors in $\mathbb{R}^2$ is the entire plane; the span of three vectors in $\mathbb{R}^3$ that don't all lie in a common plane is the entire 3-space.
+
+<TheoremBlock type="definition" number={3} title="Linear Independence">
+
+The vectors $\mathbf{v}_1, \ldots, \mathbf{v}_k$ in a vector space $V$ are **linearly independent** if the only solution to the equation
+
+$$c_1 \mathbf{v}_1 + c_2 \mathbf{v}_2 + \cdots + c_k \mathbf{v}_k = \mathbf{0}$$
+
+is the trivial one, $c_1 = c_2 = \cdots = c_k = 0$. They are **linearly dependent** if some choice of coefficients that are not all zero produces the zero vector.
+
+</TheoremBlock>
+
+Read the definition geometrically: a list of vectors is linearly dependent exactly when at least one of them can be written as a combination of the others (rearrange the equation to isolate any term with a nonzero coefficient). So "dependent" means *redundant* — one of the vectors carries no new directions — and "independent" means *non-redundant*. In $\mathbb{R}^2$, two vectors are dependent if and only if they are parallel; in $\mathbb{R}^3$, three vectors are dependent if and only if they all lie in a common plane through the origin.
+
+<TheoremBlock type="definition" number={4} title="Basis">
+
+A **basis** of a vector space $V$ is a list of vectors $\{\mathbf{v}_1, \mathbf{v}_2, \ldots, \mathbf{v}_n\}$ that is
+
+1. **linearly independent**, and
+2. **spans $V$**, i.e., $\mathrm{span}(\mathbf{v}_1, \ldots, \mathbf{v}_n) = V$.
+
+</TheoremBlock>
+
+A basis is the Goldilocks list: large enough to span (reach everything) and small enough to be independent (no redundancy). The standard basis of $\mathbb{R}^n$ is $\mathbf{e}_1, \mathbf{e}_2, \ldots, \mathbf{e}_n$, where $\mathbf{e}_i$ is the vector with a $1$ in slot $i$ and $0$s elsewhere; verifying that this list spans and is independent is direct. The basis $\{1, x, x^2, \ldots, x^n\}$ of $P_n$ is the analog for polynomials. There are infinitely many other bases of either space — every rotation of the standard basis of $\mathbb{R}^n$ produces another orthonormal basis, and any independent spanning set works — and we are about to prove that no matter which basis we pick, the *number* of vectors is always the same.
+
+Before that theorem, one fact we will need repeatedly:
+
+<TheoremBlock type="proposition" number={1} title="Unique Representation in a Basis">
+
+Let $\{\mathbf{v}_1, \ldots, \mathbf{v}_n\}$ be a basis of a vector space $V$. Then every $\mathbf{w} \in V$ has a **unique** expression as a linear combination of the basis vectors:
+
+$$\mathbf{w} = c_1 \mathbf{v}_1 + c_2 \mathbf{v}_2 + \cdots + c_n \mathbf{v}_n.$$
+
+The numbers $c_1, \ldots, c_n$ are called the **coordinates** of $\mathbf{w}$ with respect to the basis.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+**Existence.** Because the basis spans $V$, every $\mathbf{w}$ is *some* linear combination of the basis vectors.
+
+**Uniqueness.** Suppose $\mathbf{w}$ has two expressions:
+
+$$\mathbf{w} = c_1 \mathbf{v}_1 + \cdots + c_n \mathbf{v}_n = c_1' \mathbf{v}_1 + \cdots + c_n' \mathbf{v}_n.$$
+
+Subtracting the right side from the left,
+
+$$(c_1 - c_1') \mathbf{v}_1 + (c_2 - c_2') \mathbf{v}_2 + \cdots + (c_n - c_n') \mathbf{v}_n = \mathbf{0}.$$
+
+By linear independence of the basis, the only way a linear combination of $\mathbf{v}_1, \ldots, \mathbf{v}_n$ can equal $\mathbf{0}$ is if every coefficient is zero, so $c_i - c_i' = 0$ for each $i$, which is $c_i = c_i'$. The two expressions are the same.
+
+</TheoremBlock>
+
+Coordinates are how an abstract vector space gets concrete. Once you pick a basis, every vector becomes a column of $n$ numbers — its coordinates — and you can do arithmetic with those numbers. Different bases give different coordinates for the same vector, and switching between them is what §9 of this topic (Change of Basis) will be about. For now, the bookkeeping fact is that the coordinates exist and are unique.
+
+The headline theorem of this section is that any two bases of the same vector space have the same number of vectors. This number is well-defined and earns the name *dimension*.
+
+<TheoremBlock type="theorem" number={1} title="Dimension Theorem (Steinitz Exchange)">
+
+If $\{\mathbf{v}_1, \ldots, \mathbf{v}_n\}$ and $\{\mathbf{w}_1, \ldots, \mathbf{w}_m\}$ are both bases of the same vector space $V$, then $n = m$.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+We prove the theorem by establishing a stronger statement called the **Exchange Lemma**: if $\{\mathbf{v}_1, \ldots, \mathbf{v}_n\}$ spans $V$ and $\{\mathbf{w}_1, \ldots, \mathbf{w}_m\}$ is linearly independent in $V$, then $m \leq n$. Applying this lemma twice — first to the basis $\{\mathbf{v}_i\}$ (which spans) and the basis $\{\mathbf{w}_j\}$ (which is independent), giving $m \leq n$, and then with the roles reversed, giving $n \leq m$ — completes the proof.
+
+We prove the lemma by induction on $k$, where at step $k$ we will have replaced $k$ of the $\mathbf{v}_i$ with the vectors $\mathbf{w}_1, \ldots, \mathbf{w}_k$ while preserving the spanning property.
+
+**Step 1.** Because $\{\mathbf{v}_1, \ldots, \mathbf{v}_n\}$ spans $V$ and $\mathbf{w}_1 \in V$, we can write
+
+$$\mathbf{w}_1 = a_1 \mathbf{v}_1 + a_2 \mathbf{v}_2 + \cdots + a_n \mathbf{v}_n.$$
+
+At least one coefficient $a_i$ is nonzero — otherwise $\mathbf{w}_1 = \mathbf{0}$, which would contradict the linear independence of $\{\mathbf{w}_j\}$ (independent sets never contain the zero vector). Reordering the $\mathbf{v}_i$ if necessary, assume $a_1 \neq 0$. Then we can solve for $\mathbf{v}_1$:
+
+$$\mathbf{v}_1 = \frac{1}{a_1}\bigl(\mathbf{w}_1 - a_2 \mathbf{v}_2 - \cdots - a_n \mathbf{v}_n\bigr).$$
+
+So $\mathbf{v}_1$ is a linear combination of $\mathbf{w}_1, \mathbf{v}_2, \ldots, \mathbf{v}_n$, which means $\{\mathbf{w}_1, \mathbf{v}_2, \ldots, \mathbf{v}_n\}$ still spans $V$: anything previously reachable from the old list is still reachable from the new one.
+
+**Inductive step.** Suppose after $k$ steps we have a spanning list of the form $\{\mathbf{w}_1, \ldots, \mathbf{w}_k, \mathbf{v}_{k+1}, \ldots, \mathbf{v}_n\}$. If $k = m$ we are done — the inductive procedure has consumed all the $\mathbf{w}_j$, so $m$ of the original $\mathbf{v}_i$ have been replaced and in particular $m \leq n$. Otherwise, $k < m$ and we have at least one more $\mathbf{w}_{k+1}$ to insert. Write
+
+$$\mathbf{w}_{k+1} = b_1 \mathbf{w}_1 + \cdots + b_k \mathbf{w}_k + c_{k+1} \mathbf{v}_{k+1} + \cdots + c_n \mathbf{v}_n,$$
+
+using the inductive spanning property. At least one of the $c_i$ must be nonzero, because if every $c_i$ were zero then $\mathbf{w}_{k+1}$ would be a linear combination of $\mathbf{w}_1, \ldots, \mathbf{w}_k$, contradicting the linear independence of $\{\mathbf{w}_j\}$. Reordering the remaining $\mathbf{v}_i$ if necessary, assume $c_{k+1} \neq 0$. Solving for $\mathbf{v}_{k+1}$ as in Step 1, we conclude that $\mathbf{v}_{k+1}$ is a linear combination of the new list $\{\mathbf{w}_1, \ldots, \mathbf{w}_{k+1}, \mathbf{v}_{k+2}, \ldots, \mathbf{v}_n\}$, so the new list still spans $V$. This completes the inductive step.
+
+**Termination.** The induction can run for at most $n$ steps before we exhaust the $\mathbf{v}_i$. If at the end of the inductive procedure we still have $\mathbf{w}_j$ left over — that is, if $m > n$ — then we would have a contradiction at step $n + 1$: after replacing all $n$ of the $\mathbf{v}_i$ we would be trying to express $\mathbf{w}_{n+1}$ as a linear combination of $\{\mathbf{w}_1, \ldots, \mathbf{w}_n\}$, which would violate linear independence. So $m \leq n$, which is the lemma.
+
+</TheoremBlock>
+
+The Steinitz exchange argument is the workhorse of finite-dimensional linear algebra: it is also how one proves that every linearly independent set can be *extended* to a basis (run the exchange in reverse, adding vectors from a known basis until the set spans) and that every spanning set *contains* a basis (run the exchange and discard the redundant vectors). Both facts will be invoked silently in §8 when we prove the rank-nullity theorem.
+
+<TheoremBlock type="definition" number={5} title="Dimension">
+
+The **dimension** of a vector space $V$, written $\dim V$, is the number of vectors in any basis. By the Dimension Theorem, this number does not depend on the choice of basis, so the dimension is well-defined. A vector space is **finite-dimensional** if it has a basis with finitely many elements, and **infinite-dimensional** otherwise.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={4} title="Dimensions of ℝⁿ, Pₙ, and C[a, b]">
+
+For each of our running examples:
+
+- $\dim \mathbb{R}^n = n$, with the standard basis $\mathbf{e}_1, \mathbf{e}_2, \ldots, \mathbf{e}_n$.
+- $\dim P_n = n + 1$, with basis $\{1, x, x^2, \ldots, x^n\}$.
+- $\dim C[a, b] = \infty$. To see this, note that the functions $1, x, x^2, \ldots, x^k$ are linearly independent in $C[a, b]$ for every $k$ (a polynomial of degree at most $k$ has at most $k$ roots, so if a nontrivial linear combination of monomials were the zero function it would have infinitely many roots — impossible). So $C[a, b]$ contains $P_k$ as a subspace for every $k$, and no finite basis can suffice.
+
+</TheoremBlock>
+
+The first vector-space-flavored interactive viz on this site uses these definitions directly. Drag the arrows below to manipulate a candidate basis of $\mathbb{R}^2$; toggle vectors active and inactive; switch between presets. The readout tracks the rank of the active set (the dimension of its span), whether the set is linearly independent, and — when exactly two vectors are active — the determinant of the matrix whose columns are those vectors.
+
+<BasisExplorer client:visible />
+
+A useful exercise once the viz is in hand: configure the three "dependent" vectors so that the determinant of the first two is positive, and watch the determinant flip sign when you swap them. The sign of the determinant tracks the orientation of the basis — a concept §7 will make precise.
+
+<TheoremBlock type="remark" number={2} title="Infinite-Dimensional Vector Spaces">
+
+Most function spaces are infinite-dimensional. The space $C[a, b]$ above is just one example; the space of square-integrable functions $L^2(\mathbb{R})$ is another, and so is the sequence space $\ell^2$ of square-summable real sequences. The theorems we prove in this topic are about finite-dimensional spaces, but the *language* — span, basis, dimension, orthogonality — extends to infinite dimensions with appropriate care for convergence. That extension is the subject of functional analysis, the focus of [Metric Spaces](/topics/metric-spaces), [Normed & Banach Spaces](/topics/banach-spaces), and [Inner Product & Hilbert Spaces](/topics/hilbert-spaces) elsewhere on this site. Finite-dimensional linear algebra is the warm-up; infinite-dimensional linear algebra is the real game.
+
+</TheoremBlock>
+
+**ML aside.** When a paper introduces a model that "projects onto a 128-dimensional latent space," the number 128 is a dimension in exactly the sense above: it is the size of any basis of that latent space. Two architectures with the same latent dimension but different bases are representationally equivalent up to a change of coordinates — which is one reason representational similarity analysis exists, and one reason different word-embedding models with the same dimension can encode the same semantic structure in apparently unrelated coordinates. Choosing a basis for the latent space is what training the embedding layer does; the dimension is a hyperparameter you set, and the basis is a parameter the model learns.
+
+**Where this leads.** We have a vocabulary now: vectors, spans, independent sets, bases, and dimensions. The natural next question — the one that animates the rest of the topic — is what *functions* between vector spaces look like, and the answer is the same answer that motivated this whole development: linear functions. Section 4 below introduces linear maps, and §5 explains why a matrix is exactly the right way to record one. Further out, once we have built the full apparatus, a deeper question will surface: given a linear map $T$ acting on a vector space $V$, can we find a basis of $V$ that makes the matrix of $T$ as simple as possible? For some maps, yes: a basis of "directions the map only stretches without rotating." Those directions have a name — *eigenvectors* — but they belong to the next topic on this track, and we will not introduce them here. For now, every basis is equally good.
+
+## 4. Linear Maps
+
+A *function* between vector spaces is a rule that takes a vector in one space and produces a vector in another. Most functions you can write down are wild — they bend lines, stretch some regions while crushing others, and have nothing in common with one another. The class of functions linear algebra studies is the narrowest possible one that respects the two operations a vector space comes with: addition and scalar multiplication. A function with this property is called a **linear map** (or, equivalently, a **linear transformation**), and the entire content of §§4-9 of this topic is what these maps can and cannot do.
+
+The geometric picture is the one we developed in §1: a linear map sends straight lines through the origin to straight lines through the origin (possibly degenerated to a single point), parallel lines to parallel lines, and the origin to itself. Algebraically, "respects addition and scalar multiplication" turns into two equations that we elevate to definition.
+
+<TheoremBlock type="definition" number={6} title="Linear Map">
+
+A function $T \colon V \to W$ between real vector spaces is a **linear map** (or **linear transformation**) if it satisfies the two structure conditions
+
+1. **(Additivity)** $\;T(\mathbf{u} + \mathbf{v}) = T(\mathbf{u}) + T(\mathbf{v})$ for all $\mathbf{u}, \mathbf{v} \in V$.
+2. **(Homogeneity)** $\;T(c \mathbf{v}) = c\, T(\mathbf{v})$ for all $c \in \mathbb{R}$ and all $\mathbf{v} \in V$.
+
+Equivalently — and this single equation is sometimes used as the definition — $T(a \mathbf{u} + b \mathbf{v}) = a\, T(\mathbf{u}) + b\, T(\mathbf{v})$ for all scalars $a, b$ and all vectors $\mathbf{u}, \mathbf{v}$.
+
+</TheoremBlock>
+
+One immediate consequence of the two axioms is that every linear map sends the zero vector to the zero vector: $T(\mathbf{0}) = T(0 \cdot \mathbf{v}) = 0 \cdot T(\mathbf{v}) = \mathbf{0}$. This is the algebraic shadow of the geometric "origin stays put" condition from §1, and it is the single property that distinguishes a linear map from an *affine* one (which is a linear map composed with a translation). Now four examples — the canonical zoo of linear maps on the plane — each of which the reader should be able to draw from memory by the end of this section.
+
+<TheoremBlock type="example" number={5} title="Rotation by θ in ℝ²">
+
+For a fixed angle $\theta \in \mathbb{R}$, define $R_\theta \colon \mathbb{R}^2 \to \mathbb{R}^2$ by
+
+$$R_\theta(x, y) = (\, x \cos\theta - y \sin\theta, \; x \sin\theta + y \cos\theta \,).$$
+
+Linearity is direct from the formula: each output coordinate is a real-linear combination of $x$ and $y$, so additivity and homogeneity in the input both go through. Geometrically, $R_\theta$ rotates every vector counter-clockwise by $\theta$ radians around the origin. The image of the standard basis is $R_\theta(\mathbf{e}_1) = (\cos\theta, \sin\theta)$ and $R_\theta(\mathbf{e}_2) = (-\sin\theta, \cos\theta)$ — a fact that will determine the matrix of $R_\theta$ in §5.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={6} title="Orthogonal Projection onto a Line">
+
+Let $\mathbf{u} \in \mathbb{R}^n$ be a unit vector. The **orthogonal projection onto the line spanned by $\mathbf{u}$** is the map $P_\mathbf{u} \colon \mathbb{R}^n \to \mathbb{R}^n$ defined by
+
+$$P_\mathbf{u}(\mathbf{v}) = (\mathbf{v} \cdot \mathbf{u})\, \mathbf{u},$$
+
+where $\mathbf{v} \cdot \mathbf{u} = \sum_i v_i u_i$ is the standard dot product. Linearity follows because the dot product is linear in its first slot: $P_\mathbf{u}(a\mathbf{v} + b\mathbf{w}) = ((a\mathbf{v} + b\mathbf{w}) \cdot \mathbf{u})\, \mathbf{u} = (a\, \mathbf{v} \cdot \mathbf{u} + b\, \mathbf{w} \cdot \mathbf{u})\, \mathbf{u} = a P_\mathbf{u}(\mathbf{v}) + b P_\mathbf{u}(\mathbf{w})$. Geometrically, $P_\mathbf{u}$ sends every vector to its shadow on the line through the origin in the direction of $\mathbf{u}$. The image of $P_\mathbf{u}$ is exactly that line; its kernel is the hyperplane perpendicular to $\mathbf{u}$ — every vector orthogonal to $\mathbf{u}$ has $\mathbf{v} \cdot \mathbf{u} = 0$ and so projects to the origin.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={7} title="Uniform Scaling by λ">
+
+For a fixed $\lambda \in \mathbb{R}$, define $S_\lambda \colon \mathbb{R}^n \to \mathbb{R}^n$ by
+
+$$S_\lambda(\mathbf{v}) = \lambda \mathbf{v}.$$
+
+Linearity is immediate: $S_\lambda(a\mathbf{u} + b\mathbf{v}) = \lambda(a\mathbf{u} + b\mathbf{v}) = a\, \lambda\mathbf{u} + b\, \lambda\mathbf{v} = a S_\lambda(\mathbf{u}) + b S_\lambda(\mathbf{v})$. The geometry depends on the sign of $\lambda$: for $\lambda > 0$ the map stretches every vector outward (or shrinks toward the origin if $0 < \lambda < 1$); for $\lambda < 0$ it stretches *and* flips through the origin; for $\lambda = 0$ it crushes the whole space to a single point.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={8} title="Horizontal Shear">
+
+For a fixed $k \in \mathbb{R}$, define $\mathrm{Sh}_k \colon \mathbb{R}^2 \to \mathbb{R}^2$ by
+
+$$\mathrm{Sh}_k(x, y) = (\, x + k y, \; y \,).$$
+
+Each output coordinate is a linear combination of the inputs, so $\mathrm{Sh}_k$ is linear. Geometrically, every point's $y$-coordinate is preserved but its $x$-coordinate is bumped sideways by $k$ times $y$. The result is that horizontal lines slide rigidly, with the slide distance proportional to height: the $x$-axis stays put (everything on it has $y = 0$), and lines parallel to the $x$-axis stay parallel — they just shift sideways. This is the "deck of cards" picture from §1 made precise.
+
+</TheoremBlock>
+
+<figure className="my-6">
+  <img src="/images/topics/linear-algebra/linear-map-zoo.png" alt="Six canonical linear maps acting on the unit square: identity, rotation, projection onto x-axis, horizontal shear, anisotropic scaling, reflection" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">The canonical zoo of linear maps acting on the unit square. Each map is determined by where it sends e₁ and e₂ — the two colored arrows in each panel.</figcaption>
+</figure>
+
+The four examples share a structural pattern. Each is determined by where it sends the two basis vectors $\mathbf{e}_1, \mathbf{e}_2$ of $\mathbb{R}^2$ — once you know $T(\mathbf{e}_1)$ and $T(\mathbf{e}_2)$, linearity tells you $T(x \mathbf{e}_1 + y \mathbf{e}_2) = x\, T(\mathbf{e}_1) + y\, T(\mathbf{e}_2)$ for every input vector. The next viz makes this pattern visceral: drag the two image vectors and watch the entire grid follow. A side panel keeps track of the matrix whose columns are exactly those image vectors — but we have not built the language of matrices yet; that's what §5 is for. For now, the viz is a preview.
+
+<LinearMapMatrixBuilder client:visible />
+
+The "preset" dropdown switches between the eight canonical maps — identity, two rotations, two projections, a shear, a uniform scaling, and a reflection. The matrix readout on the right shows what those image vectors look like as a 2×2 array. The determinant indicator beneath the matrix tracks the signed area of the parallelogram in the canvas: positive for orientation-preserving maps, negative for orientation-reversing ones, zero whenever the map collapses the plane to a line.
+
+Two subspaces are naturally associated with every linear map: the inputs that get sent to zero, and the outputs that actually get hit. They have names.
+
+<TheoremBlock type="definition" number={7} title="Kernel and Image">
+
+Let $T \colon V \to W$ be a linear map between vector spaces.
+
+- The **kernel** (or **nullspace**) of $T$ is the subset of $V$ that $T$ sends to the zero vector of $W$:
+
+$$\ker T = \{\, \mathbf{v} \in V \mid T(\mathbf{v}) = \mathbf{0} \,\}.$$
+
+- The **image** (or **range**) of $T$ is the subset of $W$ consisting of all vectors that are hit by something in $V$:
+
+$$\mathrm{im}\, T = \{\, T(\mathbf{v}) \mid \mathbf{v} \in V \,\} \subseteq W.$$
+
+</TheoremBlock>
+
+For the four canonical examples: rotation has trivial kernel $\{\mathbf{0}\}$ and image all of $\mathbb{R}^2$ (it loses no information and reaches every output). Projection onto the line through $\mathbf{u}$ has kernel equal to the perpendicular line and image equal to the line through $\mathbf{u}$. Uniform scaling $S_\lambda$ has trivial kernel and image all of $\mathbb{R}^n$ when $\lambda \neq 0$; when $\lambda = 0$ the kernel is the whole space and the image is just the origin. Horizontal shear has trivial kernel and image all of $\mathbb{R}^2$. These observations are not coincidences — they are diagnostics, and §8 (Rank-Nullity) will package them into a single counting theorem.
+
+<TheoremBlock type="proposition" number={2} title="Kernel and Image Are Subspaces">
+
+For any linear map $T \colon V \to W$, the kernel $\ker T$ is a subspace of $V$ and the image $\mathrm{im}\, T$ is a subspace of $W$.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+We verify the two closure conditions and the zero-vector condition for each.
+
+**The kernel.** Let $\mathbf{u}, \mathbf{v} \in \ker T$ and $c \in \mathbb{R}$. Then by linearity,
+
+$$T(\mathbf{u} + \mathbf{v}) = T(\mathbf{u}) + T(\mathbf{v}) = \mathbf{0} + \mathbf{0} = \mathbf{0},$$
+
+so $\mathbf{u} + \mathbf{v} \in \ker T$, and
+
+$$T(c \mathbf{v}) = c\, T(\mathbf{v}) = c \cdot \mathbf{0} = \mathbf{0},$$
+
+so $c \mathbf{v} \in \ker T$. The zero vector $\mathbf{0}_V$ is in $\ker T$ because $T(\mathbf{0}_V) = \mathbf{0}_W$ (a consequence of homogeneity at $c = 0$).
+
+**The image.** Let $\mathbf{w}_1, \mathbf{w}_2 \in \mathrm{im}\, T$, so $\mathbf{w}_1 = T(\mathbf{v}_1)$ and $\mathbf{w}_2 = T(\mathbf{v}_2)$ for some $\mathbf{v}_1, \mathbf{v}_2 \in V$, and let $c \in \mathbb{R}$. Then
+
+$$\mathbf{w}_1 + \mathbf{w}_2 = T(\mathbf{v}_1) + T(\mathbf{v}_2) = T(\mathbf{v}_1 + \mathbf{v}_2) \in \mathrm{im}\, T,$$
+
+and
+
+$$c \mathbf{w}_1 = c\, T(\mathbf{v}_1) = T(c \mathbf{v}_1) \in \mathrm{im}\, T.$$
+
+The zero vector $\mathbf{0}_W$ is in $\mathrm{im}\, T$ because $\mathbf{0}_W = T(\mathbf{0}_V)$.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={3} title="Kernel and Nullspace Mean the Same Thing">
+
+Pure-mathematics texts say *kernel*; applied texts say *nullspace*. They denote the same set. We use both interchangeably, preferring *kernel* in abstract discussion of linear maps and *nullspace* when discussing computations with matrices, where "the nullspace of $A$" is the standard phrase. Likewise, *range* and *image* are synonyms, with the same prose-vs-computation split.
+
+</TheoremBlock>
+
+The next remark is the single most consequential observation of the section, and it is the entire reason matrices exist.
+
+<TheoremBlock type="remark" number={4} title="A Linear Map is Determined by Its Action on a Basis">
+
+Let $V$ be a finite-dimensional vector space with basis $\{\mathbf{v}_1, \ldots, \mathbf{v}_n\}$, let $W$ be any vector space, and let $\mathbf{w}_1, \ldots, \mathbf{w}_n$ be any $n$ vectors in $W$ (chosen however you like — they need not be a basis, they need not be distinct, they need not even be nonzero). Then there is exactly one linear map $T \colon V \to W$ satisfying $T(\mathbf{v}_i) = \mathbf{w}_i$ for every $i$.
+
+*Why.* Existence: every $\mathbf{v} \in V$ has a unique expansion $\mathbf{v} = c_1 \mathbf{v}_1 + \cdots + c_n \mathbf{v}_n$ by Proposition 1, and we are *forced* to define $T(\mathbf{v}) = c_1 \mathbf{w}_1 + \cdots + c_n \mathbf{w}_n$ in order for linearity to hold. Verifying that this definition is indeed linear is a mechanical check: linearity in the coefficient list follows from linearity in the coordinates. Uniqueness: if two linear maps $T$ and $T'$ both send $\mathbf{v}_i$ to $\mathbf{w}_i$ for every $i$, then they agree on the basis, and by linearity they agree on every linear combination of basis vectors, i.e. on every vector in $V$.
+
+This single fact is the reason a linear map is recorded by a finite block of numbers — once you have specified where each of the $n$ basis vectors goes, the whole map is determined. The next section turns that block of numbers into a matrix.
+
+</TheoremBlock>
+
+**ML aside.** A linear regression model $\hat{y} = \mathbf{w}^\top \mathbf{x}$ is a linear map $\mathbb{R}^p \to \mathbb{R}$. The kernel is the hyperplane $\{\mathbf{x} \mid \mathbf{w}^\top \mathbf{x} = 0\}$ — exactly the set of input vectors at which the model predicts zero, which is the *decision boundary at output 0* in machine-learning vocabulary. The image is either all of $\mathbb{R}$ (when $\mathbf{w} \neq \mathbf{0}$) or the single point $\{0\}$ (when $\mathbf{w} = \mathbf{0}$ and the model is degenerate). The kernel/image dichotomy is exactly the geometric reading of "which inputs the model ignores" and "which outputs the model can produce" — vocabulary every regression diagnostic uses without naming.
+
+**Where this leads.** We have a definition of linear map and a zoo of examples. The next two sections turn the verbal definition into a computational object — a matrix — and then describe how matrices compose. Further on, once we have all of this in hand, we will ask: among the bases we could choose for $V$, is there one that makes the matrix of $T$ as simple as possible? For uniform scaling, every basis is equally good — every direction is just scaled. For rotation by an angle other than $0$ or $\pi$, no real basis makes the matrix diagonal — every direction genuinely turns. For projection, a basis aligned with the projection line and its perpendicular reduces the matrix to a diagonal of zeros and ones. The general theory of "which maps admit a diagonalizing basis, and what does the basis look like" is the content of *Eigenvalues & Eigenvectors* — the next topic.
+
+## 5. Matrices as Representations of Linear Maps
+
+A *matrix* is, in the most reductive description, a rectangular block of numbers. That description is true and unhelpful — it is also the description that drives most students to memorize the row-by-column multiplication rule without understanding where it came from. We will give a different description: a matrix is the **coordinate-dependent record of a linear map**, and the row-by-column rule is the consequence, not the postulate. Once that ordering is in place, every matrix manipulation downstream becomes a geometric statement.
+
+Here is the setup. Pick a basis $\mathcal{B} = \{\mathbf{v}_1, \ldots, \mathbf{v}_n\}$ of the domain $V$ and a basis $\mathcal{C} = \{\mathbf{w}_1, \ldots, \mathbf{w}_m\}$ of the codomain $W$. By Remark 4, the linear map $T \colon V \to W$ is determined by the $n$ image vectors $T(\mathbf{v}_1), \ldots, T(\mathbf{v}_n)$. Each $T(\mathbf{v}_j)$ lives in $W$ and so has a unique expansion in the basis $\mathcal{C}$:
+
+$$T(\mathbf{v}_j) = a_{1j} \mathbf{w}_1 + a_{2j} \mathbf{w}_2 + \cdots + a_{mj} \mathbf{w}_m.$$
+
+The $mn$ scalars $a_{ij}$ assemble into an $m \times n$ rectangular array. *That* array is the matrix of $T$, and reading it correctly is the entire point of this section.
+
+<TheoremBlock type="definition" number={8} title="Matrix of a Linear Map">
+
+Let $T \colon V \to W$ be a linear map between finite-dimensional vector spaces, let $\mathcal{B} = \{\mathbf{v}_1, \ldots, \mathbf{v}_n\}$ be a basis of $V$, and let $\mathcal{C} = \{\mathbf{w}_1, \ldots, \mathbf{w}_m\}$ be a basis of $W$. Write the image of each $\mathbf{v}_j$ in the basis $\mathcal{C}$ as
+
+$$T(\mathbf{v}_j) = \sum_{i=1}^{m} a_{ij} \mathbf{w}_i, \qquad j = 1, 2, \ldots, n.$$
+
+The **matrix of $T$ relative to $\mathcal{B}$ and $\mathcal{C}$**, written $[T]_{\mathcal{C} \leftarrow \mathcal{B}}$, is the $m \times n$ array $A = (a_{ij})$. Equivalently — and this is the picture worth carrying around — the **$j$-th column of $[T]_{\mathcal{C} \leftarrow \mathcal{B}}$ is the coordinate vector of $T(\mathbf{v}_j)$ in the basis $\mathcal{C}$**.
+
+</TheoremBlock>
+
+<figure className="my-6">
+  <img src="/images/topics/linear-algebra/matrix-as-columns.png" alt="Two-panel comparison: 2x2 matrix with columns highlighted as images of e_1 and e_2; 3x3 matrix in isometric projection showing the three column images" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">The j-th column of a matrix is the place the j-th basis vector lands. Once internalized, almost every matrix manipulation becomes a geometric statement.</figcaption>
+</figure>
+
+Reread that last sentence; it is what the rest of this topic rests on. The $j$-th column is the answer to the question "where does $T$ send the $j$-th input basis vector?" The viz above made this visible: when you drag $T(\mathbf{e}_1)$, only the first column of the matrix changes; when you drag $T(\mathbf{e}_2)$, only the second column changes. Read this way, the matrix is *the recipe for what $T$ does to each input basis vector*, written out in coordinates.
+
+That recipe extends to every input vector — not just basis vectors — through a single computation that we now also name.
+
+<TheoremBlock type="definition" number={9} title="Matrix-Vector Product">
+
+Let $A$ be an $m \times n$ matrix with columns $\mathbf{a}_1, \mathbf{a}_2, \ldots, \mathbf{a}_n \in \mathbb{R}^m$, and let $\mathbf{c} = (c_1, c_2, \ldots, c_n)^\top \in \mathbb{R}^n$ be a column vector. The **matrix-vector product** $A \mathbf{c}$ is the vector in $\mathbb{R}^m$ given by
+
+$$A \mathbf{c} = c_1 \mathbf{a}_1 + c_2 \mathbf{a}_2 + \cdots + c_n \mathbf{a}_n.$$
+
+That is, $A \mathbf{c}$ is the linear combination of the columns of $A$ with weights coming from $\mathbf{c}$.
+
+</TheoremBlock>
+
+The conventional formula for the matrix-vector product, $(A \mathbf{c})_i = \sum_j a_{ij} c_j$, is the entry-by-entry rewrite of the columns-as-vectors formula above; they describe the same operation. Most computational packages implement the entry-by-entry form (it is friendlier to the cache), but the columns-as-vectors form is the one that makes the geometry visible. With this definition in hand, the matrix of $T$ does what its name promises.
+
+<TheoremBlock type="theorem" number={2} title="Matrix-Vector Product Computes the Linear Map">
+
+With notation as in Definitions 8 and 9: if $\mathbf{v} \in V$ has coordinate vector $\mathbf{c} = (c_1, \ldots, c_n)^\top$ in the basis $\mathcal{B}$, then the coordinate vector of $T(\mathbf{v})$ in the basis $\mathcal{C}$ is the matrix-vector product $A \mathbf{c}$, where $A = [T]_{\mathcal{C} \leftarrow \mathcal{B}}$.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+Start with the expansion of $\mathbf{v}$ in $\mathcal{B}$ and apply $T$, using linearity at each step:
+
+$$T(\mathbf{v}) = T\!\left( \sum_{j=1}^{n} c_j \mathbf{v}_j \right) = \sum_{j=1}^{n} c_j\, T(\mathbf{v}_j).$$
+
+By Definition 8, $T(\mathbf{v}_j) = \sum_{i=1}^{m} a_{ij} \mathbf{w}_i$. Substituting and swapping the order of the (finite) sums,
+
+$$T(\mathbf{v}) = \sum_{j=1}^{n} c_j \sum_{i=1}^{m} a_{ij} \mathbf{w}_i = \sum_{i=1}^{m} \!\left( \sum_{j=1}^{n} a_{ij} c_j \right) \mathbf{w}_i.$$
+
+The expression in parentheses is exactly the $i$-th entry of the matrix-vector product $A \mathbf{c}$, so the $i$-th coordinate of $T(\mathbf{v})$ in $\mathcal{C}$ is $(A \mathbf{c})_i$. That is the claim.
+
+</TheoremBlock>
+
+The theorem turns the abstract definition of a linear map into a concrete computation. To apply $T$ to a vector $\mathbf{v}$, write $\mathbf{v}$ in coordinates in the input basis, look up the matrix $[T]_{\mathcal{C} \leftarrow \mathcal{B}}$, multiply, and read off the answer in the output basis. Every linear-algebra library on every platform does exactly this. Two examples make the matrix-of-a-map idea concrete.
+
+<TheoremBlock type="example" number={9} title="Standard Matrix of a Rotation in ℝ²">
+
+The rotation $R_\theta \colon \mathbb{R}^2 \to \mathbb{R}^2$ from Example 5 sends the standard basis to
+
+$$R_\theta(\mathbf{e}_1) = (\cos\theta, \sin\theta), \qquad R_\theta(\mathbf{e}_2) = (-\sin\theta, \cos\theta).$$
+
+By Definition 8, those two image vectors are the columns of $[R_\theta]$ in the standard basis:
+
+$$[R_\theta] = \begin{pmatrix} \cos\theta & -\sin\theta \\ \sin\theta & \;\cos\theta \end{pmatrix}.$$
+
+Applying Theorem 2 with $\mathbf{c} = (x, y)^\top$ recovers the formula $R_\theta(x, y) = (x \cos\theta - y \sin\theta, \; x \sin\theta + y \cos\theta)$ from Example 5 — exactly as expected. The viz's "Rotation by 30°" and "Rotation by 90°" presets are this matrix at $\theta = \pi/6$ and $\theta = \pi/2$ respectively.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={10} title="Matrix of Projection onto the x-axis">
+
+Let $P \colon \mathbb{R}^2 \to \mathbb{R}^2$ be the map $P(x, y) = (x, 0)$. Then $P(\mathbf{e}_1) = (1, 0)$ and $P(\mathbf{e}_2) = (0, 0)$, so
+
+$$[P] = \begin{pmatrix} 1 & 0 \\ 0 & 0 \end{pmatrix}.$$
+
+The second column is all zeros, which is exactly the statement that $\mathbf{e}_2 \in \ker P$ — read columnwise. Whenever you spot a zero column in a matrix, you have spotted a basis vector in the kernel. This is the first of many "structural facts of the matrix that you read off geometrically without computing anything" the topic will accumulate.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={5} title="Why the Columns Are the Images of Basis Vectors">
+
+The single most important fact of linear-algebra pedagogy — the one most often skipped over in undergraduate courses and the one that makes the viz above the centerpiece of this section — is that **the $j$-th column of a matrix is the place the $j$-th basis vector lands**. Once that is internalized, almost every matrix manipulation becomes a geometric statement:
+
+- A column of zeros means the corresponding basis vector is in the kernel.
+- Two equal columns mean the matrix sends two basis vectors to the same image, so the kernel contains the difference.
+- A square matrix has linearly independent columns if and only if no two input basis vectors collide and none collapses to zero, which is exactly the condition that $T$ is invertible.
+- The image of a matrix is the span of its columns — period. The "column space" of a matrix and the image of the underlying linear map are the same set.
+
+Every one of those statements is just Definition 8 plus a moment's thought about what linear-combination means. The standard order of pedagogy reverses this — first the row-by-column rule, then the geometric consequences — but reversing the ordering loses the *reason* the row-by-column rule looks the way it does. We will return to this picture repeatedly; treat it as the topic's central image.
+
+</TheoremBlock>
+
+**ML aside.** A fully-connected (dense) layer without bias and without nonlinearity is the map $\mathbf{h} = W \mathbf{x}$, where $W$ is a learned weight matrix. The $j$-th column of $W$ is, by exactly Definition 8, *what this layer does to the $j$-th input neuron* — its "response pattern" when only neuron $j$ is active. One popular interpretability technique is to literally render those columns as images (for image inputs) or words (for embedding inputs) and see what the layer has learned to "look for." When you read a paper that visualizes the "feature detectors" of a neural network's first layer, you are looking at columns of $W$ rendered as pictures — Definition 8 doing interpretability work.
+
+## 6. Matrix Algebra
+
+We now have one matrix per linear map. The next question is what happens when we *combine* linear maps. The two combinations that matter — composition (do one map, then another) and scaling/addition of maps — give matrix operations: matrix multiplication, scalar multiplication of matrices, and matrix addition. The standard undergraduate course postulates the rules for these operations (especially the row-by-column rule for multiplication) and asks the student to verify that they have nice properties. **We do the reverse.** Composition of linear maps is the more fundamental operation, and we derive the row-by-column rule as the formula that records it. The pedagogical commitment of this section is that matrix multiplication is *defined to be* composition; the row-times-column arithmetic is the consequence.
+
+This ordering matters far beyond this section. The chain rule for Jacobians, the spectral theorem, the diagonalization of a covariance matrix, the composition of layers in a neural network — every downstream concept becomes a matrix-multiplication statement, and every one of them is easier to see if you read matrix multiplication as composition rather than as a memorized formula.
+
+<TheoremBlock type="definition" number={10} title="Composition of Linear Maps">
+
+Let $T \colon V \to W$ and $S \colon W \to U$ be linear maps. Their **composition** $S \circ T \colon V \to U$ is the function
+
+$$(S \circ T)(\mathbf{v}) = S(T(\mathbf{v})), \qquad \mathbf{v} \in V.$$
+
+The composition of two linear maps is itself linear: $(S \circ T)(a \mathbf{u} + b \mathbf{v}) = S(T(a \mathbf{u} + b \mathbf{v})) = S(a T(\mathbf{u}) + b T(\mathbf{v})) = a S(T(\mathbf{u})) + b S(T(\mathbf{v})) = a (S \circ T)(\mathbf{u}) + b (S \circ T)(\mathbf{v})$, applying the linearity axioms of $T$ once and of $S$ once.
+
+</TheoremBlock>
+
+So the composition $S \circ T$ is itself a linear map, and therefore it has a matrix. The question of this section is: what is that matrix? We answer it by chasing where each basis vector of $V$ ends up under the composition, expressing the result in coordinates, and reading off the rule.
+
+<TheoremBlock type="definition" number={11} title="Matrix Product">
+
+Let $B$ be an $\ell \times m$ matrix and $A$ be an $m \times n$ matrix. The **matrix product** $BA$ is the $\ell \times n$ matrix whose $(i, k)$ entry is
+
+$$(BA)_{ik} = \sum_{j=1}^{m} B_{ij}\, A_{jk}, \qquad 1 \leq i \leq \ell, \; 1 \leq k \leq n.$$
+
+</TheoremBlock>
+
+That is the row-by-column rule, written out. We are *naming* it for now; we have not yet motivated it. The next theorem motivates it — by showing that $BA$ is the matrix that records the composition $S \circ T$ whenever $A$ is the matrix of $T$ and $B$ is the matrix of $S$.
+
+<TheoremBlock type="theorem" number={3} title="Matrix Product Computes Composition">
+
+Let $T \colon V \to W$ and $S \colon W \to U$ be linear maps between finite-dimensional vector spaces. Fix bases $\mathcal{B}$ of $V$, $\mathcal{C}$ of $W$, and $\mathcal{D}$ of $U$. Let
+
+$$A = [T]_{\mathcal{C} \leftarrow \mathcal{B}}, \qquad B = [S]_{\mathcal{D} \leftarrow \mathcal{C}}$$
+
+be the matrices of $T$ and $S$ in those bases. Then the matrix of the composition in the bases $\mathcal{B}$ and $\mathcal{D}$ is the matrix product
+
+$$[S \circ T]_{\mathcal{D} \leftarrow \mathcal{B}} = B A.$$
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+We chase where each basis vector of $V$ ends up under the composition and read off the result columnwise, since by Definition 8 the $k$-th column of $[S \circ T]_{\mathcal{D} \leftarrow \mathcal{B}}$ is the coordinate vector of $(S \circ T)(\mathbf{v}_k)$ in the basis $\mathcal{D}$.
+
+Write the bases as $\mathcal{B} = \{\mathbf{v}_1, \ldots, \mathbf{v}_n\}$, $\mathcal{C} = \{\mathbf{w}_1, \ldots, \mathbf{w}_m\}$, $\mathcal{D} = \{\mathbf{u}_1, \ldots, \mathbf{u}_\ell\}$, with $A = (a_{jk})$ an $m \times n$ matrix and $B = (b_{ij})$ an $\ell \times m$ matrix.
+
+**Step 1: apply $T$ to $\mathbf{v}_k$.** By Definition 8 applied to $T$,
+
+$$T(\mathbf{v}_k) = \sum_{j=1}^{m} a_{jk}\, \mathbf{w}_j.$$
+
+**Step 2: apply $S$ to the result.** Using linearity of $S$ to pull the sum out, then Definition 8 applied to $S$ to expand each $S(\mathbf{w}_j)$,
+
+$$(S \circ T)(\mathbf{v}_k) = S(T(\mathbf{v}_k)) = S\!\left( \sum_{j=1}^{m} a_{jk}\, \mathbf{w}_j \right) = \sum_{j=1}^{m} a_{jk}\, S(\mathbf{w}_j) = \sum_{j=1}^{m} a_{jk} \sum_{i=1}^{\ell} b_{ij}\, \mathbf{u}_i.$$
+
+**Step 3: swap the order of summation and read off the coordinates.** The two sums are finite, so we may interchange them:
+
+$$(S \circ T)(\mathbf{v}_k) = \sum_{i=1}^{\ell} \!\left( \sum_{j=1}^{m} b_{ij}\, a_{jk} \right) \mathbf{u}_i.$$
+
+The parenthesized quantity is the $i$-th coordinate of $(S \circ T)(\mathbf{v}_k)$ in the basis $\mathcal{D}$. By Definition 8, that quantity is the $(i, k)$ entry of the matrix $[S \circ T]_{\mathcal{D} \leftarrow \mathcal{B}}$.
+
+**Step 4: recognize the row-by-column rule.** Compare $\sum_{j=1}^{m} b_{ij}\, a_{jk}$ to the right-hand side of Definition 11:
+
+$$(BA)_{ik} = \sum_{j=1}^{m} B_{ij}\, A_{jk} = \sum_{j=1}^{m} b_{ij}\, a_{jk}.$$
+
+The two expressions are literally identical. So the $(i, k)$ entry of $[S \circ T]_{\mathcal{D} \leftarrow \mathcal{B}}$ equals the $(i, k)$ entry of the matrix product $BA$, for every $i$ and every $k$. The two matrices are equal entrywise, hence equal as matrices.
+
+</TheoremBlock>
+
+<figure className="my-6">
+  <img src="/images/topics/linear-algebra/composition-is-product.png" alt="Three-panel sequence: unit square, intermediate parallelogram after applying A, final parallelogram after applying B; dashed outline shows (BA)*square coincides with B*(A*square)" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">Composing two linear maps A then B produces a single linear map whose matrix is the product BA. The dashed outline in the rightmost panel is (BA)·square — it coincides exactly with B·(A·square).</figcaption>
+</figure>
+
+This is the structural fact the entire row-by-column rule descends from. The rule is not arbitrary; it is the unique formula that records the composition of two linear maps in coordinates. Three immediate consequences worth noticing:
+
+- The number of columns of $B$ must equal the number of rows of $A$, because the basis $\mathcal{C}$ of $W$ has to match between "where $T$ sends things" and "where $S$ takes them from."
+- The result $BA$ has the row count of $B$ and the column count of $A$ — the rows of the *outer* map and the columns of the *inner* one.
+- The order $BA$ (not $AB$) is the order that records $S \circ T$ — outermost map on the left. We apply $T$ first to a vector and then $S$, but we write the matrix product with $S$'s matrix first. This is the conventional inconsistency that occasionally trips up newcomers; the proof above is what fixes the order.
+
+The remaining operations on matrices — transpose, scalar addition, inverse — flow from the same recipe. Each is the matrix-side mirror of a natural operation on linear maps.
+
+<TheoremBlock type="definition" number={12} title="Transpose">
+
+The **transpose** of an $m \times n$ matrix $A = (a_{ij})$ is the $n \times m$ matrix $A^\top$ whose entries are $(A^\top)_{ji} = a_{ij}$. Equivalently, the rows of $A$ are the columns of $A^\top$ and vice versa.
+
+</TheoremBlock>
+
+Geometrically, the transpose is the matrix of the **adjoint** of the linear map with respect to the standard inner product — a fact we will only state here and develop fully in §10 (and again in the *Hilbert Spaces* topic on the functional-analysis track). For now, the operation is just an entry-swapping rule.
+
+<TheoremBlock type="definition" number={13} title="Identity Matrix and Invertibility">
+
+The **identity matrix of size $n$**, written $I_n$, is the $n \times n$ matrix whose entries are
+
+$$(I_n)_{ij} = \begin{cases} 1 & \text{if } i = j, \\ 0 & \text{otherwise.} \end{cases}$$
+
+It is the matrix of the identity linear map $\mathrm{id}_V \colon V \to V$ (sending every $\mathbf{v}$ to itself) in any basis.
+
+A square matrix $A$ of size $n$ is **invertible** if there exists a matrix $A^{-1}$ of the same size satisfying
+
+$$A A^{-1} = A^{-1} A = I_n.$$
+
+When such an $A^{-1}$ exists it is unique, and it is called the **inverse** of $A$.
+
+</TheoremBlock>
+
+By Theorem 3 (and the fact that the identity map has the identity matrix in any basis), $A$ is invertible if and only if the linear map it represents has a two-sided inverse — i.e., is a bijection. Section 8 will collect this with several other equivalent characterizations of invertibility into a single corollary; for now, just note that "invertible" is a property of the underlying linear map, not of the bookkeeping that records it.
+
+<TheoremBlock type="proposition" number={3} title="Properties of Matrix Algebra">
+
+For matrices of compatible sizes and scalars $c \in \mathbb{R}$:
+
+1. **(Associativity of multiplication)** $\;(AB)C = A(BC)$.
+2. **(Distributivity)** $\;A(B + C) = AB + AC$ and $(A + B)C = AC + BC$.
+3. **(Transpose of a product)** $\;(AB)^\top = B^\top A^\top$. *Note the order reversal.*
+4. **(Non-commutativity)** In general, $AB \neq BA$. Matrix multiplication is *not* a commutative operation.
+
+</TheoremBlock>
+
+Properties (1) and (2) are immediate from Theorem 3 once you recognize the matrix-side claims as the matrix-side mirrors of well-known statements about functions: function composition is associative ($(f \circ g) \circ h = f \circ (g \circ h)$), and linearity gives the two distributive laws automatically. Property (3) — the order reversal under transpose — is a one-line entry-wise computation that we'll work in §10 once inner products give the operation a geometric meaning. Property (4) is the one worth dwelling on: it is the matrix-side reflection of the fact that *function composition is not commutative*. "First rotate, then shear" and "first shear, then rotate" are genuinely different procedures that produce different output vectors from the same input.
+
+<TheoremBlock type="example" number={11} title="Non-commutativity Made Geometric">
+
+Let $A$ be the matrix of rotation by $90°$ and $B$ be the matrix of the horizontal shear with $k = 1$:
+
+$$A = \begin{pmatrix} 0 & -1 \\ 1 & \;0 \end{pmatrix}, \qquad B = \begin{pmatrix} 1 & 1 \\ 0 & 1 \end{pmatrix}.$$
+
+Compute both orderings directly:
+
+$$AB = \begin{pmatrix} 0 & -1 \\ 1 & \;0 \end{pmatrix} \begin{pmatrix} 1 & 1 \\ 0 & 1 \end{pmatrix} = \begin{pmatrix} \;0 & -1 \\ \;1 & \;1 \end{pmatrix},$$
+
+$$BA = \begin{pmatrix} 1 & 1 \\ 0 & 1 \end{pmatrix} \begin{pmatrix} 0 & -1 \\ 1 & \;0 \end{pmatrix} = \begin{pmatrix} 1 & -1 \\ 1 & \;0 \end{pmatrix}.$$
+
+The two products are different. Geometrically, $AB$ applies the shear first and then the rotation: the standard square is sheared into a parallelogram and then that parallelogram is rotated $90°$. $BA$ rotates first and then shears: the square turns into a different square, which is then sheared into a *different* parallelogram. Both endings have the same area (because $\det(AB) = \det(BA) = 1$ — the product of determinants), but they sit in different places and have different shapes. Non-commutativity is a structural feature, not a quirk of the formula.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={6} title="Geometric Meaning of the Inverse">
+
+A square matrix $A$ of size $n$ is invertible if and only if the linear map it represents is a bijection — every output is hit by exactly one input. That single geometric condition is equivalent to all of the following, which §8 will collect into a single corollary by the rank-nullity theorem:
+
+- $A$'s columns are linearly independent (no redundancy among the basis-vector images).
+- $A$'s rank is $n$ (the image fills $\mathbb{R}^n$).
+- $\ker A = \{\mathbf{0}\}$ (no inputs other than zero are sent to zero).
+- $\det A \neq 0$ (the parallelepiped spanned by the columns has nonzero volume — §7).
+- The system $A \mathbf{x} = \mathbf{b}$ has a unique solution for every $\mathbf{b}$.
+
+The remarkable fact is that *all of these conditions are equivalent* — they are the same statement read different ways through the rank-nullity theorem. We will prove their equivalence in §8. Until then, treat them as a single rich notion of "the matrix represents an honest one-to-one onto linear map," and use whichever of the five characterizations is convenient at the moment.
+
+</TheoremBlock>
+
+**ML aside.** Stacking $L$ layers in a neural network — without the biases and the nonlinearities — computes $W_L W_{L-1} \cdots W_2 W_1 \mathbf{x}$, a single matrix product by Theorem 3. The reason a deep linear network "collapses" to a single effective matrix, and therefore has the same expressive power as a one-layer linear model, is exactly the composition rule of this section: composing linear maps gives a linear map, and the matrix of the composition is the product of the matrices. The reason deep networks are interesting at all is the nonlinearity $\sigma$ between layers: applying $\sigma$ after each linear step breaks the composition collapse, because composing a linear map with a nonlinear function is no longer linear and the matrix-product shortcut no longer applies. Every "depth" argument in deep learning theory works through this distinction.
+
+## 7. Determinants — Signed Volume
+
+Every square matrix has a single number attached to it called its *determinant*. In the standard pedagogy that number arrives as a formula — for a $2 \times 2$ matrix, $ad - bc$; for a $3 \times 3$ matrix, an alternating sum that no one remembers; for an $n \times n$ matrix, an unwieldy sum over $n!$ permutations — and students are asked to memorize the formula and verify a list of properties. That formula is correct, but it hides the meaning of the number it computes. We approach the determinant differently: we *define* it by the three properties it must have, prove those properties force a unique function, and then derive the formula as a consequence. The number that emerges has a clean geometric meaning — it is the signed scaling factor of the unit cube under the linear map represented by the matrix — and once that meaning is in hand, every property of the determinant becomes obvious.
+
+The three properties are: multilinearity (linear in each column when the others are held fixed), alternating (swapping two columns negates the value), and a normalization fixing the value on the identity matrix. Each of those is a geometric statement about signed volume in disguise.
+
+<TheoremBlock type="definition" number={14} title="Determinant (Axiomatic)">
+
+The **determinant** of an $n \times n$ matrix $A$ with columns $\mathbf{a}_1, \ldots, \mathbf{a}_n$ is the unique function $\det \colon \mathbb{R}^{n \times n} \to \mathbb{R}$ satisfying:
+
+1. **(Multilinear in each column)** For any column index $j$, any scalars $c, c' \in \mathbb{R}$, and any vectors $\mathbf{a}_j, \mathbf{a}_j' \in \mathbb{R}^n$,
+
+$$\det(\mathbf{a}_1, \ldots, c \mathbf{a}_j + c' \mathbf{a}_j', \ldots, \mathbf{a}_n) = c \det(\mathbf{a}_1, \ldots, \mathbf{a}_j, \ldots, \mathbf{a}_n) + c' \det(\mathbf{a}_1, \ldots, \mathbf{a}_j', \ldots, \mathbf{a}_n).$$
+
+The same property holds in every column, with all other columns held fixed.
+
+2. **(Alternating)** Swapping two columns negates the determinant. Equivalently, if two columns are equal, the determinant is zero.
+
+3. **(Normalization)** $\det I_n = 1$, where $I_n$ is the identity matrix.
+
+</TheoremBlock>
+
+Calling this a definition is doing a lot of work — we are asserting that exactly one function satisfies all three properties, and we have not yet proved that. The next theorem closes that gap.
+
+<TheoremBlock type="theorem" number={4} title="Existence and Uniqueness of the Determinant">
+
+There exists a unique function $\det \colon \mathbb{R}^{n \times n} \to \mathbb{R}$ satisfying axioms (D1), (D2), (D3) of Definition 14. Explicitly,
+
+$$\det A = \sum_{\sigma \in S_n} \mathrm{sgn}(\sigma) \, \prod_{i=1}^{n} a_{\sigma(i), \, i},$$
+
+where $S_n$ denotes the symmetric group of all permutations of $\{1, 2, \ldots, n\}$ and $\mathrm{sgn}(\sigma) \in \{+1, -1\}$ is the sign of the permutation $\sigma$.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+**Uniqueness.** Suppose $f \colon \mathbb{R}^{n \times n} \to \mathbb{R}$ satisfies (D1), (D2), (D3). Write each column of $A$ as a linear combination of the standard basis vectors,
+
+$$\mathbf{a}_j = \sum_{i_j = 1}^{n} a_{i_j, j} \, \mathbf{e}_{i_j}, \qquad j = 1, \ldots, n.$$
+
+Apply multilinearity (D1) to expand $f$ over each column index:
+
+$$f(A) = f(\mathbf{a}_1, \ldots, \mathbf{a}_n) = \sum_{i_1 = 1}^{n} \cdots \sum_{i_n = 1}^{n} \left( \prod_{j=1}^{n} a_{i_j, j} \right) f(\mathbf{e}_{i_1}, \ldots, \mathbf{e}_{i_n}).$$
+
+By the alternating property (D2), $f(\mathbf{e}_{i_1}, \ldots, \mathbf{e}_{i_n})$ vanishes whenever any two of the indices $i_1, \ldots, i_n$ coincide — repeated columns force the value to zero. The only surviving terms in the sum are those where $(i_1, \ldots, i_n)$ is a permutation of $(1, 2, \ldots, n)$, i.e., $(i_1, \ldots, i_n) = (\sigma(1), \ldots, \sigma(n))$ for some $\sigma \in S_n$.
+
+For such a permutation, $f(\mathbf{e}_{\sigma(1)}, \ldots, \mathbf{e}_{\sigma(n)})$ is obtained from $f(I_n) = f(\mathbf{e}_1, \ldots, \mathbf{e}_n) = 1$ by some number of column swaps that bring the permuted basis back into standard order. Each swap negates the value by (D2), and the parity of the required number of swaps is exactly $\mathrm{sgn}(\sigma)$. Therefore
+
+$$f(\mathbf{e}_{\sigma(1)}, \ldots, \mathbf{e}_{\sigma(n)}) = \mathrm{sgn}(\sigma) \cdot f(I_n) = \mathrm{sgn}(\sigma).$$
+
+Substituting back,
+
+$$f(A) = \sum_{\sigma \in S_n} \mathrm{sgn}(\sigma) \, \prod_{j=1}^{n} a_{\sigma(j), j},$$
+
+which is the claimed formula. So *any* function satisfying (D1), (D2), (D3) must agree with that formula — uniqueness.
+
+**Existence.** Take the formula in the theorem statement as a definition of $\det A$, and verify directly that it satisfies (D1), (D2), (D3). Multilinearity (D1) follows because each term $\mathrm{sgn}(\sigma) \prod_j a_{\sigma(j), j}$ is linear in each column. The alternating property (D2) holds because swapping two columns of $A$ corresponds to composing $\sigma$ with a transposition, which flips $\mathrm{sgn}(\sigma)$ in every term; the sum therefore negates. Normalization (D3) holds because for $A = I_n$ the only nonzero product is the one with $\sigma$ the identity permutation, contributing $1$. So the formula defines a function satisfying all three axioms, and by uniqueness it is the *only* such function.
+
+</TheoremBlock>
+
+The explicit formula has $n!$ terms — manageable for $n = 2$ (two terms: $a_{11} a_{22} - a_{12} a_{21}$) and arguably $n = 3$ (six terms), useless past $n \approx 8$. We will compute determinants in practice not by the permutation sum but by row reduction, which is $O(n^3)$. The permutation formula is the *certificate* that the function is well-defined; the computation is something else entirely. The axioms are also what give the determinant its meaning.
+
+<TheoremBlock type="theorem" number={5} title="Geometric Meaning of the Determinant">
+
+For any $n \times n$ matrix $A$ with columns $\mathbf{a}_1, \ldots, \mathbf{a}_n \in \mathbb{R}^n$:
+
+- The absolute value $|\det A|$ equals the $n$-dimensional volume of the parallelepiped spanned by the columns of $A$ — equivalently, the volume of the image of the unit $n$-cube under the linear map $\mathbf{x} \mapsto A \mathbf{x}$.
+- The sign $\mathrm{sgn}(\det A) \in \{+, -, 0\}$ tracks orientation: positive if $A$ preserves the orientation of the standard basis, negative if it reverses it, zero if the columns are linearly dependent (in which case the image collapses to lower-dimensional volume zero).
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+**Two dimensions.** The parallelogram with sides $\mathbf{a}_1 = (a_{11}, a_{21})$ and $\mathbf{a}_2 = (a_{12}, a_{22})$ has signed area
+
+$$\mathrm{signed\,area}(\mathbf{a}_1, \mathbf{a}_2) = a_{11} a_{22} - a_{12} a_{21},$$
+
+which can be derived by computing the area as base × height and tracking orientation: the base has length $\|\mathbf{a}_1\|$, the height is the perpendicular drop from the tip of $\mathbf{a}_2$ onto the line spanned by $\mathbf{a}_1$, and the sign of the cross product $\mathbf{a}_1 \times \mathbf{a}_2$ records whether the columns turn counter-clockwise (positive) or clockwise (negative) as you walk $\mathbf{a}_1 \to \mathbf{a}_2$. The right-hand side is exactly the $2 \times 2$ determinant from the permutation formula, so the $2 \times 2$ case is verified directly.
+
+**General $n$.** The signed-volume function $V(\mathbf{a}_1, \ldots, \mathbf{a}_n)$ of the parallelepiped spanned by $n$ vectors in $\mathbb{R}^n$ satisfies exactly the three axioms (D1), (D2), (D3):
+
+- *Multilinearity in each column.* Holding $\mathbf{a}_2, \ldots, \mathbf{a}_n$ fixed, the signed volume is linear in $\mathbf{a}_1$ — geometrically, doubling one side doubles the volume, and the volume of a parallelepiped with one side decomposed as $c \mathbf{a}_1 + c' \mathbf{a}_1'$ splits cleanly along that decomposition (a fact derivable by Cavalieri's principle in the appropriate dimension, made precise in [Multiple Integrals & Fubini's Theorem](/topics/multiple-integrals)).
+- *Alternating.* Swapping two columns flips the orientation of the spanning vectors and negates the signed volume; repeated columns force the parallelepiped to be degenerate and the volume to be zero.
+- *Normalization.* The unit $n$-cube has volume $1$, so $V(I_n) = V(\mathbf{e}_1, \ldots, \mathbf{e}_n) = 1$.
+
+By the uniqueness clause of Theorem 4, the function $V$ and the function $\det$ are equal on every input. Therefore $\det A$ is the signed volume of the parallelepiped spanned by the columns of $A$ for every $n$.
+
+</TheoremBlock>
+
+<figure className="my-6">
+  <img src="/images/topics/linear-algebra/determinant-as-volume.png" alt="Three-panel comparison of 2x2 determinants: positive orientation (green parallelogram), negative orientation (red), and singular case where the parallelogram collapses to a line" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">|det A| is the area of the parallelogram spanned by the columns of A. Sign tracks orientation: positive (green) when preserved, negative (red) when reversed, zero (grey) when the parallelogram collapses to lower dimensions.</figcaption>
+</figure>
+
+The determinant is therefore not really about the formula — it is about the volume. The viz below makes this concrete in two dimensions: drag the two column vectors and watch the parallelogram fill with green when the orientation is positive, red when negative, and grey when the columns are parallel and the parallelogram collapses to a line.
+
+<DeterminantVolumeVisualizer client:visible />
+
+A useful exercise once the viz is in hand: configure the columns so the determinant equals $-2$, then add the second column to the first (the matrix becomes column-row equivalent: replace $\mathbf{a}_1$ with $\mathbf{a}_1 + \mathbf{a}_2$). Observe that the parallelogram changes shape — but its signed area does *not* change. That observation is the geometric content of property (c) below.
+
+With the geometric meaning in place, the standard computational properties of the determinant become easy reading.
+
+<TheoremBlock type="theorem" number={6} title="Computational Properties of the Determinant">
+
+For square matrices $A$ and $B$ of the same size and a scalar $c \in \mathbb{R}$:
+
+1. **(Multiplicativity)** $\;\det(AB) = (\det A)(\det B)$.
+2. **(Transpose)** $\;\det A^\top = \det A$.
+3. **(Column-addition invariance)** Adding a scalar multiple of one column to another leaves the determinant unchanged.
+4. **(Column scaling)** Multiplying one column by $c$ multiplies the determinant by $c$. Multiplying *every* column by $c$ multiplies the determinant by $c^n$.
+5. **(Invertibility)** $\det A \neq 0$ if and only if $A$ is invertible.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+We prove (a) — multiplicativity — in full and sketch the rest, all of which follow from Definition 14 plus simple inspection of the formula.
+
+**Multiplicativity.** Suppose first that $\det B \neq 0$. Define the function $f \colon \mathbb{R}^{n \times n} \to \mathbb{R}$ by
+
+$$f(A) = \frac{\det(AB)}{\det B}.$$
+
+We claim $f$ satisfies axioms (D1), (D2), (D3) of Definition 14 as a function of $A$ (with $B$ held fixed). The columns of $AB$ are $A \mathbf{b}_1, A \mathbf{b}_2, \ldots, A \mathbf{b}_n$, where $\mathbf{b}_j$ is the $j$-th column of $B$. As a function of $A$:
+
+- *Multilinear in each column of $A$.* Each column of $AB$ is a linear combination (with weights from $B$) of the columns of $A$, so $\det(AB)$ is multilinear in each column of $A$ by multilinearity of $\det$ applied to each column of $AB$.
+- *Alternating in the columns of $A$.* Swapping two columns of $A$ swaps the corresponding columns of $AB$, which negates $\det(AB)$ by (D2) for $\det$.
+- *Normalization.* When $A = I_n$, $AB = B$, so $f(I_n) = \det B / \det B = 1$.
+
+By the uniqueness clause of Theorem 4, $f(A) = \det A$. Rearranging gives $\det(AB) = (\det A)(\det B)$, as claimed.
+
+When $\det B = 0$: by (e) (proved next), $B$ is singular, so its columns are linearly dependent and $B \mathbf{x} = \mathbf{0}$ has a nonzero solution. Then $(AB) \mathbf{x} = A (B \mathbf{x}) = A \mathbf{0} = \mathbf{0}$, so $AB$ is also singular and $\det(AB) = 0 = (\det A) \cdot 0 = (\det A)(\det B)$. The identity holds either way.
+
+**Transpose.** From the permutation formula,
+
+$$\det A^\top = \sum_{\sigma \in S_n} \mathrm{sgn}(\sigma) \prod_{i=1}^{n} (A^\top)_{\sigma(i), i} = \sum_{\sigma \in S_n} \mathrm{sgn}(\sigma) \prod_{i=1}^{n} a_{i, \sigma(i)}.$$
+
+Reindexing the product by $j = \sigma(i)$ (so $i = \sigma^{-1}(j)$) and noting $\mathrm{sgn}(\sigma) = \mathrm{sgn}(\sigma^{-1})$ recovers exactly the formula for $\det A$.
+
+**Column-addition invariance.** If we replace $\mathbf{a}_j$ with $\mathbf{a}_j + c \mathbf{a}_k$ (for $k \neq j$), by multilinearity (D1) the determinant becomes $\det A + c \cdot \det(\ldots, \mathbf{a}_k \text{ in slot } j, \ldots, \mathbf{a}_k \text{ in slot } k, \ldots)$. The second term has two equal columns (both equal to $\mathbf{a}_k$, one in slot $j$ and one in slot $k$), so it vanishes by (D2). The result equals $\det A$.
+
+**Column scaling.** Direct from multilinearity (D1): scaling one column by $c$ scales the determinant by $c$. Scaling every column by $c$ does so $n$ times, giving $c^n$.
+
+**Invertibility.** If $A$ is invertible, then $A A^{-1} = I_n$, so by (a), $(\det A)(\det A^{-1}) = \det I_n = 1$, which forces $\det A \neq 0$. Conversely, if $A$ is singular, its columns are linearly dependent, so one column $\mathbf{a}_j$ is a linear combination of the others, and by (D1) the determinant decomposes into terms each of which has a repeated column — all zero by (D2). Therefore $\det A = 0$.
+
+</TheoremBlock>
+
+The computational fact behind row reduction follows immediately.
+
+<TheoremBlock type="example" number={12} title="Determinants of 2×2 and 3×3 Matrices">
+
+For a $2 \times 2$ matrix, the permutation formula gives
+
+$$\det \begin{pmatrix} a & b \\ c & d \end{pmatrix} = a d - b c.$$
+
+For a $3 \times 3$ matrix, the cofactor expansion along the first row gives
+
+$$\det \begin{pmatrix} a_{11} & a_{12} & a_{13} \\ a_{21} & a_{22} & a_{23} \\ a_{31} & a_{32} & a_{33} \end{pmatrix} = a_{11}(a_{22} a_{33} - a_{23} a_{32}) - a_{12}(a_{21} a_{33} - a_{23} a_{31}) + a_{13}(a_{21} a_{32} - a_{22} a_{31}).$$
+
+These are the only sizes for which the closed-form formula is reasonable to apply by hand. For $4 \times 4$ the formula has $24$ terms; for $5 \times 5$, $120$ terms; for $10 \times 10$, more than three million. Row reduction is the algorithm you actually use.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={7} title="Why Cofactor Expansion is a Coda">
+
+Cofactor expansion — the formula every undergraduate memorizes for $3 \times 3$ matrices, generalizing in the obvious way to larger sizes — is useful for $n \leq 3$ and essentially nothing else. The cost of cofactor expansion at size $n$ is $O(n!)$, which is unusable past $n \approx 10$. The cost of row reduction is $O(n^3)$, which scales to matrices of millions of rows in scientific computing. **In practice, every modern linear-algebra library computes determinants by some variant of LU decomposition** — row reduction with bookkeeping — and never by cofactor expansion.
+
+We mention cofactor expansion in this topic for two reasons. First, it generalizes the explicit formula for $2 \times 2$ matrices to $3 \times 3$ in a way that students can verify on paper. Second, it underlies one elegant theorem (the *adjugate formula* for the inverse, $A^{-1} = \frac{1}{\det A}\, \mathrm{adj}(A)$), which we will not develop here but which appears in proofs of formulas relating determinants to inverses. Both are computational dead ends past small sizes.
+
+**Algorithm: determinant by row reduction.** Given a square matrix $A$ of size $n$, apply Gaussian elimination with partial pivoting to reduce $A$ to upper triangular form, tracking row swaps and row scalings as you go. After reduction,
+
+$$\det A = (-1)^{(\#\, \text{row swaps})} \cdot \prod_{i=1}^{n} (\text{diagonal entry } i).$$
+
+The cost is $O(n^3)$. This is the algorithm the `determinant` function in `linearAlgebra.ts` implements (see the shared module created in slice 1); the topic's notebook verifies its outputs against NumPy's reference implementation across random matrices.
+
+</TheoremBlock>
+
+**ML aside.** When training a *normalizing flow* — a deep-learning architecture that learns a sequence of invertible transformations mapping a complex data distribution to a simple base distribution (typically a standard Gaussian) — the loss function involves a *log-determinant* of the Jacobian of each layer. The reason traces exactly to Theorem 5: a probability density transforms under a change of variables by the inverse of the Jacobian's volume scaling, and that scaling is $|\det J|$. Computing $\log|\det J|$ at scale for layers of millions of dimensions is what makes normalizing-flow architectures interesting: practitioners design layers whose Jacobians are triangular (so the determinant is the product of diagonal entries — back to a one-liner via row reduction), or block-triangular, or otherwise structured so the log-determinant is cheap. The trade-off between expressiveness and Jacobian-cheapness is the central design axis of the field. Every architecture in that literature — RealNVP, Glow, Neural ODEs, FFJORD — is a different answer to "how do we get expressive layers without paying $O(n^3)$ for the determinant at every step?"
+
+## 8. Rank, Nullspace, and the Rank-Nullity Theorem
+
+Every linear map carries a pair of subspaces alongside it: the **kernel** (the inputs that get crushed to zero — Definition 7) and the **image** (the outputs that actually get reached — also Definition 7). Their dimensions are the **nullity** and the **rank** of the map respectively, and they are connected by a single counting equation — the **rank-nullity theorem** — that is the most useful dimension fact in finite-dimensional linear algebra. The theorem says: every dimension of the input space gets accounted for, either by getting absorbed into the kernel or by surviving as an independent direction in the image. Nothing is lost in translation; every input direction has a place to go.
+
+The version stated in textbooks is one equation. The reason it deserves so much attention is that it unifies several apparently different statements about square matrices — invertibility, full-rank columns, full-rank rows, nontrivial null space, nonzero determinant — into a single corollary in which they are all equivalent. After we prove the main theorem, we collect those statements as Corollary 1; the equivalence is, in a real sense, the headline result of the section.
+
+<TheoremBlock type="definition" number={15} title="Rank and Nullity">
+
+Let $T \colon V \to W$ be a linear map between finite-dimensional vector spaces, and let $A$ be its matrix in any chosen bases.
+
+- The **rank** of $T$ (or of $A$) is $\mathrm{rank}(T) = \dim(\mathrm{im}\, T)$, the dimension of the image.
+- The **nullity** of $T$ (or of $A$) is $\mathrm{nullity}(T) = \dim(\ker T)$, the dimension of the kernel.
+
+For an $m \times n$ matrix $A$, $\mathrm{rank}(A)$ equals the dimension of its column space (equivalently, of its row space — a fact we establish in Remark 8 below), and $\mathrm{nullity}(A)$ is the dimension of its nullspace $\{\mathbf{x} \in \mathbb{R}^n \mid A \mathbf{x} = \mathbf{0}\}$.
+
+</TheoremBlock>
+
+The rank and nullity are independent of which bases were used to write down the matrix — they are properties of the underlying linear map, not of the bookkeeping. Both are non-negative integers, both can be computed by row reduction (the rank is the number of pivots; the nullity is the number of free columns), and both are constrained by the input dimension via the theorem below.
+
+<TheoremBlock type="theorem" number={7} title="Rank-Nullity">
+
+For any linear map $T \colon V \to W$ between finite-dimensional vector spaces with $\dim V = n$,
+
+$$\mathrm{rank}(T) + \mathrm{nullity}(T) = n.$$
+
+Equivalently, for any $m \times n$ matrix $A$, $\;\mathrm{rank}(A) + \mathrm{nullity}(A) = n$ (the number of columns).
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+Let $\dim V = n$ and $\mathrm{nullity}(T) = k$, so $0 \leq k \leq n$. Pick a basis $\{\mathbf{u}_1, \ldots, \mathbf{u}_k\}$ of $\ker T$ (the case $k = 0$ means we pick the empty basis). Because every linearly independent subset of $V$ extends to a basis (a consequence of the Steinitz Exchange argument from §3, applied in reverse), we can extend to a basis
+
+$$\mathcal{B} = \{\mathbf{u}_1, \ldots, \mathbf{u}_k, \mathbf{v}_1, \ldots, \mathbf{v}_{n-k}\}$$
+
+of all of $V$. The claim is that the images $\{T(\mathbf{v}_1), \ldots, T(\mathbf{v}_{n-k})\}$ form a basis of $\mathrm{im}\, T$. If this is true, the dimension of the image is $n - k$, which gives $\mathrm{rank}(T) + \mathrm{nullity}(T) = (n - k) + k = n$, the theorem.
+
+**Spanning.** Let $\mathbf{w} \in \mathrm{im}\, T$, so $\mathbf{w} = T(\mathbf{v})$ for some $\mathbf{v} \in V$. Expand $\mathbf{v}$ in the basis $\mathcal{B}$,
+
+$$\mathbf{v} = \sum_{i=1}^{k} a_i \mathbf{u}_i + \sum_{j=1}^{n-k} b_j \mathbf{v}_j.$$
+
+Applying $T$ and using linearity,
+
+$$\mathbf{w} = T(\mathbf{v}) = \sum_{i=1}^{k} a_i\, T(\mathbf{u}_i) + \sum_{j=1}^{n-k} b_j\, T(\mathbf{v}_j) = \mathbf{0} + \sum_{j=1}^{n-k} b_j\, T(\mathbf{v}_j),$$
+
+since each $\mathbf{u}_i \in \ker T$. So $\mathbf{w}$ is a linear combination of $\{T(\mathbf{v}_j)\}_{j=1}^{n-k}$, which means these vectors span $\mathrm{im}\, T$.
+
+**Linear independence.** Suppose
+
+$$\sum_{j=1}^{n-k} c_j\, T(\mathbf{v}_j) = \mathbf{0}.$$
+
+By linearity, $T\!\left( \sum_j c_j \mathbf{v}_j \right) = \mathbf{0}$, so the vector $\sum_j c_j \mathbf{v}_j$ lies in $\ker T$. But $\ker T$ has basis $\{\mathbf{u}_i\}$, so we can write
+
+$$\sum_{j=1}^{n-k} c_j \mathbf{v}_j = \sum_{i=1}^{k} d_i \mathbf{u}_i$$
+
+for some scalars $d_i$. Rearranging,
+
+$$\sum_{j=1}^{n-k} c_j \mathbf{v}_j - \sum_{i=1}^{k} d_i \mathbf{u}_i = \mathbf{0}.$$
+
+But the combined set $\mathcal{B} = \{\mathbf{u}_1, \ldots, \mathbf{u}_k, \mathbf{v}_1, \ldots, \mathbf{v}_{n-k}\}$ is a basis of $V$, hence linearly independent. So every coefficient in the equation must be zero: $c_j = 0$ for all $j$ and $d_i = 0$ for all $i$. In particular, every $c_j = 0$, which is what linear independence of $\{T(\mathbf{v}_j)\}$ requires.
+
+Both halves of the claim are verified, so $\{T(\mathbf{v}_j)\}_{j=1}^{n-k}$ is a basis of $\mathrm{im}\, T$, hence $\dim(\mathrm{im}\, T) = n - k$, and $\mathrm{rank}(T) + \mathrm{nullity}(T) = (n - k) + k = n$.
+
+</TheoremBlock>
+
+<figure className="my-6">
+  <img src="/images/topics/linear-algebra/rank-nullity-picture.png" alt="Two-panel decomposition: input space split into kernel (purple line) plus complement (blue plane); output space showing image (green plane) with kernel vectors collapsed to origin" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">Rank-nullity in pictures: dimensions of the input space split into kernel (absorbed) plus image-spanning complement (preserved). Their dimensions sum to dim V.</figcaption>
+</figure>
+
+The proof has an underrated feature: it is *constructive*. Given any specific kernel basis and any extension to a basis of $V$, applying $T$ to the extension vectors produces a basis of the image. That is the recipe row-reduction algorithms quietly follow when they read off a basis for the column space from a matrix's pivot columns.
+
+Two viewpoints on the same theorem will be useful in different contexts. The first is the abstract one above — linear maps between abstract vector spaces. The second is the concrete one for matrices, which reads off rank and nullity from a matrix's columns.
+
+<TheoremBlock type="remark" number={8} title="Rank-Nullity for Matrices, Restated">
+
+For an $m \times n$ matrix $A$ — viewed as a linear map $\mathbb{R}^n \to \mathbb{R}^m$:
+
+$$\mathrm{rank}(A) + \mathrm{nullity}(A) = n.$$
+
+The number of columns ($n$) splits into rank (columns that contribute independent directions to the image) and nullity (columns that are redundant in the sense that they belong to the nullspace's degrees of freedom). A useful corollary: $\mathrm{rank}(A) \leq \min(m, n)$, since the image lives in $\mathbb{R}^m$ and the rank cannot exceed the dimension of the input space (where it would be bounded by $n$) nor the output space (where it would be bounded by $m$).
+
+A deeper fact is that the **rank equals the dimension of the row space** as well as the column space. Proof: $\mathrm{rank}(A^\top) = \mathrm{rank}(A)$, because $A^\top$ and $A$ have the same set of pivots when row-reduced. The row space of $A$ is the column space of $A^\top$, so its dimension is $\mathrm{rank}(A^\top) = \mathrm{rank}(A)$. This is sometimes called the "row-column rank equality"; it is one of those classical results that students rediscover with surprise.
+
+</TheoremBlock>
+
+With the theorem in hand, the seven characterizations of invertibility we have been collecting in the topic — Remark 6's geometric meanings, Theorem 6(e)'s determinant test, and the implicit "the map is a bijection" — collapse into a single corollary.
+
+<TheoremBlock type="corollary" number={1} title="Equivalent Characterizations of Invertibility">
+
+For an $n \times n$ matrix $A$ (equivalently, for the linear map $T \colon \mathbb{R}^n \to \mathbb{R}^n$ it represents), the following statements are equivalent:
+
+1. $A$ is invertible — there exists $A^{-1}$ with $A A^{-1} = A^{-1} A = I_n$.
+2. The linear map $T$ is a bijection.
+3. $\mathrm{rank}(A) = n$.
+4. $\mathrm{nullity}(A) = 0$, i.e., $\ker A = \{\mathbf{0}\}$.
+5. The columns of $A$ are linearly independent.
+6. The rows of $A$ are linearly independent.
+7. $\det A \neq 0$.
+8. For every $\mathbf{b} \in \mathbb{R}^n$, the system $A \mathbf{x} = \mathbf{b}$ has a unique solution.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+We show a chain of implications and equivalences that covers all eight.
+
+**(a) ⇔ (b).** The matrix $A$ acts as the linear map $T$, and an $n \times n$ matrix is invertible by Definition 13 iff it has a two-sided inverse iff $T$ is a bijection.
+
+**(b) ⇔ (c).** A linear map $T \colon \mathbb{R}^n \to \mathbb{R}^n$ is surjective iff $\mathrm{im}\, T = \mathbb{R}^n$ iff $\mathrm{rank}(T) = n$. Combined with rank-nullity (Theorem 7) and the fact that input and output spaces have the same dimension $n$, this also makes $T$ injective, hence bijective. So bijection in either direction is equivalent to rank $= n$.
+
+**(c) ⇔ (d).** By rank-nullity, $\mathrm{rank}(A) + \mathrm{nullity}(A) = n$. Therefore $\mathrm{rank}(A) = n$ iff $\mathrm{nullity}(A) = 0$.
+
+**(c) ⇔ (e).** By Definition 15, $\mathrm{rank}(A)$ is the dimension of the column space. The column space has dimension $n$ iff the $n$ columns of $A$ are linearly independent.
+
+**(e) ⇔ (f).** By Remark 8, $\mathrm{rank}(A) = \mathrm{rank}(A^\top)$. The columns of $A^\top$ are the rows of $A$, so column independence and row independence are equivalent.
+
+**(a) ⇔ (g).** Theorem 6(e): $\det A \neq 0$ iff $A$ is invertible.
+
+**(a) ⇔ (h).** If $A$ is invertible, $A \mathbf{x} = \mathbf{b}$ has the unique solution $\mathbf{x} = A^{-1} \mathbf{b}$ for every $\mathbf{b}$. Conversely, if $A \mathbf{x} = \mathbf{b}$ has a unique solution for every $\mathbf{b}$, then in particular $A \mathbf{x} = \mathbf{0}$ has $\mathbf{x} = \mathbf{0}$ as its unique solution (forcing nullity zero, i.e., (d), hence (a)).
+
+All eight statements are pairwise equivalent.
+
+</TheoremBlock>
+
+The corollary is the load-bearing result of the section. Every test you have for "is this matrix invertible?" — the determinant test, the row-reduction test that produces a pivot in every column, the dimension count, the system-solving criterion — is the same test phrased differently. In computational practice they have very different complexities: the determinant test is $O(n^3)$ via row reduction; checking columns for independence is also $O(n^3)$ via the same reduction; computing $A^{-1}$ explicitly is $O(n^3)$ but with a larger constant. Most numerical packages report invertibility as a side product of LU decomposition, which is the row-reduction algorithm. The proof above explains why all of these tests agree.
+
+A useful exercise: configure the viz below into a singular matrix and observe that all five readouts (rank, nullity, rank+nullity, the invertibility verdict, and the determinant indicator) update consistently with the corollary.
+
+<RankNullityVisualizer client:visible />
+
+The presets cover the canonical configurations: full-rank square (the identity preset), tall full-rank, wide full-rank, rank-deficient square, and a rank-1 wide matrix. For each, the visualizer reads off the rank, nullity, and rank+nullity = (number of columns) — all consistent with the theorem and the corollary.
+
+<TheoremBlock type="example" number={13} title="Underdetermined Regression">
+
+Consider a linear regression where the design matrix $X$ is $n \times p$ with $p > n$ — more features than observations, a common setup in high-dimensional statistics and modern machine learning. The normal equation for ordinary least squares is
+
+$$X^\top X\, \boldsymbol{\beta} = X^\top \mathbf{y}.$$
+
+Now $X^\top X$ is a $p \times p$ matrix. Its rank is at most $\mathrm{rank}(X) \leq \min(n, p) = n < p$, so by rank-nullity, $\mathrm{nullity}(X^\top X) \geq p - n > 0$. The matrix is singular. By Corollary 1, the normal-equation system has either no solutions or infinitely many; in this case (since $X^\top \mathbf{y}$ lies in the column space of $X^\top X$ by construction), it has infinitely many solutions, all differing by elements of $\ker(X^\top X)$.
+
+That is the linear-algebra reason high-dimensional regression requires *regularization*. Ridge regression replaces $X^\top X$ with $X^\top X + \lambda I$, which is full-rank for every $\lambda > 0$ (its determinant is the product of the shifted eigenvalues — a topic for the next track topic — but more concretely, $\lambda I$ is full-rank and the sum of a positive-semi-definite matrix and a positive-definite one is positive-definite). Lasso adds an $L^1$ penalty whose subgradient picks out a unique sparse solution. Both methods are responding to the same singularity diagnosed by rank-nullity: the problem as posed does not have a unique solution, and we have to add information to make it well-defined.
+
+</TheoremBlock>
+
+**ML aside.** The bottleneck dimension of a linear autoencoder is exactly the rank of the encoder matrix. If the encoder is the map $\mathbf{z} = W \mathbf{x}$ with $W$ a $k \times d$ matrix and $k \ll d$, then $\mathrm{rank}(W) \leq k$, and the decoder cannot recover more than $k$ independent directions of the input. The other $d - k$ input directions live in the kernel of the encoder and are lost — that is the linear-algebra picture of *lossy compression*. The choice of $k$ is the "how much information do we keep" knob. The choice of $W$ — which $k$ directions to keep — is what training the autoencoder learns. When $k = d$ and $W$ is invertible, the autoencoder is lossless; this is the trivial case. The interesting cases have $k < d$ and the rank-nullity theorem is bounding how much information can flow through the bottleneck.
+
+## 9. Change of Basis
+
+A linear map $T \colon V \to V$ is a function — a single, basis-independent object. Its *matrix*, however, is a coordinate-dependent record. Pick a different basis and you get a different matrix for the same map. This section makes the relationship between the two matrices precise and gives the formula that switches between them.
+
+The motivating question is practical. Suppose you have a linear map whose matrix in one basis is messy — say, a projection onto a tilted line whose matrix in the standard basis is the full-fill rank-1 monstrosity $\frac{1}{2}\bigl(\begin{smallmatrix}1 & 1 \\ 1 & 1\end{smallmatrix}\bigr)$. Is there a basis in which the matrix is simpler? Yes: in a basis adapted to the line and its perpendicular, the same projection has matrix $\bigl(\begin{smallmatrix}1 & 0 \\ 0 & 0\end{smallmatrix}\bigr)$ — the cleanest possible representation of "keep one coordinate, drop the other." The transformation that switches between the two matrices is exactly what we are about to write down.
+
+<TheoremBlock type="definition" number={16} title="Change-of-Basis Matrix">
+
+Let $V$ be a finite-dimensional vector space with two bases $\mathcal{B} = \{\mathbf{v}_1, \ldots, \mathbf{v}_n\}$ and $\mathcal{B}' = \{\mathbf{v}_1', \ldots, \mathbf{v}_n'\}$. The **change-of-basis matrix from $\mathcal{B}'$ to $\mathcal{B}$**, written $P_{\mathcal{B} \leftarrow \mathcal{B}'}$ (or just $P$ when the bases are clear from context), is the $n \times n$ matrix whose $j$-th column is the coordinate vector of $\mathbf{v}_j'$ in the basis $\mathcal{B}$.
+
+In symbols, if $\mathbf{v}_j' = \sum_{i=1}^{n} p_{ij}\, \mathbf{v}_i$, then $P = (p_{ij})$.
+
+</TheoremBlock>
+
+The columns of $P$ are exactly the images of the new basis vectors $\mathbf{v}_j'$ written out in the old basis $\mathcal{B}$. Note the orientation: $P$ takes coordinates in the *new* basis $\mathcal{B}'$ and produces coordinates in the *old* basis $\mathcal{B}$. The subscript convention $P_{\mathcal{B} \leftarrow \mathcal{B}'}$ records this — left side is the output basis, right side is the input basis, and the arrow goes "from $\mathcal{B}'$ to $\mathcal{B}$" when you read it as a coordinate transformation.
+
+<TheoremBlock type="proposition" number={4} title="Coordinate Transformation">
+
+Let $\mathbf{v} \in V$ have coordinate vector $\mathbf{c}$ in the basis $\mathcal{B}$ and coordinate vector $\mathbf{c}'$ in the basis $\mathcal{B}'$. Then $\mathbf{c} = P \mathbf{c}'$, where $P = P_{\mathcal{B} \leftarrow \mathcal{B}'}$ is the change-of-basis matrix from Definition 16.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+Expand $\mathbf{v}$ in $\mathcal{B}'$:
+
+$$\mathbf{v} = \sum_{j=1}^{n} c_j'\, \mathbf{v}_j'.$$
+
+Substitute the expansion $\mathbf{v}_j' = \sum_i p_{ij}\, \mathbf{v}_i$ from Definition 16:
+
+$$\mathbf{v} = \sum_{j=1}^{n} c_j' \sum_{i=1}^{n} p_{ij}\, \mathbf{v}_i = \sum_{i=1}^{n} \!\left( \sum_{j=1}^{n} p_{ij}\, c_j' \right) \mathbf{v}_i.$$
+
+The expression in parentheses is the $i$-th component of the matrix-vector product $P \mathbf{c}'$. So the coordinate vector of $\mathbf{v}$ in $\mathcal{B}$ is $\mathbf{c} = P \mathbf{c}'$.
+
+</TheoremBlock>
+
+The change-of-basis matrix $P$ is always invertible, since its columns are the basis vectors of $\mathcal{B}'$ written in $\mathcal{B}$ — a basis is linearly independent by definition, so by Corollary 1 the matrix is invertible. The inverse $P^{-1}$ is then the change-of-basis matrix going the other way, from $\mathcal{B}$ to $\mathcal{B}'$.
+
+With coordinate transformation in place, the formula for how a linear map's matrix changes follows by chasing where each input vector ends up.
+
+<TheoremBlock type="theorem" number={8} title="Change-of-Basis Formula">
+
+Let $T \colon V \to V$ be a linear map, and let $\mathcal{B}, \mathcal{B}'$ be two bases of $V$ with change-of-basis matrix $P = P_{\mathcal{B} \leftarrow \mathcal{B}'}$. Then the matrices of $T$ in the two bases are related by
+
+$$[T]_{\mathcal{B}'} = P^{-1} [T]_{\mathcal{B}}\, P.$$
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+For any vector $\mathbf{v} \in V$ with coordinates $\mathbf{c}$ in $\mathcal{B}$ and $\mathbf{c}'$ in $\mathcal{B}'$:
+
+$$\mathbf{c} = P \mathbf{c}' \qquad\Longleftrightarrow\qquad \mathbf{c}' = P^{-1} \mathbf{c}.$$
+
+Apply $T$ and write the result in $\mathcal{B}'$. The coordinate vector of $T(\mathbf{v})$ in $\mathcal{B}'$ is (by Theorem 2 applied in basis $\mathcal{B}'$):
+
+$$[T(\mathbf{v})]_{\mathcal{B}'} = [T]_{\mathcal{B}'}\, \mathbf{c}'.$$
+
+It is also reachable by the three-step path "convert $\mathbf{c}'$ to $\mathcal{B}$, apply $T$ in $\mathcal{B}$, convert back to $\mathcal{B}'$":
+
+$$[T(\mathbf{v})]_{\mathcal{B}'} = P^{-1} [T]_{\mathcal{B}}\, \mathbf{c} = P^{-1} [T]_{\mathcal{B}}\, P\, \mathbf{c}'.$$
+
+The two expressions agree for every coordinate vector $\mathbf{c}'$, so the matrices are equal: $[T]_{\mathcal{B}'} = P^{-1} [T]_{\mathcal{B}}\, P$.
+
+</TheoremBlock>
+
+<figure className="my-6">
+  <img src="/images/topics/linear-algebra/change-of-basis.png" alt="Two-panel comparison: a 30 degree rotation applied to the unit square in the standard basis, and the same rotation applied in a tilted (45-degree-rotated) basis — same linear map, different matrix" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">The same linear map (a 30° rotation) viewed in two different bases. The matrix changes via the similarity transformation [T]_B' = P⁻¹ [T]_B P, but the underlying map is unchanged.</figcaption>
+</figure>
+
+The formula is sometimes written $A' = P^{-1} A P$, where $A$ and $A'$ are the matrices in the two bases. This is the operation that says "translate input, apply, translate output back." Two matrices related this way are called **similar**, and similarity is the matrix-side reflection of "same linear map, different basis."
+
+<TheoremBlock type="example" number={14} title="Rotation in a Tilted Basis">
+
+Let $T$ be rotation by $30°$ in $\mathbb{R}^2$. Its matrix in the standard basis is
+
+$$[T]_{\mathcal{B}} = \begin{pmatrix} \cos 30° & -\sin 30° \\ \sin 30° & \;\cos 30° \end{pmatrix} = \begin{pmatrix} \;\tfrac{\sqrt{3}}{2} & -\tfrac{1}{2} \\[1pt] \;\tfrac{1}{2} & \;\;\tfrac{\sqrt{3}}{2} \end{pmatrix}.$$
+
+Now switch to the basis $\mathcal{B}' = \left\{ \tfrac{1}{\sqrt{2}}(1, 1),\, \tfrac{1}{\sqrt{2}}(-1, 1) \right\}$ — the standard basis rotated by $45°$. The change-of-basis matrix from $\mathcal{B}'$ to the standard basis $\mathcal{B}$ has the new basis vectors as columns:
+
+$$P = \frac{1}{\sqrt{2}} \begin{pmatrix} \;1 & -1 \\ \;1 & \;\;1 \end{pmatrix}.$$
+
+This matrix is itself a rotation by $45°$, and a $2 \times 2$ rotation is its own inverse-transpose: $P^{-1} = P^\top$. The change-of-basis formula gives
+
+$$[T]_{\mathcal{B}'} = P^{-1} [T]_{\mathcal{B}}\, P = P^\top [T]_{\mathcal{B}}\, P.$$
+
+Crucially, rotations *commute with rotations*: if you tilt the basis and apply a rotation, you get the same answer as if you apply the rotation and then tilt the basis. So $P^\top [T]_{\mathcal{B}}\, P = [T]_{\mathcal{B}}$, and the matrix is unchanged. This is the cleanest example of a similarity transformation that doesn't change the matrix — and it reflects a structural fact about rotations: their action is the same in every orthonormal basis.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={15} title="Projection in a Non-Standard Basis">
+
+Let $T$ be the orthogonal projection of $\mathbb{R}^2$ onto the line $y = x$. In the standard basis, $T(\mathbf{e}_1) = T(\mathbf{e}_2) = \tfrac{1}{2}(\mathbf{e}_1 + \mathbf{e}_2)$, so
+
+$$[T]_{\mathcal{B}} = \frac{1}{2} \begin{pmatrix} 1 & 1 \\ 1 & 1 \end{pmatrix}.$$
+
+Now switch to the basis $\mathcal{B}' = \left\{ \tfrac{1}{\sqrt{2}}(1, 1),\, \tfrac{1}{\sqrt{2}}(-1, 1) \right\}$ — the line $y = x$ and its perpendicular. In this basis the projection is *trivial to describe*: it sends the first basis vector to itself (it's already on the line) and the second to zero (it's perpendicular to the line). So
+
+$$[T]_{\mathcal{B}'} = \begin{pmatrix} 1 & 0 \\ 0 & 0 \end{pmatrix}.$$
+
+The same linear map has two very different matrices. The change-of-basis formula $[T]_{\mathcal{B}'} = P^{-1} [T]_{\mathcal{B}}\, P$ ties them together; a direct calculation (with the same $P$ as Example 14) verifies the relationship. This is also the cleanest possible example of a basis chosen to make a map simple — and it foreshadows the central question of the next topic: can we always find such a basis? The answer for diagonalizable maps is yes, and the basis vectors are the *eigenvectors* of the map. We will not develop that here, but Example 15 is the prototype that motivates the question.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={9} title="Similar Matrices Are the Same Map">
+
+Two $n \times n$ matrices $A$ and $A'$ are **similar** if there exists an invertible matrix $P$ with $A' = P^{-1} A P$. By Theorem 8, similar matrices are exactly the matrices of the same linear map in different bases. Two consequences:
+
+- *Quantities that depend only on the underlying map are equal for similar matrices.* These include the trace, the determinant, the rank, the nullity, the characteristic polynomial, and the set of eigenvalues. We list them here even though some haven't been formally defined; the point is that they are invariants of the map, not of the bookkeeping.
+- *Quantities that depend on the choice of basis differ.* These include the individual entries, the column space (as a specific subspace of $\mathbb{R}^n$, not its dimension), and the specific eigenvector representatives.
+
+When you ask "what is true about the linear map," you are asking about invariants of similarity. When you ask "what does this particular matrix look like," you are asking about something basis-dependent that may not match what you'd see in a different basis. Distinguishing the two questions is most of the conceptual work of an applied linear-algebra course.
+
+</TheoremBlock>
+
+**ML aside.** Data whitening — multiplying centered data by $\Sigma^{-1/2}$, where $\Sigma$ is the sample covariance matrix — is a change of basis. In the original coordinates, the data has whatever covariance structure happens to be present; in the whitened coordinates, the covariance is the identity, meaning every direction has unit variance and every pair of directions is uncorrelated. Many algorithms behave better in the whitened basis — gradient descent on isotropic data has condition number $1$, k-means clusters become equidistant in the natural sense, the Mahalanobis distance becomes the ordinary Euclidean distance. Choosing to whiten is choosing a basis in which the algebra is simpler. The same theorem (Theorem 8) describes how the data's statistical properties transform under that change of basis — they don't change in any deep sense, only their representation does.
+
+## 10. Inner Products and Orthogonality
+
+Everything in this topic so far has been *algebraic* — about addition, scalar multiplication, linear combinations, and the maps that respect those operations. None of it has involved measurement. We have not said how long a vector is, what angle two vectors make, or what it means for two vectors to be perpendicular. Those concepts require an additional structure on a vector space called an **inner product**, and adding that structure is what turns a vector space into something we can do *geometry* with: lengths, angles, projections, distances, and orthogonality.
+
+The standard inner product on $\mathbb{R}^n$ — the dot product $\mathbf{u} \cdot \mathbf{v} = \sum_i u_i v_i$ — is the example we already know. Generalizing the dot product to a list of axioms reveals what makes it tick: it is symmetric (treats both inputs the same), linear in each argument, and *positive-definite* (a vector's inner product with itself is non-negative, and zero only for the zero vector). Anything that satisfies those properties earns the name *inner product*, and the resulting theory works in exactly the same way as for the dot product. Three central theorems will come out of this: the Cauchy-Schwarz inequality (which makes "angle" well-defined), the orthogonal decomposition theorem (which makes orthogonal projection canonical), and the Gram-Schmidt process (which constructs orthonormal bases on demand).
+
+<TheoremBlock type="definition" number={17} title="Inner Product">
+
+An **inner product** on a real vector space $V$ is a function $\langle \cdot, \cdot \rangle \colon V \times V \to \mathbb{R}$ satisfying:
+
+1. **(Symmetry)** $\;\langle \mathbf{u}, \mathbf{v} \rangle = \langle \mathbf{v}, \mathbf{u} \rangle$ for all $\mathbf{u}, \mathbf{v} \in V$.
+2. **(Linearity in the first slot)** $\;\langle a\mathbf{u} + b\mathbf{u}', \mathbf{v} \rangle = a \langle \mathbf{u}, \mathbf{v} \rangle + b \langle \mathbf{u}', \mathbf{v} \rangle$ for all $a, b \in \mathbb{R}$ and $\mathbf{u}, \mathbf{u}', \mathbf{v} \in V$. By symmetry, the same holds in the second slot.
+3. **(Positive-definiteness)** $\;\langle \mathbf{v}, \mathbf{v} \rangle \geq 0$ for all $\mathbf{v} \in V$, with equality if and only if $\mathbf{v} = \mathbf{0}$.
+
+A vector space equipped with an inner product is called an **inner product space**.
+
+</TheoremBlock>
+
+<TheoremBlock type="definition" number={18} title="Induced Norm">
+
+In any inner product space $V$, the **norm** (or **length**) induced by the inner product is
+
+$$\|\mathbf{v}\| = \sqrt{\langle \mathbf{v}, \mathbf{v} \rangle}.$$
+
+Positive-definiteness (axiom I3) ensures that the square root is well-defined and that $\|\mathbf{v}\| = 0$ iff $\mathbf{v} = \mathbf{0}$. A vector with $\|\mathbf{v}\| = 1$ is called a **unit vector**.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={16} title="Standard Inner Product on ℝⁿ">
+
+The function $\langle \mathbf{u}, \mathbf{v} \rangle = \mathbf{u}^\top \mathbf{v} = \sum_{i=1}^{n} u_i v_i$ — the familiar dot product — is an inner product on $\mathbb{R}^n$. Symmetry and bilinearity follow from the arithmetic of real numbers; positive-definiteness follows because $\langle \mathbf{v}, \mathbf{v} \rangle = \sum v_i^2 \geq 0$, with equality only when every $v_i = 0$. The induced norm is the Euclidean norm $\|\mathbf{v}\| = \sqrt{\sum_i v_i^2}$, the length of the arrow from the origin to $\mathbf{v}$.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={17} title="L² Inner Product on C[a, b]">
+
+On the space $C[a, b]$ of continuous functions $[a, b] \to \mathbb{R}$, define
+
+$$\langle f, g \rangle = \int_a^b f(x)\, g(x)\, dx.$$
+
+Symmetry and bilinearity follow from the linearity of integration. Positive-definiteness uses the fact that a non-negative continuous function with zero integral over $[a, b]$ must be identically zero — a fact established in [Riemann Integral & FTC](/topics/riemann-integral). The induced norm is $\|f\|_2 = \sqrt{\int_a^b f(x)^2\, dx}$, sometimes called the *$L^2$ norm*. Two functions are "orthogonal" in this inner product when $\int_a^b f g\, dx = 0$ — the orthogonality condition behind Fourier series ([Fourier Series & Orthogonal Expansions](/topics/fourier-series)).
+
+</TheoremBlock>
+
+The dot product satisfies $|\mathbf{u} \cdot \mathbf{v}| \leq \|\mathbf{u}\| \|\mathbf{v}\|$, which the reader may know from Euclidean geometry as "the cosine of an angle is between $-1$ and $1$." The same inequality holds for every inner product, with the same proof, and it is the inequality that lets us define the *angle* between two vectors in an arbitrary inner product space.
+
+<TheoremBlock type="theorem" number={9} title="Cauchy-Schwarz Inequality">
+
+For any vectors $\mathbf{u}, \mathbf{v}$ in an inner product space $V$,
+
+$$|\langle \mathbf{u}, \mathbf{v} \rangle| \leq \|\mathbf{u}\| \cdot \|\mathbf{v}\|,$$
+
+with equality if and only if $\mathbf{u}$ and $\mathbf{v}$ are linearly dependent (one is a scalar multiple of the other, possibly zero).
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+If $\mathbf{v} = \mathbf{0}$, both sides are zero and equality holds trivially with $\mathbf{u}$ and $\mathbf{v}$ trivially dependent. Assume $\mathbf{v} \neq \mathbf{0}$.
+
+Consider the real-valued function
+
+$$f(t) = \|\mathbf{u} - t \mathbf{v}\|^2 = \langle \mathbf{u} - t \mathbf{v}, \mathbf{u} - t \mathbf{v} \rangle.$$
+
+Expanding via bilinearity and symmetry,
+
+$$f(t) = \langle \mathbf{u}, \mathbf{u} \rangle - 2t \langle \mathbf{u}, \mathbf{v} \rangle + t^2 \langle \mathbf{v}, \mathbf{v} \rangle = \|\mathbf{u}\|^2 - 2t \langle \mathbf{u}, \mathbf{v} \rangle + t^2 \|\mathbf{v}\|^2.$$
+
+This is a quadratic in $t$ that is always $\geq 0$ by positive-definiteness, so its discriminant is $\leq 0$:
+
+$$\bigl( -2 \langle \mathbf{u}, \mathbf{v} \rangle \bigr)^2 - 4\, \|\mathbf{v}\|^2 \cdot \|\mathbf{u}\|^2 \leq 0.$$
+
+Simplifying gives $4 \langle \mathbf{u}, \mathbf{v} \rangle^2 \leq 4 \|\mathbf{u}\|^2 \|\mathbf{v}\|^2$, i.e.,
+
+$$\langle \mathbf{u}, \mathbf{v} \rangle^2 \leq \|\mathbf{u}\|^2 \cdot \|\mathbf{v}\|^2.$$
+
+Taking square roots of non-negative numbers gives $|\langle \mathbf{u}, \mathbf{v} \rangle| \leq \|\mathbf{u}\| \cdot \|\mathbf{v}\|$, which is the claimed inequality.
+
+Equality holds iff the discriminant is exactly zero, iff the quadratic $f(t)$ has a (double) real root, iff there exists $t^*$ with $\|\mathbf{u} - t^* \mathbf{v}\|^2 = 0$, iff $\mathbf{u} - t^* \mathbf{v} = \mathbf{0}$ (by positive-definiteness), iff $\mathbf{u}$ and $\mathbf{v}$ are linearly dependent.
+
+</TheoremBlock>
+
+The Cauchy-Schwarz inequality guarantees that the ratio $\langle \mathbf{u}, \mathbf{v} \rangle / (\|\mathbf{u}\| \|\mathbf{v}\|)$ lies in $[-1, 1]$ whenever both vectors are nonzero. So the formula
+
+$$\cos \theta = \frac{\langle \mathbf{u}, \mathbf{v} \rangle}{\|\mathbf{u}\| \cdot \|\mathbf{v}\|}$$
+
+defines a well-defined angle $\theta \in [0, \pi]$ between any two nonzero vectors in any inner product space. This is the angle that the dot product "measures" in $\mathbb{R}^n$ — but the formula and the result extend to function spaces, sequence spaces, and any other inner product space. The angle is part of the structure, not a Euclidean artifact.
+
+The special case where the angle is $\pi/2$ — equivalently, the inner product is zero — earns the name *orthogonality* and is the most-used geometric concept in linear algebra.
+
+<TheoremBlock type="definition" number={19} title="Orthogonality and Orthogonal Complement">
+
+Two vectors $\mathbf{u}, \mathbf{v}$ in an inner product space $V$ are **orthogonal**, written $\mathbf{u} \perp \mathbf{v}$, if $\langle \mathbf{u}, \mathbf{v} \rangle = 0$.
+
+A set $\{\mathbf{q}_1, \ldots, \mathbf{q}_k\}$ is **orthogonal** if every pair is orthogonal; **orthonormal** if it is orthogonal and every $\mathbf{q}_i$ has unit norm. An **orthonormal basis** is a basis that is orthonormal.
+
+For a subspace $U \subseteq V$, the **orthogonal complement** is
+
+$$U^\perp = \{\, \mathbf{v} \in V \mid \langle \mathbf{v}, \mathbf{u} \rangle = 0 \text{ for all } \mathbf{u} \in U \,\}.$$
+
+$U^\perp$ is itself a subspace of $V$ (verify: closure under addition and scalar multiplication follow from bilinearity of the inner product).
+
+</TheoremBlock>
+
+The geometric content of orthogonality is "perpendicular." Two orthogonal nonzero vectors point in directions that share no component — projecting one onto the other gives zero. The orthogonal complement of a subspace $U$ is the set of vectors perpendicular to *every* vector in $U$; in $\mathbb{R}^3$, the orthogonal complement of a line is a plane and of a plane is a line. The remarkable fact, which the next theorem packages, is that $V$ splits cleanly into $U$ and $U^\perp$.
+
+<TheoremBlock type="theorem" number={10} title="Orthogonal Decomposition">
+
+Let $V$ be a finite-dimensional inner product space and $U \subseteq V$ a subspace. Then every $\mathbf{v} \in V$ has a unique decomposition
+
+$$\mathbf{v} = \mathbf{u} + \mathbf{u}^\perp, \qquad \mathbf{u} \in U,\; \mathbf{u}^\perp \in U^\perp.$$
+
+The map $\mathbf{v} \mapsto \mathbf{u}$ is the **orthogonal projection of $V$ onto $U$**, and it is a linear map. Symbolically, $V = U \oplus U^\perp$ (direct sum decomposition).
+
+</TheoremBlock>
+
+We will use Theorem 10 below in the proof of Gram-Schmidt; the proof of Theorem 10 itself is a constructive argument using the Gram-Schmidt process (an example of theorems that are best proved by their algorithm), so we postpone the formal proof to a follow-up topic ([Hilbert Spaces](/topics/hilbert-spaces)) where the infinite-dimensional version becomes the main event. In finite dimensions, the proof reduces to constructing an orthonormal basis of $U$, extending it to one of $V$, and reading off the decomposition.
+
+The construction of an orthonormal basis from any old basis is the **Gram-Schmidt process** — an algorithm so important that it earns its own theorem.
+
+<TheoremBlock type="theorem" number={11} title="Gram-Schmidt Produces an Orthonormal Basis">
+
+Let $\{\mathbf{v}_1, \mathbf{v}_2, \ldots, \mathbf{v}_n\}$ be a basis of an inner product space $V$. Define vectors $\mathbf{u}_1, \mathbf{u}_2, \ldots, \mathbf{u}_n$ and $\mathbf{q}_1, \mathbf{q}_2, \ldots, \mathbf{q}_n$ recursively:
+
+$$\mathbf{u}_1 = \mathbf{v}_1, \qquad \mathbf{q}_1 = \frac{\mathbf{u}_1}{\|\mathbf{u}_1\|},$$
+
+and for $k = 2, 3, \ldots, n$:
+
+$$\mathbf{u}_k = \mathbf{v}_k - \sum_{i=1}^{k-1} \langle \mathbf{v}_k, \mathbf{q}_i \rangle\, \mathbf{q}_i, \qquad \mathbf{q}_k = \frac{\mathbf{u}_k}{\|\mathbf{u}_k\|}.$$
+
+Then $\{\mathbf{q}_1, \mathbf{q}_2, \ldots, \mathbf{q}_n\}$ is an orthonormal basis of $V$, and for every $k$, $\mathrm{span}(\mathbf{q}_1, \ldots, \mathbf{q}_k) = \mathrm{span}(\mathbf{v}_1, \ldots, \mathbf{v}_k)$.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+We prove by induction on $k$ that (a) $\{\mathbf{q}_1, \ldots, \mathbf{q}_k\}$ is orthonormal, and (b) $\mathrm{span}(\mathbf{q}_1, \ldots, \mathbf{q}_k) = \mathrm{span}(\mathbf{v}_1, \ldots, \mathbf{v}_k)$.
+
+**Base case ($k = 1$).** Since $\{\mathbf{v}_1, \ldots, \mathbf{v}_n\}$ is a basis, $\mathbf{v}_1 \neq \mathbf{0}$, so $\|\mathbf{u}_1\| = \|\mathbf{v}_1\| > 0$ and $\mathbf{q}_1 = \mathbf{v}_1 / \|\mathbf{v}_1\|$ is well-defined. By construction, $\|\mathbf{q}_1\| = 1$, so the singleton $\{\mathbf{q}_1\}$ is orthonormal. The span condition is immediate: $\mathrm{span}(\mathbf{q}_1) = \mathrm{span}(\mathbf{v}_1)$, since $\mathbf{q}_1$ is a nonzero scalar multiple of $\mathbf{v}_1$.
+
+**Inductive step.** Assume the claim holds for indices $1, \ldots, k-1$; that is, $\{\mathbf{q}_1, \ldots, \mathbf{q}_{k-1}\}$ is orthonormal with $\mathrm{span}(\mathbf{q}_1, \ldots, \mathbf{q}_{k-1}) = \mathrm{span}(\mathbf{v}_1, \ldots, \mathbf{v}_{k-1})$. Examine the construction:
+
+$$\mathbf{u}_k = \mathbf{v}_k - \sum_{i=1}^{k-1} \langle \mathbf{v}_k, \mathbf{q}_i \rangle\, \mathbf{q}_i.$$
+
+*Orthogonality of $\mathbf{u}_k$ to each $\mathbf{q}_j$ for $j < k$.* Take the inner product of $\mathbf{u}_k$ with $\mathbf{q}_j$:
+
+$$\langle \mathbf{u}_k, \mathbf{q}_j \rangle = \langle \mathbf{v}_k, \mathbf{q}_j \rangle - \sum_{i=1}^{k-1} \langle \mathbf{v}_k, \mathbf{q}_i \rangle \cdot \langle \mathbf{q}_i, \mathbf{q}_j \rangle.$$
+
+By the inductive orthonormality of $\{\mathbf{q}_1, \ldots, \mathbf{q}_{k-1}\}$, $\langle \mathbf{q}_i, \mathbf{q}_j \rangle = \delta_{ij}$ (one when $i = j$, zero otherwise). The sum collapses to a single nonzero term at $i = j$:
+
+$$\langle \mathbf{u}_k, \mathbf{q}_j \rangle = \langle \mathbf{v}_k, \mathbf{q}_j \rangle - \langle \mathbf{v}_k, \mathbf{q}_j \rangle = 0.$$
+
+So $\mathbf{u}_k$ is orthogonal to each $\mathbf{q}_j$ for $j < k$.
+
+*Non-vanishing of $\mathbf{u}_k$.* Suppose for contradiction $\mathbf{u}_k = \mathbf{0}$. Then $\mathbf{v}_k = \sum_{i=1}^{k-1} \langle \mathbf{v}_k, \mathbf{q}_i \rangle\, \mathbf{q}_i$, so $\mathbf{v}_k \in \mathrm{span}(\mathbf{q}_1, \ldots, \mathbf{q}_{k-1}) = \mathrm{span}(\mathbf{v}_1, \ldots, \mathbf{v}_{k-1})$. But $\{\mathbf{v}_1, \ldots, \mathbf{v}_n\}$ is a basis, so its elements are linearly independent, and $\mathbf{v}_k$ cannot lie in the span of the earlier $\mathbf{v}_i$. Contradiction. So $\mathbf{u}_k \neq \mathbf{0}$ and $\|\mathbf{u}_k\| > 0$, making $\mathbf{q}_k = \mathbf{u}_k / \|\mathbf{u}_k\|$ well-defined and a unit vector.
+
+*Orthonormality of the full set.* The orthogonality of $\mathbf{u}_k$ to each $\mathbf{q}_j$ for $j < k$ carries to $\mathbf{q}_k = \mathbf{u}_k / \|\mathbf{u}_k\|$ by scaling (the inner product is bilinear). Combined with $\|\mathbf{q}_k\| = 1$ and the inductive orthonormality, $\{\mathbf{q}_1, \ldots, \mathbf{q}_k\}$ is orthonormal.
+
+*Span condition.* By construction, $\mathbf{q}_k$ is a linear combination of $\mathbf{v}_k$ and $\{\mathbf{q}_1, \ldots, \mathbf{q}_{k-1}\}$ (which, by induction, span $\{\mathbf{v}_1, \ldots, \mathbf{v}_{k-1}\}$). So $\mathbf{q}_k \in \mathrm{span}(\mathbf{v}_1, \ldots, \mathbf{v}_k)$. Conversely, $\mathbf{v}_k$ is recoverable from $\mathbf{q}_k$ and the earlier $\mathbf{q}_i$ (rearrange the Gram-Schmidt formula), so $\mathbf{v}_k \in \mathrm{span}(\mathbf{q}_1, \ldots, \mathbf{q}_k)$. Together with the inductive span condition for the first $k - 1$ vectors, this gives $\mathrm{span}(\mathbf{q}_1, \ldots, \mathbf{q}_k) = \mathrm{span}(\mathbf{v}_1, \ldots, \mathbf{v}_k)$.
+
+By induction, the claim holds for all $k$ up to $n$. At $k = n$, $\{\mathbf{q}_1, \ldots, \mathbf{q}_n\}$ is an orthonormal basis of $V$, completing the proof.
+
+</TheoremBlock>
+
+<figure className="my-6">
+  <img src="/images/topics/linear-algebra/gram-schmidt-steps.png" alt="Three-panel 3D Gram-Schmidt sequence: starting skewed basis, intermediate u_k vectors after projection-and-subtract, final orthonormal q_k basis" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">Gram-Schmidt on a skewed basis of ℝ³: starting vectors (left), intermediate u_k after subtracting projections (middle), final orthonormal q_k (right). The viz below walks through this animation one step at a time.</figcaption>
+</figure>
+
+The Gram-Schmidt process is the canonical way to manufacture an orthonormal basis on demand. The viz below steps through the process on a skewed input basis of $\mathbb{R}^3$, with each $\mathbf{v}_k$ rendered in grey, the projections being subtracted in orange, the intermediate $\mathbf{u}_k$ in blue, and the finalized $\mathbf{q}_k$ in green. The accumulating orthonormal basis is reported in a side panel as the algorithm runs.
+
+<GramSchmidtAnimator client:visible />
+
+<TheoremBlock type="remark" number={10} title="QR Factorization">
+
+If we apply Gram-Schmidt to the columns of an $m \times n$ matrix $A$ (with $n \leq m$ and full column rank), the orthonormal vectors $\mathbf{q}_1, \ldots, \mathbf{q}_n$ become the columns of an $m \times n$ matrix $Q$ with orthonormal columns. The relationship between $A$ and $Q$ takes the form
+
+$$A = Q R,$$
+
+where $R$ is an $n \times n$ upper-triangular matrix whose entries are exactly the coefficients that Gram-Schmidt computes: $R_{ij} = \langle \mathbf{v}_j, \mathbf{q}_i \rangle$ for $i \leq j$ and $R_{ij} = 0$ for $i > j$. This is the **QR factorization** of $A$ — the orthogonal-triangular decomposition that powers numerical least-squares solvers, eigenvalue iterations, and many other algorithms. We will not develop QR in detail here; the *Numerical Linear Algebra* literature (Trefethen & Bau) treats it in full, and the spectral theorems of the next track topic depend on it implicitly.
+
+</TheoremBlock>
+
+**ML aside.** **Cosine similarity** — the dominant similarity metric for embedding spaces in modern ML (Word2Vec, sentence-transformers, retrieval-augmented generation, recommender systems) — is the cosine of the angle between two vectors, exactly the formula derived from Cauchy-Schwarz above:
+
+$$\mathrm{cosine\,similarity}(\mathbf{u}, \mathbf{v}) = \frac{\langle \mathbf{u}, \mathbf{v} \rangle}{\|\mathbf{u}\| \cdot \|\mathbf{v}\|}.$$
+
+The Cauchy-Schwarz inequality is what guarantees this quantity lies in $[-1, 1]$ — and is what makes the metric well-defined regardless of vector dimension. Two further uses: the **triangle inequality** $\|\mathbf{u} + \mathbf{v}\| \leq \|\mathbf{u}\| + \|\mathbf{v}\|$ (a corollary of Cauchy-Schwarz, derivable by expanding the squared norm) controls how embeddings compose under addition, which is the constraint behind compositional embeddings like Word2Vec's analogy property "king − man + woman ≈ queen." And the **orthogonality of residual** to design-matrix columns in least-squares regression — equivalent to the orthogonal-decomposition theorem applied to $\mathbf{y}$ projected onto $\mathrm{col}(X)$ — is the geometric statement behind the normal equations, which the next section will unpack.
+
+**Where this leads.** We have built a lot of geometric machinery — angles, lengths, orthogonality, orthogonal projections, orthonormal bases. The most natural next question is: given a linear map $T$, are there *directions* in the space that $T$ does not rotate? Directions $\mathbf{v}$ where $T(\mathbf{v}) = \lambda \mathbf{v}$ for some scalar $\lambda$ — the map merely stretches the vector by a factor of $\lambda$ but does not reorient it. Such a direction is a 1-dimensional invariant subspace, and the vectors along it are called **eigenvectors** of $T$ with **eigenvalue** $\lambda$. For some maps (e.g. projections, rotations by $0$ or $\pi$, scalings) such directions abound; for others (rotation by $\pi/4$ in $\mathbb{R}^2$) no real direction is fixed. The systematic theory of when eigenvectors exist, how many there are, and what they tell us about a map is the content of the next topic, *Eigenvalues & Eigenvectors*. The spectral theorem for symmetric matrices — the headline result of that topic — says that a symmetric matrix has an orthonormal basis of eigenvectors, tying together the orthogonality of this section with the eigenvalue picture of the next.
+
+## 11. Connections to Machine Learning
+
+Linear algebra is the most heavily invoked piece of mathematics in machine learning. The inline ML asides at the end of each section have signposted specific connections one at a time — neural-network layers as linear maps, projections as bias-free regression, deep linear networks as products of matrices, normalizing flows as Jacobian-volume preservation, autoencoders as rank constraints, embeddings as choices of basis, cosine similarity as the Cauchy-Schwarz quotient. This section consolidates three of the largest connections into stand-alone treatments that draw on the full apparatus of §§1-10.
+
+### 11.1 Least Squares as Orthogonal Projection
+
+The single most common use of linear algebra in applied work is **ordinary least squares** regression. Given data $(X, \mathbf{y})$ with design matrix $X \in \mathbb{R}^{n \times p}$ and response vector $\mathbf{y} \in \mathbb{R}^n$, OLS solves the minimization
+
+$$\hat{\boldsymbol{\beta}} = \arg\min_{\boldsymbol{\beta} \in \mathbb{R}^p} \,\|\mathbf{y} - X \boldsymbol{\beta}\|^2.$$
+
+The algebraic answer is the closed-form expression $\hat{\boldsymbol{\beta}} = (X^\top X)^{-1} X^\top \mathbf{y}$ — derivable by setting the gradient to zero and inverting. That algebraic derivation is correct, but it conceals the *reason* the formula looks the way it does. The reason is geometric: $\hat{\boldsymbol{\beta}}$ is the unique vector of coefficients that puts $X \hat{\boldsymbol{\beta}}$ at the **orthogonal projection of $\mathbf{y}$ onto the column space of $X$** — and the formula above is just the algebraic shadow of that projection.
+
+Here is the geometric story written out. Let $\mathrm{col}(X) \subseteq \mathbb{R}^n$ denote the column space of $X$ (a subspace of $\mathbb{R}^n$ of dimension $\mathrm{rank}(X) \leq p$). Every reachable prediction $X \boldsymbol{\beta}$ lives in $\mathrm{col}(X)$ — that is the definition of the column space. The squared error $\|\mathbf{y} - X \boldsymbol{\beta}\|^2$ is the squared distance from $\mathbf{y}$ to the candidate prediction. By the orthogonal-decomposition theorem (Theorem 10), $\mathbb{R}^n = \mathrm{col}(X) \oplus \mathrm{col}(X)^\perp$, so $\mathbf{y}$ has a unique decomposition $\mathbf{y} = \mathbf{y}_\| + \mathbf{y}_\perp$ with $\mathbf{y}_\| \in \mathrm{col}(X)$ and $\mathbf{y}_\perp \in \mathrm{col}(X)^\perp$. The minimum-distance point in $\mathrm{col}(X)$ to $\mathbf{y}$ is exactly $\mathbf{y}_\|$ — the orthogonal projection — with distance $\|\mathbf{y}_\perp\|$.
+
+So the OLS prediction is $X \hat{\boldsymbol{\beta}} = \mathbf{y}_\|$, and the residual $\hat{\mathbf{r}} = \mathbf{y} - X \hat{\boldsymbol{\beta}} = \mathbf{y}_\perp$ is orthogonal to every column of $X$. Writing the orthogonality condition columnwise gives the **normal equations**:
+
+$$X^\top \hat{\mathbf{r}} = \mathbf{0} \;\;\Longleftrightarrow\;\; X^\top (\mathbf{y} - X \hat{\boldsymbol{\beta}}) = \mathbf{0} \;\;\Longleftrightarrow\;\; X^\top X \hat{\boldsymbol{\beta}} = X^\top \mathbf{y}.$$
+
+When $X$ has full column rank, $X^\top X$ is invertible (by Corollary 1 applied to the $p \times p$ matrix $X^\top X$, whose columns are independent iff $X$'s columns are) and we recover $\hat{\boldsymbol{\beta}} = (X^\top X)^{-1} X^\top \mathbf{y}$. The algebraic formula is the geometry rewritten in coordinates.
+
+<TheoremBlock type="example" number={18} title="A Solved Least-Squares Problem">
+
+Fit a line $\hat{y} = \beta_0 + \beta_1 x$ to the four data points $(0, 1),\, (1, 2),\, (2, 2),\, (3, 4)$. Set up the design matrix and response,
+
+$$X = \begin{pmatrix} 1 & 0 \\ 1 & 1 \\ 1 & 2 \\ 1 & 3 \end{pmatrix}, \qquad \mathbf{y} = (1, 2, 2, 4)^\top.$$
+
+Compute the normal-equation ingredients:
+
+$$X^\top X = \begin{pmatrix} 4 & 6 \\ 6 & 14 \end{pmatrix}, \qquad X^\top \mathbf{y} = (9, 17)^\top.$$
+
+Invert the $2 \times 2$ matrix: $\det(X^\top X) = 4 \cdot 14 - 6 \cdot 6 = 20$, so
+
+$$(X^\top X)^{-1} = \frac{1}{20} \begin{pmatrix} 14 & -6 \\ -6 & \;\;4 \end{pmatrix}.$$
+
+Apply to $X^\top \mathbf{y}$:
+
+$$\hat{\boldsymbol{\beta}} = (X^\top X)^{-1} X^\top \mathbf{y} = \frac{1}{20} \begin{pmatrix} 14 & -6 \\ -6 & \;\;4 \end{pmatrix} \begin{pmatrix} 9 \\ 17 \end{pmatrix} = \frac{1}{20} \begin{pmatrix} 24 \\ 14 \end{pmatrix} = \begin{pmatrix} 1.2 \\ 0.7 \end{pmatrix}.$$
+
+So $\hat{\beta}_0 = 1.2$ and $\hat{\beta}_1 = 0.7$, fitting the line $\hat{y} = 1.2 + 0.7 x$. The notebook (cell §9) plots the four points, the line, and the four residual arrows orthogonal to $\mathrm{col}(X)$, making the orthogonality of the residual visible.
+
+</TheoremBlock>
+
+<figure className="my-6">
+  <img src="/images/topics/linear-algebra/least-squares-projection.png" alt="Two-panel OLS visualization: scatter of data points with the fitted line and vertical residual segments; residual scatter showing residuals are mean-zero and orthogonal to col(X)" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">OLS as orthogonal projection: the fitted line is the projection of y onto col(X). The residuals (right panel) scatter around zero and are orthogonal to every column of X — the geometric statement behind the normal equations.</figcaption>
+</figure>
+
+The geometric story extends in three useful directions. The orthogonal projection $\mathbf{y} \mapsto \mathbf{y}_\|$ is itself a linear map; its matrix in the standard basis is the **projection matrix** $P_X = X (X^\top X)^{-1} X^\top$, and the hat matrix $\hat{\mathbf{y}} = P_X \mathbf{y}$ has trace equal to $\mathrm{rank}(X)$ — the "effective number of parameters" in classical statistics. The residual matrix $I - P_X$ is also a projection (onto $\mathrm{col}(X)^\perp$). And when $X$ is rank-deficient, the formula $(X^\top X)^{-1}$ fails — exactly the diagnosis from Example 13 (underdetermined regression), and exactly the situation where ridge or lasso regularization steps in. Every applied-statistics technique stacked on top of linear regression — diagnostics, leverage, influence, generalized inverses — descends from this orthogonal-projection geometry. <a className="formalml-badge" href="https://www.formalml.com/topics/regression-fundamentals">regression-fundamentals →</a>
+
+### 11.2 Embeddings as Choices of Basis
+
+A modern ML embedding maps discrete objects (words, sentences, users, items, documents) to vectors in $\mathbb{R}^d$, where $d$ is typically a few hundred to a few thousand. Word2Vec uses $d = 300$; BERT's `[CLS]` token lives in $\mathbb{R}^{768}$; the OpenAI text-embedding APIs return $1536$-dimensional vectors. From the linear-algebra perspective, an embedding is a *choice of basis* for the latent space — the axes of $\mathbb{R}^d$ are implicit basis vectors, chosen by training to make geometrically nearby vectors semantically similar.
+
+This framing has immediate consequences. The famous Word2Vec analogy property, $\mathrm{king} - \mathrm{man} + \mathrm{woman} \approx \mathrm{queen}$, is a *linear-combination statement* in $\mathbb{R}^{300}$: it says that the vector difference $\mathrm{king} - \mathrm{man}$ is approximately equal to $\mathrm{queen} - \mathrm{woman}$, both representing the abstract "royalty" direction in the latent basis. The triangle inequality from §10 (Cauchy-Schwarz corollary) constrains how exactly this can hold — perfect equality would require the four words to lie on a parallelogram, which they don't. The approximation works because the trained basis has *learned* to align such relationships with linear-combination operations.
+
+The same picture explains why **PCA** (principal component analysis) is useful as embedding post-processing. PCA finds an orthonormal basis (the principal components) ordered by variance, and the first few components capture the directions in which the embedding distribution is most spread out. Re-expressing the embedding in this principal basis is a change of basis (§9) — the same data lives in a new coordinate system. We are not yet in a position to compute the principal components; they are eigenvectors of the covariance matrix, which belongs to the next topic. But the setup — pick a basis adapted to the data's structure — is exactly the change-of-basis idea developed here. <a className="formalml-badge" href="https://www.formalml.com/topics/embeddings">embeddings →</a>
+
+### 11.3 Quadratic Local Approximation of Loss
+
+Near a critical point $\boldsymbol{\theta}^*$ of a smooth loss function $L \colon \mathbb{R}^d \to \mathbb{R}$, Taylor expansion gives the second-order approximation
+
+$$L(\boldsymbol{\theta}) \approx L(\boldsymbol{\theta}^*) + \tfrac{1}{2} (\boldsymbol{\theta} - \boldsymbol{\theta}^*)^\top H (\boldsymbol{\theta} - \boldsymbol{\theta}^*),$$
+
+where $H = \nabla^2 L(\boldsymbol{\theta}^*)$ is the Hessian matrix at the critical point (the gradient term vanishes because $\boldsymbol{\theta}^*$ is critical). The quadratic form $\boldsymbol{\delta}^\top H \boldsymbol{\delta}$ controlling the shape of the loss surface near $\boldsymbol{\theta}^*$ is — when $H$ is positive-definite — exactly the squared norm $\|\boldsymbol{\delta}\|_H^2$ induced by the inner product $\langle \mathbf{u}, \mathbf{v} \rangle_H = \mathbf{u}^\top H \mathbf{v}$. So the local geometry of optimization is *the inner-product geometry from §10*, with $H$ playing the role of the inner product.
+
+Three consequences worth noting. First, the level sets of the quadratic approximation are *ellipsoids* whose principal axes are the eigenvectors of $H$ — exactly the basis from §9 in which $H$ becomes diagonal. Gradient descent's convergence rate is controlled by the *condition number* of $H$ (the ratio of largest to smallest eigenvalue), and this condition number is the same number that quantifies "how badly tilted the ellipsoid is" — a basis-invariant quantity, but one whose computation requires diagonalization. Second, **Newton's method** uses the inverse Hessian to rescale gradient steps into the basis where the loss is locally isotropic: $\boldsymbol{\theta}_{t+1} = \boldsymbol{\theta}_t - H^{-1} \nabla L(\boldsymbol{\theta}_t)$ takes one step to a quadratic local minimum, by construction. Third, **adaptive optimizers** like Adam and RMSProp can be read as approximate Hessian rescalings — they whiten the gradient using running statistics that mimic $H^{-1/2}$, exactly the change of basis from the data-whitening ML aside in §9.
+
+The whole story is: a quadratic form is an inner product is the geometry of optimization near a critical point. Once you know that, every line in an optimization textbook becomes a statement about basis-adapted geometry. <a className="formalml-badge" href="https://www.formalml.com/topics/gradient-descent">gradient-descent →</a> <a className="formalml-badge" href="https://www.formalml.com/topics/neural-network-basics">neural-network-basics →</a>
+
+## 12. Connections to Statistics
+
+The single most important statistical object derived from linear algebra is the **sample covariance matrix**. Given mean-centered data $X \in \mathbb{R}^{n \times p}$ (rows are observations, columns are features, and each column has mean zero), the sample covariance is
+
+$$S = \frac{1}{n - 1}\, X^\top X.$$
+
+This is a **Gram matrix** — specifically, the matrix of pairwise inner products of the columns of $X$, scaled by $1/(n-1)$. As a Gram matrix, $S$ inherits the full structure developed in §10: it is symmetric, positive-semi-definite, and rank-equal to $\mathrm{rank}(X)$. Its column space is the subspace of $\mathbb{R}^p$ that the centered data actually inhabits, and its rank measures how many independent feature directions are present in the data — a rank-nullity statement applied to a covariance estimate. When $S$ is full-rank (positive-definite), it defines an inner product on $\mathbb{R}^p$; the induced norm is the **Mahalanobis distance**, which weights coordinates by their inverse variance and is the right notion of distance when feature scales differ. <a className="formalstatistics-badge" href="https://www.formalstatistics.com/topics/covariance-correlation">covariance-correlation →</a>
+
+The **method of moments** and the broader theory of *M-estimation* (maximum likelihood, generalized method of moments) rely on the matrix machinery developed here in a different way. The asymptotic variance of an M-estimator has the **sandwich form** $A^{-1} B A^{-1\top}$, where $A$ is a Jacobian-like matrix and $B$ is a covariance of score functions. The inverse $A^{-1}$ requires $A$ to be invertible — which by Corollary 1 is the *identifiability* condition for the estimator. The quadratic form $\boldsymbol{\theta}^\top (A^{-1} B A^{-1\top}) \boldsymbol{\theta}$ is the asymptotic variance of any linear contrast of the parameters, and again the inner-product geometry from §10 determines confidence-region geometry. <a className="formalstatistics-badge" href="https://www.formalstatistics.com/topics/method-of-moments">method-of-moments →</a>
+
+Finally, **linear regression inference** — the F-tests, t-tests, and confidence intervals attached to the OLS estimator $\hat{\boldsymbol{\beta}} = (X^\top X)^{-1} X^\top \mathbf{y}$ — reads off directly from the rank of $X$ and the inner-product structure of the residual space. The residual sum of squares lives in $\mathrm{col}(X)^\perp$, whose dimension is $n - \mathrm{rank}(X)$; this is the famous "$n - p$" degrees of freedom appearing in the denominator of the unbiased variance estimator. Every classical-statistics formula in linear regression — leverage, influence, the F-distribution of the test statistic, the geometry of nested-model comparison — descends from the orthogonal-decomposition theorem applied to the column space and its complement. <a className="formalstatistics-badge" href="https://www.formalstatistics.com/topics/linear-regression-inference">linear-regression-inference →</a>
+
+## 13. Where This Leads
+
+<figure className="my-6">
+  <img src="/images/topics/linear-algebra/connections-summary.png" alt="Four-panel forward-looking summary: eigenvector directions of a matrix, principal components of a data ellipse, quadratic loss contours with gradient descent path, and SVD of the unit circle into a tilted ellipse" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">Four directions this topic prepares the reader for: eigenvectors (next topic), principal components (PCA), quadratic forms in optimization, and the singular value decomposition (SVD).</figcaption>
+</figure>
+
+This topic built the foundation. Three downstream directions extend the apparatus, each with its own topic on this site or its sister sites.
+
+**Eigenvalues and Eigenvectors** is the immediate next topic on this track. The animating question is: given a linear map $T \colon V \to V$, can we find a basis of $V$ in which $T$ has a particularly simple matrix? For some maps the answer is yes, and the basis is a basis of **eigenvectors** — directions $\mathbf{v}$ that $T$ merely scales, $T(\mathbf{v}) = \lambda \mathbf{v}$, without rotation. In that basis the matrix is diagonal, with the diagonal entries being the **eigenvalues**. The full theory — characteristic polynomials, multiplicities, diagonalizability criteria, the spectral theorem for symmetric matrices, defective maps and Jordan canonical form — is the content of the next topic. Two of this topic's loose ends close immediately there: Example 15's projection-becomes-diagonal observation is the prototype of the spectral theorem, and the eigenvalue framing for the Hessian condition number (§11.3) becomes concrete.
+
+**Singular Value Decomposition** (SVD) generalizes the eigenvalue picture to rectangular matrices. Every $m \times n$ real matrix factors as $A = U \Sigma V^\top$, where $U$ is $m \times m$ orthogonal, $V$ is $n \times n$ orthogonal, and $\Sigma$ is $m \times n$ diagonal with non-negative entries called the **singular values**. The SVD says that every linear map between inner-product spaces factors as "rotate, scale along orthogonal axes, rotate again" — a remarkable structural theorem that underpins low-rank approximation, principal component analysis, recommendation systems, latent-semantic indexing, and many more. We do not develop SVD here; it is the natural sequel to Eigenvalues and is best treated as a separate topic.
+
+**Quadratic forms** reappear in optimization through the Hessian and the second-derivative test, in geometry through curvature (the Gaussian curvature of a surface is the determinant of a quadratic form), and in statistics through the multivariate Gaussian distribution (whose density is $\exp(-\tfrac{1}{2} \mathbf{x}^\top \Sigma^{-1} \mathbf{x})$, a quadratic form in disguise). The apparatus built in this topic — inner products, symmetric matrices, the geometry of orthonormal bases — is the entry pass to every quadratic-form result downstream.
+
+Beyond this topic, **functional analysis** (Track 8) lifts every finite-dimensional construction here into infinite dimensions. Inner products become bounded sesquilinear forms; orthonormal bases become Hilbert-space bases; the orthogonal-decomposition theorem becomes the projection theorem for closed subspaces; the rank-nullity theorem becomes the open-mapping theorem and the index theorem. The transition from finite to infinite dimensions is non-trivial — questions of convergence and completeness arise that have no finite-dimensional analog — but the *language* developed here is exactly the language that infinite-dimensional theory inherits. [Metric Spaces](/topics/metric-spaces), [Normed & Banach Spaces](/topics/banach-spaces), [Inner Product & Hilbert Spaces](/topics/hilbert-spaces), and [Calculus of Variations](/topics/calculus-of-variations) carry the story forward.
+
+The finite-dimensional theory is complete in its own right — every theorem in this topic stands on its own and has unconditional applications, from solving linear systems to fitting regression models. But the apparatus also serves as the warm-up for a deeper story whose chapters are written elsewhere on this site. *Eigenvalues & Eigenvectors* is next.
