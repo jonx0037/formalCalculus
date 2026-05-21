@@ -24,6 +24,8 @@ const DOMAIN_ORDER = [
   'multivar-integral',
   'series-approximation',
   'odes',
+  'linear-algebra',
+  'probability-foundations',
   'measure-integration',
   'functional-analysis',
 ];
@@ -35,6 +37,8 @@ const DOMAIN_LABELS: Record<string, string> = {
   'multivar-integral': 'Multi Int',
   'series-approximation': 'Series',
   'odes': 'ODEs',
+  'linear-algebra': 'Linear Alg',
+  'probability-foundations': 'Probability',
   'measure-integration': 'Measure',
   'functional-analysis': 'Functional',
 };

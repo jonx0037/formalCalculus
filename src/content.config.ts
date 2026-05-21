@@ -17,6 +17,8 @@ const topics = defineCollection({
       'multivar-integral',
       'series-approximation',
       'odes',
+      'linear-algebra',
+      'probability-foundations',
       'measure-integration',
       'functional-analysis',
     ]),
