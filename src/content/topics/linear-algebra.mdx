@@ -105,6 +105,7 @@ import BasisExplorer from '../../components/viz/BasisExplorer.tsx';
 import LinearMapMatrixBuilder from '../../components/viz/LinearMapMatrixBuilder.tsx';
 import DeterminantVolumeVisualizer from '../../components/viz/DeterminantVolumeVisualizer.tsx';
 import RankNullityVisualizer from '../../components/viz/RankNullityVisualizer.tsx';
+import GramSchmidtAnimator from '../../components/viz/GramSchmidtAnimator.tsx';
 
 ## 1. What Linear Algebra Studies
 
@@ -1027,3 +1028,302 @@ That is the linear-algebra reason high-dimensional regression requires *regulari
 </TheoremBlock>
 
 **ML aside.** The bottleneck dimension of a linear autoencoder is exactly the rank of the encoder matrix. If the encoder is the map $\mathbf{z} = W \mathbf{x}$ with $W$ a $k \times d$ matrix and $k \ll d$, then $\mathrm{rank}(W) \leq k$, and the decoder cannot recover more than $k$ independent directions of the input. The other $d - k$ input directions live in the kernel of the encoder and are lost — that is the linear-algebra picture of *lossy compression*. The choice of $k$ is the "how much information do we keep" knob. The choice of $W$ — which $k$ directions to keep — is what training the autoencoder learns. When $k = d$ and $W$ is invertible, the autoencoder is lossless; this is the trivial case. The interesting cases have $k < d$ and the rank-nullity theorem is bounding how much information can flow through the bottleneck.
+
+## 9. Change of Basis
+
+A linear map $T \colon V \to V$ is a function — a single, basis-independent object. Its *matrix*, however, is a coordinate-dependent record. Pick a different basis and you get a different matrix for the same map. This section makes the relationship between the two matrices precise and gives the formula that switches between them.
+
+The motivating question is practical. Suppose you have a linear map whose matrix in one basis is messy — say, a projection onto a tilted line whose matrix in the standard basis is the full-fill rank-1 monstrosity $\frac{1}{2}\bigl(\begin{smallmatrix}1 & 1 \\ 1 & 1\end{smallmatrix}\bigr)$. Is there a basis in which the matrix is simpler? Yes: in a basis adapted to the line and its perpendicular, the same projection has matrix $\bigl(\begin{smallmatrix}1 & 0 \\ 0 & 0\end{smallmatrix}\bigr)$ — the cleanest possible representation of "keep one coordinate, drop the other." The transformation that switches between the two matrices is exactly what we are about to write down.
+
+<TheoremBlock type="definition" number={16} title="Change-of-Basis Matrix">
+
+Let $V$ be a finite-dimensional vector space with two bases $\mathcal{B} = \{\mathbf{v}_1, \ldots, \mathbf{v}_n\}$ and $\mathcal{B}' = \{\mathbf{v}_1', \ldots, \mathbf{v}_n'\}$. The **change-of-basis matrix from $\mathcal{B}'$ to $\mathcal{B}$**, written $P_{\mathcal{B} \leftarrow \mathcal{B}'}$ (or just $P$ when the bases are clear from context), is the $n \times n$ matrix whose $j$-th column is the coordinate vector of $\mathbf{v}_j'$ in the basis $\mathcal{B}$.
+
+In symbols, if $\mathbf{v}_j' = \sum_{i=1}^{n} p_{ij}\, \mathbf{v}_i$, then $P = (p_{ij})$.
+
+</TheoremBlock>
+
+The columns of $P$ are exactly the images of the new basis vectors $\mathbf{v}_j'$ written out in the old basis $\mathcal{B}$. Note the orientation: $P$ takes coordinates in the *new* basis $\mathcal{B}'$ and produces coordinates in the *old* basis $\mathcal{B}$. The subscript convention $P_{\mathcal{B} \leftarrow \mathcal{B}'}$ records this — left side is the output basis, right side is the input basis, and the arrow goes "from $\mathcal{B}'$ to $\mathcal{B}$" when you read it as a coordinate transformation.
+
+<TheoremBlock type="proposition" number={4} title="Coordinate Transformation">
+
+Let $\mathbf{v} \in V$ have coordinate vector $\mathbf{c}$ in the basis $\mathcal{B}$ and coordinate vector $\mathbf{c}'$ in the basis $\mathcal{B}'$. Then $\mathbf{c} = P \mathbf{c}'$, where $P = P_{\mathcal{B} \leftarrow \mathcal{B}'}$ is the change-of-basis matrix from Definition 16.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+Expand $\mathbf{v}$ in $\mathcal{B}'$:
+
+$$\mathbf{v} = \sum_{j=1}^{n} c_j'\, \mathbf{v}_j'.$$
+
+Substitute the expansion $\mathbf{v}_j' = \sum_i p_{ij}\, \mathbf{v}_i$ from Definition 16:
+
+$$\mathbf{v} = \sum_{j=1}^{n} c_j' \sum_{i=1}^{n} p_{ij}\, \mathbf{v}_i = \sum_{i=1}^{n} \!\left( \sum_{j=1}^{n} p_{ij}\, c_j' \right) \mathbf{v}_i.$$
+
+The expression in parentheses is the $i$-th component of the matrix-vector product $P \mathbf{c}'$. So the coordinate vector of $\mathbf{v}$ in $\mathcal{B}$ is $\mathbf{c} = P \mathbf{c}'$.
+
+</TheoremBlock>
+
+The change-of-basis matrix $P$ is always invertible, since its columns are the basis vectors of $\mathcal{B}'$ written in $\mathcal{B}$ — a basis is linearly independent by definition, so by Corollary 1 the matrix is invertible. The inverse $P^{-1}$ is then the change-of-basis matrix going the other way, from $\mathcal{B}$ to $\mathcal{B}'$.
+
+With coordinate transformation in place, the formula for how a linear map's matrix changes follows by chasing where each input vector ends up.
+
+<TheoremBlock type="theorem" number={8} title="Change-of-Basis Formula">
+
+Let $T \colon V \to V$ be a linear map, and let $\mathcal{B}, \mathcal{B}'$ be two bases of $V$ with change-of-basis matrix $P = P_{\mathcal{B} \leftarrow \mathcal{B}'}$. Then the matrices of $T$ in the two bases are related by
+
+$$[T]_{\mathcal{B}'} = P^{-1} [T]_{\mathcal{B}}\, P.$$
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+For any vector $\mathbf{v} \in V$ with coordinates $\mathbf{c}$ in $\mathcal{B}$ and $\mathbf{c}'$ in $\mathcal{B}'$:
+
+$$\mathbf{c} = P \mathbf{c}' \qquad\Longleftrightarrow\qquad \mathbf{c}' = P^{-1} \mathbf{c}.$$
+
+Apply $T$ and write the result in $\mathcal{B}'$. The coordinate vector of $T(\mathbf{v})$ in $\mathcal{B}'$ is (by Theorem 2 applied in basis $\mathcal{B}'$):
+
+$$[T(\mathbf{v})]_{\mathcal{B}'} = [T]_{\mathcal{B}'}\, \mathbf{c}'.$$
+
+It is also reachable by the three-step path "convert $\mathbf{c}'$ to $\mathcal{B}$, apply $T$ in $\mathcal{B}$, convert back to $\mathcal{B}'$":
+
+$$[T(\mathbf{v})]_{\mathcal{B}'} = P^{-1} [T]_{\mathcal{B}}\, \mathbf{c} = P^{-1} [T]_{\mathcal{B}}\, P\, \mathbf{c}'.$$
+
+The two expressions agree for every coordinate vector $\mathbf{c}'$, so the matrices are equal: $[T]_{\mathcal{B}'} = P^{-1} [T]_{\mathcal{B}}\, P$.
+
+</TheoremBlock>
+
+The formula is sometimes written $A' = P^{-1} A P$, where $A$ and $A'$ are the matrices in the two bases. This is the operation that says "translate input, apply, translate output back." Two matrices related this way are called **similar**, and similarity is the matrix-side reflection of "same linear map, different basis."
+
+<TheoremBlock type="example" number={14} title="Rotation in a Tilted Basis">
+
+Let $T$ be rotation by $30°$ in $\mathbb{R}^2$. Its matrix in the standard basis is
+
+$$[T]_{\mathcal{B}} = \begin{pmatrix} \cos 30° & -\sin 30° \\ \sin 30° & \;\cos 30° \end{pmatrix} = \begin{pmatrix} \;\tfrac{\sqrt{3}}{2} & -\tfrac{1}{2} \\[1pt] \;\tfrac{1}{2} & \;\;\tfrac{\sqrt{3}}{2} \end{pmatrix}.$$
+
+Now switch to the basis $\mathcal{B}' = \left\{ \tfrac{1}{\sqrt{2}}(1, 1),\, \tfrac{1}{\sqrt{2}}(-1, 1) \right\}$ — the standard basis rotated by $45°$. The change-of-basis matrix from $\mathcal{B}'$ to the standard basis $\mathcal{B}$ has the new basis vectors as columns:
+
+$$P = \frac{1}{\sqrt{2}} \begin{pmatrix} \;1 & -1 \\ \;1 & \;\;1 \end{pmatrix}.$$
+
+This matrix is itself a rotation by $45°$, and a $2 \times 2$ rotation is its own inverse-transpose: $P^{-1} = P^\top$. The change-of-basis formula gives
+
+$$[T]_{\mathcal{B}'} = P^{-1} [T]_{\mathcal{B}}\, P = P^\top [T]_{\mathcal{B}}\, P.$$
+
+Crucially, rotations *commute with rotations*: if you tilt the basis and apply a rotation, you get the same answer as if you apply the rotation and then tilt the basis. So $P^\top [T]_{\mathcal{B}}\, P = [T]_{\mathcal{B}}$, and the matrix is unchanged. This is the cleanest example of a similarity transformation that doesn't change the matrix — and it reflects a structural fact about rotations: their action is the same in every orthonormal basis.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={15} title="Projection in a Non-Standard Basis">
+
+Let $T$ be the orthogonal projection of $\mathbb{R}^2$ onto the line $y = x$. In the standard basis, $T(\mathbf{e}_1) = T(\mathbf{e}_2) = \tfrac{1}{2}(\mathbf{e}_1 + \mathbf{e}_2)$, so
+
+$$[T]_{\mathcal{B}} = \frac{1}{2} \begin{pmatrix} 1 & 1 \\ 1 & 1 \end{pmatrix}.$$
+
+Now switch to the basis $\mathcal{B}' = \left\{ \tfrac{1}{\sqrt{2}}(1, 1),\, \tfrac{1}{\sqrt{2}}(-1, 1) \right\}$ — the line $y = x$ and its perpendicular. In this basis the projection is *trivial to describe*: it sends the first basis vector to itself (it's already on the line) and the second to zero (it's perpendicular to the line). So
+
+$$[T]_{\mathcal{B}'} = \begin{pmatrix} 1 & 0 \\ 0 & 0 \end{pmatrix}.$$
+
+The same linear map has two very different matrices. The change-of-basis formula $[T]_{\mathcal{B}'} = P^{-1} [T]_{\mathcal{B}}\, P$ ties them together; a direct calculation (with the same $P$ as Example 14) verifies the relationship. This is also the cleanest possible example of a basis chosen to make a map simple — and it foreshadows the central question of the next topic: can we always find such a basis? The answer for diagonalizable maps is yes, and the basis vectors are the *eigenvectors* of the map. We will not develop that here, but Example 15 is the prototype that motivates the question.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={9} title="Similar Matrices Are the Same Map">
+
+Two $n \times n$ matrices $A$ and $A'$ are **similar** if there exists an invertible matrix $P$ with $A' = P^{-1} A P$. By Theorem 8, similar matrices are exactly the matrices of the same linear map in different bases. Two consequences:
+
+- *Quantities that depend only on the underlying map are equal for similar matrices.* These include the trace, the determinant, the rank, the nullity, the characteristic polynomial, and the set of eigenvalues. We list them here even though some haven't been formally defined; the point is that they are invariants of the map, not of the bookkeeping.
+- *Quantities that depend on the choice of basis differ.* These include the individual entries, the column space (as a specific subspace of $\mathbb{R}^n$, not its dimension), and the specific eigenvector representatives.
+
+When you ask "what is true about the linear map," you are asking about invariants of similarity. When you ask "what does this particular matrix look like," you are asking about something basis-dependent that may not match what you'd see in a different basis. Distinguishing the two questions is most of the conceptual work of an applied linear-algebra course.
+
+</TheoremBlock>
+
+**ML aside.** Data whitening — multiplying centered data by $\Sigma^{-1/2}$, where $\Sigma$ is the sample covariance matrix — is a change of basis. In the original coordinates, the data has whatever covariance structure happens to be present; in the whitened coordinates, the covariance is the identity, meaning every direction has unit variance and every pair of directions is uncorrelated. Many algorithms behave better in the whitened basis — gradient descent on isotropic data has condition number $1$, k-means clusters become equidistant in the natural sense, the Mahalanobis distance becomes the ordinary Euclidean distance. Choosing to whiten is choosing a basis in which the algebra is simpler. The same theorem (Theorem 8) describes how the data's statistical properties transform under that change of basis — they don't change in any deep sense, only their representation does.
+
+## 10. Inner Products and Orthogonality
+
+Everything in this topic so far has been *algebraic* — about addition, scalar multiplication, linear combinations, and the maps that respect those operations. None of it has involved measurement. We have not said how long a vector is, what angle two vectors make, or what it means for two vectors to be perpendicular. Those concepts require an additional structure on a vector space called an **inner product**, and adding that structure is what turns a vector space into something we can do *geometry* with: lengths, angles, projections, distances, and orthogonality.
+
+The standard inner product on $\mathbb{R}^n$ — the dot product $\mathbf{u} \cdot \mathbf{v} = \sum_i u_i v_i$ — is the example we already know. Generalizing the dot product to a list of axioms reveals what makes it tick: it is symmetric (treats both inputs the same), linear in each argument, and *positive-definite* (a vector's inner product with itself is non-negative, and zero only for the zero vector). Anything that satisfies those properties earns the name *inner product*, and the resulting theory works in exactly the same way as for the dot product. Three central theorems will come out of this: the Cauchy-Schwarz inequality (which makes "angle" well-defined), the orthogonal decomposition theorem (which makes orthogonal projection canonical), and the Gram-Schmidt process (which constructs orthonormal bases on demand).
+
+<TheoremBlock type="definition" number={17} title="Inner Product">
+
+An **inner product** on a real vector space $V$ is a function $\langle \cdot, \cdot \rangle \colon V \times V \to \mathbb{R}$ satisfying:
+
+1. **(Symmetry)** $\;\langle \mathbf{u}, \mathbf{v} \rangle = \langle \mathbf{v}, \mathbf{u} \rangle$ for all $\mathbf{u}, \mathbf{v} \in V$.
+2. **(Linearity in the first slot)** $\;\langle a\mathbf{u} + b\mathbf{u}', \mathbf{v} \rangle = a \langle \mathbf{u}, \mathbf{v} \rangle + b \langle \mathbf{u}', \mathbf{v} \rangle$ for all $a, b \in \mathbb{R}$ and $\mathbf{u}, \mathbf{u}', \mathbf{v} \in V$. By symmetry, the same holds in the second slot.
+3. **(Positive-definiteness)** $\;\langle \mathbf{v}, \mathbf{v} \rangle \geq 0$ for all $\mathbf{v} \in V$, with equality if and only if $\mathbf{v} = \mathbf{0}$.
+
+A vector space equipped with an inner product is called an **inner product space**.
+
+</TheoremBlock>
+
+<TheoremBlock type="definition" number={18} title="Induced Norm">
+
+In any inner product space $V$, the **norm** (or **length**) induced by the inner product is
+
+$$\|\mathbf{v}\| = \sqrt{\langle \mathbf{v}, \mathbf{v} \rangle}.$$
+
+Positive-definiteness (axiom I3) ensures that the square root is well-defined and that $\|\mathbf{v}\| = 0$ iff $\mathbf{v} = \mathbf{0}$. A vector with $\|\mathbf{v}\| = 1$ is called a **unit vector**.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={16} title="Standard Inner Product on ℝⁿ">
+
+The function $\langle \mathbf{u}, \mathbf{v} \rangle = \mathbf{u}^\top \mathbf{v} = \sum_{i=1}^{n} u_i v_i$ — the familiar dot product — is an inner product on $\mathbb{R}^n$. Symmetry and bilinearity follow from the arithmetic of real numbers; positive-definiteness follows because $\langle \mathbf{v}, \mathbf{v} \rangle = \sum v_i^2 \geq 0$, with equality only when every $v_i = 0$. The induced norm is the Euclidean norm $\|\mathbf{v}\| = \sqrt{\sum_i v_i^2}$, the length of the arrow from the origin to $\mathbf{v}$.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={17} title="L² Inner Product on C[a, b]">
+
+On the space $C[a, b]$ of continuous functions $[a, b] \to \mathbb{R}$, define
+
+$$\langle f, g \rangle = \int_a^b f(x)\, g(x)\, dx.$$
+
+Symmetry and bilinearity follow from the linearity of integration. Positive-definiteness uses the fact that a non-negative continuous function with zero integral over $[a, b]$ must be identically zero — a fact established in [Riemann Integral & FTC](/topics/riemann-integral). The induced norm is $\|f\|_2 = \sqrt{\int_a^b f(x)^2\, dx}$, sometimes called the *$L^2$ norm*. Two functions are "orthogonal" in this inner product when $\int_a^b f g\, dx = 0$ — the orthogonality condition behind Fourier series ([Fourier Series & Orthogonal Expansions](/topics/fourier-series)).
+
+</TheoremBlock>
+
+The dot product satisfies $|\mathbf{u} \cdot \mathbf{v}| \leq \|\mathbf{u}\| \|\mathbf{v}\|$, which the reader may know from Euclidean geometry as "the cosine of an angle is between $-1$ and $1$." The same inequality holds for every inner product, with the same proof, and it is the inequality that lets us define the *angle* between two vectors in an arbitrary inner product space.
+
+<TheoremBlock type="theorem" number={9} title="Cauchy-Schwarz Inequality">
+
+For any vectors $\mathbf{u}, \mathbf{v}$ in an inner product space $V$,
+
+$$|\langle \mathbf{u}, \mathbf{v} \rangle| \leq \|\mathbf{u}\| \cdot \|\mathbf{v}\|,$$
+
+with equality if and only if $\mathbf{u}$ and $\mathbf{v}$ are linearly dependent (one is a scalar multiple of the other, possibly zero).
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+If $\mathbf{v} = \mathbf{0}$, both sides are zero and equality holds trivially with $\mathbf{u}$ and $\mathbf{v}$ trivially dependent. Assume $\mathbf{v} \neq \mathbf{0}$.
+
+Consider the real-valued function
+
+$$f(t) = \|\mathbf{u} - t \mathbf{v}\|^2 = \langle \mathbf{u} - t \mathbf{v}, \mathbf{u} - t \mathbf{v} \rangle.$$
+
+Expanding via bilinearity and symmetry,
+
+$$f(t) = \langle \mathbf{u}, \mathbf{u} \rangle - 2t \langle \mathbf{u}, \mathbf{v} \rangle + t^2 \langle \mathbf{v}, \mathbf{v} \rangle = \|\mathbf{u}\|^2 - 2t \langle \mathbf{u}, \mathbf{v} \rangle + t^2 \|\mathbf{v}\|^2.$$
+
+This is a quadratic in $t$ that is always $\geq 0$ by positive-definiteness, so its discriminant is $\leq 0$:
+
+$$\bigl( -2 \langle \mathbf{u}, \mathbf{v} \rangle \bigr)^2 - 4\, \|\mathbf{v}\|^2 \cdot \|\mathbf{u}\|^2 \leq 0.$$
+
+Simplifying gives $4 \langle \mathbf{u}, \mathbf{v} \rangle^2 \leq 4 \|\mathbf{u}\|^2 \|\mathbf{v}\|^2$, i.e.,
+
+$$\langle \mathbf{u}, \mathbf{v} \rangle^2 \leq \|\mathbf{u}\|^2 \cdot \|\mathbf{v}\|^2.$$
+
+Taking square roots of non-negative numbers gives $|\langle \mathbf{u}, \mathbf{v} \rangle| \leq \|\mathbf{u}\| \cdot \|\mathbf{v}\|$, which is the claimed inequality.
+
+Equality holds iff the discriminant is exactly zero, iff the quadratic $f(t)$ has a (double) real root, iff there exists $t^*$ with $\|\mathbf{u} - t^* \mathbf{v}\|^2 = 0$, iff $\mathbf{u} - t^* \mathbf{v} = \mathbf{0}$ (by positive-definiteness), iff $\mathbf{u}$ and $\mathbf{v}$ are linearly dependent.
+
+</TheoremBlock>
+
+The Cauchy-Schwarz inequality guarantees that the ratio $\langle \mathbf{u}, \mathbf{v} \rangle / (\|\mathbf{u}\| \|\mathbf{v}\|)$ lies in $[-1, 1]$ whenever both vectors are nonzero. So the formula
+
+$$\cos \theta = \frac{\langle \mathbf{u}, \mathbf{v} \rangle}{\|\mathbf{u}\| \cdot \|\mathbf{v}\|}$$
+
+defines a well-defined angle $\theta \in [0, \pi]$ between any two nonzero vectors in any inner product space. This is the angle that the dot product "measures" in $\mathbb{R}^n$ — but the formula and the result extend to function spaces, sequence spaces, and any other inner product space. The angle is part of the structure, not a Euclidean artifact.
+
+The special case where the angle is $\pi/2$ — equivalently, the inner product is zero — earns the name *orthogonality* and is the most-used geometric concept in linear algebra.
+
+<TheoremBlock type="definition" number={19} title="Orthogonality and Orthogonal Complement">
+
+Two vectors $\mathbf{u}, \mathbf{v}$ in an inner product space $V$ are **orthogonal**, written $\mathbf{u} \perp \mathbf{v}$, if $\langle \mathbf{u}, \mathbf{v} \rangle = 0$.
+
+A set $\{\mathbf{q}_1, \ldots, \mathbf{q}_k\}$ is **orthogonal** if every pair is orthogonal; **orthonormal** if it is orthogonal and every $\mathbf{q}_i$ has unit norm. An **orthonormal basis** is a basis that is orthonormal.
+
+For a subspace $U \subseteq V$, the **orthogonal complement** is
+
+$$U^\perp = \{\, \mathbf{v} \in V \mid \langle \mathbf{v}, \mathbf{u} \rangle = 0 \text{ for all } \mathbf{u} \in U \,\}.$$
+
+$U^\perp$ is itself a subspace of $V$ (verify: closure under addition and scalar multiplication follow from bilinearity of the inner product).
+
+</TheoremBlock>
+
+The geometric content of orthogonality is "perpendicular." Two orthogonal nonzero vectors point in directions that share no component — projecting one onto the other gives zero. The orthogonal complement of a subspace $U$ is the set of vectors perpendicular to *every* vector in $U$; in $\mathbb{R}^3$, the orthogonal complement of a line is a plane and of a plane is a line. The remarkable fact, which the next theorem packages, is that $V$ splits cleanly into $U$ and $U^\perp$.
+
+<TheoremBlock type="theorem" number={10} title="Orthogonal Decomposition">
+
+Let $V$ be a finite-dimensional inner product space and $U \subseteq V$ a subspace. Then every $\mathbf{v} \in V$ has a unique decomposition
+
+$$\mathbf{v} = \mathbf{u} + \mathbf{u}^\perp, \qquad \mathbf{u} \in U,\; \mathbf{u}^\perp \in U^\perp.$$
+
+The map $\mathbf{v} \mapsto \mathbf{u}$ is the **orthogonal projection of $V$ onto $U$**, and it is a linear map. Symbolically, $V = U \oplus U^\perp$ (direct sum decomposition).
+
+</TheoremBlock>
+
+We will use Theorem 10 below in the proof of Gram-Schmidt; the proof of Theorem 10 itself is a constructive argument using the Gram-Schmidt process (an example of theorems that are best proved by their algorithm), so we postpone the formal proof to a follow-up topic ([Hilbert Spaces](/topics/hilbert-spaces)) where the infinite-dimensional version becomes the main event. In finite dimensions, the proof reduces to constructing an orthonormal basis of $U$, extending it to one of $V$, and reading off the decomposition.
+
+The construction of an orthonormal basis from any old basis is the **Gram-Schmidt process** — an algorithm so important that it earns its own theorem.
+
+<TheoremBlock type="theorem" number={11} title="Gram-Schmidt Produces an Orthonormal Basis">
+
+Let $\{\mathbf{v}_1, \mathbf{v}_2, \ldots, \mathbf{v}_n\}$ be a basis of an inner product space $V$. Define vectors $\mathbf{u}_1, \mathbf{u}_2, \ldots, \mathbf{u}_n$ and $\mathbf{q}_1, \mathbf{q}_2, \ldots, \mathbf{q}_n$ recursively:
+
+$$\mathbf{u}_1 = \mathbf{v}_1, \qquad \mathbf{q}_1 = \frac{\mathbf{u}_1}{\|\mathbf{u}_1\|},$$
+
+and for $k = 2, 3, \ldots, n$:
+
+$$\mathbf{u}_k = \mathbf{v}_k - \sum_{i=1}^{k-1} \langle \mathbf{v}_k, \mathbf{q}_i \rangle\, \mathbf{q}_i, \qquad \mathbf{q}_k = \frac{\mathbf{u}_k}{\|\mathbf{u}_k\|}.$$
+
+Then $\{\mathbf{q}_1, \mathbf{q}_2, \ldots, \mathbf{q}_n\}$ is an orthonormal basis of $V$, and for every $k$, $\mathrm{span}(\mathbf{q}_1, \ldots, \mathbf{q}_k) = \mathrm{span}(\mathbf{v}_1, \ldots, \mathbf{v}_k)$.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+We prove by induction on $k$ that (a) $\{\mathbf{q}_1, \ldots, \mathbf{q}_k\}$ is orthonormal, and (b) $\mathrm{span}(\mathbf{q}_1, \ldots, \mathbf{q}_k) = \mathrm{span}(\mathbf{v}_1, \ldots, \mathbf{v}_k)$.
+
+**Base case ($k = 1$).** Since $\{\mathbf{v}_1, \ldots, \mathbf{v}_n\}$ is a basis, $\mathbf{v}_1 \neq \mathbf{0}$, so $\|\mathbf{u}_1\| = \|\mathbf{v}_1\| > 0$ and $\mathbf{q}_1 = \mathbf{v}_1 / \|\mathbf{v}_1\|$ is well-defined. By construction, $\|\mathbf{q}_1\| = 1$, so the singleton $\{\mathbf{q}_1\}$ is orthonormal. The span condition is immediate: $\mathrm{span}(\mathbf{q}_1) = \mathrm{span}(\mathbf{v}_1)$, since $\mathbf{q}_1$ is a nonzero scalar multiple of $\mathbf{v}_1$.
+
+**Inductive step.** Assume the claim holds for indices $1, \ldots, k-1$; that is, $\{\mathbf{q}_1, \ldots, \mathbf{q}_{k-1}\}$ is orthonormal with $\mathrm{span}(\mathbf{q}_1, \ldots, \mathbf{q}_{k-1}) = \mathrm{span}(\mathbf{v}_1, \ldots, \mathbf{v}_{k-1})$. Examine the construction:
+
+$$\mathbf{u}_k = \mathbf{v}_k - \sum_{i=1}^{k-1} \langle \mathbf{v}_k, \mathbf{q}_i \rangle\, \mathbf{q}_i.$$
+
+*Orthogonality of $\mathbf{u}_k$ to each $\mathbf{q}_j$ for $j < k$.* Take the inner product of $\mathbf{u}_k$ with $\mathbf{q}_j$:
+
+$$\langle \mathbf{u}_k, \mathbf{q}_j \rangle = \langle \mathbf{v}_k, \mathbf{q}_j \rangle - \sum_{i=1}^{k-1} \langle \mathbf{v}_k, \mathbf{q}_i \rangle \cdot \langle \mathbf{q}_i, \mathbf{q}_j \rangle.$$
+
+By the inductive orthonormality of $\{\mathbf{q}_1, \ldots, \mathbf{q}_{k-1}\}$, $\langle \mathbf{q}_i, \mathbf{q}_j \rangle = \delta_{ij}$ (one when $i = j$, zero otherwise). The sum collapses to a single nonzero term at $i = j$:
+
+$$\langle \mathbf{u}_k, \mathbf{q}_j \rangle = \langle \mathbf{v}_k, \mathbf{q}_j \rangle - \langle \mathbf{v}_k, \mathbf{q}_j \rangle = 0.$$
+
+So $\mathbf{u}_k$ is orthogonal to each $\mathbf{q}_j$ for $j < k$.
+
+*Non-vanishing of $\mathbf{u}_k$.* Suppose for contradiction $\mathbf{u}_k = \mathbf{0}$. Then $\mathbf{v}_k = \sum_{i=1}^{k-1} \langle \mathbf{v}_k, \mathbf{q}_i \rangle\, \mathbf{q}_i$, so $\mathbf{v}_k \in \mathrm{span}(\mathbf{q}_1, \ldots, \mathbf{q}_{k-1}) = \mathrm{span}(\mathbf{v}_1, \ldots, \mathbf{v}_{k-1})$. But $\{\mathbf{v}_1, \ldots, \mathbf{v}_n\}$ is a basis, so its elements are linearly independent, and $\mathbf{v}_k$ cannot lie in the span of the earlier $\mathbf{v}_i$. Contradiction. So $\mathbf{u}_k \neq \mathbf{0}$ and $\|\mathbf{u}_k\| > 0$, making $\mathbf{q}_k = \mathbf{u}_k / \|\mathbf{u}_k\|$ well-defined and a unit vector.
+
+*Orthonormality of the full set.* The orthogonality of $\mathbf{u}_k$ to each $\mathbf{q}_j$ for $j < k$ carries to $\mathbf{q}_k = \mathbf{u}_k / \|\mathbf{u}_k\|$ by scaling (the inner product is bilinear). Combined with $\|\mathbf{q}_k\| = 1$ and the inductive orthonormality, $\{\mathbf{q}_1, \ldots, \mathbf{q}_k\}$ is orthonormal.
+
+*Span condition.* By construction, $\mathbf{q}_k$ is a linear combination of $\mathbf{v}_k$ and $\{\mathbf{q}_1, \ldots, \mathbf{q}_{k-1}\}$ (which, by induction, span $\{\mathbf{v}_1, \ldots, \mathbf{v}_{k-1}\}$). So $\mathbf{q}_k \in \mathrm{span}(\mathbf{v}_1, \ldots, \mathbf{v}_k)$. Conversely, $\mathbf{v}_k$ is recoverable from $\mathbf{q}_k$ and the earlier $\mathbf{q}_i$ (rearrange the Gram-Schmidt formula), so $\mathbf{v}_k \in \mathrm{span}(\mathbf{q}_1, \ldots, \mathbf{q}_k)$. Together with the inductive span condition for the first $k - 1$ vectors, this gives $\mathrm{span}(\mathbf{q}_1, \ldots, \mathbf{q}_k) = \mathrm{span}(\mathbf{v}_1, \ldots, \mathbf{v}_k)$.
+
+By induction, the claim holds for all $k$ up to $n$. At $k = n$, $\{\mathbf{q}_1, \ldots, \mathbf{q}_n\}$ is an orthonormal basis of $V$, completing the proof.
+
+</TheoremBlock>
+
+The Gram-Schmidt process is the canonical way to manufacture an orthonormal basis on demand. The viz below steps through the process on a skewed input basis of $\mathbb{R}^3$, with each $\mathbf{v}_k$ rendered in grey, the projections being subtracted in orange, the intermediate $\mathbf{u}_k$ in blue, and the finalized $\mathbf{q}_k$ in green. The accumulating orthonormal basis is reported in a side panel as the algorithm runs.
+
+<GramSchmidtAnimator client:visible />
+
+<TheoremBlock type="remark" number={10} title="QR Factorization">
+
+If we apply Gram-Schmidt to the columns of an $m \times n$ matrix $A$ (with $n \leq m$ and full column rank), the orthonormal vectors $\mathbf{q}_1, \ldots, \mathbf{q}_n$ become the columns of an $m \times n$ matrix $Q$ with orthonormal columns. The relationship between $A$ and $Q$ takes the form
+
+$$A = Q R,$$
+
+where $R$ is an $n \times n$ upper-triangular matrix whose entries are exactly the coefficients that Gram-Schmidt computes: $R_{ij} = \langle \mathbf{v}_j, \mathbf{q}_i \rangle$ for $i \leq j$ and $R_{ij} = 0$ for $i > j$. This is the **QR factorization** of $A$ — the orthogonal-triangular decomposition that powers numerical least-squares solvers, eigenvalue iterations, and many other algorithms. We will not develop QR in detail here; the *Numerical Linear Algebra* literature (Trefethen & Bau) treats it in full, and the spectral theorems of the next track topic depend on it implicitly.
+
+</TheoremBlock>
+
+**ML aside.** **Cosine similarity** — the dominant similarity metric for embedding spaces in modern ML (Word2Vec, sentence-transformers, retrieval-augmented generation, recommender systems) — is the cosine of the angle between two vectors, exactly the formula derived from Cauchy-Schwarz above:
+
+$$\mathrm{cosine\,similarity}(\mathbf{u}, \mathbf{v}) = \frac{\langle \mathbf{u}, \mathbf{v} \rangle}{\|\mathbf{u}\| \cdot \|\mathbf{v}\|}.$$
+
+The Cauchy-Schwarz inequality is what guarantees this quantity lies in $[-1, 1]$ — and is what makes the metric well-defined regardless of vector dimension. Two further uses: the **triangle inequality** $\|\mathbf{u} + \mathbf{v}\| \leq \|\mathbf{u}\| + \|\mathbf{v}\|$ (a corollary of Cauchy-Schwarz, derivable by expanding the squared norm) controls how embeddings compose under addition, which is the constraint behind compositional embeddings like Word2Vec's analogy property "king − man + woman ≈ queen." And the **orthogonality of residual** to design-matrix columns in least-squares regression — equivalent to the orthogonal-decomposition theorem applied to $\mathbf{y}$ projected onto $\mathrm{col}(X)$ — is the geometric statement behind the normal equations, which the next section will unpack.
+
+**Where this leads.** We have built a lot of geometric machinery — angles, lengths, orthogonality, orthogonal projections, orthonormal bases. The most natural next question is: given a linear map $T$, are there *directions* in the space that $T$ does not rotate? Directions $\mathbf{v}$ where $T(\mathbf{v}) = \lambda \mathbf{v}$ for some scalar $\lambda$ — the map merely stretches the vector by a factor of $\lambda$ but does not reorient it. Such a direction is a 1-dimensional invariant subspace, and the vectors along it are called **eigenvectors** of $T$ with **eigenvalue** $\lambda$. For some maps (e.g. projections, rotations by $0$ or $\pi$, scalings) such directions abound; for others (rotation by $\pi/4$ in $\mathbb{R}^2$) no real direction is fixed. The systematic theory of when eigenvectors exist, how many there are, and what they tell us about a map is the content of the next topic, *Eigenvalues & Eigenvectors*. The spectral theorem for symmetric matrices — the headline result of that topic — says that a symmetric matrix has an orthonormal basis of eigenvectors, tying together the orthogonality of this section with the eigenvalue picture of the next.

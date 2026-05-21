@@ -1,15 +1,18 @@
 /**
  * BasisExplorer — Topic 33 (Linear Algebra), §3.3 flagship visualization.
  *
- * Draggable vectors in ℝ² with real-time readouts for rank, linear
- * independence, and (when exactly two vectors are active) the determinant
- * of the matrix whose columns are those vectors. The shaded "span" region
- * tracks the span of the active vectors: a line when the rank is 1, a
- * tinted half-plane outline when the rank is 2.
+ * Draggable vectors in ℝ² (or preset-driven vectors in ℝ³) with real-time
+ * readouts for rank, linear independence, and the determinant of the
+ * square matrix whose columns are the active vectors. The shaded "span"
+ * region tracks the span of the active vectors: a line when the rank is
+ * 1, a tinted rectangle when the rank is 2 (in 2D mode).
  *
- * 2D mode is fully interactive in this first slice. 3D mode is a deliberate
- * placeholder — the GramSchmidtAnimator session adds shared 3D rendering
- * primitives, at which point 3D mode here will reuse them.
+ * 2D mode is fully interactive — drag vectors, toggle active, add and
+ * remove vectors. 3D mode (added in slice 4) is preset-driven without
+ * drag: pick a 3-vector basis from the preset menu and the rank/det/
+ * independence readouts update accordingly. Dragging in 3D would require
+ * picking a constrained plane in screen space, which the brief defers to
+ * a future iteration.
  */
 
 import { useCallback, useMemo, useState } from 'react';
@@ -18,6 +21,7 @@ import { useD3 } from './shared/useD3';
 import { useResizeObserver } from './shared/useResizeObserver';
 import {
   determinant,
+  projectToScreen,
   rankFromColumns,
   type Vector,
 } from './shared/linearAlgebra';
@@ -51,6 +55,8 @@ interface VectorState {
   id: number;
   x: number;
   y: number;
+  /** z coordinate, present only in 3D mode. */
+  z?: number;
   active: boolean;
 }
 
@@ -65,8 +71,10 @@ export interface BasisExplorerProps {
 
 // ── Helpers ───────────────────────────────────────────────────
 
-function stateToColumns(vectors: VectorState[]): Vector[] {
-  return vectors.filter((v) => v.active).map((v) => [v.x, v.y]);
+function stateToColumns(vectors: VectorState[], mode: '2d' | '3d'): Vector[] {
+  return vectors
+    .filter((v) => v.active)
+    .map((v) => (mode === '3d' ? [v.x, v.y, v.z ?? 0] : [v.x, v.y]));
 }
 
 function classifyIndependence(rank: number, activeCount: number): string {
@@ -92,43 +100,62 @@ export default function BasisExplorer({
     useResizeObserver<HTMLDivElement>();
 
   const presets = useMemo<BasisPreset[]>(
-    () => getBasisPresets().filter((p) => p.ambient === 2),
-    [],
+    () => getBasisPresets().filter((p) => p.ambient === (mode === '3d' ? 3 : 2)),
+    [mode],
   );
 
   const defaultVectors: VectorState[] = useMemo(() => {
+    const dim = mode === '3d' ? 3 : 2;
     const source =
       initialVectors && initialVectors.length > 0
         ? initialVectors
-        : [
-            [1, 0],
-            [0, 1],
-          ];
+        : dim === 3
+          ? [
+              [1, 0, 0],
+              [0, 1, 0],
+              [0, 0, 1],
+            ]
+          : [
+              [1, 0],
+              [0, 1],
+            ];
     return source.slice(0, MAX_VECTORS).map((coords, i) => ({
       id: i,
       x: coords[0] ?? 0,
       y: coords[1] ?? 0,
+      z: dim === 3 ? (coords[2] ?? 0) : undefined,
       active: true,
     }));
-  }, [initialVectors]);
+  }, [initialVectors, mode]);
 
   const [vectors, setVectors] = useState<VectorState[]>(defaultVectors);
   const [showSpan, setShowSpan] = useState<boolean>(initialShowSpan);
-  const [presetId, setPresetId] = useState<string>('standard-2d');
+  const [presetId, setPresetId] = useState<string>(
+    mode === '3d' ? 'standard-3d' : 'standard-2d',
+  );
 
-  const activeColumns = useMemo(() => stateToColumns(vectors), [vectors]);
+  const activeColumns = useMemo(() => stateToColumns(vectors, mode), [vectors, mode]);
   const rank = useMemo(() => rankFromColumns(activeColumns), [activeColumns]);
   const activeCount = useMemo(
     () => vectors.filter((v) => v.active).length,
     [vectors],
   );
   const det = useMemo(() => {
-    if (activeColumns.length !== 2) return null;
+    if (mode === '2d') {
+      if (activeColumns.length !== 2) return null;
+      return determinant([
+        [activeColumns[0][0], activeColumns[1][0]],
+        [activeColumns[0][1], activeColumns[1][1]],
+      ]);
+    }
+    // 3D mode: det only defined when exactly 3 active vectors.
+    if (activeColumns.length !== 3) return null;
     return determinant([
-      [activeColumns[0][0], activeColumns[1][0]],
-      [activeColumns[0][1], activeColumns[1][1]],
+      [activeColumns[0][0], activeColumns[1][0], activeColumns[2][0]],
+      [activeColumns[0][1], activeColumns[1][1], activeColumns[2][1]],
+      [activeColumns[0][2], activeColumns[1][2], activeColumns[2][2]],
     ]);
-  }, [activeColumns]);
+  }, [activeColumns, mode]);
 
   const handlePresetChange = useCallback(
     (nextId: string) => {
@@ -141,11 +168,12 @@ export default function BasisExplorer({
           id: i,
           x: coords[0] ?? 0,
           y: coords[1] ?? 0,
+          z: mode === '3d' ? (coords[2] ?? 0) : undefined,
           active: true,
         }));
       setVectors(next);
     },
-    [presets],
+    [presets, mode],
   );
 
   const handleToggleActive = useCallback((id: number) => {
@@ -161,15 +189,23 @@ export default function BasisExplorer({
       let nextId = 0;
       while (usedIds.has(nextId)) nextId += 1;
       // Place the new vector somewhere visible and not already on an existing one.
-      const offsets = [
+      const offsets2d = [
         [1.4, 0.5],
         [-0.7, 1.3],
         [0.6, -1.1],
       ];
-      const [x, y] = offsets[prev.length] ?? [1, 1];
-      return [...prev, { id: nextId, x, y, active: true }];
+      const offsets3d = [
+        [1.4, 0.5, 0.3],
+        [-0.7, 1.3, 0.4],
+        [0.6, -1.1, 1.0],
+      ];
+      const [x, y, z] = (mode === '3d' ? offsets3d : offsets2d)[prev.length] ?? [1, 1, 0.5];
+      return [
+        ...prev,
+        { id: nextId, x, y, z: mode === '3d' ? z : undefined, active: true },
+      ];
     });
-  }, []);
+  }, [mode]);
 
   const handleRemoveVector = useCallback((id: number) => {
     setVectors((prev) => prev.filter((v) => v.id !== id));
@@ -188,7 +224,6 @@ export default function BasisExplorer({
   const svgRef = useD3<SVGSVGElement>(
     (svg) => {
       svg.selectAll('*').remove();
-      if (mode !== '2d') return;
 
       const innerW = svgSize - margin.left - margin.right;
       const innerH = svgSize - margin.top - margin.bottom;
@@ -206,6 +241,12 @@ export default function BasisExplorer({
         .scaleLinear()
         .domain([-VIEW_HALF, VIEW_HALF])
         .range([innerH, 0]); // y-down → flipped
+
+      // ── 3D branch ──────────────────────────────────────────
+      if (mode === '3d') {
+        render3D(g, xScale, yScale, innerW, innerH, vectors);
+        return;
+      }
 
       // ── Background grid ────────────────────────────────────
       const gridGroup = g.append('g').attr('class', 'grid');
@@ -388,26 +429,6 @@ export default function BasisExplorer({
     [vectors, rank, showSpan, svgSize, mode],
   );
 
-  // ── 3D placeholder ────────────────────────────────────────
-  if (mode === '3d') {
-    return (
-      <div
-        ref={containerRef}
-        className="my-6 rounded-lg border p-6 text-center"
-        style={{
-          borderColor: 'var(--color-border)',
-          background: 'var(--color-surface-alt)',
-          color: 'var(--color-text-muted)',
-        }}
-      >
-        <p className="text-sm">
-          3D BasisExplorer is part of a follow-up session. For now, drop the{' '}
-          <code>mode</code> prop to use 2D mode.
-        </p>
-      </div>
-    );
-  }
-
   // ── Render ────────────────────────────────────────────────
   return (
     <div
@@ -425,7 +446,11 @@ export default function BasisExplorer({
             width={svgSize}
             height={svgSize}
             role="img"
-            aria-label="Interactive plane showing draggable vectors and the span of the active set"
+            aria-label={
+              mode === '3d'
+                ? 'Three-dimensional view showing a basis of R^3 via isometric projection'
+                : 'Interactive plane showing draggable vectors and the span of the active set'
+            }
             style={{
               maxWidth: '100%',
               background: 'var(--color-surface)',
@@ -494,7 +519,9 @@ export default function BasisExplorer({
                       style={{ background: color }}
                     />
                     <span className="flex-1 font-mono text-xs">
-                      v{idx + 1} = ({formatNumber(v.x)}, {formatNumber(v.y)})
+                      v{idx + 1} = (
+                      {formatNumber(v.x)}, {formatNumber(v.y)}
+                      {mode === '3d' ? `, ${formatNumber(v.z ?? 0)}` : ''})
                     </span>
                     <label className="flex items-center gap-1 text-xs">
                       <input
@@ -569,9 +596,9 @@ export default function BasisExplorer({
           </div>
 
           <p className="text-xs text-gray-500">
-            Drag any vector tip to change its direction and length. Toggle{' '}
-            <em>active</em> to exclude a vector from the rank/determinant
-            calculation.
+            {mode === '3d'
+              ? 'Switch presets to explore different 3D bases. Toggle active to exclude a vector from the rank computation. Dragging is disabled in 3D — use presets to manipulate vectors.'
+              : 'Drag any vector tip to change its direction and length. Toggle active to exclude a vector from the rank/determinant calculation.'}
           </p>
         </div>
       </div>
@@ -583,4 +610,115 @@ export default function BasisExplorer({
 
 function clamp(x: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, x));
+}
+
+// ── 3D rendering ──────────────────────────────────────────────
+
+function render3D(
+  g: d3.Selection<SVGGElement, unknown, null, undefined>,
+  xScale: d3.ScaleLinear<number, number>,
+  yScale: d3.ScaleLinear<number, number>,
+  innerW: number,
+  innerH: number,
+  vectors: VectorState[],
+): void {
+  // Light isometric grid (the projected unit cube edges).
+  const cubeEdges: Array<[number[], number[]]> = [
+    [[0, 0, 0], [1, 0, 0]],
+    [[0, 0, 0], [0, 1, 0]],
+    [[0, 0, 0], [0, 0, 1]],
+    [[1, 0, 0], [1, 1, 0]],
+    [[1, 0, 0], [1, 0, 1]],
+    [[0, 1, 0], [1, 1, 0]],
+    [[0, 1, 0], [0, 1, 1]],
+    [[0, 0, 1], [1, 0, 1]],
+    [[0, 0, 1], [0, 1, 1]],
+    [[1, 1, 0], [1, 1, 1]],
+    [[1, 0, 1], [1, 1, 1]],
+    [[0, 1, 1], [1, 1, 1]],
+  ];
+  cubeEdges.forEach(([a, b]) => {
+    const [ax, ay] = projectToScreen(a);
+    const [bx, by] = projectToScreen(b);
+    g.append('line')
+      .attr('x1', xScale(ax)).attr('y1', yScale(ay))
+      .attr('x2', xScale(bx)).attr('y2', yScale(by))
+      .style('stroke', 'var(--color-viz-grid)')
+      .style('stroke-width', 0.5)
+      .style('opacity', 0.45);
+  });
+
+  // 3D axes — x in red, y in green, z in blue (with negative halves dashed).
+  const drawAxis = (dir: number[], color: string, label: string) => {
+    const tip = dir.map((c) => c * 2.5);
+    const tail = dir.map((c) => -c * 2.5);
+    const [tx, ty] = projectToScreen(tip);
+    const [hx, hy] = projectToScreen(tail);
+    const [ox, oy] = projectToScreen([0, 0, 0]);
+    g.append('line')
+      .attr('x1', xScale(ox)).attr('y1', yScale(oy))
+      .attr('x2', xScale(tx)).attr('y2', yScale(ty))
+      .style('stroke', color).style('stroke-width', 0.9).style('opacity', 0.5);
+    g.append('line')
+      .attr('x1', xScale(ox)).attr('y1', yScale(oy))
+      .attr('x2', xScale(hx)).attr('y2', yScale(hy))
+      .style('stroke', color).style('stroke-width', 0.9).style('opacity', 0.25)
+      .style('stroke-dasharray', '3 3');
+    g.append('text')
+      .attr('x', xScale(tx) + 4 * Math.sign(tx))
+      .attr('y', yScale(ty) - 4)
+      .style('fill', color).style('font-size', '10px').style('opacity', 0.7)
+      .text(label);
+  };
+  drawAxis([1, 0, 0], '#dc2626', 'x');
+  drawAxis([0, 1, 0], '#10b981', 'y');
+  drawAxis([0, 0, 1], '#2563eb', 'z');
+
+  // Vectors.
+  vectors.forEach((v, idx) => {
+    const color = LINEAR_ALGEBRA_VECTOR_PALETTE[idx % LINEAR_ALGEBRA_VECTOR_PALETTE.length];
+    const opacity = v.active ? 1.0 : 0.25;
+    const tip = [v.x, v.y, v.z ?? 0];
+    const [origScreenX, origScreenY] = projectToScreen([0, 0, 0]);
+    const [tipScreenX, tipScreenY] = projectToScreen(tip);
+    const x0 = xScale(origScreenX);
+    const y0 = yScale(origScreenY);
+    const x1 = xScale(tipScreenX);
+    const y1 = yScale(tipScreenY);
+    const len = Math.hypot(x1 - x0, y1 - y0);
+    if (len < 1) return;
+
+    g.append('line')
+      .attr('x1', x0).attr('y1', y0)
+      .attr('x2', x1).attr('y2', y1)
+      .style('stroke', color).style('stroke-width', 2.5)
+      .style('opacity', opacity);
+
+    // Arrowhead.
+    const ux = (x1 - x0) / len;
+    const uy = (y1 - y0) / len;
+    const headLen = 12;
+    const headHalf = 6;
+    const hx = x1 - headLen * ux;
+    const hy = y1 - headLen * uy;
+    const px = -uy;
+    const py = ux;
+    g.append('polygon')
+      .attr('points', `${x1},${y1} ${hx + headHalf * px},${hy + headHalf * py} ${hx - headHalf * px},${hy - headHalf * py}`)
+      .style('fill', color)
+      .style('opacity', opacity);
+
+    g.append('text')
+      .attr('x', x1 + 8 * Math.sign(tipScreenX || 1))
+      .attr('y', y1 - 6)
+      .attr('text-anchor', tipScreenX < 0 ? 'end' : 'start')
+      .style('fill', color)
+      .style('font-size', '10px')
+      .style('font-weight', '600')
+      .style('opacity', opacity)
+      .text(`v${idx + 1}`);
+  });
+
+  // Suppress unused-axis warnings.
+  void innerW; void innerH;
 }
