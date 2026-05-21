@@ -5,19 +5,6 @@ import TopicCard from '../components/ui/TopicCard.astro';
 import CurriculumGraph from '../components/viz/CurriculumGraph.tsx';
 import graphData from '../data/curriculum-graph.json';
 
-const domainLabels: Record<string, string> = {
-  'limits-continuity': 'Limits & Continuity',
-  'single-variable': 'Single-Variable Calculus',
-  'multivar-differential': 'Multivariable Differential',
-  'multivar-integral': 'Multivariable Integral',
-  'series-approximation': 'Series & Approximation',
-  'odes': 'ODEs',
-  'linear-algebra': 'Linear Algebra',
-  'probability-foundations': 'Probability Foundations',
-  'measure-integration': 'Measure & Integration',
-  'functional-analysis': 'Functional Analysis',
-};
-
 // Group nodes by domain
 const nodesByDomain = new Map<string, typeof graphData.nodes>();
 for (const node of graphData.nodes) {
@@ -27,7 +14,7 @@ for (const node of graphData.nodes) {
 }
 ---
 
-<BaseLayout title="Curriculum" description="The full formalCalculus curriculum — 32 topics across 10 tracks, with 4 planned.">
+<BaseLayout title="Curriculum" description={`The full formalCalculus curriculum — ${graphData.nodes.length} topics across ${tracks.length} tracks, with ${tracks.reduce((acc, t) => acc + t.planned.length, 0)} planned.`}>
   <div class="max-w-5xl mx-auto px-4 sm:px-6 py-12">
     <header class="mb-12 text-center">
       <h1
@@ -37,7 +24,7 @@ for (const node of graphData.nodes) {
         Curriculum
       </h1>
       <p class="text-lg" style="color: var(--color-text-muted);">
-        32 topics across 10 tracks (4 planned) — from limits to functional analysis.
+        {graphData.nodes.length} topics across {tracks.length} tracks ({tracks.reduce((acc, t) => acc + t.planned.length, 0)} planned) — from limits to functional analysis.
       </p>
       <p class="text-sm mt-2" style="color: var(--color-text-muted);">
         Every topic connects forward to
