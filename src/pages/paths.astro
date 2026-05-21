@@ -79,7 +79,7 @@ for (const node of graphData.nodes) {
                       : node.id.includes('sequences') || node.id.includes('epsilon-delta') ||
                         node.id.includes('derivative') || node.id.includes('riemann') ||
                         node.id.includes('gradient') || node.id.includes('series-conv') ||
-                        node.id.includes('first-order')
+                        node.id.includes('first-order') || node.id === 'linear-algebra'
                       ? 'foundational'
                       : 'intermediate'
                   }

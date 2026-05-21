@@ -30,6 +30,8 @@
     { "id": "stability-dynamics", "label": "Stability & Dynamical Systems", "domain": "odes", "status": "published", "url": "/topics/stability-dynamics" },
     { "id": "numerical-odes", "label": "Numerical Methods for ODEs", "domain": "odes", "status": "published", "url": "/topics/numerical-odes" },
 
+    { "id": "linear-algebra", "label": "Linear Algebra", "domain": "linear-algebra", "status": "published", "url": "/topics/linear-algebra" },
+
     { "id": "sigma-algebras", "label": "Sigma-Algebras & Measures", "domain": "measure-integration", "status": "published", "url": "/topics/sigma-algebras" },
     { "id": "lebesgue-integral", "label": "The Lebesgue Integral", "domain": "measure-integration", "status": "published", "url": "/topics/lebesgue-integral" },
     { "id": "lp-spaces", "label": "Lp Spaces", "domain": "measure-integration", "status": "published", "url": "/topics/lp-spaces" },
