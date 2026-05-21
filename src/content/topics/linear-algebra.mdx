@@ -103,6 +103,8 @@ references:
 import TheoremBlock from '../../components/ui/TheoremBlock.astro';
 import BasisExplorer from '../../components/viz/BasisExplorer.tsx';
 import LinearMapMatrixBuilder from '../../components/viz/LinearMapMatrixBuilder.tsx';
+import DeterminantVolumeVisualizer from '../../components/viz/DeterminantVolumeVisualizer.tsx';
+import RankNullityVisualizer from '../../components/viz/RankNullityVisualizer.tsx';
 
 ## 1. What Linear Algebra Studies
 
@@ -710,3 +712,318 @@ The remarkable fact is that *all of these conditions are equivalent* — they ar
 </TheoremBlock>
 
 **ML aside.** Stacking $L$ layers in a neural network — without the biases and the nonlinearities — computes $W_L W_{L-1} \cdots W_2 W_1 \mathbf{x}$, a single matrix product by Theorem 3. The reason a deep linear network "collapses" to a single effective matrix, and therefore has the same expressive power as a one-layer linear model, is exactly the composition rule of this section: composing linear maps gives a linear map, and the matrix of the composition is the product of the matrices. The reason deep networks are interesting at all is the nonlinearity $\sigma$ between layers: applying $\sigma$ after each linear step breaks the composition collapse, because composing a linear map with a nonlinear function is no longer linear and the matrix-product shortcut no longer applies. Every "depth" argument in deep learning theory works through this distinction.
+
+## 7. Determinants — Signed Volume
+
+Every square matrix has a single number attached to it called its *determinant*. In the standard pedagogy that number arrives as a formula — for a $2 \times 2$ matrix, $ad - bc$; for a $3 \times 3$ matrix, an alternating sum that no one remembers; for an $n \times n$ matrix, an unwieldy sum over $n!$ permutations — and students are asked to memorize the formula and verify a list of properties. That formula is correct, but it hides the meaning of the number it computes. We approach the determinant differently: we *define* it by the three properties it must have, prove those properties force a unique function, and then derive the formula as a consequence. The number that emerges has a clean geometric meaning — it is the signed scaling factor of the unit cube under the linear map represented by the matrix — and once that meaning is in hand, every property of the determinant becomes obvious.
+
+The three properties are: multilinearity (linear in each column when the others are held fixed), alternating (swapping two columns negates the value), and a normalization fixing the value on the identity matrix. Each of those is a geometric statement about signed volume in disguise.
+
+<TheoremBlock type="definition" number={14} title="Determinant (Axiomatic)">
+
+The **determinant** of an $n \times n$ matrix $A$ with columns $\mathbf{a}_1, \ldots, \mathbf{a}_n$ is the unique function $\det \colon \mathbb{R}^{n \times n} \to \mathbb{R}$ satisfying:
+
+1. **(Multilinear in each column)** For any column index $j$, any scalars $c, c' \in \mathbb{R}$, and any vectors $\mathbf{a}_j, \mathbf{a}_j' \in \mathbb{R}^n$,
+
+$$\det(\mathbf{a}_1, \ldots, c \mathbf{a}_j + c' \mathbf{a}_j', \ldots, \mathbf{a}_n) = c \det(\mathbf{a}_1, \ldots, \mathbf{a}_j, \ldots, \mathbf{a}_n) + c' \det(\mathbf{a}_1, \ldots, \mathbf{a}_j', \ldots, \mathbf{a}_n).$$
+
+The same property holds in every column, with all other columns held fixed.
+
+2. **(Alternating)** Swapping two columns negates the determinant. Equivalently, if two columns are equal, the determinant is zero.
+
+3. **(Normalization)** $\det I_n = 1$, where $I_n$ is the identity matrix.
+
+</TheoremBlock>
+
+Calling this a definition is doing a lot of work — we are asserting that exactly one function satisfies all three properties, and we have not yet proved that. The next theorem closes that gap.
+
+<TheoremBlock type="theorem" number={4} title="Existence and Uniqueness of the Determinant">
+
+There exists a unique function $\det \colon \mathbb{R}^{n \times n} \to \mathbb{R}$ satisfying axioms (D1), (D2), (D3) of Definition 14. Explicitly,
+
+$$\det A = \sum_{\sigma \in S_n} \mathrm{sgn}(\sigma) \, \prod_{i=1}^{n} a_{\sigma(i), \, i},$$
+
+where $S_n$ denotes the symmetric group of all permutations of $\{1, 2, \ldots, n\}$ and $\mathrm{sgn}(\sigma) \in \{+1, -1\}$ is the sign of the permutation $\sigma$.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+**Uniqueness.** Suppose $f \colon \mathbb{R}^{n \times n} \to \mathbb{R}$ satisfies (D1), (D2), (D3). Write each column of $A$ as a linear combination of the standard basis vectors,
+
+$$\mathbf{a}_j = \sum_{i_j = 1}^{n} a_{i_j, j} \, \mathbf{e}_{i_j}, \qquad j = 1, \ldots, n.$$
+
+Apply multilinearity (D1) to expand $f$ over each column index:
+
+$$f(A) = f(\mathbf{a}_1, \ldots, \mathbf{a}_n) = \sum_{i_1 = 1}^{n} \cdots \sum_{i_n = 1}^{n} \left( \prod_{j=1}^{n} a_{i_j, j} \right) f(\mathbf{e}_{i_1}, \ldots, \mathbf{e}_{i_n}).$$
+
+By the alternating property (D2), $f(\mathbf{e}_{i_1}, \ldots, \mathbf{e}_{i_n})$ vanishes whenever any two of the indices $i_1, \ldots, i_n$ coincide — repeated columns force the value to zero. The only surviving terms in the sum are those where $(i_1, \ldots, i_n)$ is a permutation of $(1, 2, \ldots, n)$, i.e., $(i_1, \ldots, i_n) = (\sigma(1), \ldots, \sigma(n))$ for some $\sigma \in S_n$.
+
+For such a permutation, $f(\mathbf{e}_{\sigma(1)}, \ldots, \mathbf{e}_{\sigma(n)})$ is obtained from $f(I_n) = f(\mathbf{e}_1, \ldots, \mathbf{e}_n) = 1$ by some number of column swaps that bring the permuted basis back into standard order. Each swap negates the value by (D2), and the parity of the required number of swaps is exactly $\mathrm{sgn}(\sigma)$. Therefore
+
+$$f(\mathbf{e}_{\sigma(1)}, \ldots, \mathbf{e}_{\sigma(n)}) = \mathrm{sgn}(\sigma) \cdot f(I_n) = \mathrm{sgn}(\sigma).$$
+
+Substituting back,
+
+$$f(A) = \sum_{\sigma \in S_n} \mathrm{sgn}(\sigma) \, \prod_{j=1}^{n} a_{\sigma(j), j},$$
+
+which is the claimed formula. So *any* function satisfying (D1), (D2), (D3) must agree with that formula — uniqueness.
+
+**Existence.** Take the formula in the theorem statement as a definition of $\det A$, and verify directly that it satisfies (D1), (D2), (D3). Multilinearity (D1) follows because each term $\mathrm{sgn}(\sigma) \prod_j a_{\sigma(j), j}$ is linear in each column. The alternating property (D2) holds because swapping two columns of $A$ corresponds to composing $\sigma$ with a transposition, which flips $\mathrm{sgn}(\sigma)$ in every term; the sum therefore negates. Normalization (D3) holds because for $A = I_n$ the only nonzero product is the one with $\sigma$ the identity permutation, contributing $1$. So the formula defines a function satisfying all three axioms, and by uniqueness it is the *only* such function.
+
+</TheoremBlock>
+
+The explicit formula has $n!$ terms — manageable for $n = 2$ (two terms: $a_{11} a_{22} - a_{12} a_{21}$) and arguably $n = 3$ (six terms), useless past $n \approx 8$. We will compute determinants in practice not by the permutation sum but by row reduction, which is $O(n^3)$. The permutation formula is the *certificate* that the function is well-defined; the computation is something else entirely. The axioms are also what give the determinant its meaning.
+
+<TheoremBlock type="theorem" number={5} title="Geometric Meaning of the Determinant">
+
+For any $n \times n$ matrix $A$ with columns $\mathbf{a}_1, \ldots, \mathbf{a}_n \in \mathbb{R}^n$:
+
+- The absolute value $|\det A|$ equals the $n$-dimensional volume of the parallelepiped spanned by the columns of $A$ — equivalently, the volume of the image of the unit $n$-cube under the linear map $\mathbf{x} \mapsto A \mathbf{x}$.
+- The sign $\mathrm{sgn}(\det A) \in \{+, -, 0\}$ tracks orientation: positive if $A$ preserves the orientation of the standard basis, negative if it reverses it, zero if the columns are linearly dependent (in which case the image collapses to lower-dimensional volume zero).
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+**Two dimensions.** The parallelogram with sides $\mathbf{a}_1 = (a_{11}, a_{21})$ and $\mathbf{a}_2 = (a_{12}, a_{22})$ has signed area
+
+$$\mathrm{signed\,area}(\mathbf{a}_1, \mathbf{a}_2) = a_{11} a_{22} - a_{12} a_{21},$$
+
+which can be derived by computing the area as base × height and tracking orientation: the base has length $\|\mathbf{a}_1\|$, the height is the perpendicular drop from the tip of $\mathbf{a}_2$ onto the line spanned by $\mathbf{a}_1$, and the sign of the cross product $\mathbf{a}_1 \times \mathbf{a}_2$ records whether the columns turn counter-clockwise (positive) or clockwise (negative) as you walk $\mathbf{a}_1 \to \mathbf{a}_2$. The right-hand side is exactly the $2 \times 2$ determinant from the permutation formula, so the $2 \times 2$ case is verified directly.
+
+**General $n$.** The signed-volume function $V(\mathbf{a}_1, \ldots, \mathbf{a}_n)$ of the parallelepiped spanned by $n$ vectors in $\mathbb{R}^n$ satisfies exactly the three axioms (D1), (D2), (D3):
+
+- *Multilinearity in each column.* Holding $\mathbf{a}_2, \ldots, \mathbf{a}_n$ fixed, the signed volume is linear in $\mathbf{a}_1$ — geometrically, doubling one side doubles the volume, and the volume of a parallelepiped with one side decomposed as $c \mathbf{a}_1 + c' \mathbf{a}_1'$ splits cleanly along that decomposition (a fact derivable by Cavalieri's principle in the appropriate dimension, made precise in [Multiple Integrals & Fubini's Theorem](/topics/multiple-integrals)).
+- *Alternating.* Swapping two columns flips the orientation of the spanning vectors and negates the signed volume; repeated columns force the parallelepiped to be degenerate and the volume to be zero.
+- *Normalization.* The unit $n$-cube has volume $1$, so $V(I_n) = V(\mathbf{e}_1, \ldots, \mathbf{e}_n) = 1$.
+
+By the uniqueness clause of Theorem 4, the function $V$ and the function $\det$ are equal on every input. Therefore $\det A$ is the signed volume of the parallelepiped spanned by the columns of $A$ for every $n$.
+
+</TheoremBlock>
+
+The determinant is therefore not really about the formula — it is about the volume. The viz below makes this concrete in two dimensions: drag the two column vectors and watch the parallelogram fill with green when the orientation is positive, red when negative, and grey when the columns are parallel and the parallelogram collapses to a line.
+
+<DeterminantVolumeVisualizer client:visible />
+
+A useful exercise once the viz is in hand: configure the columns so the determinant equals $-2$, then add the second column to the first (the matrix becomes column-row equivalent: replace $\mathbf{a}_1$ with $\mathbf{a}_1 + \mathbf{a}_2$). Observe that the parallelogram changes shape — but its signed area does *not* change. That observation is the geometric content of property (c) below.
+
+With the geometric meaning in place, the standard computational properties of the determinant become easy reading.
+
+<TheoremBlock type="theorem" number={6} title="Computational Properties of the Determinant">
+
+For square matrices $A$ and $B$ of the same size and a scalar $c \in \mathbb{R}$:
+
+1. **(Multiplicativity)** $\;\det(AB) = (\det A)(\det B)$.
+2. **(Transpose)** $\;\det A^\top = \det A$.
+3. **(Column-addition invariance)** Adding a scalar multiple of one column to another leaves the determinant unchanged.
+4. **(Column scaling)** Multiplying one column by $c$ multiplies the determinant by $c$. Multiplying *every* column by $c$ multiplies the determinant by $c^n$.
+5. **(Invertibility)** $\det A \neq 0$ if and only if $A$ is invertible.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+We prove (a) — multiplicativity — in full and sketch the rest, all of which follow from Definition 14 plus simple inspection of the formula.
+
+**Multiplicativity.** Suppose first that $\det B \neq 0$. Define the function $f \colon \mathbb{R}^{n \times n} \to \mathbb{R}$ by
+
+$$f(A) = \frac{\det(AB)}{\det B}.$$
+
+We claim $f$ satisfies axioms (D1), (D2), (D3) of Definition 14 as a function of $A$ (with $B$ held fixed). The columns of $AB$ are $A \mathbf{b}_1, A \mathbf{b}_2, \ldots, A \mathbf{b}_n$, where $\mathbf{b}_j$ is the $j$-th column of $B$. As a function of $A$:
+
+- *Multilinear in each column of $A$.* Each column of $AB$ is a linear combination (with weights from $B$) of the columns of $A$, so $\det(AB)$ is multilinear in each column of $A$ by multilinearity of $\det$ applied to each column of $AB$.
+- *Alternating in the columns of $A$.* Swapping two columns of $A$ swaps the corresponding columns of $AB$, which negates $\det(AB)$ by (D2) for $\det$.
+- *Normalization.* When $A = I_n$, $AB = B$, so $f(I_n) = \det B / \det B = 1$.
+
+By the uniqueness clause of Theorem 4, $f(A) = \det A$. Rearranging gives $\det(AB) = (\det A)(\det B)$, as claimed.
+
+When $\det B = 0$: by (e) (proved next), $B$ is singular, so its columns are linearly dependent and $B \mathbf{x} = \mathbf{0}$ has a nonzero solution. Then $(AB) \mathbf{x} = A (B \mathbf{x}) = A \mathbf{0} = \mathbf{0}$, so $AB$ is also singular and $\det(AB) = 0 = (\det A) \cdot 0 = (\det A)(\det B)$. The identity holds either way.
+
+**Transpose.** From the permutation formula,
+
+$$\det A^\top = \sum_{\sigma \in S_n} \mathrm{sgn}(\sigma) \prod_{i=1}^{n} (A^\top)_{\sigma(i), i} = \sum_{\sigma \in S_n} \mathrm{sgn}(\sigma) \prod_{i=1}^{n} a_{i, \sigma(i)}.$$
+
+Reindexing the product by $j = \sigma(i)$ (so $i = \sigma^{-1}(j)$) and noting $\mathrm{sgn}(\sigma) = \mathrm{sgn}(\sigma^{-1})$ recovers exactly the formula for $\det A$.
+
+**Column-addition invariance.** If we replace $\mathbf{a}_j$ with $\mathbf{a}_j + c \mathbf{a}_k$ (for $k \neq j$), by multilinearity (D1) the determinant becomes $\det A + c \cdot \det(\ldots, \mathbf{a}_k \text{ in slot } j, \ldots, \mathbf{a}_k \text{ in slot } k, \ldots)$. The second term has two equal columns (both equal to $\mathbf{a}_k$, one in slot $j$ and one in slot $k$), so it vanishes by (D2). The result equals $\det A$.
+
+**Column scaling.** Direct from multilinearity (D1): scaling one column by $c$ scales the determinant by $c$. Scaling every column by $c$ does so $n$ times, giving $c^n$.
+
+**Invertibility.** If $A$ is invertible, then $A A^{-1} = I_n$, so by (a), $(\det A)(\det A^{-1}) = \det I_n = 1$, which forces $\det A \neq 0$. Conversely, if $A$ is singular, its columns are linearly dependent, so one column $\mathbf{a}_j$ is a linear combination of the others, and by (D1) the determinant decomposes into terms each of which has a repeated column — all zero by (D2). Therefore $\det A = 0$.
+
+</TheoremBlock>
+
+The computational fact behind row reduction follows immediately.
+
+<TheoremBlock type="example" number={12} title="Determinants of 2×2 and 3×3 Matrices">
+
+For a $2 \times 2$ matrix, the permutation formula gives
+
+$$\det \begin{pmatrix} a & b \\ c & d \end{pmatrix} = a d - b c.$$
+
+For a $3 \times 3$ matrix, the cofactor expansion along the first row gives
+
+$$\det \begin{pmatrix} a_{11} & a_{12} & a_{13} \\ a_{21} & a_{22} & a_{23} \\ a_{31} & a_{32} & a_{33} \end{pmatrix} = a_{11}(a_{22} a_{33} - a_{23} a_{32}) - a_{12}(a_{21} a_{33} - a_{23} a_{31}) + a_{13}(a_{21} a_{32} - a_{22} a_{31}).$$
+
+These are the only sizes for which the closed-form formula is reasonable to apply by hand. For $4 \times 4$ the formula has $24$ terms; for $5 \times 5$, $120$ terms; for $10 \times 10$, more than three million. Row reduction is the algorithm you actually use.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={7} title="Why Cofactor Expansion is a Coda">
+
+Cofactor expansion — the formula every undergraduate memorizes for $3 \times 3$ matrices, generalizing in the obvious way to larger sizes — is useful for $n \leq 3$ and essentially nothing else. The cost of cofactor expansion at size $n$ is $O(n!)$, which is unusable past $n \approx 10$. The cost of row reduction is $O(n^3)$, which scales to matrices of millions of rows in scientific computing. **In practice, every modern linear-algebra library computes determinants by some variant of LU decomposition** — row reduction with bookkeeping — and never by cofactor expansion.
+
+We mention cofactor expansion in this topic for two reasons. First, it generalizes the explicit formula for $2 \times 2$ matrices to $3 \times 3$ in a way that students can verify on paper. Second, it underlies one elegant theorem (the *adjugate formula* for the inverse, $A^{-1} = \frac{1}{\det A}\, \mathrm{adj}(A)$), which we will not develop here but which appears in proofs of formulas relating determinants to inverses. Both are computational dead ends past small sizes.
+
+**Algorithm: determinant by row reduction.** Given a square matrix $A$ of size $n$, apply Gaussian elimination with partial pivoting to reduce $A$ to upper triangular form, tracking row swaps and row scalings as you go. After reduction,
+
+$$\det A = (-1)^{(\#\, \text{row swaps})} \cdot \prod_{i=1}^{n} (\text{diagonal entry } i).$$
+
+The cost is $O(n^3)$. This is the algorithm the `determinant` function in `linearAlgebra.ts` implements (see the shared module created in slice 1); the topic's notebook verifies its outputs against NumPy's reference implementation across random matrices.
+
+</TheoremBlock>
+
+**ML aside.** When training a *normalizing flow* — a deep-learning architecture that learns a sequence of invertible transformations mapping a complex data distribution to a simple base distribution (typically a standard Gaussian) — the loss function involves a *log-determinant* of the Jacobian of each layer. The reason traces exactly to Theorem 5: a probability density transforms under a change of variables by the inverse of the Jacobian's volume scaling, and that scaling is $|\det J|$. Computing $\log|\det J|$ at scale for layers of millions of dimensions is what makes normalizing-flow architectures interesting: practitioners design layers whose Jacobians are triangular (so the determinant is the product of diagonal entries — back to a one-liner via row reduction), or block-triangular, or otherwise structured so the log-determinant is cheap. The trade-off between expressiveness and Jacobian-cheapness is the central design axis of the field. Every architecture in that literature — RealNVP, Glow, Neural ODEs, FFJORD — is a different answer to "how do we get expressive layers without paying $O(n^3)$ for the determinant at every step?"
+
+## 8. Rank, Nullspace, and the Rank-Nullity Theorem
+
+Every linear map carries a pair of subspaces alongside it: the **kernel** (the inputs that get crushed to zero — Definition 7) and the **image** (the outputs that actually get reached — also Definition 7). Their dimensions are the **nullity** and the **rank** of the map respectively, and they are connected by a single counting equation — the **rank-nullity theorem** — that is the most useful dimension fact in finite-dimensional linear algebra. The theorem says: every dimension of the input space gets accounted for, either by getting absorbed into the kernel or by surviving as an independent direction in the image. Nothing is lost in translation; every input direction has a place to go.
+
+The version stated in textbooks is one equation. The reason it deserves so much attention is that it unifies several apparently different statements about square matrices — invertibility, full-rank columns, full-rank rows, nontrivial null space, nonzero determinant — into a single corollary in which they are all equivalent. After we prove the main theorem, we collect those statements as Corollary 1; the equivalence is, in a real sense, the headline result of the section.
+
+<TheoremBlock type="definition" number={15} title="Rank and Nullity">
+
+Let $T \colon V \to W$ be a linear map between finite-dimensional vector spaces, and let $A$ be its matrix in any chosen bases.
+
+- The **rank** of $T$ (or of $A$) is $\mathrm{rank}(T) = \dim(\mathrm{im}\, T)$, the dimension of the image.
+- The **nullity** of $T$ (or of $A$) is $\mathrm{nullity}(T) = \dim(\ker T)$, the dimension of the kernel.
+
+For an $m \times n$ matrix $A$, $\mathrm{rank}(A)$ equals the dimension of its column space (equivalently, of its row space — a fact we establish in Remark 8 below), and $\mathrm{nullity}(A)$ is the dimension of its nullspace $\{\mathbf{x} \in \mathbb{R}^n \mid A \mathbf{x} = \mathbf{0}\}$.
+
+</TheoremBlock>
+
+The rank and nullity are independent of which bases were used to write down the matrix — they are properties of the underlying linear map, not of the bookkeeping. Both are non-negative integers, both can be computed by row reduction (the rank is the number of pivots; the nullity is the number of free columns), and both are constrained by the input dimension via the theorem below.
+
+<TheoremBlock type="theorem" number={7} title="Rank-Nullity">
+
+For any linear map $T \colon V \to W$ between finite-dimensional vector spaces with $\dim V = n$,
+
+$$\mathrm{rank}(T) + \mathrm{nullity}(T) = n.$$
+
+Equivalently, for any $m \times n$ matrix $A$, $\;\mathrm{rank}(A) + \mathrm{nullity}(A) = n$ (the number of columns).
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+Let $\dim V = n$ and $\mathrm{nullity}(T) = k$, so $0 \leq k \leq n$. Pick a basis $\{\mathbf{u}_1, \ldots, \mathbf{u}_k\}$ of $\ker T$ (the case $k = 0$ means we pick the empty basis). Because every linearly independent subset of $V$ extends to a basis (a consequence of the Steinitz Exchange argument from §3, applied in reverse), we can extend to a basis
+
+$$\mathcal{B} = \{\mathbf{u}_1, \ldots, \mathbf{u}_k, \mathbf{v}_1, \ldots, \mathbf{v}_{n-k}\}$$
+
+of all of $V$. The claim is that the images $\{T(\mathbf{v}_1), \ldots, T(\mathbf{v}_{n-k})\}$ form a basis of $\mathrm{im}\, T$. If this is true, the dimension of the image is $n - k$, which gives $\mathrm{rank}(T) + \mathrm{nullity}(T) = (n - k) + k = n$, the theorem.
+
+**Spanning.** Let $\mathbf{w} \in \mathrm{im}\, T$, so $\mathbf{w} = T(\mathbf{v})$ for some $\mathbf{v} \in V$. Expand $\mathbf{v}$ in the basis $\mathcal{B}$,
+
+$$\mathbf{v} = \sum_{i=1}^{k} a_i \mathbf{u}_i + \sum_{j=1}^{n-k} b_j \mathbf{v}_j.$$
+
+Applying $T$ and using linearity,
+
+$$\mathbf{w} = T(\mathbf{v}) = \sum_{i=1}^{k} a_i\, T(\mathbf{u}_i) + \sum_{j=1}^{n-k} b_j\, T(\mathbf{v}_j) = \mathbf{0} + \sum_{j=1}^{n-k} b_j\, T(\mathbf{v}_j),$$
+
+since each $\mathbf{u}_i \in \ker T$. So $\mathbf{w}$ is a linear combination of $\{T(\mathbf{v}_j)\}_{j=1}^{n-k}$, which means these vectors span $\mathrm{im}\, T$.
+
+**Linear independence.** Suppose
+
+$$\sum_{j=1}^{n-k} c_j\, T(\mathbf{v}_j) = \mathbf{0}.$$
+
+By linearity, $T\!\left( \sum_j c_j \mathbf{v}_j \right) = \mathbf{0}$, so the vector $\sum_j c_j \mathbf{v}_j$ lies in $\ker T$. But $\ker T$ has basis $\{\mathbf{u}_i\}$, so we can write
+
+$$\sum_{j=1}^{n-k} c_j \mathbf{v}_j = \sum_{i=1}^{k} d_i \mathbf{u}_i$$
+
+for some scalars $d_i$. Rearranging,
+
+$$\sum_{j=1}^{n-k} c_j \mathbf{v}_j - \sum_{i=1}^{k} d_i \mathbf{u}_i = \mathbf{0}.$$
+
+But the combined set $\mathcal{B} = \{\mathbf{u}_1, \ldots, \mathbf{u}_k, \mathbf{v}_1, \ldots, \mathbf{v}_{n-k}\}$ is a basis of $V$, hence linearly independent. So every coefficient in the equation must be zero: $c_j = 0$ for all $j$ and $d_i = 0$ for all $i$. In particular, every $c_j = 0$, which is what linear independence of $\{T(\mathbf{v}_j)\}$ requires.
+
+Both halves of the claim are verified, so $\{T(\mathbf{v}_j)\}_{j=1}^{n-k}$ is a basis of $\mathrm{im}\, T$, hence $\dim(\mathrm{im}\, T) = n - k$, and $\mathrm{rank}(T) + \mathrm{nullity}(T) = (n - k) + k = n$.
+
+</TheoremBlock>
+
+The proof has an underrated feature: it is *constructive*. Given any specific kernel basis and any extension to a basis of $V$, applying $T$ to the extension vectors produces a basis of the image. That is the recipe row-reduction algorithms quietly follow when they read off a basis for the column space from a matrix's pivot columns.
+
+Two viewpoints on the same theorem will be useful in different contexts. The first is the abstract one above — linear maps between abstract vector spaces. The second is the concrete one for matrices, which reads off rank and nullity from a matrix's columns.
+
+<TheoremBlock type="remark" number={8} title="Rank-Nullity for Matrices, Restated">
+
+For an $m \times n$ matrix $A$ — viewed as a linear map $\mathbb{R}^n \to \mathbb{R}^m$:
+
+$$\mathrm{rank}(A) + \mathrm{nullity}(A) = n.$$
+
+The number of columns ($n$) splits into rank (columns that contribute independent directions to the image) and nullity (columns that are redundant in the sense that they belong to the nullspace's degrees of freedom). A useful corollary: $\mathrm{rank}(A) \leq \min(m, n)$, since the image lives in $\mathbb{R}^m$ and the rank cannot exceed the dimension of the input space (where it would be bounded by $n$) nor the output space (where it would be bounded by $m$).
+
+A deeper fact is that the **rank equals the dimension of the row space** as well as the column space. Proof: $\mathrm{rank}(A^\top) = \mathrm{rank}(A)$, because $A^\top$ and $A$ have the same set of pivots when row-reduced. The row space of $A$ is the column space of $A^\top$, so its dimension is $\mathrm{rank}(A^\top) = \mathrm{rank}(A)$. This is sometimes called the "row-column rank equality"; it is one of those classical results that students rediscover with surprise.
+
+</TheoremBlock>
+
+With the theorem in hand, the seven characterizations of invertibility we have been collecting in the topic — Remark 6's geometric meanings, Theorem 6(e)'s determinant test, and the implicit "the map is a bijection" — collapse into a single corollary.
+
+<TheoremBlock type="corollary" number={1} title="Equivalent Characterizations of Invertibility">
+
+For an $n \times n$ matrix $A$ (equivalently, for the linear map $T \colon \mathbb{R}^n \to \mathbb{R}^n$ it represents), the following statements are equivalent:
+
+1. $A$ is invertible — there exists $A^{-1}$ with $A A^{-1} = A^{-1} A = I_n$.
+2. The linear map $T$ is a bijection.
+3. $\mathrm{rank}(A) = n$.
+4. $\mathrm{nullity}(A) = 0$, i.e., $\ker A = \{\mathbf{0}\}$.
+5. The columns of $A$ are linearly independent.
+6. The rows of $A$ are linearly independent.
+7. $\det A \neq 0$.
+8. For every $\mathbf{b} \in \mathbb{R}^n$, the system $A \mathbf{x} = \mathbf{b}$ has a unique solution.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+We show a chain of implications and equivalences that covers all eight.
+
+**(a) ⇔ (b).** The matrix $A$ acts as the linear map $T$, and an $n \times n$ matrix is invertible by Definition 13 iff it has a two-sided inverse iff $T$ is a bijection.
+
+**(b) ⇔ (c).** A linear map $T \colon \mathbb{R}^n \to \mathbb{R}^n$ is surjective iff $\mathrm{im}\, T = \mathbb{R}^n$ iff $\mathrm{rank}(T) = n$. Combined with rank-nullity (Theorem 7) and the fact that input and output spaces have the same dimension $n$, this also makes $T$ injective, hence bijective. So bijection in either direction is equivalent to rank $= n$.
+
+**(c) ⇔ (d).** By rank-nullity, $\mathrm{rank}(A) + \mathrm{nullity}(A) = n$. Therefore $\mathrm{rank}(A) = n$ iff $\mathrm{nullity}(A) = 0$.
+
+**(c) ⇔ (e).** By Definition 15, $\mathrm{rank}(A)$ is the dimension of the column space. The column space has dimension $n$ iff the $n$ columns of $A$ are linearly independent.
+
+**(e) ⇔ (f).** By Remark 8, $\mathrm{rank}(A) = \mathrm{rank}(A^\top)$. The columns of $A^\top$ are the rows of $A$, so column independence and row independence are equivalent.
+
+**(a) ⇔ (g).** Theorem 6(e): $\det A \neq 0$ iff $A$ is invertible.
+
+**(a) ⇔ (h).** If $A$ is invertible, $A \mathbf{x} = \mathbf{b}$ has the unique solution $\mathbf{x} = A^{-1} \mathbf{b}$ for every $\mathbf{b}$. Conversely, if $A \mathbf{x} = \mathbf{b}$ has a unique solution for every $\mathbf{b}$, then in particular $A \mathbf{x} = \mathbf{0}$ has $\mathbf{x} = \mathbf{0}$ as its unique solution (forcing nullity zero, i.e., (d), hence (a)).
+
+All eight statements are pairwise equivalent.
+
+</TheoremBlock>
+
+The corollary is the load-bearing result of the section. Every test you have for "is this matrix invertible?" — the determinant test, the row-reduction test that produces a pivot in every column, the dimension count, the system-solving criterion — is the same test phrased differently. In computational practice they have very different complexities: the determinant test is $O(n^3)$ via row reduction; checking columns for independence is also $O(n^3)$ via the same reduction; computing $A^{-1}$ explicitly is $O(n^3)$ but with a larger constant. Most numerical packages report invertibility as a side product of LU decomposition, which is the row-reduction algorithm. The proof above explains why all of these tests agree.
+
+A useful exercise: configure the viz below into a singular matrix and observe that all five readouts (rank, nullity, rank+nullity, the invertibility verdict, and the determinant indicator) update consistently with the corollary.
+
+<RankNullityVisualizer client:visible />
+
+The presets cover the canonical configurations: full-rank square (the identity preset), tall full-rank, wide full-rank, rank-deficient square, and a rank-1 wide matrix. For each, the visualizer reads off the rank, nullity, and rank+nullity = (number of columns) — all consistent with the theorem and the corollary.
+
+<TheoremBlock type="example" number={13} title="Underdetermined Regression">
+
+Consider a linear regression where the design matrix $X$ is $n \times p$ with $p > n$ — more features than observations, a common setup in high-dimensional statistics and modern machine learning. The normal equation for ordinary least squares is
+
+$$X^\top X\, \boldsymbol{\beta} = X^\top \mathbf{y}.$$
+
+Now $X^\top X$ is a $p \times p$ matrix. Its rank is at most $\mathrm{rank}(X) \leq \min(n, p) = n < p$, so by rank-nullity, $\mathrm{nullity}(X^\top X) \geq p - n > 0$. The matrix is singular. By Corollary 1, the normal-equation system has either no solutions or infinitely many; in this case (since $X^\top \mathbf{y}$ lies in the column space of $X^\top X$ by construction), it has infinitely many solutions, all differing by elements of $\ker(X^\top X)$.
+
+That is the linear-algebra reason high-dimensional regression requires *regularization*. Ridge regression replaces $X^\top X$ with $X^\top X + \lambda I$, which is full-rank for every $\lambda > 0$ (its determinant is the product of the shifted eigenvalues — a topic for the next track topic — but more concretely, $\lambda I$ is full-rank and the sum of a positive-semi-definite matrix and a positive-definite one is positive-definite). Lasso adds an $L^1$ penalty whose subgradient picks out a unique sparse solution. Both methods are responding to the same singularity diagnosed by rank-nullity: the problem as posed does not have a unique solution, and we have to add information to make it well-defined.
+
+</TheoremBlock>
+
+**ML aside.** The bottleneck dimension of a linear autoencoder is exactly the rank of the encoder matrix. If the encoder is the map $\mathbf{z} = W \mathbf{x}$ with $W$ a $k \times d$ matrix and $k \ll d$, then $\mathrm{rank}(W) \leq k$, and the decoder cannot recover more than $k$ independent directions of the input. The other $d - k$ input directions live in the kernel of the encoder and are lost — that is the linear-algebra picture of *lossy compression*. The choice of $k$ is the "how much information do we keep" knob. The choice of $W$ — which $k$ directions to keep — is what training the autoencoder learns. When $k = d$ and $W$ is invertible, the autoencoder is lossless; this is the trivial case. The interesting cases have $k < d$ and the rank-nullity theorem is bounding how much information can flow through the bottleneck.
