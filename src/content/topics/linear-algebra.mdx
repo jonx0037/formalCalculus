@@ -113,6 +113,11 @@ Pick a function from the plane to itself. What is the simplest possible kind of 
 
 Three pictures will set the scene. A *rotation* by some angle around the origin: lines through the origin rotate to other lines through the origin, parallel pairs stay parallel, and the origin stays put. A *uniform stretch* by some factor: every vector is rescaled, but again lines stay lines, parallels stay parallel, and the origin is fixed. A *shear* — imagine taking a deck of cards and pushing the top of the stack sideways while the bottom card stays still — once more, lines, parallels, and the origin all behave. These three transformations look different but share the same defining structure, and that structure is what we are going to name and study.
 
+<figure className="my-6">
+  <img src="/images/topics/linear-algebra/linearity-vs-not.png" alt="Three-panel comparison: a linear map preserves the grid, an affine map translates it, a quadratic warp bends straight lines into parabolas" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">The same unit grid under three maps: a linear map (grid stays a grid, origin fixed), an affine map (grid translates), and a quadratic warp (lines bend).</figcaption>
+</figure>
+
 Contrast these with two non-examples. A *translation* — sliding every point a fixed distance in some direction — sends the origin somewhere else, so it fails the "origin stays put" condition. Translations are *not* linear, even though they look extremely similar to the rotations and shears we just described. We will come back to this distinction; it is the difference between a linear map and an *affine* map, and it is the reason every neural network layer separates a multiplication by a weight matrix from an addition of a bias vector. A *quadratic warp* like $(x, y) \mapsto (x, y + 0.4 x^2)$ bends straight lines into parabolas, so it fails the "lines go to lines" condition. Quadratic warps are not linear either, and the entire reason a neural network is more expressive than a single matrix multiplication is that the nonlinearity $\sigma$ in $\sigma(W \mathbf{x} + \mathbf{b})$ bends lines into curves.
 
 **ML aside.** A neural network layer without the bias term and without the activation function is exactly a linear map. The bias breaks the "origin stays put" condition; the activation breaks the "lines stay lines" condition. When ML papers talk about "the linear part of a layer," they mean the bare matrix multiplication $\mathbf{x} \mapsto W\mathbf{x}$, and that is the object linear algebra is built to study.
@@ -192,9 +197,19 @@ Three sets that look completely different — arrows in the plane, continuous fu
 
 </TheoremBlock>
 
+<figure className="my-6">
+  <img src="/images/topics/linear-algebra/vector-space-examples.png" alt="Three vector spaces with the same axioms: arrows in R^2, continuous functions on [0,1], polynomials in P_2" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">Three vector spaces that look completely different but obey the same eight axioms — arrows in the plane, continuous functions on an interval, polynomials of bounded degree.</figcaption>
+</figure>
+
 **ML aside.** When you concatenate a 768-dimensional BERT embedding with a 64-dimensional dense feature vector, you produce an element of the **direct sum** $\mathbb{R}^{768} \oplus \mathbb{R}^{64} \cong \mathbb{R}^{832}$ — a brand-new vector space built from two old ones. When you process a minibatch of $B$ samples, each $d$-dimensional, you work inside $\mathbb{R}^{B \times d}$. None of this is incidental: the reason these constructions compose cleanly across PyTorch and JAX is that the underlying algebra is the vector-space algebra defined above. Once you see linear algebra as the rules for combining vector spaces, every reshape and concatenate operation in ML code becomes a vector-space construction in disguise.
 
 ## 3. Linear Independence, Span, Basis, and Dimension
+
+<figure className="my-6">
+  <img src="/images/topics/linear-algebra/basis-and-span.png" alt="Two-panel comparison: two linearly independent vectors span the plane; three linearly dependent vectors still span only the plane because one is redundant" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">Linear independence is about non-redundancy of directions: two LI vectors span the plane; a third redundant vector adds no new directions to the span.</figcaption>
+</figure>
 
 Now we put the abstraction to work. The four concepts in the title of this section — span, linear independence, basis, dimension — are the most-used vocabulary in all of linear algebra, and the right way to introduce them is geometric. Pick two arrows in $\mathbb{R}^2$ that point in different directions. Can you reach any other arrow by adding scaled copies of those two? Yes: the two arrows *span* the plane. Pick a third arrow. Is it redundant — already reachable from the first two? Yes again: the three arrows are *linearly dependent*. A *basis* of the plane is two arrows that span without redundancy, and the number two is the *dimension*. Everything below is making these four sentences precise.
 
@@ -392,6 +407,11 @@ Each output coordinate is a linear combination of the inputs, so $\mathrm{Sh}_k$
 
 </TheoremBlock>
 
+<figure className="my-6">
+  <img src="/images/topics/linear-algebra/linear-map-zoo.png" alt="Six canonical linear maps acting on the unit square: identity, rotation, projection onto x-axis, horizontal shear, anisotropic scaling, reflection" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">The canonical zoo of linear maps acting on the unit square. Each map is determined by where it sends e₁ and e₂ — the two colored arrows in each panel.</figcaption>
+</figure>
+
 The four examples share a structural pattern. Each is determined by where it sends the two basis vectors $\mathbf{e}_1, \mathbf{e}_2$ of $\mathbb{R}^2$ — once you know $T(\mathbf{e}_1)$ and $T(\mathbf{e}_2)$, linearity tells you $T(x \mathbf{e}_1 + y \mathbf{e}_2) = x\, T(\mathbf{e}_1) + y\, T(\mathbf{e}_2)$ for every input vector. The next viz makes this pattern visceral: drag the two image vectors and watch the entire grid follow. A side panel keeps track of the matrix whose columns are exactly those image vectors — but we have not built the language of matrices yet; that's what §5 is for. For now, the viz is a preview.
 
 <LinearMapMatrixBuilder client:visible />
@@ -489,6 +509,11 @@ $$T(\mathbf{v}_j) = \sum_{i=1}^{m} a_{ij} \mathbf{w}_i, \qquad j = 1, 2, \ldots,
 The **matrix of $T$ relative to $\mathcal{B}$ and $\mathcal{C}$**, written $[T]_{\mathcal{C} \leftarrow \mathcal{B}}$, is the $m \times n$ array $A = (a_{ij})$. Equivalently — and this is the picture worth carrying around — the **$j$-th column of $[T]_{\mathcal{C} \leftarrow \mathcal{B}}$ is the coordinate vector of $T(\mathbf{v}_j)$ in the basis $\mathcal{C}$**.
 
 </TheoremBlock>
+
+<figure className="my-6">
+  <img src="/images/topics/linear-algebra/matrix-as-columns.png" alt="Two-panel comparison: 2x2 matrix with columns highlighted as images of e_1 and e_2; 3x3 matrix in isometric projection showing the three column images" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">The j-th column of a matrix is the place the j-th basis vector lands. Once internalized, almost every matrix manipulation becomes a geometric statement.</figcaption>
+</figure>
 
 Reread that last sentence; it is what the rest of this topic rests on. The $j$-th column is the answer to the question "where does $T$ send the $j$-th input basis vector?" The viz above made this visible: when you drag $T(\mathbf{e}_1)$, only the first column of the matrix changes; when you drag $T(\mathbf{e}_2)$, only the second column changes. Read this way, the matrix is *the recipe for what $T$ does to each input basis vector*, written out in coordinates.
 
@@ -634,6 +659,11 @@ $$(BA)_{ik} = \sum_{j=1}^{m} B_{ij}\, A_{jk} = \sum_{j=1}^{m} b_{ij}\, a_{jk}.$$
 The two expressions are literally identical. So the $(i, k)$ entry of $[S \circ T]_{\mathcal{D} \leftarrow \mathcal{B}}$ equals the $(i, k)$ entry of the matrix product $BA$, for every $i$ and every $k$. The two matrices are equal entrywise, hence equal as matrices.
 
 </TheoremBlock>
+
+<figure className="my-6">
+  <img src="/images/topics/linear-algebra/composition-is-product.png" alt="Three-panel sequence: unit square, intermediate parallelogram after applying A, final parallelogram after applying B; dashed outline shows (BA)*square coincides with B*(A*square)" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">Composing two linear maps A then B produces a single linear map whose matrix is the product BA. The dashed outline in the rightmost panel is (BA)·square — it coincides exactly with B·(A·square).</figcaption>
+</figure>
 
 This is the structural fact the entire row-by-column rule descends from. The rule is not arbitrary; it is the unique formula that records the composition of two linear maps in coordinates. Three immediate consequences worth noticing:
 
@@ -803,6 +833,11 @@ By the uniqueness clause of Theorem 4, the function $V$ and the function $\det$ 
 
 </TheoremBlock>
 
+<figure className="my-6">
+  <img src="/images/topics/linear-algebra/determinant-as-volume.png" alt="Three-panel comparison of 2x2 determinants: positive orientation (green parallelogram), negative orientation (red), and singular case where the parallelogram collapses to a line" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">|det A| is the area of the parallelogram spanned by the columns of A. Sign tracks orientation: positive (green) when preserved, negative (red) when reversed, zero (grey) when the parallelogram collapses to lower dimensions.</figcaption>
+</figure>
+
 The determinant is therefore not really about the formula — it is about the volume. The viz below makes this concrete in two dimensions: drag the two column vectors and watch the parallelogram fill with green when the orientation is positive, red when negative, and grey when the columns are parallel and the parallelogram collapses to a line.
 
 <DeterminantVolumeVisualizer client:visible />
@@ -952,6 +987,11 @@ Both halves of the claim are verified, so $\{T(\mathbf{v}_j)\}_{j=1}^{n-k}$ is a
 
 </TheoremBlock>
 
+<figure className="my-6">
+  <img src="/images/topics/linear-algebra/rank-nullity-picture.png" alt="Two-panel decomposition: input space split into kernel (purple line) plus complement (blue plane); output space showing image (green plane) with kernel vectors collapsed to origin" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">Rank-nullity in pictures: dimensions of the input space split into kernel (absorbed) plus image-spanning complement (preserved). Their dimensions sum to dim V.</figcaption>
+</figure>
+
 The proof has an underrated feature: it is *constructive*. Given any specific kernel basis and any extension to a basis of $V$, applying $T$ to the extension vectors produces a basis of the image. That is the recipe row-reduction algorithms quietly follow when they read off a basis for the column space from a matrix's pivot columns.
 
 Two viewpoints on the same theorem will be useful in different contexts. The first is the abstract one above — linear maps between abstract vector spaces. The second is the concrete one for matrices, which reads off rank and nullity from a matrix's columns.
@@ -1094,6 +1134,11 @@ $$[T(\mathbf{v})]_{\mathcal{B}'} = P^{-1} [T]_{\mathcal{B}}\, \mathbf{c} = P^{-1
 The two expressions agree for every coordinate vector $\mathbf{c}'$, so the matrices are equal: $[T]_{\mathcal{B}'} = P^{-1} [T]_{\mathcal{B}}\, P$.
 
 </TheoremBlock>
+
+<figure className="my-6">
+  <img src="/images/topics/linear-algebra/change-of-basis.png" alt="Two-panel comparison: a 30 degree rotation applied to the unit square in the standard basis, and the same rotation applied in a tilted (45-degree-rotated) basis — same linear map, different matrix" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">The same linear map (a 30° rotation) viewed in two different bases. The matrix changes via the similarity transformation [T]_B' = P⁻¹ [T]_B P, but the underlying map is unchanged.</figcaption>
+</figure>
 
 The formula is sometimes written $A' = P^{-1} A P$, where $A$ and $A'$ are the matrices in the two bases. This is the operation that says "translate input, apply, translate output back." Two matrices related this way are called **similar**, and similarity is the matrix-side reflection of "same linear map, different basis."
 
@@ -1306,6 +1351,11 @@ By induction, the claim holds for all $k$ up to $n$. At $k = n$, $\{\mathbf{q}_1
 
 </TheoremBlock>
 
+<figure className="my-6">
+  <img src="/images/topics/linear-algebra/gram-schmidt-steps.png" alt="Three-panel 3D Gram-Schmidt sequence: starting skewed basis, intermediate u_k vectors after projection-and-subtract, final orthonormal q_k basis" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">Gram-Schmidt on a skewed basis of ℝ³: starting vectors (left), intermediate u_k after subtracting projections (middle), final orthonormal q_k (right). The viz below walks through this animation one step at a time.</figcaption>
+</figure>
+
 The Gram-Schmidt process is the canonical way to manufacture an orthonormal basis on demand. The viz below steps through the process on a skewed input basis of $\mathbb{R}^3$, with each $\mathbf{v}_k$ rendered in grey, the projections being subtracted in orange, the intermediate $\mathbf{u}_k$ in blue, and the finalized $\mathbf{q}_k$ in green. The accumulating orthonormal basis is reported in a side panel as the algorithm runs.
 
 <GramSchmidtAnimator client:visible />
@@ -1370,6 +1420,11 @@ So $\hat{\beta}_0 = 1.2$ and $\hat{\beta}_1 = 0.7$, fitting the line $\hat{y} = 
 
 </TheoremBlock>
 
+<figure className="my-6">
+  <img src="/images/topics/linear-algebra/least-squares-projection.png" alt="Two-panel OLS visualization: scatter of data points with the fitted line and vertical residual segments; residual scatter showing residuals are mean-zero and orthogonal to col(X)" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">OLS as orthogonal projection: the fitted line is the projection of y onto col(X). The residuals (right panel) scatter around zero and are orthogonal to every column of X — the geometric statement behind the normal equations.</figcaption>
+</figure>
+
 The geometric story extends in three useful directions. The orthogonal projection $\mathbf{y} \mapsto \mathbf{y}_\|$ is itself a linear map; its matrix in the standard basis is the **projection matrix** $P_X = X (X^\top X)^{-1} X^\top$, and the hat matrix $\hat{\mathbf{y}} = P_X \mathbf{y}$ has trace equal to $\mathrm{rank}(X)$ — the "effective number of parameters" in classical statistics. The residual matrix $I - P_X$ is also a projection (onto $\mathrm{col}(X)^\perp$). And when $X$ is rank-deficient, the formula $(X^\top X)^{-1}$ fails — exactly the diagnosis from Example 13 (underdetermined regression), and exactly the situation where ridge or lasso regularization steps in. Every applied-statistics technique stacked on top of linear regression — diagnostics, leverage, influence, generalized inverses — descends from this orthogonal-projection geometry. <a className="formalml-badge" href="https://www.formalml.com/topics/regression-fundamentals">regression-fundamentals →</a>
 
 ### 11.2 Embeddings as Choices of Basis
@@ -1405,6 +1460,11 @@ The **method of moments** and the broader theory of *M-estimation* (maximum like
 Finally, **linear regression inference** — the F-tests, t-tests, and confidence intervals attached to the OLS estimator $\hat{\boldsymbol{\beta}} = (X^\top X)^{-1} X^\top \mathbf{y}$ — reads off directly from the rank of $X$ and the inner-product structure of the residual space. The residual sum of squares lives in $\mathrm{col}(X)^\perp$, whose dimension is $n - \mathrm{rank}(X)$; this is the famous "$n - p$" degrees of freedom appearing in the denominator of the unbiased variance estimator. Every classical-statistics formula in linear regression — leverage, influence, the F-distribution of the test statistic, the geometry of nested-model comparison — descends from the orthogonal-decomposition theorem applied to the column space and its complement. <a className="formalstatistics-badge" href="https://www.formalstatistics.com/topics/linear-regression-inference">linear-regression-inference →</a>
 
 ## 13. Where This Leads
+
+<figure className="my-6">
+  <img src="/images/topics/linear-algebra/connections-summary.png" alt="Four-panel forward-looking summary: eigenvector directions of a matrix, principal components of a data ellipse, quadratic loss contours with gradient descent path, and SVD of the unit circle into a tilted ellipse" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">Four directions this topic prepares the reader for: eigenvectors (next topic), principal components (PCA), quadratic forms in optimization, and the singular value decomposition (SVD).</figcaption>
+</figure>
 
 This topic built the foundation. Three downstream directions extend the apparatus, each with its own topic on this site or its sister sites.
 
