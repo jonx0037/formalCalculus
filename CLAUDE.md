@@ -21,9 +21,10 @@ Sister sites: https://formalstatistics.com · https://formalml.com
 ## Commands
 
 ```bash
-pnpm dev        # Dev server at localhost:4321
-pnpm build      # Production build (runs pagefind post-build)
-pnpm preview    # Preview production build
+pnpm dev                # Dev server at localhost:4321
+pnpm build              # Production build (runs pagefind post-build)
+pnpm preview            # Preview production build
+pnpm check:connections  # Audit MDX cross-site connections (warns on <40-char relationship prose, validates slugs)
 ```
 
 ## Project Structure
@@ -97,6 +98,8 @@ Calculus visualizations have unique requirements that geometry and algebra visua
 - Topic metadata and prerequisite DAG defined in `src/data/curriculum-graph.json`
 - Track definitions in `src/data/curriculum.ts`
 - When adding a new topic, update both files and add cross-links in related topics
+- **Draft topics:** `status: "draft"` in MDX frontmatter — excluded from routes by `src/pages/topics/[...slug].astro`'s `status === 'published'` filter. Stubs can sit on `main` without affecting production.
+- **Topic ship sequence:** (1) flip `status: "draft"` → `"published"` and fill MDX body, (2) add node + prerequisite edges to `curriculum-graph.json`, (3) move the topic title from `track.planned[]` to `track.published[]` in `curriculum.ts`, (4) re-run `pnpm check:connections`.
 
 ### Relationship to formalStatistics and formalML
 
@@ -111,6 +114,7 @@ Cross-site linking convention (frontmatter):
 - `formalstatisticsConnections` for forward-links to formalstatistics.com (rendered as amber cards in the auto-section, and `<a class="formalstatistics-badge">` in inline prose).
 - `formalmlConnections` for forward-links to formalml.com (rendered as blue cards, `<a class="formalml-badge">`).
 - Both arrays mirror the same schema: `{ topic, title?, site: 'formalstatistics' | 'formalml', relationship }`.
+- `relationship` prose must be ≥40 chars (`scripts/check-connections.mjs` audit threshold) and should use Unicode notation in cards (`Σ = QΛQᵀ`) rather than LaTeX (`$\Sigma = Q\Lambda Q^\top$`) — connection cards render as plain text, not KaTeX.
 - In-prose convention: a `## Connections to Statistics` section immediately before the existing `## Connections to ML` section, when there are stats forward-links worth narrating. Skip when the array is empty.
 
 ## Code Style
@@ -126,6 +130,8 @@ Cross-site linking convention (frontmatter):
 - Use npm or generate package-lock.json
 - Commit .vscode/, .DS_Store, or firebase-debug.log
 - Create draft files outside src/content/topics/ — drafts live as unpublished MDX
+- Hardcode track or topic counts in display copy — derive from `tracks.length`, `tracks.reduce((acc, t) => acc + t.published.length, 0)`, `graphData.nodes.length`. Hand-maintained literals drift when topics ship.
+- `git add -A` or `git add .` — local research artifacts (handoff briefs under `docs/plans/formalcalculus-*-handoff-brief.md`, notebook directories under `notebooks/`) live in the working tree but should not be committed. Stage by explicit path.
 - Skip geometric intuition before formalism
 - Write one-line proof sketches — expand or omit
 - Assume the reader already knows calculus — that's what this site teaches
