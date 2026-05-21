@@ -102,6 +102,7 @@ references:
 
 import TheoremBlock from '../../components/ui/TheoremBlock.astro';
 import BasisExplorer from '../../components/viz/BasisExplorer.tsx';
+import LinearMapMatrixBuilder from '../../components/viz/LinearMapMatrixBuilder.tsx';
 
 ## 1. What Linear Algebra Studies
 
@@ -328,3 +329,384 @@ Most function spaces are infinite-dimensional. The space $C[a, b]$ above is just
 **ML aside.** When a paper introduces a model that "projects onto a 128-dimensional latent space," the number 128 is a dimension in exactly the sense above: it is the size of any basis of that latent space. Two architectures with the same latent dimension but different bases are representationally equivalent up to a change of coordinates — which is one reason representational similarity analysis exists, and one reason different word-embedding models with the same dimension can encode the same semantic structure in apparently unrelated coordinates. Choosing a basis for the latent space is what training the embedding layer does; the dimension is a hyperparameter you set, and the basis is a parameter the model learns.
 
 **Where this leads.** We have a vocabulary now: vectors, spans, independent sets, bases, and dimensions. The natural next question — the one that animates the rest of the topic — is what *functions* between vector spaces look like, and the answer is the same answer that motivated this whole development: linear functions. Section 4 below introduces linear maps, and §5 explains why a matrix is exactly the right way to record one. Further out, once we have built the full apparatus, a deeper question will surface: given a linear map $T$ acting on a vector space $V$, can we find a basis of $V$ that makes the matrix of $T$ as simple as possible? For some maps, yes: a basis of "directions the map only stretches without rotating." Those directions have a name — *eigenvectors* — but they belong to the next topic on this track, and we will not introduce them here. For now, every basis is equally good.
+
+## 4. Linear Maps
+
+A *function* between vector spaces is a rule that takes a vector in one space and produces a vector in another. Most functions you can write down are wild — they bend lines, stretch some regions while crushing others, and have nothing in common with one another. The class of functions linear algebra studies is the narrowest possible one that respects the two operations a vector space comes with: addition and scalar multiplication. A function with this property is called a **linear map** (or, equivalently, a **linear transformation**), and the entire content of §§4-9 of this topic is what these maps can and cannot do.
+
+The geometric picture is the one we developed in §1: a linear map sends straight lines through the origin to straight lines through the origin (possibly degenerated to a single point), parallel lines to parallel lines, and the origin to itself. Algebraically, "respects addition and scalar multiplication" turns into two equations that we elevate to definition.
+
+<TheoremBlock type="definition" number={6} title="Linear Map">
+
+A function $T \colon V \to W$ between real vector spaces is a **linear map** (or **linear transformation**) if it satisfies the two structure conditions
+
+1. **(Additivity)** $\;T(\mathbf{u} + \mathbf{v}) = T(\mathbf{u}) + T(\mathbf{v})$ for all $\mathbf{u}, \mathbf{v} \in V$.
+2. **(Homogeneity)** $\;T(c \mathbf{v}) = c\, T(\mathbf{v})$ for all $c \in \mathbb{R}$ and all $\mathbf{v} \in V$.
+
+Equivalently — and this single equation is sometimes used as the definition — $T(a \mathbf{u} + b \mathbf{v}) = a\, T(\mathbf{u}) + b\, T(\mathbf{v})$ for all scalars $a, b$ and all vectors $\mathbf{u}, \mathbf{v}$.
+
+</TheoremBlock>
+
+One immediate consequence of the two axioms is that every linear map sends the zero vector to the zero vector: $T(\mathbf{0}) = T(0 \cdot \mathbf{v}) = 0 \cdot T(\mathbf{v}) = \mathbf{0}$. This is the algebraic shadow of the geometric "origin stays put" condition from §1, and it is the single property that distinguishes a linear map from an *affine* one (which is a linear map composed with a translation). Now four examples — the canonical zoo of linear maps on the plane — each of which the reader should be able to draw from memory by the end of this section.
+
+<TheoremBlock type="example" number={5} title="Rotation by θ in ℝ²">
+
+For a fixed angle $\theta \in \mathbb{R}$, define $R_\theta \colon \mathbb{R}^2 \to \mathbb{R}^2$ by
+
+$$R_\theta(x, y) = (\, x \cos\theta - y \sin\theta, \; x \sin\theta + y \cos\theta \,).$$
+
+Linearity is direct from the formula: each output coordinate is a real-linear combination of $x$ and $y$, so additivity and homogeneity in the input both go through. Geometrically, $R_\theta$ rotates every vector counter-clockwise by $\theta$ radians around the origin. The image of the standard basis is $R_\theta(\mathbf{e}_1) = (\cos\theta, \sin\theta)$ and $R_\theta(\mathbf{e}_2) = (-\sin\theta, \cos\theta)$ — a fact that will determine the matrix of $R_\theta$ in §5.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={6} title="Orthogonal Projection onto a Line">
+
+Let $\mathbf{u} \in \mathbb{R}^n$ be a unit vector. The **orthogonal projection onto the line spanned by $\mathbf{u}$** is the map $P_\mathbf{u} \colon \mathbb{R}^n \to \mathbb{R}^n$ defined by
+
+$$P_\mathbf{u}(\mathbf{v}) = (\mathbf{v} \cdot \mathbf{u})\, \mathbf{u},$$
+
+where $\mathbf{v} \cdot \mathbf{u} = \sum_i v_i u_i$ is the standard dot product. Linearity follows because the dot product is linear in its first slot: $P_\mathbf{u}(a\mathbf{v} + b\mathbf{w}) = ((a\mathbf{v} + b\mathbf{w}) \cdot \mathbf{u})\, \mathbf{u} = (a\, \mathbf{v} \cdot \mathbf{u} + b\, \mathbf{w} \cdot \mathbf{u})\, \mathbf{u} = a P_\mathbf{u}(\mathbf{v}) + b P_\mathbf{u}(\mathbf{w})$. Geometrically, $P_\mathbf{u}$ sends every vector to its shadow on the line through the origin in the direction of $\mathbf{u}$. The image of $P_\mathbf{u}$ is exactly that line; its kernel is the hyperplane perpendicular to $\mathbf{u}$ — every vector orthogonal to $\mathbf{u}$ has $\mathbf{v} \cdot \mathbf{u} = 0$ and so projects to the origin.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={7} title="Uniform Scaling by λ">
+
+For a fixed $\lambda \in \mathbb{R}$, define $S_\lambda \colon \mathbb{R}^n \to \mathbb{R}^n$ by
+
+$$S_\lambda(\mathbf{v}) = \lambda \mathbf{v}.$$
+
+Linearity is immediate: $S_\lambda(a\mathbf{u} + b\mathbf{v}) = \lambda(a\mathbf{u} + b\mathbf{v}) = a\, \lambda\mathbf{u} + b\, \lambda\mathbf{v} = a S_\lambda(\mathbf{u}) + b S_\lambda(\mathbf{v})$. The geometry depends on the sign of $\lambda$: for $\lambda > 0$ the map stretches every vector outward (or shrinks toward the origin if $0 < \lambda < 1$); for $\lambda < 0$ it stretches *and* flips through the origin; for $\lambda = 0$ it crushes the whole space to a single point.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={8} title="Horizontal Shear">
+
+For a fixed $k \in \mathbb{R}$, define $\mathrm{Sh}_k \colon \mathbb{R}^2 \to \mathbb{R}^2$ by
+
+$$\mathrm{Sh}_k(x, y) = (\, x + k y, \; y \,).$$
+
+Each output coordinate is a linear combination of the inputs, so $\mathrm{Sh}_k$ is linear. Geometrically, every point's $y$-coordinate is preserved but its $x$-coordinate is bumped sideways by $k$ times $y$. The result is that horizontal lines slide rigidly, with the slide distance proportional to height: the $x$-axis stays put (everything on it has $y = 0$), and lines parallel to the $x$-axis stay parallel — they just shift sideways. This is the "deck of cards" picture from §1 made precise.
+
+</TheoremBlock>
+
+The four examples share a structural pattern. Each is determined by where it sends the two basis vectors $\mathbf{e}_1, \mathbf{e}_2$ of $\mathbb{R}^2$ — once you know $T(\mathbf{e}_1)$ and $T(\mathbf{e}_2)$, linearity tells you $T(x \mathbf{e}_1 + y \mathbf{e}_2) = x\, T(\mathbf{e}_1) + y\, T(\mathbf{e}_2)$ for every input vector. The next viz makes this pattern visceral: drag the two image vectors and watch the entire grid follow. A side panel keeps track of the matrix whose columns are exactly those image vectors — but we have not built the language of matrices yet; that's what §5 is for. For now, the viz is a preview.
+
+<LinearMapMatrixBuilder client:visible />
+
+The "preset" dropdown switches between the eight canonical maps — identity, two rotations, two projections, a shear, a uniform scaling, and a reflection. The matrix readout on the right shows what those image vectors look like as a 2×2 array. The determinant indicator beneath the matrix tracks the signed area of the parallelogram in the canvas: positive for orientation-preserving maps, negative for orientation-reversing ones, zero whenever the map collapses the plane to a line.
+
+Two subspaces are naturally associated with every linear map: the inputs that get sent to zero, and the outputs that actually get hit. They have names.
+
+<TheoremBlock type="definition" number={7} title="Kernel and Image">
+
+Let $T \colon V \to W$ be a linear map between vector spaces.
+
+- The **kernel** (or **nullspace**) of $T$ is the subset of $V$ that $T$ sends to the zero vector of $W$:
+
+$$\ker T = \{\, \mathbf{v} \in V \mid T(\mathbf{v}) = \mathbf{0} \,\}.$$
+
+- The **image** (or **range**) of $T$ is the subset of $W$ consisting of all vectors that are hit by something in $V$:
+
+$$\mathrm{im}\, T = \{\, T(\mathbf{v}) \mid \mathbf{v} \in V \,\} \subseteq W.$$
+
+</TheoremBlock>
+
+For the four canonical examples: rotation has trivial kernel $\{\mathbf{0}\}$ and image all of $\mathbb{R}^2$ (it loses no information and reaches every output). Projection onto the line through $\mathbf{u}$ has kernel equal to the perpendicular line and image equal to the line through $\mathbf{u}$. Uniform scaling $S_\lambda$ has trivial kernel and image all of $\mathbb{R}^n$ when $\lambda \neq 0$; when $\lambda = 0$ the kernel is the whole space and the image is just the origin. Horizontal shear has trivial kernel and image all of $\mathbb{R}^2$. These observations are not coincidences — they are diagnostics, and §8 (Rank-Nullity) will package them into a single counting theorem.
+
+<TheoremBlock type="proposition" number={2} title="Kernel and Image Are Subspaces">
+
+For any linear map $T \colon V \to W$, the kernel $\ker T$ is a subspace of $V$ and the image $\mathrm{im}\, T$ is a subspace of $W$.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+We verify the two closure conditions and the zero-vector condition for each.
+
+**The kernel.** Let $\mathbf{u}, \mathbf{v} \in \ker T$ and $c \in \mathbb{R}$. Then by linearity,
+
+$$T(\mathbf{u} + \mathbf{v}) = T(\mathbf{u}) + T(\mathbf{v}) = \mathbf{0} + \mathbf{0} = \mathbf{0},$$
+
+so $\mathbf{u} + \mathbf{v} \in \ker T$, and
+
+$$T(c \mathbf{v}) = c\, T(\mathbf{v}) = c \cdot \mathbf{0} = \mathbf{0},$$
+
+so $c \mathbf{v} \in \ker T$. The zero vector $\mathbf{0}_V$ is in $\ker T$ because $T(\mathbf{0}_V) = \mathbf{0}_W$ (a consequence of homogeneity at $c = 0$).
+
+**The image.** Let $\mathbf{w}_1, \mathbf{w}_2 \in \mathrm{im}\, T$, so $\mathbf{w}_1 = T(\mathbf{v}_1)$ and $\mathbf{w}_2 = T(\mathbf{v}_2)$ for some $\mathbf{v}_1, \mathbf{v}_2 \in V$, and let $c \in \mathbb{R}$. Then
+
+$$\mathbf{w}_1 + \mathbf{w}_2 = T(\mathbf{v}_1) + T(\mathbf{v}_2) = T(\mathbf{v}_1 + \mathbf{v}_2) \in \mathrm{im}\, T,$$
+
+and
+
+$$c \mathbf{w}_1 = c\, T(\mathbf{v}_1) = T(c \mathbf{v}_1) \in \mathrm{im}\, T.$$
+
+The zero vector $\mathbf{0}_W$ is in $\mathrm{im}\, T$ because $\mathbf{0}_W = T(\mathbf{0}_V)$.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={3} title="Kernel and Nullspace Mean the Same Thing">
+
+Pure-mathematics texts say *kernel*; applied texts say *nullspace*. They denote the same set. We use both interchangeably, preferring *kernel* in abstract discussion of linear maps and *nullspace* when discussing computations with matrices, where "the nullspace of $A$" is the standard phrase. Likewise, *range* and *image* are synonyms, with the same prose-vs-computation split.
+
+</TheoremBlock>
+
+The next remark is the single most consequential observation of the section, and it is the entire reason matrices exist.
+
+<TheoremBlock type="remark" number={4} title="A Linear Map is Determined by Its Action on a Basis">
+
+Let $V$ be a finite-dimensional vector space with basis $\{\mathbf{v}_1, \ldots, \mathbf{v}_n\}$, let $W$ be any vector space, and let $\mathbf{w}_1, \ldots, \mathbf{w}_n$ be any $n$ vectors in $W$ (chosen however you like — they need not be a basis, they need not be distinct, they need not even be nonzero). Then there is exactly one linear map $T \colon V \to W$ satisfying $T(\mathbf{v}_i) = \mathbf{w}_i$ for every $i$.
+
+*Why.* Existence: every $\mathbf{v} \in V$ has a unique expansion $\mathbf{v} = c_1 \mathbf{v}_1 + \cdots + c_n \mathbf{v}_n$ by Proposition 1, and we are *forced* to define $T(\mathbf{v}) = c_1 \mathbf{w}_1 + \cdots + c_n \mathbf{w}_n$ in order for linearity to hold. Verifying that this definition is indeed linear is a mechanical check: linearity in the coefficient list follows from linearity in the coordinates. Uniqueness: if two linear maps $T$ and $T'$ both send $\mathbf{v}_i$ to $\mathbf{w}_i$ for every $i$, then they agree on the basis, and by linearity they agree on every linear combination of basis vectors, i.e. on every vector in $V$.
+
+This single fact is the reason a linear map is recorded by a finite block of numbers — once you have specified where each of the $n$ basis vectors goes, the whole map is determined. The next section turns that block of numbers into a matrix.
+
+</TheoremBlock>
+
+**ML aside.** A linear regression model $\hat{y} = \mathbf{w}^\top \mathbf{x}$ is a linear map $\mathbb{R}^p \to \mathbb{R}$. The kernel is the hyperplane $\{\mathbf{x} \mid \mathbf{w}^\top \mathbf{x} = 0\}$ — exactly the set of input vectors at which the model predicts zero, which is the *decision boundary at output 0* in machine-learning vocabulary. The image is either all of $\mathbb{R}$ (when $\mathbf{w} \neq \mathbf{0}$) or the single point $\{0\}$ (when $\mathbf{w} = \mathbf{0}$ and the model is degenerate). The kernel/image dichotomy is exactly the geometric reading of "which inputs the model ignores" and "which outputs the model can produce" — vocabulary every regression diagnostic uses without naming.
+
+**Where this leads.** We have a definition of linear map and a zoo of examples. The next two sections turn the verbal definition into a computational object — a matrix — and then describe how matrices compose. Further on, once we have all of this in hand, we will ask: among the bases we could choose for $V$, is there one that makes the matrix of $T$ as simple as possible? For uniform scaling, every basis is equally good — every direction is just scaled. For rotation by an angle other than $0$ or $\pi$, no real basis makes the matrix diagonal — every direction genuinely turns. For projection, a basis aligned with the projection line and its perpendicular reduces the matrix to a diagonal of zeros and ones. The general theory of "which maps admit a diagonalizing basis, and what does the basis look like" is the content of *Eigenvalues & Eigenvectors* — the next topic.
+
+## 5. Matrices as Representations of Linear Maps
+
+A *matrix* is, in the most reductive description, a rectangular block of numbers. That description is true and unhelpful — it is also the description that drives most students to memorize the row-by-column multiplication rule without understanding where it came from. We will give a different description: a matrix is the **coordinate-dependent record of a linear map**, and the row-by-column rule is the consequence, not the postulate. Once that ordering is in place, every matrix manipulation downstream becomes a geometric statement.
+
+Here is the setup. Pick a basis $\mathcal{B} = \{\mathbf{v}_1, \ldots, \mathbf{v}_n\}$ of the domain $V$ and a basis $\mathcal{C} = \{\mathbf{w}_1, \ldots, \mathbf{w}_m\}$ of the codomain $W$. By Remark 4, the linear map $T \colon V \to W$ is determined by the $n$ image vectors $T(\mathbf{v}_1), \ldots, T(\mathbf{v}_n)$. Each $T(\mathbf{v}_j)$ lives in $W$ and so has a unique expansion in the basis $\mathcal{C}$:
+
+$$T(\mathbf{v}_j) = a_{1j} \mathbf{w}_1 + a_{2j} \mathbf{w}_2 + \cdots + a_{mj} \mathbf{w}_m.$$
+
+The $mn$ scalars $a_{ij}$ assemble into an $m \times n$ rectangular array. *That* array is the matrix of $T$, and reading it correctly is the entire point of this section.
+
+<TheoremBlock type="definition" number={8} title="Matrix of a Linear Map">
+
+Let $T \colon V \to W$ be a linear map between finite-dimensional vector spaces, let $\mathcal{B} = \{\mathbf{v}_1, \ldots, \mathbf{v}_n\}$ be a basis of $V$, and let $\mathcal{C} = \{\mathbf{w}_1, \ldots, \mathbf{w}_m\}$ be a basis of $W$. Write the image of each $\mathbf{v}_j$ in the basis $\mathcal{C}$ as
+
+$$T(\mathbf{v}_j) = \sum_{i=1}^{m} a_{ij} \mathbf{w}_i, \qquad j = 1, 2, \ldots, n.$$
+
+The **matrix of $T$ relative to $\mathcal{B}$ and $\mathcal{C}$**, written $[T]_{\mathcal{C} \leftarrow \mathcal{B}}$, is the $m \times n$ array $A = (a_{ij})$. Equivalently — and this is the picture worth carrying around — the **$j$-th column of $[T]_{\mathcal{C} \leftarrow \mathcal{B}}$ is the coordinate vector of $T(\mathbf{v}_j)$ in the basis $\mathcal{C}$**.
+
+</TheoremBlock>
+
+Reread that last sentence; it is what the rest of this topic rests on. The $j$-th column is the answer to the question "where does $T$ send the $j$-th input basis vector?" The viz above made this visible: when you drag $T(\mathbf{e}_1)$, only the first column of the matrix changes; when you drag $T(\mathbf{e}_2)$, only the second column changes. Read this way, the matrix is *the recipe for what $T$ does to each input basis vector*, written out in coordinates.
+
+That recipe extends to every input vector — not just basis vectors — through a single computation that we now also name.
+
+<TheoremBlock type="definition" number={9} title="Matrix-Vector Product">
+
+Let $A$ be an $m \times n$ matrix with columns $\mathbf{a}_1, \mathbf{a}_2, \ldots, \mathbf{a}_n \in \mathbb{R}^m$, and let $\mathbf{c} = (c_1, c_2, \ldots, c_n)^\top \in \mathbb{R}^n$ be a column vector. The **matrix-vector product** $A \mathbf{c}$ is the vector in $\mathbb{R}^m$ given by
+
+$$A \mathbf{c} = c_1 \mathbf{a}_1 + c_2 \mathbf{a}_2 + \cdots + c_n \mathbf{a}_n.$$
+
+That is, $A \mathbf{c}$ is the linear combination of the columns of $A$ with weights coming from $\mathbf{c}$.
+
+</TheoremBlock>
+
+The conventional formula for the matrix-vector product, $(A \mathbf{c})_i = \sum_j a_{ij} c_j$, is the entry-by-entry rewrite of the columns-as-vectors formula above; they describe the same operation. Most computational packages implement the entry-by-entry form (it is friendlier to the cache), but the columns-as-vectors form is the one that makes the geometry visible. With this definition in hand, the matrix of $T$ does what its name promises.
+
+<TheoremBlock type="theorem" number={2} title="Matrix-Vector Product Computes the Linear Map">
+
+With notation as in Definitions 8 and 9: if $\mathbf{v} \in V$ has coordinate vector $\mathbf{c} = (c_1, \ldots, c_n)^\top$ in the basis $\mathcal{B}$, then the coordinate vector of $T(\mathbf{v})$ in the basis $\mathcal{C}$ is the matrix-vector product $A \mathbf{c}$, where $A = [T]_{\mathcal{C} \leftarrow \mathcal{B}}$.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+Start with the expansion of $\mathbf{v}$ in $\mathcal{B}$ and apply $T$, using linearity at each step:
+
+$$T(\mathbf{v}) = T\!\left( \sum_{j=1}^{n} c_j \mathbf{v}_j \right) = \sum_{j=1}^{n} c_j\, T(\mathbf{v}_j).$$
+
+By Definition 8, $T(\mathbf{v}_j) = \sum_{i=1}^{m} a_{ij} \mathbf{w}_i$. Substituting and swapping the order of the (finite) sums,
+
+$$T(\mathbf{v}) = \sum_{j=1}^{n} c_j \sum_{i=1}^{m} a_{ij} \mathbf{w}_i = \sum_{i=1}^{m} \!\left( \sum_{j=1}^{n} a_{ij} c_j \right) \mathbf{w}_i.$$
+
+The expression in parentheses is exactly the $i$-th entry of the matrix-vector product $A \mathbf{c}$, so the $i$-th coordinate of $T(\mathbf{v})$ in $\mathcal{C}$ is $(A \mathbf{c})_i$. That is the claim.
+
+</TheoremBlock>
+
+The theorem turns the abstract definition of a linear map into a concrete computation. To apply $T$ to a vector $\mathbf{v}$, write $\mathbf{v}$ in coordinates in the input basis, look up the matrix $[T]_{\mathcal{C} \leftarrow \mathcal{B}}$, multiply, and read off the answer in the output basis. Every linear-algebra library on every platform does exactly this. Two examples make the matrix-of-a-map idea concrete.
+
+<TheoremBlock type="example" number={9} title="Standard Matrix of a Rotation in ℝ²">
+
+The rotation $R_\theta \colon \mathbb{R}^2 \to \mathbb{R}^2$ from Example 5 sends the standard basis to
+
+$$R_\theta(\mathbf{e}_1) = (\cos\theta, \sin\theta), \qquad R_\theta(\mathbf{e}_2) = (-\sin\theta, \cos\theta).$$
+
+By Definition 8, those two image vectors are the columns of $[R_\theta]$ in the standard basis:
+
+$$[R_\theta] = \begin{pmatrix} \cos\theta & -\sin\theta \\ \sin\theta & \;\cos\theta \end{pmatrix}.$$
+
+Applying Theorem 2 with $\mathbf{c} = (x, y)^\top$ recovers the formula $R_\theta(x, y) = (x \cos\theta - y \sin\theta, \; x \sin\theta + y \cos\theta)$ from Example 5 — exactly as expected. The viz's "Rotation by 30°" and "Rotation by 90°" presets are this matrix at $\theta = \pi/6$ and $\theta = \pi/2$ respectively.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={10} title="Matrix of Projection onto the x-axis">
+
+Let $P \colon \mathbb{R}^2 \to \mathbb{R}^2$ be the map $P(x, y) = (x, 0)$. Then $P(\mathbf{e}_1) = (1, 0)$ and $P(\mathbf{e}_2) = (0, 0)$, so
+
+$$[P] = \begin{pmatrix} 1 & 0 \\ 0 & 0 \end{pmatrix}.$$
+
+The second column is all zeros, which is exactly the statement that $\mathbf{e}_2 \in \ker P$ — read columnwise. Whenever you spot a zero column in a matrix, you have spotted a basis vector in the kernel. This is the first of many "structural facts of the matrix that you read off geometrically without computing anything" the topic will accumulate.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={5} title="Why the Columns Are the Images of Basis Vectors">
+
+The single most important fact of linear-algebra pedagogy — the one most often skipped over in undergraduate courses and the one that makes the viz above the centerpiece of this section — is that **the $j$-th column of a matrix is the place the $j$-th basis vector lands**. Once that is internalized, almost every matrix manipulation becomes a geometric statement:
+
+- A column of zeros means the corresponding basis vector is in the kernel.
+- Two equal columns mean the matrix sends two basis vectors to the same image, so the kernel contains the difference.
+- A square matrix has linearly independent columns if and only if no two input basis vectors collide and none collapses to zero, which is exactly the condition that $T$ is invertible.
+- The image of a matrix is the span of its columns — period. The "column space" of a matrix and the image of the underlying linear map are the same set.
+
+Every one of those statements is just Definition 8 plus a moment's thought about what linear-combination means. The standard order of pedagogy reverses this — first the row-by-column rule, then the geometric consequences — but reversing the ordering loses the *reason* the row-by-column rule looks the way it does. We will return to this picture repeatedly; treat it as the topic's central image.
+
+</TheoremBlock>
+
+**ML aside.** A fully-connected (dense) layer without bias and without nonlinearity is the map $\mathbf{h} = W \mathbf{x}$, where $W$ is a learned weight matrix. The $j$-th column of $W$ is, by exactly Definition 8, *what this layer does to the $j$-th input neuron* — its "response pattern" when only neuron $j$ is active. One popular interpretability technique is to literally render those columns as images (for image inputs) or words (for embedding inputs) and see what the layer has learned to "look for." When you read a paper that visualizes the "feature detectors" of a neural network's first layer, you are looking at columns of $W$ rendered as pictures — Definition 8 doing interpretability work.
+
+## 6. Matrix Algebra
+
+We now have one matrix per linear map. The next question is what happens when we *combine* linear maps. The two combinations that matter — composition (do one map, then another) and scaling/addition of maps — give matrix operations: matrix multiplication, scalar multiplication of matrices, and matrix addition. The standard undergraduate course postulates the rules for these operations (especially the row-by-column rule for multiplication) and asks the student to verify that they have nice properties. **We do the reverse.** Composition of linear maps is the more fundamental operation, and we derive the row-by-column rule as the formula that records it. The pedagogical commitment of this section is that matrix multiplication is *defined to be* composition; the row-times-column arithmetic is the consequence.
+
+This ordering matters far beyond this section. The chain rule for Jacobians, the spectral theorem, the diagonalization of a covariance matrix, the composition of layers in a neural network — every downstream concept becomes a matrix-multiplication statement, and every one of them is easier to see if you read matrix multiplication as composition rather than as a memorized formula.
+
+<TheoremBlock type="definition" number={10} title="Composition of Linear Maps">
+
+Let $T \colon V \to W$ and $S \colon W \to U$ be linear maps. Their **composition** $S \circ T \colon V \to U$ is the function
+
+$$(S \circ T)(\mathbf{v}) = S(T(\mathbf{v})), \qquad \mathbf{v} \in V.$$
+
+The composition of two linear maps is itself linear: $(S \circ T)(a \mathbf{u} + b \mathbf{v}) = S(T(a \mathbf{u} + b \mathbf{v})) = S(a T(\mathbf{u}) + b T(\mathbf{v})) = a S(T(\mathbf{u})) + b S(T(\mathbf{v})) = a (S \circ T)(\mathbf{u}) + b (S \circ T)(\mathbf{v})$, applying the linearity axioms of $T$ once and of $S$ once.
+
+</TheoremBlock>
+
+So the composition $S \circ T$ is itself a linear map, and therefore it has a matrix. The question of this section is: what is that matrix? We answer it by chasing where each basis vector of $V$ ends up under the composition, expressing the result in coordinates, and reading off the rule.
+
+<TheoremBlock type="definition" number={11} title="Matrix Product">
+
+Let $B$ be an $\ell \times m$ matrix and $A$ be an $m \times n$ matrix. The **matrix product** $BA$ is the $\ell \times n$ matrix whose $(i, k)$ entry is
+
+$$(BA)_{ik} = \sum_{j=1}^{m} B_{ij}\, A_{jk}, \qquad 1 \leq i \leq \ell, \; 1 \leq k \leq n.$$
+
+</TheoremBlock>
+
+That is the row-by-column rule, written out. We are *naming* it for now; we have not yet motivated it. The next theorem motivates it — by showing that $BA$ is the matrix that records the composition $S \circ T$ whenever $A$ is the matrix of $T$ and $B$ is the matrix of $S$.
+
+<TheoremBlock type="theorem" number={3} title="Matrix Product Computes Composition">
+
+Let $T \colon V \to W$ and $S \colon W \to U$ be linear maps between finite-dimensional vector spaces. Fix bases $\mathcal{B}$ of $V$, $\mathcal{C}$ of $W$, and $\mathcal{D}$ of $U$. Let
+
+$$A = [T]_{\mathcal{C} \leftarrow \mathcal{B}}, \qquad B = [S]_{\mathcal{D} \leftarrow \mathcal{C}}$$
+
+be the matrices of $T$ and $S$ in those bases. Then the matrix of the composition in the bases $\mathcal{B}$ and $\mathcal{D}$ is the matrix product
+
+$$[S \circ T]_{\mathcal{D} \leftarrow \mathcal{B}} = B A.$$
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+We chase where each basis vector of $V$ ends up under the composition and read off the result columnwise, since by Definition 8 the $k$-th column of $[S \circ T]_{\mathcal{D} \leftarrow \mathcal{B}}$ is the coordinate vector of $(S \circ T)(\mathbf{v}_k)$ in the basis $\mathcal{D}$.
+
+Write the bases as $\mathcal{B} = \{\mathbf{v}_1, \ldots, \mathbf{v}_n\}$, $\mathcal{C} = \{\mathbf{w}_1, \ldots, \mathbf{w}_m\}$, $\mathcal{D} = \{\mathbf{u}_1, \ldots, \mathbf{u}_\ell\}$, with $A = (a_{jk})$ an $m \times n$ matrix and $B = (b_{ij})$ an $\ell \times m$ matrix.
+
+**Step 1: apply $T$ to $\mathbf{v}_k$.** By Definition 8 applied to $T$,
+
+$$T(\mathbf{v}_k) = \sum_{j=1}^{m} a_{jk}\, \mathbf{w}_j.$$
+
+**Step 2: apply $S$ to the result.** Using linearity of $S$ to pull the sum out, then Definition 8 applied to $S$ to expand each $S(\mathbf{w}_j)$,
+
+$$(S \circ T)(\mathbf{v}_k) = S(T(\mathbf{v}_k)) = S\!\left( \sum_{j=1}^{m} a_{jk}\, \mathbf{w}_j \right) = \sum_{j=1}^{m} a_{jk}\, S(\mathbf{w}_j) = \sum_{j=1}^{m} a_{jk} \sum_{i=1}^{\ell} b_{ij}\, \mathbf{u}_i.$$
+
+**Step 3: swap the order of summation and read off the coordinates.** The two sums are finite, so we may interchange them:
+
+$$(S \circ T)(\mathbf{v}_k) = \sum_{i=1}^{\ell} \!\left( \sum_{j=1}^{m} b_{ij}\, a_{jk} \right) \mathbf{u}_i.$$
+
+The parenthesized quantity is the $i$-th coordinate of $(S \circ T)(\mathbf{v}_k)$ in the basis $\mathcal{D}$. By Definition 8, that quantity is the $(i, k)$ entry of the matrix $[S \circ T]_{\mathcal{D} \leftarrow \mathcal{B}}$.
+
+**Step 4: recognize the row-by-column rule.** Compare $\sum_{j=1}^{m} b_{ij}\, a_{jk}$ to the right-hand side of Definition 11:
+
+$$(BA)_{ik} = \sum_{j=1}^{m} B_{ij}\, A_{jk} = \sum_{j=1}^{m} b_{ij}\, a_{jk}.$$
+
+The two expressions are literally identical. So the $(i, k)$ entry of $[S \circ T]_{\mathcal{D} \leftarrow \mathcal{B}}$ equals the $(i, k)$ entry of the matrix product $BA$, for every $i$ and every $k$. The two matrices are equal entrywise, hence equal as matrices.
+
+</TheoremBlock>
+
+This is the structural fact the entire row-by-column rule descends from. The rule is not arbitrary; it is the unique formula that records the composition of two linear maps in coordinates. Three immediate consequences worth noticing:
+
+- The number of columns of $B$ must equal the number of rows of $A$, because the basis $\mathcal{C}$ of $W$ has to match between "where $T$ sends things" and "where $S$ takes them from."
+- The result $BA$ has the row count of $B$ and the column count of $A$ — the rows of the *outer* map and the columns of the *inner* one.
+- The order $BA$ (not $AB$) is the order that records $S \circ T$ — outermost map on the left. We apply $T$ first to a vector and then $S$, but we write the matrix product with $S$'s matrix first. This is the conventional inconsistency that occasionally trips up newcomers; the proof above is what fixes the order.
+
+The remaining operations on matrices — transpose, scalar addition, inverse — flow from the same recipe. Each is the matrix-side mirror of a natural operation on linear maps.
+
+<TheoremBlock type="definition" number={12} title="Transpose">
+
+The **transpose** of an $m \times n$ matrix $A = (a_{ij})$ is the $n \times m$ matrix $A^\top$ whose entries are $(A^\top)_{ji} = a_{ij}$. Equivalently, the rows of $A$ are the columns of $A^\top$ and vice versa.
+
+</TheoremBlock>
+
+Geometrically, the transpose is the matrix of the **adjoint** of the linear map with respect to the standard inner product — a fact we will only state here and develop fully in §10 (and again in the *Hilbert Spaces* topic on the functional-analysis track). For now, the operation is just an entry-swapping rule.
+
+<TheoremBlock type="definition" number={13} title="Identity Matrix and Invertibility">
+
+The **identity matrix of size $n$**, written $I_n$, is the $n \times n$ matrix whose entries are
+
+$$(I_n)_{ij} = \begin{cases} 1 & \text{if } i = j, \\ 0 & \text{otherwise.} \end{cases}$$
+
+It is the matrix of the identity linear map $\mathrm{id}_V \colon V \to V$ (sending every $\mathbf{v}$ to itself) in any basis.
+
+A square matrix $A$ of size $n$ is **invertible** if there exists a matrix $A^{-1}$ of the same size satisfying
+
+$$A A^{-1} = A^{-1} A = I_n.$$
+
+When such an $A^{-1}$ exists it is unique, and it is called the **inverse** of $A$.
+
+</TheoremBlock>
+
+By Theorem 3 (and the fact that the identity map has the identity matrix in any basis), $A$ is invertible if and only if the linear map it represents has a two-sided inverse — i.e., is a bijection. Section 8 will collect this with several other equivalent characterizations of invertibility into a single corollary; for now, just note that "invertible" is a property of the underlying linear map, not of the bookkeeping that records it.
+
+<TheoremBlock type="proposition" number={3} title="Properties of Matrix Algebra">
+
+For matrices of compatible sizes and scalars $c \in \mathbb{R}$:
+
+1. **(Associativity of multiplication)** $\;(AB)C = A(BC)$.
+2. **(Distributivity)** $\;A(B + C) = AB + AC$ and $(A + B)C = AC + BC$.
+3. **(Transpose of a product)** $\;(AB)^\top = B^\top A^\top$. *Note the order reversal.*
+4. **(Non-commutativity)** In general, $AB \neq BA$. Matrix multiplication is *not* a commutative operation.
+
+</TheoremBlock>
+
+Properties (1) and (2) are immediate from Theorem 3 once you recognize the matrix-side claims as the matrix-side mirrors of well-known statements about functions: function composition is associative ($(f \circ g) \circ h = f \circ (g \circ h)$), and linearity gives the two distributive laws automatically. Property (3) — the order reversal under transpose — is a one-line entry-wise computation that we'll work in §10 once inner products give the operation a geometric meaning. Property (4) is the one worth dwelling on: it is the matrix-side reflection of the fact that *function composition is not commutative*. "First rotate, then shear" and "first shear, then rotate" are genuinely different procedures that produce different output vectors from the same input.
+
+<TheoremBlock type="example" number={11} title="Non-commutativity Made Geometric">
+
+Let $A$ be the matrix of rotation by $90°$ and $B$ be the matrix of the horizontal shear with $k = 1$:
+
+$$A = \begin{pmatrix} 0 & -1 \\ 1 & \;0 \end{pmatrix}, \qquad B = \begin{pmatrix} 1 & 1 \\ 0 & 1 \end{pmatrix}.$$
+
+Compute both orderings directly:
+
+$$AB = \begin{pmatrix} 0 & -1 \\ 1 & \;0 \end{pmatrix} \begin{pmatrix} 1 & 1 \\ 0 & 1 \end{pmatrix} = \begin{pmatrix} \;0 & -1 \\ \;1 & \;1 \end{pmatrix},$$
+
+$$BA = \begin{pmatrix} 1 & 1 \\ 0 & 1 \end{pmatrix} \begin{pmatrix} 0 & -1 \\ 1 & \;0 \end{pmatrix} = \begin{pmatrix} 1 & -1 \\ 1 & \;0 \end{pmatrix}.$$
+
+The two products are different. Geometrically, $AB$ applies the shear first and then the rotation: the standard square is sheared into a parallelogram and then that parallelogram is rotated $90°$. $BA$ rotates first and then shears: the square turns into a different square, which is then sheared into a *different* parallelogram. Both endings have the same area (because $\det(AB) = \det(BA) = 1$ — the product of determinants), but they sit in different places and have different shapes. Non-commutativity is a structural feature, not a quirk of the formula.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={6} title="Geometric Meaning of the Inverse">
+
+A square matrix $A$ of size $n$ is invertible if and only if the linear map it represents is a bijection — every output is hit by exactly one input. That single geometric condition is equivalent to all of the following, which §8 will collect into a single corollary by the rank-nullity theorem:
+
+- $A$'s columns are linearly independent (no redundancy among the basis-vector images).
+- $A$'s rank is $n$ (the image fills $\mathbb{R}^n$).
+- $\ker A = \{\mathbf{0}\}$ (no inputs other than zero are sent to zero).
+- $\det A \neq 0$ (the parallelepiped spanned by the columns has nonzero volume — §7).
+- The system $A \mathbf{x} = \mathbf{b}$ has a unique solution for every $\mathbf{b}$.
+
+The remarkable fact is that *all of these conditions are equivalent* — they are the same statement read different ways through the rank-nullity theorem. We will prove their equivalence in §8. Until then, treat them as a single rich notion of "the matrix represents an honest one-to-one onto linear map," and use whichever of the five characterizations is convenient at the moment.
+
+</TheoremBlock>
+
+**ML aside.** Stacking $L$ layers in a neural network — without the biases and the nonlinearities — computes $W_L W_{L-1} \cdots W_2 W_1 \mathbf{x}$, a single matrix product by Theorem 3. The reason a deep linear network "collapses" to a single effective matrix, and therefore has the same expressive power as a one-layer linear model, is exactly the composition rule of this section: composing linear maps gives a linear map, and the matrix of the composition is the product of the matrices. The reason deep networks are interesting at all is the nonlinearity $\sigma$ between layers: applying $\sigma$ after each linear step breaks the composition collapse, because composing a linear map with a nonlinear function is no longer linear and the matrix-product shortcut no longer applies. Every "depth" argument in deep learning theory works through this distinction.
