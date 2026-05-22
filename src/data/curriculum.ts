@@ -69,8 +69,8 @@ export const tracks: Track[] = [
     title: 'Probability Foundations',
     description: 'Kolmogorov axioms, conditional probability, the union bound — a concrete-probability ramp to the measure-theoretic foundations.',
     domain: 'probability-foundations',
-    published: [],
-    planned: ['Probability & The Union Bound'],
+    published: ['Probability & The Union Bound'],
+    planned: [],
   },
   {
     id: 'measure-integration',

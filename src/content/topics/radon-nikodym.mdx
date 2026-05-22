@@ -602,7 +602,7 @@ The $L^2$-best-predictor theorem says: among **all** functions of $X$, the one t
 
 ## 10. Change of Measure and Importance Sampling
 
-The change-of-measure identity is the operational use of R-N derivatives that ML practitioners encounter most often: it is the engine of importance sampling, REINFORCE policy gradients, and the variational lower bound. The identity is short, the proof is the standard "indicator → simple → non-negative measurable → general" machine, and the consequences are everywhere.
+The change-of-measure identity is the operational use of R-N derivatives that ML practitioners encounter most often: it is the engine of importance sampling, REINFORCE policy gradients, and the variational lower bound. The identity is short, the proof is the standard "indicator → simple → non-negative measurable → general" machine, and the consequences are everywhere. When the importance weights $w = dP/dQ$ become unbounded, the Hoeffding tail bound used to certify importance-sampling accuracy collapses and one falls back to Chebyshev with the variance of the weights — exactly the Markov → Chebyshev → Hoeffding gap analyzed in [Probability & The Union Bound](/topics/probability-and-union-bound).
 
 <TheoremBlock type="theorem" number={7} title="Change of measure">
 
