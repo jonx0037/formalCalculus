@@ -100,6 +100,7 @@ references:
 import TheoremBlock from '../../components/ui/TheoremBlock.astro';
 import UnionBoundTightnessExplorer from '../../components/viz/UnionBoundTightnessExplorer.tsx';
 import BorelCantelliExplorer from '../../components/viz/BorelCantelliExplorer.tsx';
+import ConcentrationLadderExplorer from '../../components/viz/ConcentrationLadderExplorer.tsx';
 
 ## 1. Three Puzzles the Union Bound Solves
 
@@ -643,6 +644,200 @@ Hoeffding's inequality (Theorem 7 below) replaces this polynomial rate with an e
 For a Gaussian random variable $X \sim N(0, 1)$, the actual tail is $P(|X| \geq t) \leq 2 e^{-t^2 / 2}$ — exponentially decaying. Chebyshev gives only $1/t^2$ — polynomial. At $t = 3$, the Gaussian tail is $\approx 0.0027$, while Chebyshev says $\leq 1/9 \approx 0.111$ — off by nearly two orders of magnitude.
 
 This gap between polynomial Chebyshev bounds and exponential true tails is what motivates Hoeffding's inequality: when we know more about the random variable (boundedness, sub-Gaussian moment generating function), we can replace the polynomial decay with an exponential one. The MGF method developed in §8 is the standard route.
+
+</TheoremBlock>
+
+## 8. Hoeffding's Inequality
+
+The third rung of the concentration ladder. Hoeffding's inequality replaces Chebyshev's polynomial $1/n$ decay with an *exponential* $e^{-2n\epsilon^2}$ decay, at the cost of one additional hypothesis: that the random variables are bounded. The proof is the canonical *moment-generating-function method* of concentration, and it is short.
+
+<TheoremBlock type="definition" number={5} title="Moment generating function">
+
+For a random variable $X$, the *moment generating function* (MGF) is
+
+$$M_X(t) = E[e^{tX}],$$
+
+defined for those $t \in \mathbb{R}$ at which the expectation is finite.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={11} title="MGF as a self-contained tool">
+
+This is the only place in the topic where the MGF appears. We use it as a single technical device: $X$ has a *small* MGF $\Leftrightarrow$ $X$ has *light* tails. Markov's inequality applied to the non-negative random variable $e^{tX}$ converts a bound on the MGF into a bound on $P(X \geq a)$. The rigorous Lebesgue-integral foundations of expectation, conditions for the MGF to exist in a neighborhood of $0$, and the Cramér–Chernoff method are developed in [The Lebesgue Integral](/topics/lebesgue-integral) *(forward)* and in formalML's [Concentration Inequalities](https://formalml.com/topics/concentration-inequalities) → formalML. Here we treat the MGF as a black box that produces the bound.
+
+</TheoremBlock>
+
+The technical heart of the proof is the following lemma, which bounds the MGF of a centered bounded random variable by a Gaussian-like envelope.
+
+<TheoremBlock type="lemma" number={1} title="Hoeffding's lemma">
+
+If $X$ is a random variable with $E[X] = 0$ and $a \leq X \leq b$ almost surely, then for every $t \in \mathbb{R}$:
+
+$$E[e^{tX}] \leq \exp\!\left(\frac{t^2 (b - a)^2}{8}\right).$$
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+**Proof sketch.** The function $x \mapsto e^{tx}$ is convex. For $x \in [a, b]$, convexity gives the chord bound
+
+$$e^{tx} \leq \frac{b - x}{b - a} e^{ta} + \frac{x - a}{b - a} e^{tb}.$$
+
+Take expectations on both sides, using $E[X] = 0$:
+
+$$E[e^{tX}] \leq \frac{b}{b - a} e^{ta} - \frac{a}{b - a} e^{tb} =: e^{\phi(t)},$$
+
+where $\phi(t)$ is the logarithm of the right-hand side. Direct calculus shows $\phi(0) = 0$, $\phi'(0) = 0$, and $\phi''(t) \leq (b - a)^2 / 4$ uniformly in $t$. By Taylor's theorem (see [Taylor Series and Polynomial Approximation](/topics/power-taylor-series)),
+
+$$\phi(t) \leq \frac{t^2 (b - a)^2}{8}.$$
+
+Exponentiating gives the claim. The full algebra is performed in the [companion notebook](/notebooks/probability-and-union-bound).  $\blacksquare$
+
+</TheoremBlock>
+
+With Hoeffding's lemma in hand, the proof of Hoeffding's inequality is a clean application of Markov, independence, and a one-variable optimization.
+
+<TheoremBlock type="theorem" number={7} title="Hoeffding's inequality">
+
+Let $X_1, X_2, \ldots, X_n$ be *independent* random variables with $a_i \leq X_i \leq b_i$ almost surely. Let $S_n = \sum_{i=1}^n X_i$. Then for any $t > 0$:
+
+$$P(S_n - E[S_n] \geq t) \leq \exp\!\left(-\frac{2 t^2}{\sum_{i=1}^n (b_i - a_i)^2}\right).$$
+
+The symmetric two-sided form follows by union bound on the two one-sided events:
+
+$$P(|S_n - E[S_n]| \geq t) \leq 2 \exp\!\left(-\frac{2 t^2}{\sum_{i=1}^n (b_i - a_i)^2}\right).$$
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+**Full proof.** Without loss of generality assume each $E[X_i] = 0$ (otherwise subtract the means; the bound is unchanged). The proof proceeds in five steps, each rendered as its own display block to keep the KaTeX-renderable structure clean.
+
+*Step 1.* Apply Markov's inequality to the non-negative random variable $e^{\lambda S_n}$ at the threshold $e^{\lambda t}$ (for any $\lambda > 0$):
+
+$$P(S_n \geq t) = P(e^{\lambda S_n} \geq e^{\lambda t}) \leq e^{-\lambda t} \, E[e^{\lambda S_n}].$$
+
+*Step 2.* By independence of the $X_i$, the MGF of $S_n$ factors:
+
+$$E[e^{\lambda S_n}] = E\!\left[\prod_{i=1}^n e^{\lambda X_i}\right] = \prod_{i=1}^n E[e^{\lambda X_i}].$$
+
+*Step 3.* Apply Hoeffding's lemma to each $X_i$ (centered, bounded in $[a_i, b_i]$):
+
+$$E[e^{\lambda X_i}] \leq \exp\!\left(\frac{\lambda^2 (b_i - a_i)^2}{8}\right).$$
+
+Multiply across $i$ to obtain $E[e^{\lambda S_n}] \leq \exp\!\left(\frac{\lambda^2}{8} \sum_i (b_i - a_i)^2\right)$.
+
+*Step 4.* Combine Steps 1 and 3:
+
+$$P(S_n \geq t) \leq \exp\!\left(-\lambda t + \frac{\lambda^2}{8} \sum_{i=1}^n (b_i - a_i)^2\right).$$
+
+*Step 5.* The right-hand side is a quadratic in $\lambda$; its minimum over $\lambda > 0$ is at $\lambda^* = 4t / \sum_i (b_i - a_i)^2$. Substituting back:
+
+$$P(S_n \geq t) \leq \exp\!\left(-\frac{2 t^2}{\sum_{i=1}^n (b_i - a_i)^2}\right).$$
+
+This is the one-sided bound. The two-sided bound follows by applying the same argument to $-X_i$ (which gives $P(S_n \leq -t) \leq \exp(\cdots)$) and combining the two one-sided events via Boole's inequality, contributing the factor of $2$.  $\blacksquare$
+
+</TheoremBlock>
+
+The most common form in practice is the i.i.d. average over $[0, 1]$-bounded variables.
+
+<TheoremBlock type="corollary" number={2} title="Hoeffding for i.i.d. averages on [0, 1]">
+
+Let $X_1, \ldots, X_n$ be i.i.d. with $X_i \in [0, 1]$, and let $\bar X_n = \frac{1}{n} \sum_{i=1}^n X_i$. Then for any $\epsilon > 0$:
+
+$$P(|\bar X_n - E[X]| \geq \epsilon) \leq 2 \exp(-2 n \epsilon^2).$$
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+Apply Theorem 7 to $S_n = \sum X_i$ with $a_i = 0, b_i = 1$ for every $i$ and $t = n \epsilon$. The denominator $\sum (b_i - a_i)^2 = n$, so the exponent becomes $-2 (n \epsilon)^2 / n = -2 n \epsilon^2$.  $\blacksquare$
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={13} title="Hoeffding vs. Chebyshev on Bernoulli sums">
+
+Let $X_1, \ldots, X_n$ be i.i.d. Bernoulli$(1/2)$, $S_n = \sum X_i$. The variance of $S_n$ is $n/4$, so by Chebyshev, $P(|S_n - n/2| \geq \sqrt n \cdot k) \leq 1/(4 k^2)$. By Hoeffding (Corollary 2 applied to $\bar X_n$ with $\epsilon = k / \sqrt n$), the same tail is at most $2 \exp(-2 k^2)$.
+
+At $k = 3$ standard deviations: Chebyshev gives $\leq 1/(4 \cdot 9) \approx 0.028$, Hoeffding gives $\leq 2 e^{-18} \approx 3 \times 10^{-8}$. Hoeffding is **six orders of magnitude tighter** at three sigmas. At $k = 5$, the gap is $\sim 10^{16}$. The accompanying visualization plots all three bounds against the empirical Monte Carlo tail and shows the gap visually.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={12} title="Where Hoeffding falls short">
+
+Hoeffding's inequality only knows the *range* $[a_i, b_i]$ of each $X_i$, not the variance. For random variables with small variance but large range — say $X_i = 1000$ with probability $10^{-6}$ and $0$ otherwise — Hoeffding's bound is wasteful: it scales with $(b_i - a_i)^2 = 10^6$, but the actual variance is $\sigma^2 \approx 10^{-3}$. Bernstein's and Bennett's inequalities replace the range with the variance and recover exponentially tighter bounds in this regime. These live in formalML's [Concentration Inequalities](https://formalml.com/topics/concentration-inequalities) → formalML and are the natural successors to Hoeffding.
+
+</TheoremBlock>
+
+The interactive visualization below overlays the empirical sample-mean tail against Markov, Chebyshev, and Hoeffding for a chosen distribution. On the log scale, Hoeffding shows up as a straight line whose slope steepens with $n$; Chebyshev curves more slowly; Markov is approximately constant. The empirical tail tracks Hoeffding closely — much more closely than it tracks Chebyshev.
+
+<ConcentrationLadderExplorer client:visible />
+
+## 9. The Union Bound + Concentration Pattern
+
+This is the ML synthesis. Hoeffding gives a per-event tail bound. The union bound combines $m$ per-event bounds into a single uniform bound. The result has the per-event deviation grow only by $\sqrt{\log m}$, regardless of $m$ — a fact so remarkable that essentially the entire learning-theoretic literature is built on it.
+
+<TheoremBlock type="theorem" number={8} title="Uniform Hoeffding bound over a finite class">
+
+Let $\mathcal{H}$ be a finite collection of indices ("hypotheses"). For each $h \in \mathcal{H}$, let $X_{1, h}, \ldots, X_{n, h}$ be i.i.d. random variables with $X_{i, h} \in [0, 1]$ and $E[X_{i, h}] = \mu_h$, and let $\hat \mu_h = \frac{1}{n} \sum_{i=1}^n X_{i, h}$. Then for any $\delta \in (0, 1)$:
+
+$$P\!\left(\max_{h \in \mathcal{H}} |\hat \mu_h - \mu_h| \geq \sqrt{\frac{\log(2 |\mathcal{H}| / \delta)}{2 n}}\right) \leq \delta.$$
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+Fix $\epsilon = \sqrt{\log(2 |\mathcal{H}| / \delta) / (2 n)}$. For each fixed $h \in \mathcal{H}$, Corollary 2 gives
+
+$$P(|\hat \mu_h - \mu_h| \geq \epsilon) \leq 2 e^{-2 n \epsilon^2}.$$
+
+Substitute the chosen $\epsilon$:
+
+$$2 e^{-2 n \epsilon^2} = 2 \exp(-\log(2 |\mathcal{H}| / \delta)) = 2 \cdot \frac{\delta}{2 |\mathcal{H}|} = \frac{\delta}{|\mathcal{H}|}.$$
+
+Now apply Boole's inequality across $h \in \mathcal{H}$:
+
+$$P\!\left(\bigcup_{h \in \mathcal{H}} \{|\hat \mu_h - \mu_h| \geq \epsilon\}\right) \leq \sum_{h \in \mathcal{H}} P(|\hat \mu_h - \mu_h| \geq \epsilon) \leq |\mathcal{H}| \cdot \frac{\delta}{|\mathcal{H}|} = \delta.$$
+
+The event $\{\max_h |\hat \mu_h - \mu_h| \geq \epsilon\}$ equals the union event on the left, so its probability is at most $\delta$.  $\blacksquare$
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={13} title="The log m tax">
+
+The takeaway in one sentence: **the price of taking a union over $m$ events with Hoeffding tails is $\sqrt{\log m}$ inside the deviation, not $\sqrt{m}$**. To bound the maximum of $m$ Hoeffding-tailed sample means at confidence $1 - \delta$, we needed per-event deviation $\epsilon = \sqrt{\log(2 m / \delta) / (2 n)}$ — which grows like $\sqrt{\log m}$, an extremely slow function of $m$. Doubling $m$ adds only $\sqrt{\log 2} \approx 0.83$ to the *logarithm* of the deviation; multiplying $m$ by $1000$ multiplies the deviation by $\sqrt{\log 1000 / \log 2} \approx 3.16$ at fixed $\delta, n$.
+
+This is the entire engine of *uniform convergence* in learning theory: exponentially many bad events, only logarithmically more deviation. Replace finite classes with covering / VC arguments and the same conclusion extends to continuous hypothesis classes — the unifying idea is preserved.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={14} title="The PAC generalization bound">
+
+Let $\mathcal{H}$ be a finite hypothesis class, and let $\hat R(h) = \frac{1}{n} \sum_{i=1}^n \mathbf{1}_{\{h(x_i) \neq y_i\}}$ be the training error of hypothesis $h$ on $n$ i.i.d. samples $(x_i, y_i)$, with true risk $R(h) = E[\hat R(h)]$. By Theorem 8 applied to $X_{i,h} = \mathbf{1}_{\{h(x_i) \neq y_i\}}$:
+
+With probability at least $1 - \delta$, simultaneously for every $h \in \mathcal{H}$:
+
+$$|\hat R(h) - R(h)| \leq \sqrt{\frac{\log(2 |\mathcal{H}| / \delta)}{2 n}}.$$
+
+Let $\hat h = \arg\min_{h \in \mathcal{H}} \hat R(h)$ be the empirical risk minimizer (ERM), and let $h^* = \arg\min_{h \in \mathcal{H}} R(h)$ be the best-in-class hypothesis. Then with the same probability,
+
+$$R(\hat h) \leq \hat R(\hat h) + \epsilon \leq \hat R(h^*) + \epsilon \leq R(h^*) + 2 \epsilon,$$
+
+where $\epsilon = \sqrt{\log(2 |\mathcal{H}|/\delta) / (2 n)}$. The first inequality uses the uniform bound on $\hat h$; the second uses that $\hat h$ minimizes $\hat R$; the third uses the uniform bound on $h^*$. So the ERM's true risk is within $2 \epsilon$ of the best-in-class true risk — and $\epsilon$ shrinks like $1/\sqrt n$ while growing only as $\sqrt{\log |\mathcal{H}|}$.
+
+This is the canonical PAC bound for finite hypothesis classes. Forward link: [Generalization Bounds](https://formalml.com/topics/generalization-bounds) → formalML for VC dimension and Rademacher complexity, which replace $\log|\mathcal{H}|$ with structural complexity measures for infinite classes.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={15} title="UCB bandit confidence intervals">
+
+In a $K$-armed bandit, pulling arm $a$ at time $t$ produces a reward $X_{a, t} \in [0, 1]$ i.i.d. with unknown mean $\mu_a$. After $n_a$ pulls of arm $a$, the empirical mean is $\hat \mu_a = \frac{1}{n_a} \sum_{t : a_t = a} X_{a, t}$. By Hoeffding, for any $\delta_0 > 0$:
+
+$$P\!\left(|\hat \mu_a - \mu_a| \geq \sqrt{\frac{\log(2 / \delta_0)}{2 n_a}}\right) \leq \delta_0.$$
+
+The Upper-Confidence-Bound (UCB) algorithm pulls the arm with the largest $\hat \mu_a + \text{confidence width}$. To guarantee simultaneous validity over all $K$ arms and $T$ time steps, set $\delta_0 = \delta / (K T)$ and apply Boole over the $K T$ arm-time pairs: with probability $1 - \delta$, all confidence intervals are simultaneously valid throughout the horizon. The resulting confidence width $\sqrt{\log(2 K T / \delta) / (2 n_a)}$ is exactly the UCB exploration bonus.
+
+Forward link: [Multi-Armed Bandits](https://formalml.com/topics/multi-armed-bandits) → formalML, where the same construction is the core of the algorithm's regret analysis.
 
 </TheoremBlock>
 
