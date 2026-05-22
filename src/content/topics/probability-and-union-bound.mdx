@@ -282,3 +282,165 @@ Two events $A$ and $B$ are independent under one probability measure $P$ and dep
 
 </TheoremBlock>
 
+## 4. The Union Bound (Boole's Inequality)
+
+The centerpiece of this topic. The statement is one line; the proof is two; the consequences fill the rest of the curriculum.
+
+<TheoremBlock type="theorem" number={1} title="Boole's inequality (the union bound)">
+
+For any countable sequence of events $(A_n)_{n \geq 1}$ in a probability space:
+
+$$P\!\left(\bigcup_n A_n\right) \leq \sum_n P(A_n).$$
+
+Equality holds if and only if the events are pairwise disjoint up to a null set — i.e., $P(A_i \cap A_j) = 0$ for every $i \neq j$.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+Define a disjointified sequence: set $B_1 = A_1$, and for $n \geq 2$ let $B_n = A_n \setminus \bigcup_{k < n} A_k$. Three properties hold by construction.
+
+First, the $(B_n)$ are pairwise disjoint: if $i < j$, then $B_j \subseteq A_j \setminus A_i$, so $B_j$ contains no point of $A_i \supseteq B_i$.
+
+Second, $B_n \subseteq A_n$ for every $n$ (subtracting a set can only make $A_n$ smaller).
+
+Third, $\bigcup_n B_n = \bigcup_n A_n$. The $\subseteq$ direction is immediate from $B_n \subseteq A_n$. For the $\supseteq$ direction: any $\omega \in \bigcup_n A_n$ lies in some $A_n$; let $n$ be the smallest index with $\omega \in A_n$. Then $\omega \in A_n$ but $\omega \notin A_k$ for $k < n$, so $\omega \in B_n$.
+
+Now apply countable additivity to $(B_n)$ and monotonicity to $B_n \subseteq A_n$:
+
+$$P\!\left(\bigcup_n A_n\right) = P\!\left(\bigcup_n B_n\right) = \sum_n P(B_n) \leq \sum_n P(A_n).$$
+
+For the equality case: $P(B_n) = P(A_n \setminus \bigcup_{k < n} A_k) = P(A_n) - P(A_n \cap \bigcup_{k < n} A_k)$ by Proposition 1(iv) applied to the disjoint union $A_n = B_n \sqcup (A_n \cap \bigcup_{k < n} A_k)$. So $\sum_n P(B_n) = \sum_n P(A_n)$ forces every $P(A_n \cap \bigcup_{k < n} A_k) = 0$, which is equivalent to every pairwise intersection $P(A_i \cap A_j) = 0$ for $i \neq j$.  $\blacksquare$
+
+</TheoremBlock>
+
+The proof is the bookkeeping of disjointifying a sequence — the entire content is that "the events overlap" subtracts from the total. The next two consequences are the working tools.
+
+<TheoremBlock type="corollary" number={1} title="Bonferroni's inequality">
+
+For any finite or countable family of events $A_1, A_2, \ldots$:
+
+$$P\!\left(\bigcap_i A_i\right) \geq 1 - \sum_i P(A_i^c).$$
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+By De Morgan, $\left(\bigcap_i A_i\right)^c = \bigcup_i A_i^c$. So
+
+$$P\!\left(\bigcap_i A_i\right) = 1 - P\!\left(\bigcup_i A_i^c\right) \geq 1 - \sum_i P(A_i^c)$$
+
+where the inequality is Boole applied to the complements.  $\blacksquare$
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={5} title="Bonferroni and multiple testing">
+
+This is the canonical application of Corollary 1, and Puzzle 1 of §1 resolved. Suppose we run $m$ statistical tests; let $A_i^c$ be the event "test $i$ falsely rejects the null hypothesis." If each test is run at level $\alpha_0$ — that is, $P(A_i^c) \leq \alpha_0$ under the null — then by Boole on the complements,
+
+$$P(\text{some test falsely rejects}) = P\!\left(\bigcup_i A_i^c\right) \leq \sum_i P(A_i^c) \leq m \alpha_0.$$
+
+Choosing $\alpha_0 = \alpha / m$ guarantees the family-wise error rate is at most $\alpha$, regardless of the dependence between the tests. The price is power: each individual test is run at a much stricter level than $\alpha$, so the test loses sensitivity. This is the trade-off every multiple-testing correction faces, and Bonferroni is the simplest possible solution. See [Multiple Testing and False Discovery](https://formalstatistics.com/topics/multiple-testing-and-false-discovery) → formalStatistics for sharper procedures (Holm step-down, Hochberg, Benjamini–Hochberg FDR control) that all begin from this same union-bound observation.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={6} title="The uniform tail-bound pattern">
+
+This pattern will appear repeatedly. Let $X_1, \ldots, X_m$ be random variables — possibly dependent in complicated ways — and suppose each satisfies the same per-variable tail bound $P(|X_i| > t) \leq \delta(t)$. Then by Boole,
+
+$$P\!\left(\max_i |X_i| > t\right) = P\!\left(\bigcup_i \{|X_i| > t\}\right) \leq m \, \delta(t).$$
+
+To control the maximum at confidence $1 - \delta_0$, choose $t$ so that $m \, \delta(t) \leq \delta_0$ — equivalently, $\delta(t) \leq \delta_0 / m$. For the Hoeffding tail $\delta(t) = 2 e^{-2 n t^2}$ that we will prove in §8, this gives $t = \sqrt{\log(2 m / \delta_0) / (2 n)}$ — the classical $\sqrt{\log m}$ price of taking a union over $m$ events.
+
+The pattern is so general that, in machine-learning practice, "apply a union bound" is almost always shorthand for this single move: per-event exponential tail, $m$ events, pay a $\sqrt{\log m}$ tax in the deviation.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={7} title="A loose bound is still informative">
+
+Take $m = 10$ fair, independent coins; let $A_i$ be the event "coin $i$ lands heads." The exact probability of at least one head is $1 - (1/2)^{10} = 1023 / 1024 \approx 0.999$. The union bound gives
+
+$$P\!\left(\bigcup_i A_i\right) \leq \sum_i P(A_i) = 10 \cdot \frac{1}{2} = 5,$$
+
+which is useless — it exceeds $1$, the absolute upper bound on any probability. **The union bound is tight when events are nearly disjoint and uninformative when events are highly overlapping.** Drag the circles in the flagship visualization together to see the bound's ratio blow up; drag them apart to see the bound recover to exactness.
+
+Loose bounds are not failures. They are advertisements for a different tool — usually inclusion–exclusion (§5) or a structural argument that exploits the overlap. The union bound's value is not its sharpness but its *generality*: it asks nothing about how the events relate.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={5} title="Boole vs. Bonferroni vs. inclusion–exclusion">
+
+Three closely-related results live in this chapter. Boole's inequality (Theorem 1) is a one-sided upper bound on $P(\bigcup A_i)$. Bonferroni's inequality (Corollary 1) is the lower bound on $P(\bigcap A_i)$ that falls out of Boole on the complements. Inclusion–exclusion (Theorem 2 below) is an exact equality. The reason to reach for Boole instead of inclusion–exclusion in a proof is that Boole needs nothing about pairwise or higher-order intersections — only the marginal $P(A_i)$. This is exactly what makes Boole the workhorse of high-dimensional and distribution-free arguments: in those settings, joint probabilities of $m$ events are typically unknown or uncomputable, but marginals are not.
+
+</TheoremBlock>
+
+## 5. Inclusion–Exclusion
+
+When the marginals are not enough — when the overlaps are computable and we want an *exact* probability — inclusion–exclusion is the tool.
+
+<TheoremBlock type="theorem" number={2} title="Inclusion–exclusion (finite version)">
+
+For any finite family of events $A_1, A_2, \ldots, A_n$:
+
+$$P\!\left(\bigcup_{i=1}^n A_i\right) = \sum_{k=1}^n (-1)^{k+1} \sum_{1 \leq i_1 < i_2 < \cdots < i_k \leq n} P(A_{i_1} \cap A_{i_2} \cap \cdots \cap A_{i_k}).$$
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+**Proof sketch by induction on $n$.** The base case $n = 2$ is
+
+$$P(A \cup B) = P(A) + P(B) - P(A \cap B),$$
+
+which follows from $A \cup B = A \sqcup (B \setminus A)$ disjointly and $P(B) = P(A \cap B) + P(B \setminus A)$.
+
+For the inductive step, suppose the formula holds for $n - 1$ events. Write
+
+$$\bigcup_{i=1}^n A_i = \left(\bigcup_{i=1}^{n-1} A_i\right) \cup A_n,$$
+
+apply the $n = 2$ case to the two events $\bigcup_{i \leq n-1} A_i$ and $A_n$:
+
+$$P\!\left(\bigcup_{i=1}^n A_i\right) = P\!\left(\bigcup_{i=1}^{n-1} A_i\right) + P(A_n) - P\!\left(\bigcup_{i=1}^{n-1} (A_i \cap A_n)\right).$$
+
+The induction hypothesis applies twice — to the first term (an $(n-1)$-fold union) and to the third term (the union of the $n-1$ intersections $A_i \cap A_n$, also an $(n-1)$-fold union of events). Expand both, collect terms by intersection cardinality, and verify that the signs and coefficients combine to give the claimed formula. The algebra is mechanical and is performed in full in the [companion notebook](/notebooks/probability-and-union-bound).  $\blacksquare$
+
+</TheoremBlock>
+
+The 3-event case is worth writing out explicitly — it is the formula most often used by hand.
+
+<TheoremBlock type="example" number={8} title="The 3-event case">
+
+For events $A, B, C$:
+
+$$P(A \cup B \cup C) = P(A) + P(B) + P(C) - P(A \cap B) - P(A \cap C) - P(B \cap C) + P(A \cap B \cap C).$$
+
+Verification on the uniform model over $\{0, 1\}^3$. Let $\Omega = \{0, 1\}^3$ with each outcome having probability $1/8$, and let $A_i$ be the event "the $i$-th coordinate is $1$." Then $P(A_i) = 1/2$, $P(A_i \cap A_j) = 1/4$ for $i \neq j$, and $P(A_1 \cap A_2 \cap A_3) = 1/8$. The right-hand side is $3 \cdot 1/2 - 3 \cdot 1/4 + 1/8 = 12/8 - 6/8 + 1/8 = 7/8$, which matches $P(A_1 \cup A_2 \cup A_3) = 1 - P(\text{all zero}) = 1 - 1/8 = 7/8$. The accompanying notebook reproduces this and the 4-event and 5-event cases for sanity.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={9} title="Derangements via inclusion–exclusion">
+
+A *derangement* is a permutation with no fixed points. The probability that a uniformly random permutation $\pi$ of $\{1, 2, \ldots, n\}$ is a derangement equals
+
+$$\frac{D_n}{n!} = \sum_{k=0}^n \frac{(-1)^k}{k!} \;\xrightarrow{n \to \infty}\; \frac{1}{e} \approx 0.3679.$$
+
+The proof is inclusion–exclusion in three lines. Let $A_i = \{\pi(i) = i\}$ be the event "$i$ is a fixed point." Then $P(A_i) = (n-1)!/n! = 1/n$ — once $\pi(i) = i$ is fixed, the remaining $n - 1$ positions can be permuted in $(n-1)!$ ways. More generally, $P(A_{i_1} \cap \cdots \cap A_{i_k}) = (n-k)!/n!$ for any $k$ distinct indices, and there are $\binom{n}{k}$ such $k$-subsets. Inclusion–exclusion gives
+
+$$P\!\left(\bigcup_i A_i\right) = \sum_{k=1}^n (-1)^{k+1} \binom{n}{k} \frac{(n-k)!}{n!} = \sum_{k=1}^n \frac{(-1)^{k+1}}{k!}.$$
+
+Subtracting from $1$ gives the derangement probability $\sum_{k=0}^n (-1)^k / k!$, which is the partial-sum approximation to $e^{-1}$.
+
+This is a classical combinatorial identity, but it is also a sanity check for the analytic side: by [Series Convergence & Tests](/topics/series-convergence) the alternating series $\sum (-1)^k / k!$ converges absolutely to $e^{-1}$, and the rate of convergence is faster than geometric — even at $n = 8$ the derangement probability is correct to four decimal places.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={6} title="Bonferroni's inequalities — the full hierarchy">
+
+Boole's inequality is the first member of a hierarchy. Truncating the inclusion–exclusion alternating sum at an even number of terms gives an *upper* bound on $P(\bigcup A_i)$; truncating at an odd number gives a *lower* bound. The first odd truncation — a single term, $\sum_i P(A_i)$ — is exactly Boole. The next two truncations are
+
+$$\sum_i P(A_i) - \sum_{i < j} P(A_i \cap A_j) \leq P\!\left(\bigcup_i A_i\right) \leq \sum_i P(A_i) - \sum_{i < j} P(A_i \cap A_j) + \sum_{i < j < k} P(A_i \cap A_j \cap A_k).$$
+
+(The lower bound is the "Bonferroni depth-2" bar in the flagship visualization.) The full hierarchy — Bonferroni's inequalities — provides arbitrarily tight bounds at the cost of summing $\binom{m}{k}$ joint probabilities at depth $k$. In practice we rarely go past depth 2, because the gain in tightness beyond that is small relative to the explosion of joint terms.
+
+</TheoremBlock>
+
