@@ -106,7 +106,7 @@ In [First-Order ODEs](/topics/first-order-odes), we solved scalar equations $y' 
 
 A system of $n$ first-order ODEs can always be written as a single vector equation $\mathbf{y}' = \mathbf{f}(t, \mathbf{y})$, where $\mathbf{y}(t) \in \mathbb{R}^n$ is a vector-valued function. For a **linear** system with constant coefficients, this becomes $\mathbf{y}' = A\mathbf{y}$, where $A \in \mathbb{R}^{n \times n}$ is a constant matrix. The direction field from Topic 21 — a slope at every point — becomes a **vector field**: at each point $\mathbf{y}$, the matrix $A$ assigns a velocity vector $A\mathbf{y}$.
 
-**Why this matters for ML:** Neural network parameters form a vector $\theta \in \mathbb{R}^p$, and gradient descent $\dot{\theta} = -\nabla L(\theta)$ is a system of $p$ coupled ODEs. Near a minimum, linearizing gives $\dot{\theta} \approx -H\theta$ — a linear system whose behavior is governed by the [Hessian](/topics/hessian) eigenvalues. Understanding linear systems is understanding the local behavior of gradient descent.
+**Why this matters for ML:** Neural network parameters form a vector $\theta \in \mathbb{R}^p$, and gradient descent $\dot{\theta} = -\nabla L(\theta)$ is a system of $p$ coupled ODEs. Near a minimum, linearizing gives $\dot{\theta} \approx -H\theta$ — a linear system whose behavior is governed by the [Hessian](/topics/hessian)'s [eigenvalues](/topics/eigenvalues-eigenvectors). Understanding linear systems is understanding the local behavior of gradient descent.
 
 <TheoremBlock type="definition" number={1} title="Linear System of ODEs">
 A *linear system of first-order ordinary differential equations* with constant coefficients is an equation

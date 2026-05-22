@@ -61,8 +61,8 @@ export const tracks: Track[] = [
     title: 'Linear Algebra',
     description: 'Vector spaces, linear maps, matrix algebra, and spectral theory — the algebraic backbone of optimization, statistics, and ML.',
     domain: 'linear-algebra',
-    published: ['Linear Algebra'],
-    planned: ['Eigenvalues & Eigenvectors'],
+    published: ['Linear Algebra', 'Eigenvalues & Eigenvectors'],
+    planned: [],
   },
   {
     id: 'probability-foundations',

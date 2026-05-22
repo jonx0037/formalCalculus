@@ -92,7 +92,7 @@ import TrainingStabilityExplorer from '../../components/viz/TrainingStabilityExp
 
 You train a neural network and the loss plateaus. Is it stuck at a local minimum — a stable equilibrium where gradient descent has settled in? Is it perched on a saddle point, about to escape along some direction you haven't explored yet? Or is it approaching a slow-converging valley where the landscape is nearly flat?
 
-The answer depends on the eigenvalues of the Hessian $\nabla^2 L(\theta^*)$ at the critical point. All eigenvalues positive means stable minimum. Any eigenvalue negative means saddle — the corresponding eigenvector points along the escape route. Near-zero eigenvalues mean near-degeneracy — convergence along those directions is glacially slow.
+The answer depends on the [eigenvalues](/topics/eigenvalues-eigenvectors) of the Hessian $\nabla^2 L(\theta^*)$ at the critical point. All eigenvalues positive means stable minimum. Any eigenvalue negative means saddle — the corresponding eigenvector points along the escape route. Near-zero eigenvalues mean near-degeneracy — convergence along those directions is glacially slow.
 
 This is exactly the **linearization stability theorem** applied to the gradient flow ODE $\dot{\theta} = -\nabla L(\theta)$. The Jacobian of the right-hand side at a critical point is $-\nabla^2 L(\theta^*)$, and its eigenvalues — the negatives of the Hessian eigenvalues — determine local stability.
 

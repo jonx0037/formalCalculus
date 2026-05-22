@@ -1,7 +1,7 @@
 ---
 title: "Eigenvalues & Eigenvectors"
 subtitle: "Spectral theory and the geometry of symmetric operators"
-status: draft
+status: published
 difficulty: intermediate
 prerequisites:
   - "linear-algebra"
@@ -10,20 +10,1179 @@ tags:
   - "linear-algebra"
   - "spectral-theory"
   - "eigenvalues"
+  - "eigenvectors"
+  - "diagonalization"
+  - "spectral-theorem"
+  - "symmetric-matrices"
   - "quadratic-forms"
+  - "positive-definite"
+  - "rayleigh-quotient"
+  - "principal-axes"
 domain: "linear-algebra"
 notebookPath: "notebooks/eigenvalues-eigenvectors/34_eigenvalues_eigenvectors.ipynb"
 datePublished: 2026-05-20
-estimatedReadTime: 0
+estimatedReadTime: 55
 abstract: >-
-  Eigenvalue / eigenvector definitions, the characteristic polynomial,
-  diagonalizability and similarity, the spectral theorem for symmetric matrices,
-  positive-(semi)definiteness and quadratic forms, the Rayleigh quotient and
-  Courant–Fischer min-max, and the geometric reading of eigenvalues as variances
-  along principal axes.
+  Eigenvalues and eigenvectors organize a linear map by its invariant directions
+  — the vectors a map merely stretches without rotating. We define eigenvalues
+  via the equation Av = λv, develop the characteristic polynomial
+  p_A(λ) = det(λI − A) as their generator, characterize diagonalizability as
+  the existence of an eigenbasis, and prove the spectral theorem for symmetric
+  matrices: every real symmetric matrix factors as A = QΛQᵀ with Q orthogonal
+  and Λ diagonal-real. The geometric reading is that a symmetric matrix is a
+  uniform scaling along a set of mutually perpendicular axes. From the spectral
+  theorem we read off the classification of quadratic forms x^T A x as
+  positive-definite, indefinite, or negative-definite by the signs of the
+  eigenvalues, the Rayleigh quotient characterization of the largest and
+  smallest eigenvalues as extrema on the unit sphere, and the Courant-Fischer
+  min-max principle that captures every eigenvalue as a constrained extremum.
+  The same eigenvalues are the variances along the principal axes of a data
+  ellipsoid, the curvatures of a smooth loss surface at a critical point, and
+  the decay rates of gradient descent — three apparently different ML
+  quantities that are the same spectral object read three ways. The reader
+  leaves with the spectral picture that every later optimization, PCA, SVD,
+  and kernel-methods argument quietly assumes.
 formalstatisticsConnections:
   - topic: "multivariate-distributions"
     site: "formalstatistics"
-    relationship: "Spectral decomposition Σ = QΛQᵀ provides the principal-axes geometry of the multivariate normal and is the mathematical core of PCA."
-references: []
+    relationship: "Spectral decomposition Σ = QΛQᵀ provides the principal-axes geometry of the multivariate normal and is the mathematical core of PCA. The contours of the density are ellipsoids whose axes are the eigenvectors of Σ and whose half-lengths are the square roots of the eigenvalues."
+  - topic: "principal-components-analysis"
+    site: "formalstatistics"
+    relationship: "PCA on mean-centered data X solves the eigenproblem ΣQ = QΛ for Σ = XᵀX/(n−1). The principal components are the eigenvectors qᵢ ordered by descending eigenvalues λᵢ, and the variance captured by the k-th component is exactly λₖ. Every PCA derivation reduces to the spectral theorem on a real symmetric matrix."
+  - topic: "covariance-correlation"
+    site: "formalstatistics"
+    relationship: "A covariance matrix Σ is symmetric and positive-semidefinite, so it has real non-negative eigenvalues and an orthonormal eigenbasis. The eigenvalues are the variances of the principal-component scores, and Σ is positive-definite if and only if no nontrivial linear combination of the variables has zero variance — a rank-vs-null-space statement in spectral language."
+  - topic: "mahalanobis-distance"
+    site: "formalstatistics"
+    relationship: "The Mahalanobis distance d(x, y) = √((x − y)ᵀ Σ⁻¹ (x − y)) is the Euclidean distance in the basis where Σ becomes the identity — the whitening transformation Σ^(−1/2) is constructed by the spectral decomposition Σ = QΛQᵀ via Σ^(−1/2) = QΛ^(−1/2)Qᵀ. Mahalanobis geometry is spectral geometry in disguise."
+formalmlConnections:
+  - topic: "pca-and-spectral-methods"
+    site: "formalml"
+    relationship: "PCA is the spectral theorem applied to a covariance matrix. The first k principal components are the top k eigenvectors of XᵀX/(n−1), and the k-dimensional projection retaining maximum variance is the projection onto their span. Spectral methods for clustering, embedding, and dimensionality reduction all instantiate the same construction on different positive-semidefinite matrices."
+  - topic: "gradient-descent"
+    site: "formalml"
+    relationship: "Gradient descent on a quadratic loss L(θ) = ½θᵀHθ decomposes along the eigenbasis of H: each eigencomponent decays at rate e^{−λᵢt} in continuous time or (1 − ηλᵢ)^k in discrete time. The condition number κ(H) = λ_max/λ_min bounds the convergence rate, and the principal-axis picture of the loss landscape — ellipsoidal level sets oriented along eigenvectors — explains why ill-conditioned problems train slowly."
+  - topic: "spectral-clustering"
+    site: "formalml"
+    relationship: "Spectral clustering uses the eigenvectors of a graph Laplacian L = D − W (or its normalized variants) to partition data points. L is symmetric positive-semidefinite, and the Fiedler vector (the eigenvector for the second-smallest eigenvalue) gives an approximate balanced cut. The construction is a direct application of the spectral theorem to a structured PSD matrix."
+  - topic: "kernel-methods"
+    site: "formalml"
+    relationship: "Mercer's theorem decomposes a positive-semidefinite kernel as K(x, y) = Σᵢ λᵢ φᵢ(x) φᵢ(y) — an eigenvalue expansion. The finite-dimensional version is the spectral decomposition of the Gram matrix Kᵢⱼ = k(xᵢ, xⱼ). Kernel PCA, kernel ridge regression, and Gaussian-process predictive means are all matrix-spectrum computations on this Gram matrix."
+references:
+  - type: "book"
+    title: "Linear Algebra Done Right"
+    authors: "Axler"
+    year: 2024
+    edition: "4th"
+    note: "The eigenvalue-first textbook. Chapters 5 and 7 develop spectral theory before determinants — the opposite of our ordering. Read for the cleanest possible treatment of invariant subspaces, the spectral theorem for self-adjoint operators (Axler's Theorem 7.13), and the inner-product-space approach to quadratic forms."
+  - type: "book"
+    title: "Introduction to Linear Algebra"
+    authors: "Strang"
+    year: 2023
+    edition: "6th"
+    note: "Chapter 6 (eigenvalues and eigenvectors) and Chapter 7 (SVD) are the closest published match to our pedagogical line for this topic. Strang's emphasis on the geometric meaning of Ax = λx — directions that don't rotate — is the framing we take."
+  - type: "book"
+    title: "Matrix Analysis"
+    authors: "Horn & Johnson"
+    year: 2013
+    edition: "2nd"
+    note: "The rigorous reference. Chapter 1 covers the characteristic polynomial and similarity; Chapter 2 covers unitary similarity and triangularization; Chapter 4 covers Hermitian matrices and variational characterizations (Courant-Fischer). Use for cross-checking statements; not for pedagogy."
+  - type: "book"
+    title: "Matrix Analysis and Applied Linear Algebra"
+    authors: "Meyer"
+    year: 2000
+    note: "Chapter 7 (eigenvalues and eigenvectors) is the source for our proof of the spectral theorem via induction on dimension. The geometric pictures of quadratic forms in §7.5 are the visual templates for our principal-axes visualizations."
+  - type: "book"
+    title: "Numerical Linear Algebra"
+    authors: "Trefethen & Bau"
+    year: 1997
+    note: "Lectures 24–30 cover eigenvalue algorithms in depth — QR iteration, Hessenberg form, divide-and-conquer. We cite this only as the right place to learn the numerical theory we explicitly do not develop. Lecture 24's discussion of why the characteristic polynomial is the wrong way to compute eigenvalues is the source for our computational-reality remark in §3."
+  - type: "book"
+    title: "Linear Algebra"
+    authors: "Hoffman & Kunze"
+    year: 1971
+    edition: "2nd"
+    note: "Chapter 6 (elementary canonical forms) and Chapter 7 (the rational and Jordan forms) are the standard rigorous treatment of diagonalizability and Jordan normal form. Used here as the reference for the defective-matrix detour."
+  - type: "book"
+    title: "Linear Algebra and Its Applications"
+    authors: "Lax"
+    year: 2007
+    edition: "2nd"
+    note: "Lax's chapters on spectral theory of self-adjoint operators and the Courant-Fischer min-max principle are the cleanest finite-dimensional treatment of the material we cover in §§7–9. Bridges naturally to the functional-analysis topics in Track 8."
+  - type: "paper"
+    title: "On Lines and Planes of Closest Fit to Systems of Points in Space"
+    authors: "Pearson"
+    year: 1901
+    url: "https://doi.org/10.1080/14786440109462720"
+    note: "Karl Pearson's original PCA paper. Cited as the historical origin of the principal-axes geometry of data — predates the modern statistical formulation but contains the geometric idea in its first form."
 ---
+
+import TheoremBlock from '../../components/ui/TheoremBlock.astro';
+import EigenvectorExplorer from '../../components/viz/EigenvectorExplorer.tsx';
+import CharacteristicPolynomialVisualizer from '../../components/viz/CharacteristicPolynomialVisualizer.tsx';
+import DiagonalizationExplorer from '../../components/viz/DiagonalizationExplorer.tsx';
+import SpectralDecompositionVisualizer from '../../components/viz/SpectralDecompositionVisualizer.tsx';
+import QuadraticFormVisualizer from '../../components/viz/QuadraticFormVisualizer.tsx';
+import RayleighQuotientExplorer from '../../components/viz/RayleighQuotientExplorer.tsx';
+
+## 1. The Question of Invariant Directions
+
+The [Linear Algebra](/topics/linear-algebra) topic closed with a question we deliberately did not answer. Given a linear map $T \colon V \to V$ — a function that sends straight lines to straight lines, parallels to parallels, and the origin to itself — are there directions in $V$ that $T$ does not rotate? Not directions $T$ fixes pointwise (that would be far too restrictive), but directions where the action of $T$ is purely a scaling: lines through the origin that get mapped to themselves, possibly stretched, possibly flipped, but never tilted off-axis.
+
+The question is so geometric it deserves three pictures before any algebra. Picture a *uniform scaling* by some positive factor — say $T(\mathbf{x}) = 2\mathbf{x}$. Every direction in $V$ is invariant: every line through the origin is mapped to itself, every arrow stretched by exactly two. The map has, in a strong sense, *all* directions as invariant directions. Picture next a *rotation* by $\pi/4$ around the origin. No direction is invariant: every line through the origin tilts by $45°$ when you apply $T$, so no line is mapped to itself. The map has *no* real invariant directions at all. Picture finally a *horizontal shear*, the linear map that sends $(x, y) \mapsto (x + 0.5\,y, y)$. Exactly one direction is invariant: the $x$-axis, where vectors of the form $(c, 0)$ are mapped to themselves unchanged. Every other line through the origin is tilted by the shear.
+
+<figure className="my-6">
+  <img src="/images/topics/eigenvalues-eigenvectors/invariant-directions-zoo.png" alt="Four-panel comparison: uniform scaling has every direction invariant, a 45° rotation has none, a horizontal shear has exactly one (the x-axis), a generic 2x2 has two distinct invariant directions" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">Four linear maps and their invariant directions. Uniform scaling: every direction. Rotation by 45°: none over the reals. Shear: exactly one. Generic 2×2: typically two distinct directions, drawn here as solid arrows mapped to dashed scaled copies.</figcaption>
+</figure>
+
+Three maps, three answers: all, none, one. A *generic* $2 \times 2$ matrix turns out to have *two* invariant directions, not three, not one. The question of how many invariant directions a linear map has — and which — is itself nontrivial, and the rest of this topic is the systematic theory that answers it.
+
+We can write the question as a single equation. A nonzero vector $\mathbf{v}$ lies along an invariant direction of $T$ exactly when $T(\mathbf{v})$ is parallel to $\mathbf{v}$ — that is, when $T(\mathbf{v})$ is some scalar multiple of $\mathbf{v}$:
+
+$$T(\mathbf{v}) = \lambda \mathbf{v}, \qquad \lambda \in \mathbb{R}.$$
+
+The scalar $\lambda$ records *how* $T$ scales the vector along the invariant direction. For the uniform scaling, $\lambda = 2$ for every direction. For the rotation, no real $\lambda$ works for any nonzero real $\mathbf{v}$. For the shear, $\lambda = 1$ for the $x$-axis. This single equation — three symbols on the left, three on the right — is the rest of the topic in concentrated form.
+
+**ML aside.** When a paper says "the dominant eigenvector of the Hessian points in the direction of largest curvature," the noun *eigenvector* is the object this section is about to name: a direction the matrix doesn't rotate, only stretches. The factor by which it stretches is the *eigenvalue* — the curvature in that direction. The [Hessian](/topics/hessian) topic invoked this picture without justification; this topic justifies it.
+
+The viz below lets you build a $2 \times 2$ matrix one entry at a time and see the invariant directions appear in real time. Drag the matrix entries, watch the eigenvectors slide around, and notice which preset matrices have zero, one, or two real invariant directions. The defective Jordan block and the rotation preset are the two cases where the eigenvector story is more interesting than "two distinct lines" — they motivate §5 (defective matrices) and §3 (complex eigenvalues), respectively.
+
+<EigenvectorExplorer client:visible />
+
+## 2. Eigenvalues, Eigenvectors, and Eigenspaces
+
+The verbal question of §1 — *which directions does a linear map merely scale?* — becomes precise once we name the objects. A nonzero vector that gets only scaled is an *eigenvector*; the scaling factor is the *eigenvalue*; the set of all eigenvectors for a fixed eigenvalue, together with the zero vector, is the *eigenspace*. These three pieces of vocabulary will recur in every section below.
+
+<TheoremBlock type="definition" number={1} title="Eigenvalue, Eigenvector, Eigenspace">
+
+Let $V$ be a real vector space and $T \colon V \to V$ a linear map. A nonzero vector $\mathbf{v} \in V$ is an **eigenvector** of $T$ with **eigenvalue** $\lambda \in \mathbb{R}$ (or $\mathbb{C}$, when we work in the complex setting) if
+
+$$T(\mathbf{v}) = \lambda \mathbf{v}.$$
+
+The set
+
+$$E_\lambda = \{\mathbf{v} \in V \;\colon\; T(\mathbf{v}) = \lambda \mathbf{v}\}$$
+
+is the **eigenspace** of $T$ corresponding to $\lambda$. The set of all eigenvalues of $T$ is the **spectrum**, written $\sigma(T)$.
+
+</TheoremBlock>
+
+A few features of the definition deserve immediate comment. First, the equation $T(\mathbf{v}) = \lambda \mathbf{v}$ is *homogeneous of degree one* in $\mathbf{v}$: if $\mathbf{v}$ is an eigenvector with eigenvalue $\lambda$, so is $c \mathbf{v}$ for any nonzero scalar $c$ — eigenvectors come in lines through the origin, not as isolated vectors. Second, the eigenvalue $\lambda$ is determined by the eigenvector (apply $T$, see how much it scales), but a single eigenvalue may have many eigenvectors — every nonzero element of $E_\lambda$ is an eigenvector for $\lambda$. Third, although the definition is stated for an abstract linear map, in practice we will work with a fixed basis and identify $T$ with its matrix $A$; the equation becomes $A \mathbf{v} = \lambda \mathbf{v}$, and the eigenvectors and eigenvalues are properties of the matrix.
+
+<TheoremBlock type="proposition" number={1} title="Eigenspaces Are Subspaces">
+
+For any linear map $T \colon V \to V$ and any scalar $\lambda$, the eigenspace $E_\lambda$ is a subspace of $V$. In particular, $E_\lambda$ contains the zero vector and is closed under addition and scalar multiplication.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+Rewrite the eigenspace as $E_\lambda = \ker(T - \lambda I)$, where $T - \lambda I \colon V \to V$ is the linear map $\mathbf{v} \mapsto T(\mathbf{v}) - \lambda \mathbf{v}$. To see the rewrite: $\mathbf{v} \in E_\lambda$ if and only if $T(\mathbf{v}) = \lambda \mathbf{v}$, which is equivalent to $T(\mathbf{v}) - \lambda \mathbf{v} = \mathbf{0}$, which is the statement $(T - \lambda I)(\mathbf{v}) = \mathbf{0}$. The kernel of any linear map is a subspace (Proposition 2 of [Linear Algebra](/topics/linear-algebra)), so $E_\lambda$ is a subspace.
+
+Concretely: the zero vector satisfies $T(\mathbf{0}) - \lambda \mathbf{0} = \mathbf{0} - \mathbf{0} = \mathbf{0}$, so $\mathbf{0} \in E_\lambda$. If $\mathbf{u}, \mathbf{v} \in E_\lambda$, then $T(\mathbf{u} + \mathbf{v}) = T(\mathbf{u}) + T(\mathbf{v}) = \lambda \mathbf{u} + \lambda \mathbf{v} = \lambda(\mathbf{u} + \mathbf{v})$, so $\mathbf{u} + \mathbf{v} \in E_\lambda$. Scalar multiplication is analogous.  $\blacksquare$
+
+</TheoremBlock>
+
+The eigenspace is a subspace, so it has a dimension; that number measures the "size" of the invariant direction (a line, a plane, all of $V$) corresponding to $\lambda$.
+
+<TheoremBlock type="definition" number={2} title="Geometric Multiplicity">
+
+The **geometric multiplicity** of an eigenvalue $\lambda$ of $T$ is the dimension of its eigenspace:
+
+$$\operatorname{geo.mult}(\lambda) = \dim E_\lambda.$$
+
+For any actual eigenvalue $\lambda$, the eigenspace contains at least one nonzero eigenvector, so $\dim E_\lambda \geq 1$.
+
+</TheoremBlock>
+
+Three running examples will be referenced throughout the topic; each shows a different qualitative behavior of the eigenvalue equation.
+
+<TheoremBlock type="example" number={1} title="A diagonal matrix">
+
+Let $D = \operatorname{diag}(d_1, d_2, \ldots, d_n)$ — the matrix with $d_i$ on the diagonal and zeros elsewhere. For each standard-basis vector $\mathbf{e}_i$, direct computation gives $D \mathbf{e}_i = d_i \mathbf{e}_i$. So $\mathbf{e}_i$ is an eigenvector with eigenvalue $d_i$ for every $i$. The eigenvalues are exactly the diagonal entries (with their multiplicities), and the eigenspaces are the coordinate axes — or sums of coordinate axes, when entries are repeated. A diagonal matrix is the *easiest* possible eigenvalue picture: the standard basis is already an eigenbasis.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={2} title="A projection">
+
+Let $P \colon \mathbb{R}^2 \to \mathbb{R}^2$ be orthogonal projection onto the $x$-axis: $P(x, y) = (x, 0)$. Then $P \mathbf{e}_1 = (1, 0) = 1 \cdot \mathbf{e}_1$ and $P \mathbf{e}_2 = (0, 0) = 0 \cdot \mathbf{e}_2$. The eigenvectors are $\mathbf{e}_1$ with eigenvalue $1$ and $\mathbf{e}_2$ with eigenvalue $0$. The eigenspace $E_1$ is the $x$-axis (vectors that the projection leaves untouched), and $E_0$ is the $y$-axis (vectors that the projection collapses to the origin). The map is fully described by the data "stretch by $1$ along the $x$-axis, kill the $y$-axis" — and that data is exactly the eigenvalue / eigenspace pair. Example 15 of [Linear Algebra](/topics/linear-algebra) used this projection to motivate change of basis; here it reappears as the prototypical eigenvalue example.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={3} title="Rotation by π/2">
+
+Let $R \colon \mathbb{R}^2 \to \mathbb{R}^2$ be rotation by $90°$ counterclockwise: $R(x, y) = (-y, x)$, with matrix $\begin{pmatrix} 0 & -1 \\ 1 & 0 \end{pmatrix}$. No nonzero real vector is fixed up to scaling by a $90°$ rotation — every direction is mapped to the perpendicular direction, never to a scalar multiple of itself. So $R$ has *no real eigenvalues at all*.
+
+Over the complex numbers, the situation changes. Try the candidate $\mathbf{v} = (1, -i)^\top$: $R \mathbf{v} = (-(-i), 1)^\top = (i, 1)^\top = i \cdot (1, -i)^\top$, so $\mathbf{v}$ is a complex eigenvector with eigenvalue $\lambda = i$. The conjugate $\overline{\mathbf{v}} = (1, i)^\top$ is an eigenvector with eigenvalue $\overline\lambda = -i$. Real matrices can have complex eigenvalues — and when they do, the eigenvalues come in complex conjugate pairs. The real-vs-complex distinction will return in §3 when we develop the characteristic polynomial.
+
+</TheoremBlock>
+
+The three examples already span the qualitative behaviors we will need to organize: every direction invariant (Example 1 with $d_1 = d_2$), exactly two directions invariant (Example 2, and generic $2 \times 2$ matrices), and no real direction invariant (Example 3). The first nontrivial structural fact about eigenvectors — the one that drives diagonalizability in §4 — is that eigenvectors for *distinct* eigenvalues cannot be linearly dependent.
+
+<TheoremBlock type="proposition" number={2} title="Distinct Eigenvalues Imply Independent Eigenvectors">
+
+Let $T \colon V \to V$ be a linear map and let $\mathbf{v}_1, \mathbf{v}_2, \ldots, \mathbf{v}_k$ be eigenvectors of $T$ with eigenvalues $\lambda_1, \lambda_2, \ldots, \lambda_k$. If the eigenvalues are pairwise distinct, then the eigenvectors are linearly independent.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+We induct on $k$. For $k = 1$, the claim is just $\mathbf{v}_1 \neq \mathbf{0}$, which is part of the definition of eigenvector.
+
+For the induction step, assume the result for any $k - 1$ eigenvectors with distinct eigenvalues, and suppose
+
+$$c_1 \mathbf{v}_1 + c_2 \mathbf{v}_2 + \cdots + c_k \mathbf{v}_k = \mathbf{0} \qquad (\star)$$
+
+for some scalars $c_1, \ldots, c_k$. Apply $T$ to both sides. Since $T$ is linear and each $\mathbf{v}_i$ is an eigenvector with eigenvalue $\lambda_i$,
+
+$$c_1 \lambda_1 \mathbf{v}_1 + c_2 \lambda_2 \mathbf{v}_2 + \cdots + c_k \lambda_k \mathbf{v}_k = \mathbf{0}. \qquad (\star\star)$$
+
+Now multiply $(\star)$ by $\lambda_k$ and subtract from $(\star\star)$ to eliminate the $\mathbf{v}_k$ term:
+
+$$c_1 (\lambda_1 - \lambda_k) \mathbf{v}_1 + c_2 (\lambda_2 - \lambda_k) \mathbf{v}_2 + \cdots + c_{k-1} (\lambda_{k-1} - \lambda_k) \mathbf{v}_{k-1} = \mathbf{0}.$$
+
+The first $k - 1$ eigenvectors have pairwise distinct eigenvalues (since all $k$ are pairwise distinct), so by the inductive hypothesis they are linearly independent. Each coefficient must therefore vanish:
+
+$$c_i (\lambda_i - \lambda_k) = 0 \quad \text{for every } i = 1, \ldots, k - 1.$$
+
+Since $\lambda_i \neq \lambda_k$, we conclude $c_i = 0$ for $i < k$. Plugging back into $(\star)$ leaves $c_k \mathbf{v}_k = \mathbf{0}$, and since $\mathbf{v}_k \neq \mathbf{0}$, $c_k = 0$ as well. So every $c_i$ vanishes — the eigenvectors are linearly independent.  $\blacksquare$
+
+</TheoremBlock>
+
+<TheoremBlock type="corollary" number={1} title="At most dim V distinct eigenvalues">
+
+A linear map $T \colon V \to V$ on a finite-dimensional vector space has at most $\dim V$ distinct eigenvalues.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+A linearly independent set in $V$ has at most $\dim V$ elements (Proposition 5 of [Linear Algebra](/topics/linear-algebra)). Choose one eigenvector from each distinct eigenvalue: by Proposition 2, the resulting list is linearly independent, so its length — the number of distinct eigenvalues — is at most $\dim V$.  $\blacksquare$
+
+</TheoremBlock>
+
+The corollary is the structural ceiling that makes diagonalization possible. If a $3 \times 3$ matrix has three distinct eigenvalues, we automatically get three linearly independent eigenvectors — and by §4, that means we can change basis to make the matrix diagonal. Repeated eigenvalues *may* still allow a basis of eigenvectors (Example 1 with $d_1 = d_2$ and the scalar matrix $2I$ are textbook cases) but the guarantee comes only with distinctness.
+
+<TheoremBlock type="remark" number={1} title="Why we exclude the zero vector">
+
+The definition insists that $\mathbf{v} \neq \mathbf{0}$ for an eigenvector. The reason is bookkeeping: if we allowed $\mathbf{v} = \mathbf{0}$, then $T(\mathbf{0}) = \mathbf{0} = \lambda \cdot \mathbf{0}$ would hold for *every* scalar $\lambda$. The zero vector would be an "eigenvector for every eigenvalue," and the notion of "the eigenvalue of $\mathbf{0}$" would be meaningless. By excluding it, each eigenvector pins down a unique eigenvalue, and the eigenvalue equation $T(\mathbf{v}) = \lambda \mathbf{v}$ becomes a constraint on the direction of $\mathbf{v}$ rather than a triviality. Note that the *eigenspace* $E_\lambda$ does contain $\mathbf{0}$ — otherwise it would not be a subspace — but $\mathbf{0}$ is not itself called an eigenvector.
+
+</TheoremBlock>
+
+**ML aside.** When you decompose a weight matrix $W$ as $W = \sum_i \sigma_i \mathbf{u}_i \mathbf{v}_i^\top$ (the singular value decomposition, which we will not develop here), the $\sigma_i$ are *not* eigenvalues of $W$ — they are eigenvalues of $W^\top W$, which *is* symmetric and therefore covered by the spectral theorem in §6. The eigenvalues of $W$ itself are typically complex and less useful in ML practice. The reason the symmetric case dominates ML applications is that the matrices that actually matter (covariance, Hessian, $W^\top W$, kernel Gram) are all symmetric. The symmetric story is the headline of this topic; the general case (§§3–5) is the warm-up that prepares it.
+
+<figure className="my-6">
+  <img src="/images/topics/eigenvalues-eigenvectors/eigenspace-examples.png" alt="Three-panel figure: a diagonal matrix with coordinate axes as eigenspaces, a projection with x-axis as E_1 and y-axis as E_0, a 90-degree rotation showing no real invariant directions" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">Three eigenspace pictures from Examples 1–3. The diagonal matrix has the coordinate axes as its two eigenspaces. The projection has E₁ = x-axis and E₀ = y-axis. The 90° rotation has no real eigenvectors — every line through the origin rotates by 90°, so none is invariant.</figcaption>
+</figure>
+
+## 3. The Characteristic Polynomial
+
+Definition 1 names the eigenvalue equation $T(\mathbf{v}) = \lambda \mathbf{v}$, but it does not yet tell us how to *find* the eigenvalues of a given matrix. The bridge from "what is an eigenvalue?" to "compute the eigenvalues" is the *characteristic polynomial*: a single polynomial in one variable $\lambda$ whose roots are exactly the eigenvalues, and whose degree is the dimension of the underlying space.
+
+The construction starts with a rewriting of the eigenvalue equation. The condition $T(\mathbf{v}) = \lambda \mathbf{v}$ is the same as $T(\mathbf{v}) - \lambda \mathbf{v} = \mathbf{0}$, which is the same as $(T - \lambda I)(\mathbf{v}) = \mathbf{0}$. So $\mathbf{v}$ is a nonzero element of $\ker(T - \lambda I)$. By the invertibility characterization of [Linear Algebra](/topics/linear-algebra) (Corollary 1 of §8), a square matrix is non-invertible exactly when its determinant is zero. Therefore $\lambda$ is an eigenvalue if and only if $\det(T - \lambda I) = 0$ — which is a *single equation* in the *single variable* $\lambda$.
+
+<TheoremBlock type="definition" number={3} title="Characteristic Polynomial">
+
+For an $n \times n$ matrix $A$, the **characteristic polynomial** of $A$ is
+
+$$p_A(\lambda) = \det(\lambda I - A).$$
+
+It is a monic polynomial in $\lambda$ of degree $n$ with real coefficients (assuming $A$ is real). The **characteristic equation** is $p_A(\lambda) = 0$.
+
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={1} title="Eigenvalues Are Roots of the Characteristic Polynomial">
+
+For any $n \times n$ matrix $A$ and any scalar $\lambda \in \mathbb{C}$:
+
+$$\lambda \text{ is an eigenvalue of } A \quad \Longleftrightarrow \quad p_A(\lambda) = 0.$$
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+$\lambda$ is an eigenvalue of $A$ iff there exists a nonzero $\mathbf{v}$ with $(A - \lambda I)\mathbf{v} = \mathbf{0}$, i.e. $\ker(A - \lambda I) \neq \{\mathbf{0}\}$. By the invertibility characterization (Corollary 1 of §8 of [Linear Algebra](/topics/linear-algebra)), this is equivalent to $A - \lambda I$ being non-invertible, which is equivalent to $\det(A - \lambda I) = 0$.
+
+Finally, $\det(\lambda I - A) = (-1)^n \det(A - \lambda I)$ — multiplying every row of a matrix by $-1$ multiplies the determinant by $(-1)^n$ — so the two determinants vanish together. Therefore $p_A(\lambda) = \det(\lambda I - A) = 0$ if and only if $\lambda$ is an eigenvalue.  $\blacksquare$
+
+</TheoremBlock>
+
+Theorem 1 changes the entire character of the eigenvalue problem. We no longer have to *guess* eigenvalues — we *compute* them by finding roots of a polynomial. The polynomial has degree $n$, so by the Fundamental Theorem of Algebra it has exactly $n$ roots over $\mathbb{C}$, counted with multiplicity. A real $n \times n$ matrix therefore has exactly $n$ eigenvalues over the complex numbers, though fewer may be real.
+
+<TheoremBlock type="definition" number={4} title="Algebraic Multiplicity">
+
+The **algebraic multiplicity** of an eigenvalue $\lambda$ of $A$ is its multiplicity as a root of the characteristic polynomial: the largest integer $m \geq 1$ such that $(\lambda - \lambda_0)^m$ divides $p_A(\lambda)$ when $\lambda_0$ is the eigenvalue in question. We write $m_a(\lambda)$ for this number.
+
+</TheoremBlock>
+
+A natural question follows immediately. We have two notions of "multiplicity" for an eigenvalue: the *geometric* one (Definition 2, the dimension of $E_\lambda$) and the *algebraic* one we just named. How do they relate? The answer is that geometric multiplicity is bounded above by algebraic multiplicity, and the gap between them is the source of all the eigenvalue pathology to come.
+
+<TheoremBlock type="proposition" number={3} title="Geometric ≤ Algebraic Multiplicity">
+
+For any eigenvalue $\lambda$ of $A$, the geometric multiplicity is at most the algebraic multiplicity:
+
+$$\dim E_\lambda = m_g(\lambda) \;\leq\; m_a(\lambda).$$
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+Let $k = \dim E_\lambda$ be the geometric multiplicity. Choose a basis $\{\mathbf{v}_1, \ldots, \mathbf{v}_k\}$ of the eigenspace $E_\lambda$, and extend it to a basis $\mathcal{B} = \{\mathbf{v}_1, \ldots, \mathbf{v}_k, \mathbf{w}_1, \ldots, \mathbf{w}_{n - k}\}$ of $V$ (using the basis-extension lemma from §3 of [Linear Algebra](/topics/linear-algebra)). In this basis, the matrix of $A$ has block form
+
+$$[A]_{\mathcal{B}} = \begin{pmatrix} \lambda I_k & B \\ 0 & C \end{pmatrix}$$
+
+for some $k \times (n-k)$ block $B$ and $(n-k) \times (n-k)$ block $C$. The reason: $A \mathbf{v}_i = \lambda \mathbf{v}_i$ for each $i \leq k$, so the first $k$ columns of $[A]_{\mathcal{B}}$ are $\lambda$ times the corresponding standard basis vectors. The bottom-left block is zero because the eigenvectors $\mathbf{v}_i$ have no $\mathbf{w}_j$ components. The remaining columns are arbitrary, filling out the blocks $B$ and $C$.
+
+Similar matrices share the characteristic polynomial (Lemma 1 below), so
+
+$$p_A(\lambda') = \det(\lambda' I - [A]_{\mathcal{B}}) = \det\begin{pmatrix} (\lambda' - \lambda) I_k & -B \\ 0 & \lambda' I_{n-k} - C \end{pmatrix} = (\lambda' - \lambda)^k \cdot \det(\lambda' I_{n-k} - C),$$
+
+using the block-triangular determinant formula. The factor $(\lambda' - \lambda)^k$ contributes at least $k$ to the multiplicity of $\lambda$ as a root, so $m_a(\lambda) \geq k = m_g(\lambda)$. $\blacksquare$
+
+</TheoremBlock>
+
+The proof used a fact we now make explicit: similar matrices have the same characteristic polynomial. The intuition is that similarity corresponds to a change of basis, and the characteristic polynomial is a property of the underlying linear map — not of the matrix that happens to represent it in a particular basis.
+
+<TheoremBlock type="lemma" number={1} title="Similar Matrices Have the Same Characteristic Polynomial">
+
+If $A$ and $A'$ are similar — meaning $A' = P^{-1} A P$ for some invertible $P$ — then $p_{A'}(\lambda) = p_A(\lambda)$.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+Using the multiplicativity of the determinant (Theorem 6 of [Linear Algebra](/topics/linear-algebra)) and $\det(P^{-1}) \det(P) = 1$:
+
+$$p_{A'}(\lambda) = \det(\lambda I - P^{-1} A P) = \det\bigl(P^{-1}(\lambda I - A) P\bigr).$$
+
+Pulling the determinants apart and rearranging gives
+
+$$\det(P^{-1}) \det(\lambda I - A) \det(P) = \det(\lambda I - A) = p_A(\lambda).$$
+
+So $p_{A'}(\lambda) = p_A(\lambda)$. $\blacksquare$
+
+</TheoremBlock>
+
+In particular, $A$ and $A'$ have the same eigenvalue multiset (with algebraic multiplicities), the same trace (sum of eigenvalues), and the same determinant (product of eigenvalues) — all because the characteristic polynomial is a similarity invariant.
+
+The next examples compute $p_A(\lambda)$ for small matrices and illustrate the three qualitatively different scenarios: distinct real roots, a repeated real root, and a complex conjugate pair.
+
+<TheoremBlock type="example" number={4} title="Characteristic polynomial of a 2×2 matrix">
+
+For $A = \begin{pmatrix} a & b \\ c & d \end{pmatrix}$:
+
+$$p_A(\lambda) = \det\begin{pmatrix} \lambda - a & -b \\ -c & \lambda - d \end{pmatrix} = (\lambda - a)(\lambda - d) - bc = \lambda^2 - (a + d)\lambda + (ad - bc).$$
+
+The coefficients are familiar: $a + d = \operatorname{tr}(A)$ and $ad - bc = \det A$, so
+
+$$p_A(\lambda) = \lambda^2 - \operatorname{tr}(A)\,\lambda + \det A.$$
+
+Solving the quadratic gives the eigenvalues
+
+$$\lambda = \frac{\operatorname{tr}(A) \pm \sqrt{\operatorname{tr}(A)^2 - 4 \det A}}{2}.$$
+
+Apply to $A = \begin{pmatrix} 4 & -2 \\ 1 & 1 \end{pmatrix}$: $\operatorname{tr}(A) = 5$, $\det A = 6$, so $p_A(\lambda) = \lambda^2 - 5\lambda + 6 = (\lambda - 2)(\lambda - 3)$. Eigenvalues $\lambda_1 = 3$, $\lambda_2 = 2$.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={5} title="A 2×2 matrix with complex eigenvalues">
+
+For the 90° rotation $A = \begin{pmatrix} 0 & -1 \\ 1 & 0 \end{pmatrix}$ from Example 3: $\operatorname{tr}(A) = 0$, $\det A = 1$, so $p_A(\lambda) = \lambda^2 + 1$. The roots are $\lambda = \pm i$ — *no real eigenvalues*. Over the complex numbers the eigenvectors are $\mathbf{v}_{+i} = (1, -i)^\top$ and $\mathbf{v}_{-i} = (1, i)^\top$. A real matrix can have complex eigenvalues; when it does, they come in complex conjugate pairs (because the characteristic polynomial has real coefficients, so non-real roots arise in conjugate pairs).
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={6} title="A 3×3 characteristic polynomial">
+
+For $A = \begin{pmatrix} 2 & 1 & 0 \\ 0 & 2 & 1 \\ 0 & 0 & 3 \end{pmatrix}$ — upper-triangular, so the characteristic polynomial factors immediately:
+
+$$p_A(\lambda) = (\lambda - 2)(\lambda - 2)(\lambda - 3) = (\lambda - 2)^2 (\lambda - 3).$$
+
+Eigenvalues: $\lambda = 2$ with algebraic multiplicity 2 and $\lambda = 3$ with algebraic multiplicity 1. Whether $\lambda = 2$'s geometric multiplicity is 1 or 2 depends on the off-diagonal entries — this matrix happens to be *defective* (geometric multiplicity 1), so it is not diagonalizable. We return to this in §5.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={2} title="Real vs. complex eigenvalues">
+
+Over the real numbers, a polynomial of degree $n$ may have fewer than $n$ real roots: as Example 5 showed, $\lambda^2 + 1$ has no real roots even though its degree is 2. The Fundamental Theorem of Algebra guarantees that over the complex numbers, every degree-$n$ polynomial has *exactly* $n$ roots counted with multiplicity. So a real $n \times n$ matrix *always* has $n$ complex eigenvalues (with multiplicity), but possibly fewer real ones.
+
+Real eigenvalues correspond to invariant directions in the geometric sense of §1 — directions the map stretches without rotating. Complex eigenvalues correspond to *rotational* behavior: when $\lambda = a + bi$ is complex, the action of $A$ on the real 2-plane spanned by the real and imaginary parts of the complex eigenvector is a rotation by angle $\arctan(b/a)$ combined with a scaling by $|\lambda| = \sqrt{a^2 + b^2}$. The 90° rotation in Example 5 has $|\lambda| = 1$ (pure rotation, no scaling) and angle $\pi/2$. Real symmetric matrices — the headline case of §6 — never have complex eigenvalues, because their characteristic polynomials factor over the reals.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={3} title="Computational reality">
+
+Computing eigenvalues by writing down $p_A(\lambda)$ and factoring it works fine for $n = 2$ and $n = 3$ and is *unusable* for $n \geq 5$. Wilkinson's polynomial — the characteristic polynomial of a deliberately constructed $20 \times 20$ matrix — is so ill-conditioned that floating-point errors of order $2^{-23}$ in the coefficients move the roots by order 1. Even for benign-looking matrices, the polynomial coefficients accumulate cancellation error and the roots become hopelessly inaccurate.
+
+Production eigenvalue solvers use the *QR algorithm* (Francis, 1961) — an iterative orthogonal-similarity transformation that converges to a Schur form, from which eigenvalues read off the diagonal — and the *Lanczos / Arnoldi* iterations for sparse matrices when only a few extremal eigenvalues are needed. Both algorithms bypass the characteristic polynomial entirely. We cite this without developing the numerical theory; Trefethen & Bau, *Numerical Linear Algebra* (Lectures 24–30) is the right reference. The notebook for this topic uses `np.linalg.eig` and `np.linalg.eigh` for matrices larger than $3 \times 3$ — and so, in practice, do you.
+
+</TheoremBlock>
+
+**ML aside.** When the [Hessian](/topics/hessian) topic spoke of "the eigenvalues of $H$," it implicitly used the characteristic polynomial to define them. For low-dimensional examples (e.g., a $2 \times 2$ Hessian of a 2-feature regression), you can write $p_H(\lambda) = \lambda^2 - \operatorname{tr}(H) \lambda + \det H$ and solve. For real ML problems with $H \in \mathbb{R}^{p \times p}$ for $p$ in the millions, the characteristic polynomial is unreachable, and practitioners use truncated iterative methods (Lanczos for the top-$k$ eigenvalues of a sparse PSD Hessian) to extract just the eigenvalues that matter — typically the largest few (governing the loss landscape's dominant curvatures) and the smallest few (governing convergence-limiting slow modes).
+
+The viz below plots $p_A(\lambda)$ as a curve in the $(\lambda, p_A)$ plane for a user-controlled $2 \times 2$ or $3 \times 3$ matrix. Real eigenvalues appear as filled circles where the curve crosses zero; complex roots appear in an inset Argand plane.
+
+<CharacteristicPolynomialVisualizer client:visible />
+
+<figure className="my-6">
+  <img src="/images/topics/eigenvalues-eigenvectors/characteristic-polynomial-2x2.png" alt="Two-panel figure: a 2x2 matrix and its characteristic polynomial plotted alongside, with eigenvalues highlighted as filled circles where the curve crosses zero" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">The characteristic polynomial of a 2×2 matrix is a downward-opening parabola. Its roots — the points where it crosses the λ-axis — are the eigenvalues.</figcaption>
+</figure>
+
+<figure className="my-6">
+  <img src="/images/topics/eigenvalues-eigenvectors/characteristic-polynomial-3x3.png" alt="Two-panel figure: a 3x3 matrix and its cubic characteristic polynomial with three real roots highlighted" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">The characteristic polynomial of a 3×3 matrix is a cubic. For a generic real matrix it has either three real roots or one real and a complex conjugate pair.</figcaption>
+</figure>
+
+## 4. Diagonalizability and Similarity
+
+The characteristic polynomial tells us how many eigenvalues a matrix has and what they are. The next question is whether the eigenvectors form a *basis* of $V$ — because when they do, the matrix becomes *diagonal* in that basis, and most calculations involving the matrix (powers, exponentials, system solutions) collapse to trivial scalar arithmetic along the eigenbasis.
+
+<TheoremBlock type="definition" number={5} title="Diagonalizable Matrix">
+
+An $n \times n$ matrix $A$ is **diagonalizable** (over the field $\mathbb{F}$, typically $\mathbb{R}$ or $\mathbb{C}$) if there exists an invertible $P$ and a diagonal matrix $D$ — both with entries in $\mathbb{F}$ — such that
+
+$$A = P D P^{-1}.$$
+
+Equivalently, $A$ is similar to a diagonal matrix.
+
+</TheoremBlock>
+
+The factorization $A = P D P^{-1}$ is the *eigendecomposition*. Geometrically: change of basis to the eigenbasis (apply $P^{-1}$), scale along each eigendirection independently (apply $D$), change back to the standard basis (apply $P$). Algebraically: every action of $A$ on a vector reduces to $n$ independent scalar scalings in the eigenbasis.
+
+<TheoremBlock type="theorem" number={2} title="Diagonalizability and Eigenbases">
+
+An $n \times n$ matrix $A$ is diagonalizable if and only if there exists a basis of $\mathbb{R}^n$ (or $\mathbb{C}^n$, depending on the field) consisting of eigenvectors of $A$. In that case, the columns of $P$ are the eigenvectors, and the diagonal entries of $D$ are the corresponding eigenvalues.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+**($\Rightarrow$)** Suppose $A = P D P^{-1}$ with $D = \operatorname{diag}(\lambda_1, \ldots, \lambda_n)$ and $P$ invertible with columns $\mathbf{p}_1, \ldots, \mathbf{p}_n$. Multiply both sides on the right by $P$ to clear the inverse: $A P = P D$. Reading column $j$ of both sides: $A \mathbf{p}_j = \lambda_j \mathbf{p}_j$. So each column of $P$ is an eigenvector with eigenvalue equal to the corresponding diagonal entry of $D$. Since $P$ is invertible, its columns are linearly independent, hence a basis of $\mathbb{R}^n$.
+
+**($\Leftarrow$)** Suppose $\{\mathbf{p}_1, \ldots, \mathbf{p}_n\}$ is a basis of eigenvectors with eigenvalues $\lambda_1, \ldots, \lambda_n$. Form the matrix $P$ whose columns are these eigenvectors; $P$ is invertible because its columns are linearly independent. Form $D = \operatorname{diag}(\lambda_1, \ldots, \lambda_n)$. Then $A P = P D$ by column-by-column computation (each column of $A P$ is $A \mathbf{p}_j = \lambda_j \mathbf{p}_j$, and each column of $P D$ is $\lambda_j \mathbf{p}_j$). Multiply both sides on the right by $P^{-1}$ to conclude $A = P D P^{-1}$.  $\blacksquare$
+
+</TheoremBlock>
+
+The most useful immediate consequence is that *distinct eigenvalues are enough* to guarantee diagonalizability. We never have to check geometric vs. algebraic multiplicities for distinct-eigenvalue matrices.
+
+<TheoremBlock type="corollary" number={2} title="Distinct Eigenvalues Imply Diagonalizable">
+
+If an $n \times n$ matrix $A$ has $n$ distinct eigenvalues (each with algebraic multiplicity 1), then $A$ is diagonalizable.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+Pick one eigenvector $\mathbf{v}_i$ from each eigenspace $E_{\lambda_i}$. By Proposition 2 (§2), eigenvectors for distinct eigenvalues are linearly independent. So $\{\mathbf{v}_1, \ldots, \mathbf{v}_n\}$ is a list of $n$ linearly independent vectors in $\mathbb{R}^n$, hence a basis. By Theorem 2, $A$ is diagonalizable.  $\blacksquare$
+
+</TheoremBlock>
+
+For repeated eigenvalues, diagonalizability is no longer automatic. The criterion is multiplicity-by-multiplicity equality: every repeated eigenvalue must have a geometric multiplicity that matches its algebraic multiplicity.
+
+<TheoremBlock type="theorem" number={3} title="Diagonalizability Criterion via Multiplicities">
+
+An $n \times n$ matrix $A$ is diagonalizable (over a field containing all its eigenvalues) if and only if, for every eigenvalue $\lambda$, the geometric multiplicity equals the algebraic multiplicity:
+
+$$m_g(\lambda) = m_a(\lambda) \quad \text{for every } \lambda \in \sigma(A).$$
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+**($\Leftarrow$)** Suppose $m_g(\lambda) = m_a(\lambda)$ for every eigenvalue. The eigenspaces $E_{\lambda_i}$ for distinct eigenvalues are linearly independent subspaces (extending Proposition 2 from single eigenvectors to whole eigenspaces — the same induction works with bases of $E_{\lambda_i}$ in place of single vectors). The total dimension of the direct sum is
+
+$$\sum_i m_g(\lambda_i) = \sum_i m_a(\lambda_i) = \deg p_A = n,$$
+
+so the eigenspaces span all of $\mathbb{R}^n$ (assuming the field contains all the eigenvalues). Concatenating bases of each eigenspace gives a basis of $\mathbb{R}^n$ consisting of eigenvectors; by Theorem 2, $A$ is diagonalizable.
+
+**($\Rightarrow$)** Suppose $A = P D P^{-1}$ with $D = \operatorname{diag}(d_1, \ldots, d_n)$. The eigenspace $E_\lambda$ in this representation is the span of the standard basis vectors $\mathbf{e}_j$ for which $d_j = \lambda$ — so $m_g(\lambda)$ equals the count of diagonal entries equal to $\lambda$. The characteristic polynomial is $p_A(\lambda') = \prod_j (\lambda' - d_j)$ (the diagonal makes this immediate), so $m_a(\lambda)$ is also the count of diagonal entries equal to $\lambda$. The two counts agree.  $\blacksquare$
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={7} title="Diagonalization of a 2×2 matrix">
+
+Continue with $A = \begin{pmatrix} 4 & -2 \\ 1 & 1 \end{pmatrix}$. Eigenvalues $\lambda_1 = 3$ and $\lambda_2 = 2$ (Example 4) — distinct, so $A$ is diagonalizable by Corollary 2. Find eigenvectors:
+
+- For $\lambda_1 = 3$: solve $(A - 3I)\mathbf{v} = \mathbf{0}$, i.e. $\begin{pmatrix} 1 & -2 \\ 1 & -2 \end{pmatrix}\mathbf{v} = \mathbf{0}$. The kernel is spanned by $\mathbf{v}_1 = (2, 1)^\top$.
+- For $\lambda_2 = 2$: solve $(A - 2I)\mathbf{v} = \mathbf{0}$, i.e. $\begin{pmatrix} 2 & -2 \\ 1 & -1 \end{pmatrix}\mathbf{v} = \mathbf{0}$. The kernel is spanned by $\mathbf{v}_2 = (1, 1)^\top$.
+
+Form $P = \begin{pmatrix} 2 & 1 \\ 1 & 1 \end{pmatrix}$ and $D = \begin{pmatrix} 3 & 0 \\ 0 & 2 \end{pmatrix}$. Verify by direct multiplication that $A P = P D$. Then $A = P D P^{-1}$ where $P^{-1} = \begin{pmatrix} 1 & -1 \\ -1 & 2 \end{pmatrix}$. In the eigenbasis, $A$ is the pair of independent scalings — by 3 along $\mathbf{v}_1$ and by 2 along $\mathbf{v}_2$.
+
+</TheoremBlock>
+
+When two matrices represent the same linear map in different bases, they are *similar* — and similarity preserves every invariant of the underlying map. The list of similarity invariants is exactly the data we can read off from the eigenvalue picture.
+
+<TheoremBlock type="theorem" number={4} title="Similarity Invariants">
+
+If $A$ and $A'$ are similar matrices, they share:
+
+(a) the characteristic polynomial (and hence the eigenvalue multiset with algebraic multiplicities),
+
+(b) the trace,
+
+(c) the determinant,
+
+(d) the rank,
+
+(e) the nullity,
+
+(f) the geometric multiplicity of each eigenvalue.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+(a) is Lemma 1 (§3). (b) Trace equals minus the coefficient of $\lambda^{n-1}$ in $p_A(\lambda)$ (this is the elementary-symmetric-polynomial identity), so trace is determined by the characteristic polynomial, hence invariant. (c) Determinant equals $(-1)^n$ times the constant term of $p_A(\lambda)$, so it too is determined by the characteristic polynomial. (d) The column space of $P A P^{-1}$ has the same dimension as the column space of $A$: $P^{-1}$ on the right doesn't change dimension (it's a bijection from $\mathbb{R}^n$ to itself), and $P$ on the left maps the column space isomorphically. So rank is preserved. (e) Nullity equals $n - \operatorname{rank}$, so it follows from (d) by rank-nullity. (f) The geometric multiplicity of $\lambda$ is
+
+$$m_g(\lambda) = \dim \ker(A - \lambda I) = \dim \ker(P^{-1}(A - \lambda I) P) = \dim \ker(A' - \lambda I),$$
+
+the same in both bases.  $\blacksquare$
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={4} title="Powers and exponentials via diagonalization">
+
+For diagonalizable $A = P D P^{-1}$ with $D = \operatorname{diag}(\lambda_1, \ldots, \lambda_n)$:
+
+$$A^k = (P D P^{-1})^k = P D^k P^{-1} \quad \text{where} \quad D^k = \operatorname{diag}(\lambda_1^k, \ldots, \lambda_n^k).$$
+
+The $P^{-1} P$ pairs telescope. The same identity holds for any function $f$ defined on the spectrum:
+
+$$f(A) = P f(D) P^{-1} \quad \text{where} \quad f(D) = \operatorname{diag}(f(\lambda_1), \ldots, f(\lambda_n)).$$
+
+In particular,
+
+$$e^A = P \, e^D \, P^{-1} = P \operatorname{diag}(e^{\lambda_1}, \ldots, e^{\lambda_n}) P^{-1}.$$
+
+This is the **spectral mapping** observation: functions of a diagonalizable matrix are computed by applying the function to the diagonal of $D$, then sandwich-wrapping. Closed-form matrix exponentials, square roots of positive-definite matrices, and whitening transformations are all instances.
+
+</TheoremBlock>
+
+**ML aside.** When the [Linear Systems](/topics/linear-systems) topic wrote $e^{At} = P e^{Dt} P^{-1}$ for the solution of $\mathbf{y}' = A \mathbf{y}$, it was applying exactly Remark 4. The matrix exponential of a diagonalizable matrix reduces to $n$ independent scalar exponentials along the eigenbasis. The continuous-time gradient flow $\dot{\boldsymbol{\theta}} = -H \boldsymbol{\theta}$ has solution $\boldsymbol{\theta}(t) = e^{-Ht} \boldsymbol{\theta}_0 = P e^{-Dt} P^{-1} \boldsymbol{\theta}_0$, and each eigencomponent $y_i(t) = e^{-\lambda_i t} y_i(0)$ decays independently. The eigenbasis is the basis in which the dynamics *decouple* — that is the actual reason eigenvalues control convergence.
+
+<DiagonalizationExplorer client:visible />
+
+<figure className="my-6">
+  <img src="/images/topics/eigenvalues-eigenvectors/diagonalization-three-steps.png" alt="Three-panel figure: the action of A on a vector x decomposed as change to eigenbasis, scale, change back" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">The eigendecomposition A = PDP⁻¹ as a three-step action: change to the eigenbasis via P⁻¹, scale along each eigenvector by the eigenvalue (D), change back via P.</figcaption>
+</figure>
+
+## 5. Defective Matrices — A Brief Detour
+
+Not every matrix is diagonalizable. When an eigenvalue's algebraic multiplicity strictly exceeds its geometric multiplicity — the eigenspace is "smaller than it should be" — the matrix is called *defective*. The defective case is structurally important enough to name and exhibit, but the full theory of canonical forms for defective matrices (Jordan canonical form) is mathematically heavy and rarely needed in ML practice. We name the form, give one example, and forward the full development to a future topic.
+
+<TheoremBlock type="definition" number={6} title="Defective Matrix">
+
+An $n \times n$ matrix $A$ is **defective** if it has an eigenvalue whose geometric multiplicity is strictly less than its algebraic multiplicity. Equivalently, $A$ has fewer than $n$ linearly independent eigenvectors, so it admits no eigenbasis and is not diagonalizable.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={8} title="A defective 2×2 matrix">
+
+Let $J_2 = \begin{pmatrix} 2 & 1 \\ 0 & 2 \end{pmatrix}$. Characteristic polynomial: $p_{J_2}(\lambda) = (\lambda - 2)^2$. So $\lambda = 2$ is the only eigenvalue, with algebraic multiplicity 2.
+
+Compute the eigenspace by solving $(J_2 - 2I)\mathbf{v} = \mathbf{0}$:
+
+$$(J_2 - 2I) = \begin{pmatrix} 0 & 1 \\ 0 & 0 \end{pmatrix}, \qquad \ker(J_2 - 2I) = \operatorname{span}\{(1, 0)^\top\}.$$
+
+The eigenspace is one-dimensional. Geometric multiplicity 1, algebraic multiplicity 2: $J_2$ is defective. There is no basis of $\mathbb{R}^2$ consisting of eigenvectors of $J_2$, so $J_2$ is not diagonalizable. The matrix is already in *Jordan form* — it *is* a Jordan block.
+
+</TheoremBlock>
+
+<TheoremBlock type="definition" number={7} title="Jordan Block (informal)">
+
+A **Jordan block** of size $k$ with eigenvalue $\lambda$ is the $k \times k$ matrix
+
+$$J_k(\lambda) = \begin{pmatrix} \lambda & 1 & & \\ & \lambda & 1 & \\ & & \ddots & \ddots \\ & & & \lambda & 1 \\ & & & & \lambda \end{pmatrix}$$
+
+with $\lambda$ on the diagonal, $1$s on the immediate superdiagonal, and $0$s elsewhere. The matrix $J_2$ in Example 8 is the Jordan block of size 2 with eigenvalue 2.
+
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={5} title="Jordan Canonical Form (stated, not proved)">
+
+Every $n \times n$ matrix $A$ over the complex numbers is similar to a block-diagonal matrix $J$ whose blocks are Jordan blocks $J_{k_i}(\lambda_i)$. The list of Jordan blocks — their sizes and eigenvalues — is unique up to ordering, and is the **Jordan canonical form** of $A$. The Jordan form is the canonical generalization of diagonalization: diagonalizable matrices are exactly those whose Jordan form has all $1 \times 1$ blocks.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={5} title="Why we don't develop Jordan form">
+
+The proof of Theorem 5 (see Hoffman-Kunze Chapter 7 or Horn-Johnson Chapter 3) requires *generalized eigenvectors*, *Jordan chains*, and a careful induction on the algebraic multiplicity of each eigenvalue. The development is mathematically beautiful but long, and the practical payoff is modest: defective matrices are rare in clean applications, and when they do arise (linear-systems repeated eigenvalues, bifurcation analysis), the relevant techniques can be developed locally on a case-by-case basis.
+
+We treat [Linear Systems & Matrix Exponential](/topics/linear-systems) as the place where case-by-case handling for $2 \times 2$ defective systems lives; the full Jordan theory belongs to a future topic on canonical forms or numerical linear algebra. For the rest of *this* topic, we proceed as if all matrices are diagonalizable — a working assumption that holds for the symmetric matrices §6 puts at the center, and for generic random matrices in general.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={6} title="Defective matrices are measure-zero but not negligible">
+
+The set of $n \times n$ matrices with all distinct eigenvalues is *open and dense* in the space of all matrices $\mathbb{R}^{n \times n}$; its complement, where some eigenvalues coincide, is a set of measure zero (the discriminant of the characteristic polynomial vanishes on a hypersurface). So a *random* matrix is diagonalizable with probability 1.
+
+But defective matrices live on the *boundary* between qualitatively different behaviors — e.g. the boundary between a stable spiral and a stable node in a 2D phase portrait, or the boundary between under-damped and over-damped oscillation in a second-order linear system. Bifurcation theory studies exactly what happens at such boundaries, and there defectiveness is the central object, not an exception. ML reality: repeated eigenvalues of the Hessian at a critical point are a measure-zero coincidence in a generic loss landscape, but at *symmetric* critical points (e.g. loss invariant under permutation of neurons in a wide network) they become structural rather than accidental.
+
+</TheoremBlock>
+
+<figure className="my-6">
+  <img src="/images/topics/eigenvalues-eigenvectors/defective-matrix.png" alt="Two-panel figure: the Jordan block J_2 acting on a unit square, showing shear-like distortion with one fixed direction" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">The defective Jordan block J₂ = [[2, 1], [0, 2]] acts on the unit square as a stretch-and-shear. The only invariant direction is the x-axis (eigenspace for λ = 2). The other direction is "almost" an eigenvector but not quite — it shears as it stretches.</figcaption>
+</figure>
+
+## 6. Symmetric Matrices and the Spectral Theorem
+
+The defective case in §5 is the *bad news* about the general eigenvalue picture. The *good news* is that the matrices ML actually cares about — the Hessian of a smooth loss, the covariance of a random vector, the Gram matrix $X^\top X$, the kernel Gram, the graph Laplacian — are all *symmetric*. And real symmetric matrices have the cleanest possible eigenvalue behavior: real eigenvalues, orthogonal eigenvectors, *always* diagonalizable, and a factorization $A = Q \Lambda Q^\top$ where $Q$ is orthogonal and $\Lambda$ is diagonal-real. This is the **spectral theorem**, the centerpiece of the topic.
+
+<TheoremBlock type="definition" number={8} title="Symmetric Matrix">
+
+A real $n \times n$ matrix $A$ is **symmetric** if $A^\top = A$, i.e. $a_{ij} = a_{ji}$ for every pair of indices $(i, j)$.
+
+</TheoremBlock>
+
+Three structural facts about symmetric matrices, in increasing order of strength: all eigenvalues are real (Lemma 2), eigenvectors for distinct eigenvalues are *automatically* orthogonal (Lemma 3), and the eigenspaces span all of $\mathbb{R}^n$ — so a symmetric matrix always has an orthonormal eigenbasis (Theorem 6). Each fact's proof is a short computation; together they give the spectral theorem.
+
+<TheoremBlock type="lemma" number={2} title="Symmetric Matrices Have Real Eigenvalues">
+
+Every eigenvalue of a real symmetric matrix $A$ is real.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+Let $\lambda \in \mathbb{C}$ be an eigenvalue of the real symmetric matrix $A$, with a corresponding (possibly complex) eigenvector $\mathbf{v} \in \mathbb{C}^n$: $A \mathbf{v} = \lambda \mathbf{v}$.
+
+Take the conjugate transpose ($\mathbf{v}^* = \overline{\mathbf{v}}^\top$, $A^* = \overline{A}^\top$): $\mathbf{v}^* A^* = \bar\lambda \mathbf{v}^*$. Since $A$ is real and symmetric, $A^* = A^\top = A$. So $\mathbf{v}^* A = \bar\lambda \mathbf{v}^*$.
+
+Multiply the eigenvalue equation $A \mathbf{v} = \lambda \mathbf{v}$ on the left by $\mathbf{v}^*$: $\mathbf{v}^* A \mathbf{v} = \lambda \mathbf{v}^* \mathbf{v}$. Multiply $\mathbf{v}^* A = \bar\lambda \mathbf{v}^*$ on the right by $\mathbf{v}$: $\mathbf{v}^* A \mathbf{v} = \bar\lambda \mathbf{v}^* \mathbf{v}$.
+
+Equate the two expressions: $\lambda \mathbf{v}^* \mathbf{v} = \bar\lambda \mathbf{v}^* \mathbf{v}$. Since $\mathbf{v} \neq \mathbf{0}$, $\mathbf{v}^* \mathbf{v} = \|\mathbf{v}\|^2 > 0$. Divide both sides by $\|\mathbf{v}\|^2$ to get $\lambda = \bar\lambda$, hence $\lambda \in \mathbb{R}$.  $\blacksquare$
+
+</TheoremBlock>
+
+<TheoremBlock type="lemma" number={3} title="Symmetric Matrices Have Orthogonal Eigenspaces">
+
+If $A$ is real symmetric and $\mathbf{v}_1, \mathbf{v}_2$ are eigenvectors of $A$ corresponding to *distinct* eigenvalues $\lambda_1 \neq \lambda_2$, then $\mathbf{v}_1 \perp \mathbf{v}_2$.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+Compute $\langle A \mathbf{v}_1, \mathbf{v}_2 \rangle$ two ways. First, using $A \mathbf{v}_1 = \lambda_1 \mathbf{v}_1$:
+
+$$\langle A \mathbf{v}_1, \mathbf{v}_2 \rangle = \langle \lambda_1 \mathbf{v}_1, \mathbf{v}_2 \rangle = \lambda_1 \langle \mathbf{v}_1, \mathbf{v}_2 \rangle.$$
+
+Second, pushing the $A$ across the inner product using $A^\top = A$ (a property of the symmetric case, see §10 of [Linear Algebra](/topics/linear-algebra) on inner products and adjoints): $\langle A \mathbf{v}_1, \mathbf{v}_2 \rangle = \langle \mathbf{v}_1, A \mathbf{v}_2 \rangle = \langle \mathbf{v}_1, \lambda_2 \mathbf{v}_2 \rangle = \lambda_2 \langle \mathbf{v}_1, \mathbf{v}_2 \rangle.$
+
+Equating: $\lambda_1 \langle \mathbf{v}_1, \mathbf{v}_2 \rangle = \lambda_2 \langle \mathbf{v}_1, \mathbf{v}_2 \rangle$, i.e. $(\lambda_1 - \lambda_2) \langle \mathbf{v}_1, \mathbf{v}_2 \rangle = 0$. Since $\lambda_1 \neq \lambda_2$, the inner product $\langle \mathbf{v}_1, \mathbf{v}_2 \rangle = 0$.  $\blacksquare$
+
+</TheoremBlock>
+
+With both lemmas in hand, the spectral theorem is the inductive payoff. The structure of the proof is the heart of the topic: find one eigenvalue/eigenvector pair using Lemma 2, peel off its 1-dimensional eigenspace, and recurse on the $(n-1)$-dimensional orthogonal complement — which remains symmetric.
+
+<TheoremBlock type="theorem" number={6} title="Spectral Theorem for Real Symmetric Matrices">
+
+Let $A$ be a real $n \times n$ symmetric matrix. Then there exists an orthogonal matrix $Q$ (i.e. $Q^\top Q = I$) and a real diagonal matrix $\Lambda = \operatorname{diag}(\lambda_1, \ldots, \lambda_n)$ such that
+
+$$A = Q \, \Lambda \, Q^\top.$$
+
+The columns of $Q$ form an orthonormal basis of $\mathbb{R}^n$ consisting of eigenvectors of $A$; the diagonal entries of $\Lambda$ are the corresponding eigenvalues (with algebraic multiplicities, conventionally listed in non-increasing order $\lambda_1 \geq \lambda_2 \geq \cdots \geq \lambda_n$).
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+Induction on $n$.
+
+**Base case ($n = 1$).** A $1 \times 1$ matrix $A = (a_{11})$ is trivially symmetric and diagonal: take $Q = (1)$ and $\Lambda = (a_{11})$.
+
+**Inductive step.** Assume the spectral theorem holds for $(n-1) \times (n-1)$ symmetric matrices. Let $A$ be an $n \times n$ real symmetric matrix.
+
+By Lemma 2, the characteristic polynomial $p_A(\lambda)$ has at least one real root $\lambda_1$ (in fact, *all* its roots are real, but we only need one for the induction). By Theorem 1, $\lambda_1$ is a real eigenvalue. Pick a corresponding real unit eigenvector $\mathbf{q}_1 \in \mathbb{R}^n$ with $\|\mathbf{q}_1\| = 1$.
+
+Extend $\{\mathbf{q}_1\}$ to an orthonormal basis $\{\mathbf{q}_1, \mathbf{w}_2, \ldots, \mathbf{w}_n\}$ of $\mathbb{R}^n$ via Gram-Schmidt (§10 of [Linear Algebra](/topics/linear-algebra)). Form the orthogonal matrix $\tilde Q$ whose columns are these vectors; orthogonal because the columns are orthonormal.
+
+Consider the matrix $\tilde Q^\top A \tilde Q$. Two things are true about it.
+
+*First*, it is symmetric: $(\tilde Q^\top A \tilde Q)^\top = \tilde Q^\top A^\top \tilde Q = \tilde Q^\top A \tilde Q$ (using $A^\top = A$).
+
+*Second*, its first column equals $\lambda_1 \mathbf{e}_1$: the $j$-th column of $\tilde Q^\top A \tilde Q$ is $\tilde Q^\top A (\text{$j$-th column of } \tilde Q)$. For $j = 1$, this is $\tilde Q^\top A \mathbf{q}_1 = \tilde Q^\top (\lambda_1 \mathbf{q}_1) = \lambda_1 \tilde Q^\top \mathbf{q}_1 = \lambda_1 \mathbf{e}_1$, since $\tilde Q^\top \mathbf{q}_1 = \mathbf{e}_1$ by construction (the first column of $\tilde Q$ is $\mathbf{q}_1$).
+
+Combining symmetry with the first column being $\lambda_1 \mathbf{e}_1$ forces the first *row* to be $\lambda_1 \mathbf{e}_1^\top$ as well. So
+
+$$\tilde Q^\top A \tilde Q = \begin{pmatrix} \lambda_1 & \mathbf{0}^\top \\ \mathbf{0} & B \end{pmatrix}$$
+
+for some $(n-1) \times (n-1)$ block $B$. The block $B$ is symmetric (symmetry of the full matrix passes to the lower-right block). By the inductive hypothesis, $B = Q_B \Lambda_B Q_B^\top$ with $Q_B$ orthogonal and $\Lambda_B$ diagonal real.
+
+Define
+
+$$Q' = \begin{pmatrix} 1 & \mathbf{0}^\top \\ \mathbf{0} & Q_B \end{pmatrix}, \qquad \Lambda = \begin{pmatrix} \lambda_1 & \mathbf{0}^\top \\ \mathbf{0} & \Lambda_B \end{pmatrix}.$$
+
+Then $Q'$ is orthogonal (block-diagonal with orthogonal blocks) and $\Lambda$ is diagonal. A direct computation gives $\tilde Q^\top A \tilde Q = Q' \Lambda Q'^\top$. Set $Q = \tilde Q Q'$ — orthogonal as a product of orthogonals. Then $A = \tilde Q (\tilde Q^\top A \tilde Q) \tilde Q^\top = \tilde Q Q' \Lambda Q'^\top \tilde Q^\top = Q \Lambda Q^\top$, completing the induction.  $\blacksquare$
+
+</TheoremBlock>
+
+<TheoremBlock type="corollary" number={3} title="Spectral Decomposition as a Sum of Rank-One Projectors">
+
+Under the spectral theorem, $A$ has the **outer-product expansion**
+
+$$A = \sum_{i=1}^n \lambda_i \mathbf{q}_i \mathbf{q}_i^\top,$$
+
+where each $\mathbf{q}_i \mathbf{q}_i^\top$ is the rank-one orthogonal projector onto $\operatorname{span}(\mathbf{q}_i)$. The matrix $A$ is therefore a weighted sum of rank-one projectors onto its eigendirections, weighted by the eigenvalues.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+Direct expansion of $Q \Lambda Q^\top$. The matrix $\Lambda Q^\top$ scales the $i$-th row of $Q^\top$ (which is $\mathbf{q}_i^\top$) by $\lambda_i$. Multiplying by $Q$ on the left forms the outer product $\sum_i \lambda_i \mathbf{q}_i \mathbf{q}_i^\top$.  $\blacksquare$
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={9} title="Diagonalizing a 2×2 symmetric matrix">
+
+Let $A = \begin{pmatrix} 4 & 2 \\ 2 & 1 \end{pmatrix}$. Trace = 5, determinant = 0. Characteristic polynomial: $\lambda^2 - 5\lambda = \lambda(\lambda - 5)$. Eigenvalues: $\lambda_1 = 5$ and $\lambda_2 = 0$.
+
+For $\lambda_1 = 5$: solve $(A - 5I)\mathbf{v} = \mathbf{0}$, i.e. $\begin{pmatrix} -1 & 2 \\ 2 & -4 \end{pmatrix} \mathbf{v} = \mathbf{0}$. The kernel is spanned by $(2, 1)^\top$; normalize to $\mathbf{q}_1 = (2, 1)^\top / \sqrt{5}$.
+
+For $\lambda_2 = 0$: solve $A \mathbf{v} = \mathbf{0}$. The kernel is spanned by $(1, -2)^\top$; normalize to $\mathbf{q}_2 = (1, -2)^\top / \sqrt{5}$.
+
+Verify orthogonality: $\mathbf{q}_1 \cdot \mathbf{q}_2 = (2 \cdot 1 + 1 \cdot (-2))/5 = 0$ ✓, exactly as Lemma 3 promised.
+
+Spectral decomposition: $A = 5 \mathbf{q}_1 \mathbf{q}_1^\top + 0 \cdot \mathbf{q}_2 \mathbf{q}_2^\top = 5 \mathbf{q}_1 \mathbf{q}_1^\top$ — a rank-one matrix, consistent with $\det A = 0$. The image of $A$ is the line spanned by $\mathbf{q}_1$; the null space is the line spanned by $\mathbf{q}_2$.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={7} title="Why symmetric is so much cleaner">
+
+The proof of Theorem 6 uses **no polynomial algebra**. It does not factor the characteristic polynomial or count multiplicities. The induction step finds *one* eigenvalue–eigenvector pair (Lemma 2 guarantees the eigenvalue is real), restricts to the orthogonal complement (which inherits symmetry), and recurses. The argument is purely geometric: find an invariant line, peel it off, repeat. The same argument generalizes verbatim to compact self-adjoint operators on infinite-dimensional Hilbert spaces — the proof in [Hilbert Spaces](/topics/hilbert-spaces) of the infinite-dim spectral theorem is structurally identical to ours.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={8} title="Real-symmetric vs. complex-Hermitian">
+
+The complex analogue of a real symmetric matrix is a **Hermitian** matrix: $A^* = A$ where $A^* = \overline{A}^\top$. The complex spectral theorem says every Hermitian matrix factors as $A = U \Lambda U^*$ with $U$ unitary ($U^* U = I$) and $\Lambda$ real diagonal. The proof is structurally identical to ours; only the inner product changes ($\langle \mathbf{u}, \mathbf{v} \rangle = \mathbf{u}^* \mathbf{v}$, conjugate-linear in the first slot). Quantum mechanics lives in this setting — observables are Hermitian operators, and their real eigenvalues are the measurable values. For ML the real symmetric case suffices.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={9} title="The Hessian, revisited">
+
+Recall from the [Hessian](/topics/hessian) topic that the Hessian $\nabla^2 f$ of a $C^2$ function is symmetric (Clairaut's theorem). The spectral theorem now applies: $\nabla^2 f = Q \Lambda Q^\top$ with real eigenvalues. The principal curvatures of the loss surface in the directions $\mathbf{q}_i$ are exactly the eigenvalues $\lambda_i$. The second-derivative test reads off the critical-point type from the signs of the $\lambda_i$: all positive ⟹ local minimum, all negative ⟹ local maximum, mixed signs ⟹ saddle. We now have the rigorous spectral foundation for that test; §7 makes it formal as Theorem 7.
+
+</TheoremBlock>
+
+**ML aside.** A covariance matrix $\Sigma = \mathbb{E}[(X - \mu)(X - \mu)^\top]$ is symmetric by construction (the outer-product structure forces $\Sigma_{ij} = \Sigma_{ji}$). The spectral theorem gives $\Sigma = Q \Lambda Q^\top$ with $Q$ orthogonal and $\Lambda$ diagonal-real-non-negative. The columns of $Q$ are the **principal components** of the distribution; the diagonal entries of $\Lambda$ are the **variances** along those directions. PCA is *literally* the spectral theorem applied to a covariance matrix. The whitening transformation $\Sigma^{-1/2} = Q \Lambda^{-1/2} Q^\top$ (well-defined when $\Sigma$ is positive-definite) maps the distribution to one with identity covariance — the precondition for Mahalanobis distance and for well-conditioned gradient descent. <a className="formalstatistics-badge" href="https://www.formalstatistics.com/topics/multivariate-distributions">multivariate-distributions →</a> <a className="formalml-badge" href="https://www.formalml.com/topics/pca-and-spectral-methods">pca-and-spectral-methods →</a>
+
+<SpectralDecompositionVisualizer client:visible />
+
+<figure className="my-6">
+  <img src="/images/topics/eigenvalues-eigenvectors/spectral-theorem-ellipse.png" alt="Two-panel figure: unit circle on the left and its image ellipse under a symmetric matrix on the right, with eigenvectors as principal axes and eigenvalues as semi-axis lengths" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">The spectral theorem geometrically: a symmetric positive-definite matrix maps the unit circle to an ellipse whose principal axes are the eigenvectors and whose semi-axis lengths are the eigenvalues.</figcaption>
+</figure>
+
+## 7. Quadratic Forms and Positive-Definiteness
+
+The spectral theorem unlocks the classification of **quadratic forms** — scalar functions of the form $q(\mathbf{x}) = \mathbf{x}^\top A \mathbf{x}$ with $A$ symmetric. In the eigenbasis, $q$ becomes spectacularly simple: $q(\mathbf{x}) = \sum_i \lambda_i y_i^2$ where $y_i = \mathbf{q}_i^\top \mathbf{x}$ are the coordinates of $\mathbf{x}$ in the eigenbasis. The sign and growth behavior of $q$ are then entirely determined by the signs of the eigenvalues. This is the framework in which every convexity statement, every second-derivative test, and every covariance-matrix property on the rest of the site is phrased.
+
+<TheoremBlock type="definition" number={9} title="Quadratic Form">
+
+A **quadratic form** on $\mathbb{R}^n$ is a function $q : \mathbb{R}^n \to \mathbb{R}$ of the form $q(\mathbf{x}) = \mathbf{x}^\top A \mathbf{x}$ for some symmetric matrix $A$. (Any matrix $B$ in $\mathbf{x}^\top B \mathbf{x}$ can be replaced by its symmetric part $(B + B^\top)/2$ without changing the form, so we may take $A$ symmetric without loss of generality.)
+
+</TheoremBlock>
+
+<TheoremBlock type="definition" number={10} title="Definiteness">
+
+A symmetric matrix $A$ is
+
+- **positive-definite** (written $A \succ 0$) if $\mathbf{x}^\top A \mathbf{x} > 0$ for every $\mathbf{x} \neq \mathbf{0}$;
+- **positive-semidefinite** (written $A \succeq 0$) if $\mathbf{x}^\top A \mathbf{x} \geq 0$ for every $\mathbf{x}$;
+- **negative-definite** if $-A \succ 0$;
+- **negative-semidefinite** if $-A \succeq 0$;
+- **indefinite** if $\mathbf{x}^\top A \mathbf{x}$ takes both positive and negative values.
+
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={7} title="Definiteness via Eigenvalues">
+
+A symmetric matrix $A$ is positive-definite iff all eigenvalues are strictly positive; positive-semidefinite iff all eigenvalues are non-negative; negative-definite iff all eigenvalues are strictly negative; indefinite iff it has both positive and negative eigenvalues.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+By the spectral theorem, $A = Q \Lambda Q^\top$ with $Q$ orthogonal and $\Lambda = \operatorname{diag}(\lambda_1, \ldots, \lambda_n)$. Substitute $\mathbf{y} = Q^\top \mathbf{x}$:
+
+$$\mathbf{x}^\top A \mathbf{x} = \mathbf{x}^\top Q \Lambda Q^\top \mathbf{x} = \mathbf{y}^\top \Lambda \mathbf{y} = \sum_{i=1}^n \lambda_i y_i^2.$$
+
+Since $Q$ is orthogonal, the map $\mathbf{x} \mapsto \mathbf{y}$ is a bijection, and $\mathbf{x} \neq \mathbf{0}$ iff $\mathbf{y} \neq \mathbf{0}$. The form $\sum_i \lambda_i y_i^2$ is strictly positive for every $\mathbf{y} \neq \mathbf{0}$ iff every $\lambda_i > 0$ (because we can choose $\mathbf{y} = \mathbf{e}_j$ to isolate $\lambda_j$). Non-negativity, negativity, etc. follow analogously. Indefiniteness corresponds to mixed eigenvalue signs because choosing $\mathbf{y} = \mathbf{e}_j$ for the positive eigenvalue makes the form positive, and $\mathbf{y} = \mathbf{e}_k$ for the negative eigenvalue makes it negative.  $\blacksquare$
+
+</TheoremBlock>
+
+<TheoremBlock type="corollary" number={4} title="Positive-Definite Matrices Are Invertible">
+
+If $A \succ 0$, then $\det A = \prod \lambda_i > 0$, so $A$ is invertible. The inverse is also positive-definite, with eigenvalues $1/\lambda_i$.
+
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={8} title="Sylvester's Criterion">
+
+A symmetric matrix $A$ is positive-definite iff all **leading principal minors** — the determinants of the upper-left $k \times k$ submatrices, for $k = 1, 2, \ldots, n$ — are strictly positive.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+**($\Rightarrow$)** If $A \succ 0$, then for any nonzero $\mathbf{x}_k = (x_1, \ldots, x_k)^\top \in \mathbb{R}^k$, the extended vector $\mathbf{x} = (x_1, \ldots, x_k, 0, \ldots, 0)^\top \in \mathbb{R}^n$ satisfies $\mathbf{x}^\top A \mathbf{x} = \mathbf{x}_k^\top A_k \mathbf{x}_k$ where $A_k$ is the leading $k \times k$ submatrix. Since $A \succ 0$ and $\mathbf{x} \neq \mathbf{0}$, this is positive; so $A_k \succ 0$ as well, hence $\det A_k > 0$ by Corollary 4.
+
+**($\Leftarrow$)** The converse uses induction on $k$: the LDLᵀ decomposition with all positive diagonal entries can be built incrementally from the leading principal minors. The full argument is in Horn & Johnson Theorem 7.2.5; the key idea is that positive leading minors force the pivots in symmetric Gaussian elimination to remain positive, which is equivalent to positive-definiteness.  $\blacksquare$
+
+</TheoremBlock>
+
+<TheoremBlock type="definition" number={11} title="Ellipsoid">
+
+Let $A \succ 0$ be symmetric positive-definite. The **unit ellipsoid** of $A$ is
+
+$$\mathcal{E}(A) = \{\mathbf{x} \in \mathbb{R}^n : \mathbf{x}^\top A \mathbf{x} \leq 1\}.$$
+
+By the spectral theorem, $\mathcal{E}(A)$ is centered at the origin with principal axes along the eigenvectors $\mathbf{q}_i$ and semi-axis lengths $1/\sqrt{\lambda_i}$. Larger eigenvalues give *shorter* semi-axes — the matrix "stretches more aggressively" along high-eigenvalue directions, so the level set is more compressed there.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={10} title="Three quadratic forms in ℝ²">
+
+(a) $A = I = \operatorname{diag}(1, 1)$. $q(\mathbf{x}) = x_1^2 + x_2^2$. Eigenvalues $1, 1$. Level sets $q = c > 0$ are circles of radius $\sqrt c$. Positive-definite, isotropic.
+
+(b) $A = \operatorname{diag}(4, 1)$. $q(\mathbf{x}) = 4 x_1^2 + x_2^2$. Eigenvalues $4, 1$. Level sets are ellipses with $x_1$-semi-axis $\sqrt{c}/2$ and $x_2$-semi-axis $\sqrt c$ — *elongated along the $x_2$-axis* (smaller eigenvalue, longer axis). Positive-definite, anisotropic.
+
+(c) $A = \operatorname{diag}(1, -1)$. $q(\mathbf{x}) = x_1^2 - x_2^2$. Eigenvalues $1, -1$ — opposite signs. The surface $z = q(x_1, x_2)$ is a *saddle*; level sets $q = c$ are hyperbolas (for $c \neq 0$) with asymptotes $x_2 = \pm x_1$. Indefinite.
+
+The notebook plots all three. The viz below lets you interpolate continuously between them by editing the matrix entries.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={10} title="Why we care about positive-semi-definite (not just positive-definite)">
+
+Many naturally occurring symmetric matrices fail to be positive-definite but *are* positive-semidefinite: a covariance matrix of a degenerate distribution (some linear combination of variables has zero variance); a Gram matrix $X^\top X$ when the data matrix $X$ is rank-deficient; a graph Laplacian, which always has $\mathbf{1}$ in its kernel. The semidefinite case is where rank-deficiency lives. <a className="formalstatistics-badge" href="https://www.formalstatistics.com/topics/covariance-correlation">covariance-correlation →</a> Geometrically, a PSD matrix with a nontrivial kernel has an ellipsoid that *degenerates into an infinite cylinder* along the kernel direction — the form is constant along the kernel, growing only in the orthogonal complement.
+
+</TheoremBlock>
+
+**ML aside.** The Hessian topic's "condition number $\kappa(H) = \lambda_{\max}/\lambda_{\min}$" implicitly assumes $H$ is positive-definite (so $\lambda_{\min} > 0$) — that is the local-minimum case. When the Hessian is positive-semidefinite but not positive-definite, the loss has a **flat direction** (the kernel of $H$), and gradient descent in that direction is undamped. Modern deep learning has a large literature on flat directions because over-parameterized networks have positive-semidefinite-but-not-positive-definite Hessians by construction (any null direction in parameter space along which the loss does not change is a Hessian-null direction).
+
+<QuadraticFormVisualizer client:visible />
+
+<figure className="my-6">
+  <img src="/images/topics/eigenvalues-eigenvectors/quadratic-form-zoo.png" alt="Five-panel figure: positive-definite isotropic (circular contours), positive-definite elongated (elliptical), positive-semidefinite (parallel lines), indefinite saddle (hyperbolas), negative-definite (inverted)" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">The zoo of quadratic forms in ℝ², classified by eigenvalue signs. Positive-definite → ellipses (bowl). Positive-semidefinite → parallel lines (trough). Indefinite → hyperbolas (saddle). Negative-definite → ellipses (dome). The sign pattern of the eigenvalues determines the contour topology.</figcaption>
+</figure>
+
+## 8. The Rayleigh Quotient
+
+The spectral theorem and the eigenvalue/definiteness picture (§§6-7) gave us *static* information about a symmetric matrix: its decomposition, its quadratic form, its principal axes. The **Rayleigh quotient** gives us a *variational* characterization — eigenvalues as extrema of a scalar function. This is the picture in which PCA's "find the direction of maximum variance" lives, and the bridge from spectral theory to constrained optimization.
+
+<TheoremBlock type="definition" number={12} title="Rayleigh Quotient">
+
+For a real symmetric matrix $A$ and a nonzero vector $\mathbf{x} \in \mathbb{R}^n$, the **Rayleigh quotient** is
+
+$$R_A(\mathbf{x}) = \frac{\mathbf{x}^\top A \mathbf{x}}{\mathbf{x}^\top \mathbf{x}}.$$
+
+Defined on $\mathbb{R}^n \setminus \{\mathbf{0}\}$ and **scale-invariant**: $R_A(c \mathbf{x}) = R_A(\mathbf{x})$ for any $c \neq 0$. Restricting to unit vectors $\|\mathbf{x}\| = 1$ gives $R_A(\mathbf{x}) = \mathbf{x}^\top A \mathbf{x}$ — just the quadratic form on the unit sphere.
+
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={9} title="Rayleigh Quotient Bounds (Extremal Eigenvalues)">
+
+Let $A$ be real symmetric with eigenvalues $\lambda_1 \geq \lambda_2 \geq \cdots \geq \lambda_n$ and orthonormal eigenvectors $\mathbf{q}_1, \ldots, \mathbf{q}_n$. For every $\mathbf{x} \neq \mathbf{0}$:
+
+$$\lambda_n \leq R_A(\mathbf{x}) \leq \lambda_1.$$
+
+The upper bound is achieved at $\mathbf{x} = \mathbf{q}_1$; the lower bound at $\mathbf{x} = \mathbf{q}_n$. Therefore
+
+$$\lambda_1 = \max_{\mathbf{x} \neq \mathbf{0}} R_A(\mathbf{x}), \qquad \lambda_n = \min_{\mathbf{x} \neq \mathbf{0}} R_A(\mathbf{x}).$$
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+Expand $\mathbf{x}$ in the orthonormal eigenbasis: $\mathbf{x} = \sum_{i=1}^n c_i \mathbf{q}_i$ with $c_i = \mathbf{q}_i^\top \mathbf{x}$.
+
+By Parseval (orthonormality of the basis): $\mathbf{x}^\top \mathbf{x} = \sum_i c_i^2$. By the outer-product expansion (Corollary 3): $A \mathbf{x} = \sum_i \lambda_i c_i \mathbf{q}_i$, so $\mathbf{x}^\top A \mathbf{x} = \sum_i \lambda_i c_i^2$.
+
+Therefore
+
+$$R_A(\mathbf{x}) = \frac{\sum_i \lambda_i c_i^2}{\sum_i c_i^2} = \sum_{i=1}^n w_i \, \lambda_i,$$
+
+where $w_i = c_i^2 / \sum_j c_j^2 \in [0, 1]$ are weights summing to $1$. So $R_A(\mathbf{x})$ is a *convex combination* of the eigenvalues. Any convex combination of numbers lies between the smallest and largest:
+
+$$\lambda_n = \sum w_i \lambda_n \leq \sum w_i \lambda_i \leq \sum w_i \lambda_1 = \lambda_1.$$
+
+Equality on the upper bound requires all the weight to be on indices where $\lambda_i = \lambda_1$ — i.e. $\mathbf{x}$ lies in the eigenspace $E_{\lambda_1}$. The simplest choice is $\mathbf{x} = \mathbf{q}_1$. Similarly the lower bound is achieved at $\mathbf{x} = \mathbf{q}_n$.  $\blacksquare$
+
+</TheoremBlock>
+
+<TheoremBlock type="corollary" number={5} title="Variational Characterization of λ₁ and λₙ">
+
+$$\lambda_1 = \max_{\|\mathbf{x}\| = 1} \mathbf{x}^\top A \mathbf{x}, \qquad \lambda_n = \min_{\|\mathbf{x}\| = 1} \mathbf{x}^\top A \mathbf{x}.$$
+
+The maximizer is $\mathbf{q}_1$ (top eigenvector); the minimizer is $\mathbf{q}_n$ (bottom eigenvector), each up to sign and unit-norm scaling.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={11} title="Computing λ_max by maximization">
+
+Let $A = \begin{pmatrix} 2 & 1 \\ 1 & 2 \end{pmatrix}$. Parameterize the unit circle as $\mathbf{x}(\theta) = (\cos\theta, \sin\theta)^\top$. Compute
+
+$$\mathbf{x}(\theta)^\top A \mathbf{x}(\theta) = 2\cos^2\theta + 2\sin\theta\cos\theta + 2\sin^2\theta = 2 + \sin(2\theta).$$
+
+The maximum over $\theta$ is $3$ at $\theta = \pi/4$ (where $\sin(2\theta) = 1$); the minimum is $1$ at $\theta = 3\pi/4$ (where $\sin(2\theta) = -1$). So $\lambda_{\max} = 3$, $\lambda_{\min} = 1$. Top eigenvector $\mathbf{q}_1 = (\cos(\pi/4), \sin(\pi/4))^\top = (1, 1)^\top / \sqrt{2}$, bottom eigenvector $\mathbf{q}_2 = (-1, 1)^\top / \sqrt{2}$.
+
+Sanity-check via the characteristic polynomial: $\lambda^2 - 4\lambda + 3 = (\lambda - 1)(\lambda - 3)$ ✓.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={11} title="The Rayleigh quotient as a Lagrangian critical-point equation">
+
+The maximization
+
+$$\max_{\mathbf{x}} \mathbf{x}^\top A \mathbf{x} \quad \text{subject to} \quad \mathbf{x}^\top \mathbf{x} = 1$$
+
+is a constrained-optimization problem. By Lagrange multipliers (Topic 16), the Lagrangian is
+
+$$\mathcal{L}(\mathbf{x}, \mu) = \mathbf{x}^\top A \mathbf{x} - \mu (\mathbf{x}^\top \mathbf{x} - 1).$$
+
+Setting $\nabla_{\mathbf{x}} \mathcal{L} = \mathbf{0}$: $2 A \mathbf{x} - 2 \mu \mathbf{x} = \mathbf{0}$, i.e. $A \mathbf{x} = \mu \mathbf{x}$. *The Lagrange multiplier at a critical point is an eigenvalue.* The critical point $\mathbf{x}$ is the corresponding eigenvector. Maximizing the Rayleigh quotient *is* solving the eigenvalue equation — eigenvalues fall out of constrained optimization without any extra machinery.
+
+</TheoremBlock>
+
+**ML aside.** The first principal component of a mean-centered data matrix $X$ is the unit vector $\mathbf{q}_1$ maximizing $\mathbf{q}^\top (X^\top X) \mathbf{q}$ — the direction of maximum variance. By Corollary 5, that maximizer is the top eigenvector of $X^\top X$, achieving value $\lambda_1$. Each subsequent component maximizes the same Rayleigh quotient *subject to* orthogonality with the previous components — exactly the Courant-Fischer characterization of $\lambda_2, \lambda_3, \ldots$ in the next section. PCA is the iterative application of the Rayleigh quotient. <a className="formalml-badge" href="https://www.formalml.com/topics/pca-and-spectral-methods">pca-and-spectral-methods →</a>
+
+<RayleighQuotientExplorer client:visible />
+
+<figure className="my-6">
+  <img src="/images/topics/eigenvalues-eigenvectors/rayleigh-quotient-circle.png" alt="Two-panel figure: unit circle with eigenvector directions on the left, Rayleigh quotient as a function of angle on the right with horizontal dashed lines at lambda_max and lambda_min" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">The Rayleigh quotient on the unit circle. Peaks coincide with the eigenvector angles; peak values are the eigenvalues. The horizontal dashed lines mark λ_max and λ_min as the upper and lower envelopes of R_A.</figcaption>
+</figure>
+
+## 9. The Courant-Fischer Min-Max Principle
+
+The Rayleigh quotient (§8) characterized $\lambda_1$ and $\lambda_n$ as extrema. What about $\lambda_2, \lambda_3, \ldots$? Restricting the Rayleigh quotient to vectors orthogonal to $\mathbf{q}_1$ removes the top eigendirection, and the remaining max becomes $\lambda_2$. But this construction requires already *knowing* $\mathbf{q}_1$ — a chicken-and-egg problem when we want to characterize eigenvalues without first computing the others.
+
+The **Courant-Fischer min-max principle** avoids the dependence. It characterizes the $k$-th eigenvalue as a max-over-$k$-dimensional-subspaces of a min, or equivalently a min-over-$(n-k+1)$-dimensional-subspaces of a max. Either formulation captures $\lambda_k$ without first computing $\lambda_1, \ldots, \lambda_{k-1}$.
+
+<TheoremBlock type="theorem" number={10} title="Courant-Fischer Min-Max Principle">
+
+Let $A$ be real symmetric with eigenvalues $\lambda_1 \geq \cdots \geq \lambda_n$. For each $k = 1, 2, \ldots, n$:
+
+$$\lambda_k = \max_{\substack{S \subseteq \mathbb{R}^n \\ \dim S = k}} \; \min_{\substack{\mathbf{x} \in S \\ \|\mathbf{x}\| = 1}} \mathbf{x}^\top A \mathbf{x} = \min_{\substack{S \subseteq \mathbb{R}^n \\ \dim S = n - k + 1}} \; \max_{\substack{\mathbf{x} \in S \\ \|\mathbf{x}\| = 1}} \mathbf{x}^\top A \mathbf{x}.$$
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+We prove the max-min form; the min-max form is the same argument with signs flipped. Let $\mathbf{q}_1, \ldots, \mathbf{q}_n$ be the orthonormal eigenbasis from the spectral theorem, with $A \mathbf{q}_i = \lambda_i \mathbf{q}_i$ and $\lambda_1 \geq \cdots \geq \lambda_n$.
+
+**Lower bound** ($\lambda_k \leq \max_S \min_{\mathbf{x} \in S, \|\mathbf{x}\|=1} \mathbf{x}^\top A \mathbf{x}$). Take $S = \operatorname{span}(\mathbf{q}_1, \ldots, \mathbf{q}_k)$, a $k$-dimensional subspace. For any unit $\mathbf{x} = \sum_{i=1}^k c_i \mathbf{q}_i \in S$ with $\sum c_i^2 = 1$:
+
+$$\mathbf{x}^\top A \mathbf{x} = \sum_{i=1}^k \lambda_i c_i^2 \geq \lambda_k \sum_{i=1}^k c_i^2 = \lambda_k,$$
+
+since each $\lambda_i \geq \lambda_k$ for $i \leq k$. The min over this particular $S$ is at least $\lambda_k$, so the max over *all* $k$-dim subspaces is at least $\lambda_k$.
+
+**Upper bound** ($\max_S \min_{\mathbf{x} \in S, \|\mathbf{x}\|=1} \mathbf{x}^\top A \mathbf{x} \leq \lambda_k$). For any $k$-dimensional subspace $S$, consider its intersection with $T = \operatorname{span}(\mathbf{q}_k, \mathbf{q}_{k+1}, \ldots, \mathbf{q}_n)$, an $(n - k + 1)$-dimensional subspace. By dimension counting (Topic 33, §8):
+
+$$\dim(S \cap T) \geq \dim S + \dim T - n = k + (n - k + 1) - n = 1.$$
+
+So $S \cap T$ contains a unit vector $\mathbf{x}^*$. Since $\mathbf{x}^* \in T$, expand $\mathbf{x}^* = \sum_{i=k}^n c_i \mathbf{q}_i$ with $\sum c_i^2 = 1$. Then
+
+$$(\mathbf{x}^*)^\top A \mathbf{x}^* = \sum_{i=k}^n \lambda_i c_i^2 \leq \lambda_k \sum_{i=k}^n c_i^2 = \lambda_k,$$
+
+since each $\lambda_i \leq \lambda_k$ for $i \geq k$. So for every choice of $k$-dim $S$, the min is at most $(\mathbf{x}^*)^\top A \mathbf{x}^* \leq \lambda_k$, and therefore the max over all $S$ is at most $\lambda_k$.
+
+Combining both bounds: $\lambda_k = \max_S \min_{\mathbf{x} \in S, \|\mathbf{x}\|=1} \mathbf{x}^\top A \mathbf{x}$.  $\blacksquare$
+
+</TheoremBlock>
+
+The Courant-Fischer principle has two important consequences. Cauchy interlacing tells us how eigenvalues of a leading principal submatrix relate to those of the full matrix — a structural fact about how eigenvalues "thin out" as we restrict to subspaces. Weyl's inequality bounds how much the eigenvalues of a symmetric matrix can move under a perturbation, the foundation of *eigenvalue stability* in approximate PCA, noise-perturbed kernel methods, and spectral clustering on noisy graphs.
+
+<TheoremBlock type="corollary" number={6} title="Cauchy Interlacing">
+
+Let $A$ be a real symmetric $n \times n$ matrix with eigenvalues $\lambda_1 \geq \cdots \geq \lambda_n$, and let $B$ be the $(n-1) \times (n-1)$ leading principal submatrix of $A$ (delete the last row and column). Let $\mu_1 \geq \cdots \geq \mu_{n-1}$ be the eigenvalues of $B$. Then
+
+$$\lambda_k \geq \mu_k \geq \lambda_{k+1} \quad \text{for each } k = 1, \ldots, n-1.$$
+
+The eigenvalues of $B$ *interlace* those of $A$ — between consecutive eigenvalues of $A$.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+The $k$-dimensional subspaces of $\mathbb{R}^{n-1}$ embed canonically into $\mathbb{R}^n$ as $k$-dimensional subspaces orthogonal to $\mathbf{e}_n$. Apply Courant-Fischer to $B$ (working in $\mathbb{R}^{n-1}$) and to $A$ (over the same subspaces, restricted to $\mathbb{R}^{n-1} \subset \mathbb{R}^n$). The max over a smaller family of subspaces is no larger than the max over the full family, giving $\mu_k \leq \lambda_k$. The dual min-max form gives $\mu_k \geq \lambda_{k+1}$.  $\blacksquare$
+
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={11} title="Weyl's Inequality (stated)">
+
+For real symmetric matrices $A$ and $E$ of the same size, let $\lambda_k(A)$ denote the $k$-th eigenvalue (in non-increasing order). Then
+
+$$|\lambda_k(A + E) - \lambda_k(A)| \leq \|E\|_2,$$
+
+where $\|E\|_2 = \max_i |\lambda_i(E)|$ is the operator norm. Perturbing $A$ by $E$ moves each eigenvalue by at most $\|E\|_2$.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={12} title="Why Courant-Fischer matters in practice">
+
+Many ML quantities are eigenvalues of matrices that are *perturbations* of simpler ones — empirical covariance perturbing a population covariance, noisy kernel matrices perturbing the clean kernel, finite-sample graph Laplacians perturbing their continuum limits. Weyl's inequality (a consequence of Courant-Fischer) says these perturbations move eigenvalues by at most the operator-norm magnitude of the noise — the foundation of **eigenvalue stability**. The Davis-Kahan theorem extends stability to *eigenvectors* with sharper conditions; we mention it as the next step in spectral perturbation theory but defer the development.
+
+The min-max characterization also reads as a *constrained optimization*: "find the best $k$-dimensional approximation of the eigenvalue structure of $A$." For PCA, this becomes "find the $k$-dim projection that maximizes captured variance" — and Courant-Fischer says the optimal projection is onto the span of the top $k$ eigenvectors. Spectral clustering's "the Fiedler vector gives the best balanced cut" is the same statement for $\lambda_2$ of the Laplacian.
+
+</TheoremBlock>
+
+<figure className="my-6">
+  <img src="/images/topics/eigenvalues-eigenvectors/courant-fischer-subspaces.png" alt="Three-panel figure showing the Courant-Fischer min-max principle: free max equals top eigenvalue, constrained to 2D subspace orthogonal to top eigenvector gives second eigenvalue, constrained to a 1D subspace gives a specific Rayleigh-quotient value" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">Courant-Fischer: every eigenvalue is a max-min over subspaces. Constraining to a subspace of dimension k caps the Rayleigh quotient between λ_k and λ_max. The k-th eigenvalue is the max over all k-dim subspaces of the constrained minimum.</figcaption>
+</figure>
+
+## 10. Principal Axes Geometry
+
+Three pictures from §§6-8 — the spectral theorem's ellipsoid (Definition 11), the quadratic form's level sets (Theorem 7), and the Rayleigh quotient's extrema on the unit sphere (Theorem 9) — are *the same geometric object* read three ways. This short consolidating section names the unification and applies it to three apparently unrelated ML contexts that all reduce to the same spectral picture.
+
+<TheoremBlock type="definition" number={13} title="Principal Axes">
+
+Let $A \succ 0$ be symmetric positive-definite with spectral decomposition $A = Q \Lambda Q^\top$. The **principal axes** of $A$ are the eigenvectors $\mathbf{q}_1, \ldots, \mathbf{q}_n$. The **principal-axis lengths** of the unit ellipsoid $\mathcal{E}(A)$ are the semi-axes, equal to $1/\sqrt{\lambda_i}$ along $\mathbf{q}_i$.
+
+</TheoremBlock>
+
+The interpretation: a positive-definite symmetric matrix is "a uniform stretching along an orthogonal set of axes." The axes are the eigenvectors; the stretch factors are the eigenvalues. This is the picture every covariance ellipse, every quadratic loss landscape, and every Mahalanobis ball is invoking.
+
+<TheoremBlock type="proposition" number={4} title="Whitening Transformation">
+
+Let $\Sigma \succ 0$ be a symmetric positive-definite matrix with spectral decomposition $\Sigma = Q \Lambda Q^\top$. The **whitening transformation**
+
+$$W = \Sigma^{-1/2} = Q \, \Lambda^{-1/2} \, Q^\top$$
+
+satisfies $W \Sigma W^\top = I$. Equivalently, if $X$ is a random vector with covariance $\Sigma$, then $WX$ has covariance $I$.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+$W$ is symmetric: $W^\top = (Q \Lambda^{-1/2} Q^\top)^\top = Q \Lambda^{-1/2} Q^\top = W$. So $W^\top = W$, and the conjugation $W \Sigma W^\top$ simplifies:
+
+$$W \Sigma W = (Q \Lambda^{-1/2} Q^\top)(Q \Lambda Q^\top)(Q \Lambda^{-1/2} Q^\top) = Q \Lambda^{-1/2} (Q^\top Q) \Lambda (Q^\top Q) \Lambda^{-1/2} Q^\top.$$
+
+Using $Q^\top Q = I$ (orthogonality of $Q$) at each step: $W \Sigma W = Q \Lambda^{-1/2} \Lambda \Lambda^{-1/2} Q^\top = Q I Q^\top = I$.  $\blacksquare$
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={12} title="Whitening a 2D Gaussian">
+
+Let $\Sigma = \begin{pmatrix} 4 & 2 \\ 2 & 2 \end{pmatrix}$. Eigenvalues from the characteristic polynomial $\lambda^2 - 6\lambda + 4 = 0$: $\lambda_1 = 3 + \sqrt{5} \approx 5.236$, $\lambda_2 = 3 - \sqrt{5} \approx 0.764$.
+
+Eigenvectors: $\mathbf{q}_1 \approx (0.851, 0.526)^\top$ (high-variance direction); $\mathbf{q}_2 \approx (-0.526, 0.851)^\top$ (low-variance direction). The data ellipse — the locus where the multivariate-normal density takes any fixed value — is an ellipse with semi-axes $\sqrt{5.236} \approx 2.29$ and $\sqrt{0.764} \approx 0.87$, oriented along $\mathbf{q}_1$ and $\mathbf{q}_2$.
+
+The whitening transformation $W = Q \operatorname{diag}(1/\sqrt{5.236}, 1/\sqrt{0.764}) Q^\top$ stretches the data along $\mathbf{q}_2$ (where variance is small) and *compresses* along $\mathbf{q}_1$ (where variance is large), so the resulting distribution is circularly symmetric. Linear regression after whitening becomes well-conditioned; Mahalanobis distance becomes Euclidean distance in the whitened coordinates.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={13} title="The three pictures, unified">
+
+A positive-definite symmetric matrix $A$ is simultaneously three different objects:
+
+(a) **A quadratic form** $\mathbf{x}^\top A \mathbf{x}$ whose level sets are ellipsoids (Definition 11);
+
+(b) **A linear map** whose action on the unit sphere stretches it to an ellipsoid (the spectral-theorem picture from the `<SpectralDecompositionVisualizer />` above);
+
+(c) **An inner product structure** $\langle \mathbf{x}, \mathbf{y} \rangle_A = \mathbf{x}^\top A \mathbf{y}$ that defines the Mahalanobis distance $d_A(\mathbf{x}, \mathbf{y}) = \sqrt{(\mathbf{x} - \mathbf{y})^\top A (\mathbf{x} - \mathbf{y})}$.
+
+The eigenvalues and eigenvectors are the same in all three pictures; only the visualization differs. This is the unifying observation that makes spectral methods so reusable across ML and statistics. <a className="formalstatistics-badge" href="https://www.formalstatistics.com/topics/mahalanobis-distance">mahalanobis-distance →</a>
+
+</TheoremBlock>
+
+**ML aside.** Adam, RMSProp, and AdaGrad are **approximate whitening** methods for gradient descent. Each maintains a running estimate of (the diagonal of) the loss Hessian and uses it to rescale per-coordinate step sizes — effectively applying a diagonal approximation of $\Sigma^{-1/2}$ to the gradient at each step. Full whitening would require the full eigendecomposition of the Hessian; the diagonal approximation is what is computationally tractable. The condition number $\kappa(H) = \lambda_{\max} / \lambda_{\min}$ from the Hessian topic is the *anisotropy* of the loss ellipsoid — the ratio of longest to shortest axis. Newton's method whitens *fully* (uses $H^{-1}$ as preconditioner) and converges in one step on a pure quadratic.
+
+<figure className="my-6">
+  <img src="/images/topics/eigenvalues-eigenvectors/principal-axes-unified.png" alt="Four-panel figure: data ellipse for a covariance matrix, loss landscape with Hessian eigenvectors as principal axes, whitening transformation mapping ellipse to circle, generic ellipsoid of x'Ax = 1" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">The same spectral picture, four contexts. (1) Data ellipse from a covariance matrix Σ. (2) Loss landscape with Hessian H. (3) Whitening transformation Σ^(-1/2). (4) Generic ellipsoid of xᵀAx = 1. The eigenvectors are the principal axes everywhere; the eigenvalues are the variances/curvatures/semi-axis lengths.</figcaption>
+</figure>
+
+## 11. Connections to Machine Learning
+
+The spectral theorem and its corollaries are the most heavily reused piece of linear algebra in machine learning. Three applications span the full breadth of the topic, each pulling on a different part of what we built. We do not develop the algorithms here — that is the job of the formalML site — but the mathematics each technique invokes is *contained in this topic*.
+
+### 11.1. Gradient descent and the Hessian spectrum
+
+Near a strict local minimum $\boldsymbol{\theta}^*$ of a smooth loss $L \colon \mathbb{R}^p \to \mathbb{R}$, the gradient flow $\dot{\boldsymbol{\theta}} = -\nabla L(\boldsymbol{\theta})$ linearizes to $\dot{\boldsymbol{\delta}} = -H \boldsymbol{\delta}$ where $H = \nabla^2 L(\boldsymbol{\theta}^*)$ and $\boldsymbol{\delta} = \boldsymbol{\theta} - \boldsymbol{\theta}^*$. The Hessian is symmetric (Clairaut, Topic 11) and positive-definite at a strict local minimum, so the spectral theorem applies: $H = Q \Lambda Q^\top$.
+
+Change coordinates to $\mathbf{y} = Q^\top \boldsymbol{\delta}$ — the eigenbasis. The dynamics *decouple* into $p$ independent scalar ODEs:
+
+$$\dot y_i = -\lambda_i y_i, \qquad y_i(t) = e^{-\lambda_i t} \, y_i(0).$$
+
+Each eigencomponent decays at rate $\lambda_i$; the slowest mode (smallest eigenvalue) dominates the long-time behavior.
+
+Discrete gradient descent with step size $\eta$ replaces $e^{-\lambda_i t}$ with $(1 - \eta \lambda_i)^k$, where $k$ is the iteration count. Convergence requires $|1 - \eta \lambda_i| < 1$ for every $i$, i.e. $\eta < 2/\lambda_{\max}$. The optimal step size $\eta^* = 2/(\lambda_{\max} + \lambda_{\min})$ minimizes the worst-case rate, giving convergence at rate
+
+$$\left(\frac{\kappa - 1}{\kappa + 1}\right)^k, \qquad \kappa = \frac{\lambda_{\max}}{\lambda_{\min}}.$$
+
+The **condition number** $\kappa$ is the principal-axis aspect ratio of the loss ellipsoid. Ill-conditioned problems ($\kappa \gg 1$) train slowly along the small-eigenvalue direction. Newton's method effectively rescales the dynamics to $\kappa = 1$ (preconditioning by $H^{-1}$) — one step suffices for an exact quadratic loss. <a className="formalml-badge" href="https://www.formalml.com/topics/gradient-descent">gradient-descent →</a>
+
+<TheoremBlock type="example" number={13} title="Convergence rate on a quadratic loss">
+
+Let $L(\boldsymbol{\theta}) = \frac{1}{2} \boldsymbol{\theta}^\top H \boldsymbol{\theta}$ with $H = \operatorname{diag}(1, 10, 100)$. Eigenvalues $\lambda_{\min} = 1$, $\lambda_{\max} = 100$, $\kappa = 100$. Optimal step size $\eta^* = 2/101 \approx 0.0198$.
+
+After 100 iterations of optimal-step gradient descent, the *slow* direction (eigenvalue 1) has residual
+
+$$(1 - 2/101)^{100} = (99/101)^{100} \approx e^{-2} \approx 0.135.$$
+
+Only ~87% reduction — a hundred iterations bought you about two halvings of the error. The *fast* direction (eigenvalue 100) has residual $(1 - 200/101)^{100} \approx (-0.98)^{100} \approx 0.13$ — about the same magnitude, but oscillating in sign because the step is "too large" for this direction. Newton's method on the same $L$ converges in *one step*: $\boldsymbol{\theta}_1 = \boldsymbol{\theta}_0 - H^{-1} \nabla L(\boldsymbol{\theta}_0) = \boldsymbol{\theta}_0 - \boldsymbol{\theta}_0 = \boldsymbol{0}$.
+
+</TheoremBlock>
+
+### 11.2. PCA as the spectral theorem
+
+Let $X \in \mathbb{R}^{n \times p}$ be a mean-centered data matrix ($n$ observations, $p$ features). The sample covariance is
+
+$$\Sigma = \frac{1}{n - 1} X^\top X,$$
+
+a symmetric positive-semidefinite matrix. By the spectral theorem, $\Sigma = Q \Lambda Q^\top$ with $\Lambda = \operatorname{diag}(\lambda_1, \ldots, \lambda_p)$ ordered non-increasingly. The columns of $Q$ are the **principal components** $\mathbf{q}_1, \ldots, \mathbf{q}_p$; the diagonal entries are the **variances along those directions**.
+
+The first principal component $\mathbf{q}_1$ is the unit vector maximizing $\mathbf{q}^\top \Sigma \mathbf{q}$ — the direction of maximum variance. By Theorem 9 (Rayleigh quotient), the maximum is $\lambda_1$ achieved at $\mathbf{q}_1$. The first $k$ components capture variance $\sum_{i=1}^k \lambda_i$; the **explained-variance ratio** is
+
+$$\frac{\sum_{i=1}^k \lambda_i}{\sum_{i=1}^p \lambda_i}.$$
+
+PCA truncation to the top $k$ components gives the best rank-$k$ approximation in Frobenius norm (Eckart-Young, which we do not prove). All of this — the variance maximization, the orthogonality, the explained-variance ordering — is the spectral theorem read as a statistical procedure. PCA *is* the spectral decomposition of a covariance matrix. <a className="formalstatistics-badge" href="https://www.formalstatistics.com/topics/principal-components-analysis">principal-components-analysis →</a>
+
+### 11.3. Spectral clustering and kernel methods
+
+**Spectral clustering.** Let $G$ be a graph with weighted adjacency matrix $W$ (entries $w_{ij} \geq 0$). The **graph Laplacian** is
+
+$$L = D - W, \qquad D = \operatorname{diag}\left(\textstyle\sum_j w_{ij}\right),$$
+
+symmetric positive-semidefinite. Its smallest eigenvalue is $0$ with eigenvector $\mathbf{1}$ (when $G$ is connected); the *next* smallest is the **Fiedler value**, and its eigenvector — the **Fiedler vector** — gives an approximate minimum balanced cut of $G$ by sign: vertices with positive Fiedler-vector entry form one cluster, negative the other. Spectral clustering uses the bottom $k$ nontrivial eigenvectors as features and applies $k$-means in that feature space. <a className="formalml-badge" href="https://www.formalml.com/topics/spectral-clustering">spectral-clustering →</a>
+
+**Kernel methods.** A kernel $k : \mathcal{X} \times \mathcal{X} \to \mathbb{R}$ is *positive-semidefinite* if its Gram matrix $K_{ij} = k(\mathbf{x}_i, \mathbf{x}_j)$ is symmetric PSD for every finite point set $\{\mathbf{x}_i\}$. Mercer's theorem decomposes the kernel as an infinite-dimensional spectral expansion:
+
+$$k(\mathbf{x}, \mathbf{y}) = \sum_{i=1}^\infty \lambda_i \, \phi_i(\mathbf{x}) \, \phi_i(\mathbf{y}).$$
+
+The finite-dimensional version is the spectral decomposition of the Gram matrix $K = U \Lambda U^\top$. Kernel PCA, kernel ridge regression, Gaussian-process predictive means — all of them are matrix-spectrum computations on this Gram matrix. <a className="formalml-badge" href="https://www.formalml.com/topics/kernel-methods">kernel-methods →</a>
+
+Both constructions are the spectral theorem applied to a structured positive-semidefinite matrix. The construction is the same; only the matrix changes.
+
+<figure className="my-6">
+  <img src="/images/topics/eigenvalues-eigenvectors/gradient-descent-spectrum.png" alt="Three-panel figure showing gradient descent on an ill-conditioned quadratic loss: contour plot with eigenvector axes, trajectories at three step sizes, loss vs iteration curves" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">Gradient descent on a quadratic loss with κ = 100. Left: the loss contours form long thin ellipses oriented along the eigenvectors of H. Middle: gradient descent at three step sizes; too small wastes iterations on the fast direction, too large oscillates. Right: loss-vs-iteration on a log scale shows the asymptotic rate (κ−1)/(κ+1) ≈ 0.98 — painfully slow.</figcaption>
+</figure>
+
+## 12. Where This Leads
+
+We have built the spectral picture of symmetric matrices: orthogonal eigenvectors, real eigenvalues, the factorization $A = Q \Lambda Q^\top$, the definiteness classification, the Rayleigh quotient as a variational characterization, and Courant-Fischer as its extension to every eigenvalue. Four natural sequels extend this story in different directions, each living elsewhere in the curriculum (or on a sister site).
+
+**Singular value decomposition (SVD)** extends the spectral theorem to *rectangular* matrices. For any $m \times n$ real matrix $A$ — not necessarily square, not necessarily symmetric — there exist orthogonal $U$ ($m \times m$), $V$ ($n \times n$), and a diagonal $\Sigma$ ($m \times n$, non-negative entries called **singular values**) such that
+
+$$A = U \, \Sigma \, V^\top.$$
+
+The construction reduces to the spectral theorem on $A^\top A$ and $A A^\top$ (both symmetric positive-semidefinite). The geometric reading is that *every* linear map between inner-product spaces factors as "rotate, scale along orthogonal axes, rotate again." SVD is the foundation of low-rank approximation (Eckart-Young), the Moore-Penrose pseudoinverse, and the bulk of modern numerical linear algebra. It is the natural next topic on this track, currently planned for a future curriculum cycle.
+
+**Principal Component Analysis (PCA)** is the statistical sibling of SVD: PCA on a centered data matrix $X$ is the singular value decomposition of $X$ with the singular values squared giving the variances. We previewed PCA in §11.2; the full statistical treatment lives on [formalstatistics.com](https://www.formalstatistics.com/topics/principal-components-analysis), and the ML treatment on [formalml.com](https://www.formalml.com/topics/pca-and-spectral-methods). The mathematics is entirely contained in this topic — PCA adds no new linear algebra.
+
+**Perturbation theory of eigenvalues** asks how the spectrum of $A + E$ relates to the spectrum of $A$ for small $E$. Weyl's inequality (Theorem 11) is the entry point; Bauer-Fike, Davis-Kahan, and the resolvent expansion are the next steps. The theory is essential for understanding numerical stability of eigenvalue solvers and for proving consistency results in statistical learning theory — e.g. that empirical PCA on a sample converges to population PCA as $n \to \infty$. Trefethen & Bau, Stewart-Sun, and Kato are the standard references; we do not develop perturbation theory here.
+
+**Infinite-dimensional spectral theory** extends every finite-dimensional theorem in this topic to compact self-adjoint operators on a Hilbert space. The spectral theorem becomes a sum over a countable orthonormal basis of eigenvectors with eigenvalues converging to zero. The [Hilbert Spaces](/topics/hilbert-spaces) topic states the infinite-dimensional theorem and uses it for Fourier series, Sturm-Liouville theory, and integral operators. The finite-dimensional intuition and proof developed here are exactly the right preparation for that material.
+
+Within the Linear Algebra track, this topic completes the currently planned curriculum. Future track extensions might include SVD as a dedicated topic, quadratic forms in optimization (closing the loop with Hessian), and a numerical-linear-algebra topic covering the QR algorithm, power iteration, Lanczos, and Arnoldi. Those are deferred to a future curriculum cycle.
+
