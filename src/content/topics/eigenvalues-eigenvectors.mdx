@@ -121,6 +121,8 @@ import TheoremBlock from '../../components/ui/TheoremBlock.astro';
 import EigenvectorExplorer from '../../components/viz/EigenvectorExplorer.tsx';
 import CharacteristicPolynomialVisualizer from '../../components/viz/CharacteristicPolynomialVisualizer.tsx';
 import DiagonalizationExplorer from '../../components/viz/DiagonalizationExplorer.tsx';
+import SpectralDecompositionVisualizer from '../../components/viz/SpectralDecompositionVisualizer.tsx';
+import QuadraticFormVisualizer from '../../components/viz/QuadraticFormVisualizer.tsx';
 
 ## 1. The Question of Invariant Directions
 
@@ -623,5 +625,249 @@ But defective matrices live on the *boundary* between qualitatively different be
 <figure className="my-6">
   <img src="/images/topics/eigenvalues-eigenvectors/defective-matrix.png" alt="Two-panel figure: the Jordan block J_2 acting on a unit square, showing shear-like distortion with one fixed direction" className="rounded-lg border border-gray-200 dark:border-gray-700" />
   <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">The defective Jordan block J₂ = [[2, 1], [0, 2]] acts on the unit square as a stretch-and-shear. The only invariant direction is the x-axis (eigenspace for λ = 2). The other direction is "almost" an eigenvector but not quite — it shears as it stretches.</figcaption>
+</figure>
+
+## 6. Symmetric Matrices and the Spectral Theorem
+
+The defective case in §5 is the *bad news* about the general eigenvalue picture. The *good news* is that the matrices ML actually cares about — the Hessian of a smooth loss, the covariance of a random vector, the Gram matrix $X^\top X$, the kernel Gram, the graph Laplacian — are all *symmetric*. And real symmetric matrices have the cleanest possible eigenvalue behavior: real eigenvalues, orthogonal eigenvectors, *always* diagonalizable, and a factorization $A = Q \Lambda Q^\top$ where $Q$ is orthogonal and $\Lambda$ is diagonal-real. This is the **spectral theorem**, the centerpiece of the topic.
+
+<TheoremBlock type="definition" number={8} title="Symmetric Matrix">
+
+A real $n \times n$ matrix $A$ is **symmetric** if $A^\top = A$, i.e. $a_{ij} = a_{ji}$ for every pair of indices $(i, j)$.
+
+</TheoremBlock>
+
+Three structural facts about symmetric matrices, in increasing order of strength: all eigenvalues are real (Lemma 2), eigenvectors for distinct eigenvalues are *automatically* orthogonal (Lemma 3), and the eigenspaces span all of $\mathbb{R}^n$ — so a symmetric matrix always has an orthonormal eigenbasis (Theorem 6). Each fact's proof is a short computation; together they give the spectral theorem.
+
+<TheoremBlock type="lemma" number={2} title="Symmetric Matrices Have Real Eigenvalues">
+
+Every eigenvalue of a real symmetric matrix $A$ is real.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+Let $\lambda \in \mathbb{C}$ be an eigenvalue of the real symmetric matrix $A$, with a corresponding (possibly complex) eigenvector $\mathbf{v} \in \mathbb{C}^n$: $A \mathbf{v} = \lambda \mathbf{v}$.
+
+Take the conjugate transpose ($\mathbf{v}^* = \overline{\mathbf{v}}^\top$, $A^* = \overline{A}^\top$): $\mathbf{v}^* A^* = \bar\lambda \mathbf{v}^*$. Since $A$ is real and symmetric, $A^* = A^\top = A$. So $\mathbf{v}^* A = \bar\lambda \mathbf{v}^*$.
+
+Multiply the eigenvalue equation $A \mathbf{v} = \lambda \mathbf{v}$ on the left by $\mathbf{v}^*$: $\mathbf{v}^* A \mathbf{v} = \lambda \mathbf{v}^* \mathbf{v}$. Multiply $\mathbf{v}^* A = \bar\lambda \mathbf{v}^*$ on the right by $\mathbf{v}$: $\mathbf{v}^* A \mathbf{v} = \bar\lambda \mathbf{v}^* \mathbf{v}$.
+
+Equate the two expressions: $\lambda \mathbf{v}^* \mathbf{v} = \bar\lambda \mathbf{v}^* \mathbf{v}$. Since $\mathbf{v} \neq \mathbf{0}$, $\mathbf{v}^* \mathbf{v} = \|\mathbf{v}\|^2 > 0$. Divide both sides by $\|\mathbf{v}\|^2$ to get $\lambda = \bar\lambda$, hence $\lambda \in \mathbb{R}$.  $\blacksquare$
+
+</TheoremBlock>
+
+<TheoremBlock type="lemma" number={3} title="Symmetric Matrices Have Orthogonal Eigenspaces">
+
+If $A$ is real symmetric and $\mathbf{v}_1, \mathbf{v}_2$ are eigenvectors of $A$ corresponding to *distinct* eigenvalues $\lambda_1 \neq \lambda_2$, then $\mathbf{v}_1 \perp \mathbf{v}_2$.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+Compute $\langle A \mathbf{v}_1, \mathbf{v}_2 \rangle$ two ways. First, using $A \mathbf{v}_1 = \lambda_1 \mathbf{v}_1$:
+
+$$\langle A \mathbf{v}_1, \mathbf{v}_2 \rangle = \langle \lambda_1 \mathbf{v}_1, \mathbf{v}_2 \rangle = \lambda_1 \langle \mathbf{v}_1, \mathbf{v}_2 \rangle.$$
+
+Second, pushing the $A$ across the inner product using $A^\top = A$ (a property of the symmetric case, see §10 of [Linear Algebra](/topics/linear-algebra) on inner products and adjoints): $\langle A \mathbf{v}_1, \mathbf{v}_2 \rangle = \langle \mathbf{v}_1, A \mathbf{v}_2 \rangle = \langle \mathbf{v}_1, \lambda_2 \mathbf{v}_2 \rangle = \lambda_2 \langle \mathbf{v}_1, \mathbf{v}_2 \rangle.$
+
+Equating: $\lambda_1 \langle \mathbf{v}_1, \mathbf{v}_2 \rangle = \lambda_2 \langle \mathbf{v}_1, \mathbf{v}_2 \rangle$, i.e. $(\lambda_1 - \lambda_2) \langle \mathbf{v}_1, \mathbf{v}_2 \rangle = 0$. Since $\lambda_1 \neq \lambda_2$, the inner product $\langle \mathbf{v}_1, \mathbf{v}_2 \rangle = 0$.  $\blacksquare$
+
+</TheoremBlock>
+
+With both lemmas in hand, the spectral theorem is the inductive payoff. The structure of the proof is the heart of the topic: find one eigenvalue/eigenvector pair using Lemma 2, peel off its 1-dimensional eigenspace, and recurse on the $(n-1)$-dimensional orthogonal complement — which remains symmetric.
+
+<TheoremBlock type="theorem" number={6} title="Spectral Theorem for Real Symmetric Matrices">
+
+Let $A$ be a real $n \times n$ symmetric matrix. Then there exists an orthogonal matrix $Q$ (i.e. $Q^\top Q = I$) and a real diagonal matrix $\Lambda = \operatorname{diag}(\lambda_1, \ldots, \lambda_n)$ such that
+
+$$A = Q \, \Lambda \, Q^\top.$$
+
+The columns of $Q$ form an orthonormal basis of $\mathbb{R}^n$ consisting of eigenvectors of $A$; the diagonal entries of $\Lambda$ are the corresponding eigenvalues (with algebraic multiplicities, conventionally listed in non-increasing order $\lambda_1 \geq \lambda_2 \geq \cdots \geq \lambda_n$).
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+Induction on $n$.
+
+**Base case ($n = 1$).** A $1 \times 1$ matrix $A = (a_{11})$ is trivially symmetric and diagonal: take $Q = (1)$ and $\Lambda = (a_{11})$.
+
+**Inductive step.** Assume the spectral theorem holds for $(n-1) \times (n-1)$ symmetric matrices. Let $A$ be an $n \times n$ real symmetric matrix.
+
+By Lemma 2, the characteristic polynomial $p_A(\lambda)$ has at least one real root $\lambda_1$ (in fact, *all* its roots are real, but we only need one for the induction). By Theorem 1, $\lambda_1$ is a real eigenvalue. Pick a corresponding real unit eigenvector $\mathbf{q}_1 \in \mathbb{R}^n$ with $\|\mathbf{q}_1\| = 1$.
+
+Extend $\{\mathbf{q}_1\}$ to an orthonormal basis $\{\mathbf{q}_1, \mathbf{w}_2, \ldots, \mathbf{w}_n\}$ of $\mathbb{R}^n$ via Gram-Schmidt (§10 of [Linear Algebra](/topics/linear-algebra)). Form the orthogonal matrix $\tilde Q$ whose columns are these vectors; orthogonal because the columns are orthonormal.
+
+Consider the matrix $\tilde Q^\top A \tilde Q$. Two things are true about it.
+
+*First*, it is symmetric: $(\tilde Q^\top A \tilde Q)^\top = \tilde Q^\top A^\top \tilde Q = \tilde Q^\top A \tilde Q$ (using $A^\top = A$).
+
+*Second*, its first column equals $\lambda_1 \mathbf{e}_1$: the $j$-th column of $\tilde Q^\top A \tilde Q$ is $\tilde Q^\top A (\text{$j$-th column of } \tilde Q)$. For $j = 1$, this is $\tilde Q^\top A \mathbf{q}_1 = \tilde Q^\top (\lambda_1 \mathbf{q}_1) = \lambda_1 \tilde Q^\top \mathbf{q}_1 = \lambda_1 \mathbf{e}_1$, since $\tilde Q^\top \mathbf{q}_1 = \mathbf{e}_1$ by construction (the first column of $\tilde Q$ is $\mathbf{q}_1$).
+
+Combining symmetry with the first column being $\lambda_1 \mathbf{e}_1$ forces the first *row* to be $\lambda_1 \mathbf{e}_1^\top$ as well. So
+
+$$\tilde Q^\top A \tilde Q = \begin{pmatrix} \lambda_1 & \mathbf{0}^\top \\ \mathbf{0} & B \end{pmatrix}$$
+
+for some $(n-1) \times (n-1)$ block $B$. The block $B$ is symmetric (symmetry of the full matrix passes to the lower-right block). By the inductive hypothesis, $B = Q_B \Lambda_B Q_B^\top$ with $Q_B$ orthogonal and $\Lambda_B$ diagonal real.
+
+Define
+
+$$Q' = \begin{pmatrix} 1 & \mathbf{0}^\top \\ \mathbf{0} & Q_B \end{pmatrix}, \qquad \Lambda = \begin{pmatrix} \lambda_1 & \mathbf{0}^\top \\ \mathbf{0} & \Lambda_B \end{pmatrix}.$$
+
+Then $Q'$ is orthogonal (block-diagonal with orthogonal blocks) and $\Lambda$ is diagonal. A direct computation gives $\tilde Q^\top A \tilde Q = Q' \Lambda Q'^\top$. Set $Q = \tilde Q Q'$ — orthogonal as a product of orthogonals. Then $A = \tilde Q (\tilde Q^\top A \tilde Q) \tilde Q^\top = \tilde Q Q' \Lambda Q'^\top \tilde Q^\top = Q \Lambda Q^\top$, completing the induction.  $\blacksquare$
+
+</TheoremBlock>
+
+<TheoremBlock type="corollary" number={3} title="Spectral Decomposition as a Sum of Rank-One Projectors">
+
+Under the spectral theorem, $A$ has the **outer-product expansion**
+
+$$A = \sum_{i=1}^n \lambda_i \mathbf{q}_i \mathbf{q}_i^\top,$$
+
+where each $\mathbf{q}_i \mathbf{q}_i^\top$ is the rank-one orthogonal projector onto $\operatorname{span}(\mathbf{q}_i)$. The matrix $A$ is therefore a weighted sum of rank-one projectors onto its eigendirections, weighted by the eigenvalues.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+Direct expansion of $Q \Lambda Q^\top$. The matrix $\Lambda Q^\top$ scales the $i$-th row of $Q^\top$ (which is $\mathbf{q}_i^\top$) by $\lambda_i$. Multiplying by $Q$ on the left forms the outer product $\sum_i \lambda_i \mathbf{q}_i \mathbf{q}_i^\top$.  $\blacksquare$
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={9} title="Diagonalizing a 2×2 symmetric matrix">
+
+Let $A = \begin{pmatrix} 4 & 2 \\ 2 & 1 \end{pmatrix}$. Trace = 5, determinant = 0. Characteristic polynomial: $\lambda^2 - 5\lambda = \lambda(\lambda - 5)$. Eigenvalues: $\lambda_1 = 5$ and $\lambda_2 = 0$.
+
+For $\lambda_1 = 5$: solve $(A - 5I)\mathbf{v} = \mathbf{0}$, i.e. $\begin{pmatrix} -1 & 2 \\ 2 & -4 \end{pmatrix} \mathbf{v} = \mathbf{0}$. The kernel is spanned by $(2, 1)^\top$; normalize to $\mathbf{q}_1 = (2, 1)^\top / \sqrt{5}$.
+
+For $\lambda_2 = 0$: solve $A \mathbf{v} = \mathbf{0}$. The kernel is spanned by $(1, -2)^\top$; normalize to $\mathbf{q}_2 = (1, -2)^\top / \sqrt{5}$.
+
+Verify orthogonality: $\mathbf{q}_1 \cdot \mathbf{q}_2 = (2 \cdot 1 + 1 \cdot (-2))/5 = 0$ ✓, exactly as Lemma 3 promised.
+
+Spectral decomposition: $A = 5 \mathbf{q}_1 \mathbf{q}_1^\top + 0 \cdot \mathbf{q}_2 \mathbf{q}_2^\top = 5 \mathbf{q}_1 \mathbf{q}_1^\top$ — a rank-one matrix, consistent with $\det A = 0$. The image of $A$ is the line spanned by $\mathbf{q}_1$; the null space is the line spanned by $\mathbf{q}_2$.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={7} title="Why symmetric is so much cleaner">
+
+The proof of Theorem 6 uses **no polynomial algebra**. It does not factor the characteristic polynomial or count multiplicities. The induction step finds *one* eigenvalue–eigenvector pair (Lemma 2 guarantees the eigenvalue is real), restricts to the orthogonal complement (which inherits symmetry), and recurses. The argument is purely geometric: find an invariant line, peel it off, repeat. The same argument generalizes verbatim to compact self-adjoint operators on infinite-dimensional Hilbert spaces — the proof in [Hilbert Spaces](/topics/hilbert-spaces) of the infinite-dim spectral theorem is structurally identical to ours.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={8} title="Real-symmetric vs. complex-Hermitian">
+
+The complex analogue of a real symmetric matrix is a **Hermitian** matrix: $A^* = A$ where $A^* = \overline{A}^\top$. The complex spectral theorem says every Hermitian matrix factors as $A = U \Lambda U^*$ with $U$ unitary ($U^* U = I$) and $\Lambda$ real diagonal. The proof is structurally identical to ours; only the inner product changes ($\langle \mathbf{u}, \mathbf{v} \rangle = \mathbf{u}^* \mathbf{v}$, conjugate-linear in the first slot). Quantum mechanics lives in this setting — observables are Hermitian operators, and their real eigenvalues are the measurable values. For ML the real symmetric case suffices.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={9} title="The Hessian, revisited">
+
+Recall from the [Hessian](/topics/hessian) topic that the Hessian $\nabla^2 f$ of a $C^2$ function is symmetric (Clairaut's theorem). The spectral theorem now applies: $\nabla^2 f = Q \Lambda Q^\top$ with real eigenvalues. The principal curvatures of the loss surface in the directions $\mathbf{q}_i$ are exactly the eigenvalues $\lambda_i$. The second-derivative test reads off the critical-point type from the signs of the $\lambda_i$: all positive ⟹ local minimum, all negative ⟹ local maximum, mixed signs ⟹ saddle. We now have the rigorous spectral foundation for that test; §7 makes it formal as Theorem 7.
+
+</TheoremBlock>
+
+**ML aside.** A covariance matrix $\Sigma = \mathbb{E}[(X - \mu)(X - \mu)^\top]$ is symmetric by construction (the outer-product structure forces $\Sigma_{ij} = \Sigma_{ji}$). The spectral theorem gives $\Sigma = Q \Lambda Q^\top$ with $Q$ orthogonal and $\Lambda$ diagonal-real-non-negative. The columns of $Q$ are the **principal components** of the distribution; the diagonal entries of $\Lambda$ are the **variances** along those directions. PCA is *literally* the spectral theorem applied to a covariance matrix. The whitening transformation $\Sigma^{-1/2} = Q \Lambda^{-1/2} Q^\top$ (well-defined when $\Sigma$ is positive-definite) maps the distribution to one with identity covariance — the precondition for Mahalanobis distance and for well-conditioned gradient descent. <a className="formalstatistics-badge" href="https://www.formalstatistics.com/topics/multivariate-distributions">multivariate-distributions →</a> <a className="formalml-badge" href="https://www.formalml.com/topics/pca-and-spectral-methods">pca-and-spectral-methods →</a>
+
+<SpectralDecompositionVisualizer client:visible />
+
+<figure className="my-6">
+  <img src="/images/topics/eigenvalues-eigenvectors/spectral-theorem-ellipse.png" alt="Two-panel figure: unit circle on the left and its image ellipse under a symmetric matrix on the right, with eigenvectors as principal axes and eigenvalues as semi-axis lengths" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">The spectral theorem geometrically: a symmetric positive-definite matrix maps the unit circle to an ellipse whose principal axes are the eigenvectors and whose semi-axis lengths are the eigenvalues.</figcaption>
+</figure>
+
+## 7. Quadratic Forms and Positive-Definiteness
+
+The spectral theorem unlocks the classification of **quadratic forms** — scalar functions of the form $q(\mathbf{x}) = \mathbf{x}^\top A \mathbf{x}$ with $A$ symmetric. In the eigenbasis, $q$ becomes spectacularly simple: $q(\mathbf{x}) = \sum_i \lambda_i y_i^2$ where $y_i = \mathbf{q}_i^\top \mathbf{x}$ are the coordinates of $\mathbf{x}$ in the eigenbasis. The sign and growth behavior of $q$ are then entirely determined by the signs of the eigenvalues. This is the framework in which every convexity statement, every second-derivative test, and every covariance-matrix property on the rest of the site is phrased.
+
+<TheoremBlock type="definition" number={9} title="Quadratic Form">
+
+A **quadratic form** on $\mathbb{R}^n$ is a function $q : \mathbb{R}^n \to \mathbb{R}$ of the form $q(\mathbf{x}) = \mathbf{x}^\top A \mathbf{x}$ for some symmetric matrix $A$. (Any matrix $B$ in $\mathbf{x}^\top B \mathbf{x}$ can be replaced by its symmetric part $(B + B^\top)/2$ without changing the form, so we may take $A$ symmetric without loss of generality.)
+
+</TheoremBlock>
+
+<TheoremBlock type="definition" number={10} title="Definiteness">
+
+A symmetric matrix $A$ is
+
+- **positive-definite** (written $A \succ 0$) if $\mathbf{x}^\top A \mathbf{x} > 0$ for every $\mathbf{x} \neq \mathbf{0}$;
+- **positive-semidefinite** (written $A \succeq 0$) if $\mathbf{x}^\top A \mathbf{x} \geq 0$ for every $\mathbf{x}$;
+- **negative-definite** if $-A \succ 0$;
+- **negative-semidefinite** if $-A \succeq 0$;
+- **indefinite** if $\mathbf{x}^\top A \mathbf{x}$ takes both positive and negative values.
+
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={7} title="Definiteness via Eigenvalues">
+
+A symmetric matrix $A$ is positive-definite iff all eigenvalues are strictly positive; positive-semidefinite iff all eigenvalues are non-negative; negative-definite iff all eigenvalues are strictly negative; indefinite iff it has both positive and negative eigenvalues.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+By the spectral theorem, $A = Q \Lambda Q^\top$ with $Q$ orthogonal and $\Lambda = \operatorname{diag}(\lambda_1, \ldots, \lambda_n)$. Substitute $\mathbf{y} = Q^\top \mathbf{x}$:
+
+$$\mathbf{x}^\top A \mathbf{x} = \mathbf{x}^\top Q \Lambda Q^\top \mathbf{x} = \mathbf{y}^\top \Lambda \mathbf{y} = \sum_{i=1}^n \lambda_i y_i^2.$$
+
+Since $Q$ is orthogonal, the map $\mathbf{x} \mapsto \mathbf{y}$ is a bijection, and $\mathbf{x} \neq \mathbf{0}$ iff $\mathbf{y} \neq \mathbf{0}$. The form $\sum_i \lambda_i y_i^2$ is strictly positive for every $\mathbf{y} \neq \mathbf{0}$ iff every $\lambda_i > 0$ (because we can choose $\mathbf{y} = \mathbf{e}_j$ to isolate $\lambda_j$). Non-negativity, negativity, etc. follow analogously. Indefiniteness corresponds to mixed eigenvalue signs because choosing $\mathbf{y} = \mathbf{e}_j$ for the positive eigenvalue makes the form positive, and $\mathbf{y} = \mathbf{e}_k$ for the negative eigenvalue makes it negative.  $\blacksquare$
+
+</TheoremBlock>
+
+<TheoremBlock type="corollary" number={4} title="Positive-Definite Matrices Are Invertible">
+
+If $A \succ 0$, then $\det A = \prod \lambda_i > 0$, so $A$ is invertible. The inverse is also positive-definite, with eigenvalues $1/\lambda_i$.
+
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={8} title="Sylvester's Criterion">
+
+A symmetric matrix $A$ is positive-definite iff all **leading principal minors** — the determinants of the upper-left $k \times k$ submatrices, for $k = 1, 2, \ldots, n$ — are strictly positive.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+**($\Rightarrow$)** If $A \succ 0$, then for any nonzero $\mathbf{x}_k = (x_1, \ldots, x_k)^\top \in \mathbb{R}^k$, the extended vector $\mathbf{x} = (x_1, \ldots, x_k, 0, \ldots, 0)^\top \in \mathbb{R}^n$ satisfies $\mathbf{x}^\top A \mathbf{x} = \mathbf{x}_k^\top A_k \mathbf{x}_k$ where $A_k$ is the leading $k \times k$ submatrix. Since $A \succ 0$ and $\mathbf{x} \neq \mathbf{0}$, this is positive; so $A_k \succ 0$ as well, hence $\det A_k > 0$ by Corollary 4.
+
+**($\Leftarrow$)** The converse uses induction on $k$: the LDLᵀ decomposition with all positive diagonal entries can be built incrementally from the leading principal minors. The full argument is in Horn & Johnson Theorem 7.2.5; the key idea is that positive leading minors force the pivots in symmetric Gaussian elimination to remain positive, which is equivalent to positive-definiteness.  $\blacksquare$
+
+</TheoremBlock>
+
+<TheoremBlock type="definition" number={11} title="Ellipsoid">
+
+Let $A \succ 0$ be symmetric positive-definite. The **unit ellipsoid** of $A$ is
+
+$$\mathcal{E}(A) = \{\mathbf{x} \in \mathbb{R}^n : \mathbf{x}^\top A \mathbf{x} \leq 1\}.$$
+
+By the spectral theorem, $\mathcal{E}(A)$ is centered at the origin with principal axes along the eigenvectors $\mathbf{q}_i$ and semi-axis lengths $1/\sqrt{\lambda_i}$. Larger eigenvalues give *shorter* semi-axes — the matrix "stretches more aggressively" along high-eigenvalue directions, so the level set is more compressed there.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={10} title="Three quadratic forms in ℝ²">
+
+(a) $A = I = \operatorname{diag}(1, 1)$. $q(\mathbf{x}) = x_1^2 + x_2^2$. Eigenvalues $1, 1$. Level sets $q = c > 0$ are circles of radius $\sqrt c$. Positive-definite, isotropic.
+
+(b) $A = \operatorname{diag}(4, 1)$. $q(\mathbf{x}) = 4 x_1^2 + x_2^2$. Eigenvalues $4, 1$. Level sets are ellipses with $x_1$-semi-axis $\sqrt{c}/2$ and $x_2$-semi-axis $\sqrt c$ — *elongated along the $x_2$-axis* (smaller eigenvalue, longer axis). Positive-definite, anisotropic.
+
+(c) $A = \operatorname{diag}(1, -1)$. $q(\mathbf{x}) = x_1^2 - x_2^2$. Eigenvalues $1, -1$ — opposite signs. The surface $z = q(x_1, x_2)$ is a *saddle*; level sets $q = c$ are hyperbolas (for $c \neq 0$) with asymptotes $x_2 = \pm x_1$. Indefinite.
+
+The notebook plots all three. The viz below lets you interpolate continuously between them by editing the matrix entries.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={10} title="Why we care about positive-semi-definite (not just positive-definite)">
+
+Many naturally occurring symmetric matrices fail to be positive-definite but *are* positive-semidefinite: a covariance matrix of a degenerate distribution (some linear combination of variables has zero variance); a Gram matrix $X^\top X$ when the data matrix $X$ is rank-deficient; a graph Laplacian, which always has $\mathbf{1}$ in its kernel. The semidefinite case is where rank-deficiency lives. <a className="formalstatistics-badge" href="https://www.formalstatistics.com/topics/covariance-correlation">covariance-correlation →</a> Geometrically, a PSD matrix with a nontrivial kernel has an ellipsoid that *degenerates into an infinite cylinder* along the kernel direction — the form is constant along the kernel, growing only in the orthogonal complement.
+
+</TheoremBlock>
+
+**ML aside.** The Hessian topic's "condition number $\kappa(H) = \lambda_{\max}/\lambda_{\min}$" implicitly assumes $H$ is positive-definite (so $\lambda_{\min} > 0$) — that is the local-minimum case. When the Hessian is positive-semidefinite but not positive-definite, the loss has a **flat direction** (the kernel of $H$), and gradient descent in that direction is undamped. Modern deep learning has a large literature on flat directions because over-parameterized networks have positive-semidefinite-but-not-positive-definite Hessians by construction (any null direction in parameter space along which the loss does not change is a Hessian-null direction).
+
+<QuadraticFormVisualizer client:visible />
+
+<figure className="my-6">
+  <img src="/images/topics/eigenvalues-eigenvectors/quadratic-form-zoo.png" alt="Five-panel figure: positive-definite isotropic (circular contours), positive-definite elongated (elliptical), positive-semidefinite (parallel lines), indefinite saddle (hyperbolas), negative-definite (inverted)" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">The zoo of quadratic forms in ℝ², classified by eigenvalue signs. Positive-definite → ellipses (bowl). Positive-semidefinite → parallel lines (trough). Indefinite → hyperbolas (saddle). Negative-definite → ellipses (dome). The sign pattern of the eigenvalues determines the contour topology.</figcaption>
 </figure>
 
