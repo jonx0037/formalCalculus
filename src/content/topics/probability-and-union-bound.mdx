@@ -96,3 +96,189 @@ references:
     url: "https://doi.org/10.1080/01621459.1963.10500830"
     note: "The original 1963 paper. The proof in Section 8 follows Hoeffding's argument."
 ---
+
+import TheoremBlock from '../../components/ui/TheoremBlock.astro';
+import UnionBoundTightnessExplorer from '../../components/viz/UnionBoundTightnessExplorer.tsx';
+
+## 1. Three Puzzles the Union Bound Solves
+
+We open with three apparently unrelated questions. By the end of the topic each will be a one-line application of a single inequality.
+
+**Puzzle 1 — Why does the Bonferroni correction work?** A researcher runs $m = 100$ hypothesis tests, each at significance level $\alpha = 0.05$. Under the null hypothesis that all $100$ effects are zero, what is the probability that *at least one* test falsely rejects? If the tests were independent, the answer would be $1 - (1 - \alpha)^{m} \approx 0.994$ — almost certain. The Bonferroni correction says: test each hypothesis at level $\alpha / m$ instead. Then no matter what the dependence between the tests is, the family-wise error rate is at most $\alpha$. The proof, when we get to it, is one line. It is the union bound.
+
+**Puzzle 2 — What does "infinitely often" even mean?** Toss a fair coin forever. The event "heads occurs infinitely often" is intuitive but slippery: it is a statement about the entire infinite tail of the sequence, not about any finite prefix. The Borel–Cantelli lemmas give it a precise set-theoretic form and a sharp probabilistic dichotomy: if $\sum_n P(A_n) < \infty$, then $A_n$ occurs infinitely often with probability $0$; if $\sum_n P(A_n) = \infty$ and the $A_n$ are independent, then $A_n$ occurs infinitely often with probability $1$. The first half of that dichotomy is — again — a corollary of the union bound.
+
+**Puzzle 3 — Why does a learning algorithm generalize?** A machine-learning system picks the best hypothesis $\hat h$ from a finite class $\mathcal{H}$ by minimizing the training error $\hat R(h)$ over $n$ samples. We want a bound on the true risk $R(\hat h)$ — the error on fresh data. For any *single* fixed hypothesis $h$, Hoeffding's inequality gives $P(|\hat R(h) - R(h)| > \epsilon) \leq 2 e^{-2 n \epsilon^2}$. But $\hat h$ is not a single fixed hypothesis — it is whichever member of $\mathcal{H}$ happens to win the training-error contest. So we need a bound that holds *uniformly* over $\mathcal{H}$. The PAC generalization bound delivers exactly that:
+
+$$P\!\left(\exists h \in \mathcal{H} : |\hat R(h) - R(h)| > \epsilon\right) \leq |\mathcal{H}| \cdot 2 e^{-2 n \epsilon^2}.$$
+
+The inequality on the left is upgraded to one on the right by paying a factor of $|\mathcal{H}|$ — a price that, on the log scale of the deviation, is only $\sqrt{\log |\mathcal{H}|}$. The mechanism is the union bound, again.
+
+Three puzzles, three subjects, one inequality. The interactive below previews the geometry. Drag the events apart and the union bound becomes tight; drag them together and the gap opens.
+
+<UnionBoundTightnessExplorer client:visible />
+
+**The editorial pivot of this topic.** Everything you have done in formalCalculus so far has been about *functions on the real line*: limits, derivatives, integrals, series of numbers. Probability is about *subsets of an abstract sample space*, and the operations are union, intersection, and complement instead of addition, multiplication, and composition. The vocabulary is different, but the analytic moves are the same — limits of sequences, convergence of sums, exchange of supremum and limit. In [Sigma-Algebras & Measures](/topics/sigma-algebras), the measure-theoretic foundations make this analogy exact. For now we proceed at the elementary level: probabilities are non-negative numbers attached to subsets of a sample space, they sum to one, and the only inequalities we need are short combinatorial arguments.
+
+## 2. The Kolmogorov Axioms
+
+A probability is a function that takes events (subsets of a sample space) and returns numbers in $[0, 1]$, subject to three axioms. The axioms are short; their consequences are everything.
+
+<TheoremBlock type="definition" number={1} title="Probability space">
+
+A *probability space* is a triple $(\Omega, \mathcal{F}, P)$ where:
+
+- $\Omega$ is a non-empty set, the *sample space* — the set of all possible outcomes.
+- $\mathcal{F}$ is a collection of subsets of $\Omega$, the *events* — sets to which we are willing to assign a probability. We require $\Omega \in \mathcal{F}$, $A^c \in \mathcal{F}$ whenever $A \in \mathcal{F}$, and $\bigcup_n A_n \in \mathcal{F}$ whenever each $A_n \in \mathcal{F}$ (closure under countable unions).
+- $P \colon \mathcal{F} \to [0, 1]$ is a function satisfying three axioms:
+  - **(K1) Non-negativity.** $P(A) \geq 0$ for every $A \in \mathcal{F}$.
+  - **(K2) Normalization.** $P(\Omega) = 1$.
+  - **(K3) Countable additivity.** For any disjoint sequence $(A_n)_{n \geq 1}$ of events, $P\!\left(\bigcup_n A_n\right) = \sum_n P(A_n)$.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={1} title="Events without sigma-algebras">
+
+The closure conditions on $\mathcal{F}$ make it a *sigma-algebra*. Why bother — why not let *every* subset be an event? For finite or countable $\Omega$, the answer is: we *can* let every subset be an event, by taking $\mathcal{F} = 2^\Omega$. The condition is automatically satisfied and the question never arises. For uncountable $\Omega$ — like $[0, 1]$ with the "length" probability — there exist subsets to which no consistent probability can be assigned, and $\mathcal{F}$ has to be smaller than $2^\Omega$. That non-trivial story is told in [Sigma-Algebras & Measures](/topics/sigma-algebras) *(forward)*. For this topic, take $\mathcal{F}$ to be "the subsets we know how to measure" and proceed.
+
+</TheoremBlock>
+
+The axioms are sparse, but they force every standard probability identity. We collect the most-used consequences before moving on.
+
+<TheoremBlock type="proposition" number={1} title="Immediate consequences of the axioms">
+
+Let $(\Omega, \mathcal{F}, P)$ be a probability space. Then:
+
+1. $P(\emptyset) = 0$.
+2. $P(A^c) = 1 - P(A)$ for every $A \in \mathcal{F}$.
+3. **Monotonicity:** if $A \subseteq B$, then $P(A) \leq P(B)$.
+4. **Finite additivity:** for disjoint events $A_1, \ldots, A_n$, $P\!\left(\bigcup_{i=1}^n A_i\right) = \sum_{i=1}^n P(A_i)$.
+5. **Continuity from below:** if $A_1 \subseteq A_2 \subseteq \cdots$ is an increasing sequence of events, then $P\!\left(\bigcup_n A_n\right) = \lim_{n \to \infty} P(A_n)$.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+**(1)** Take $A_n = \emptyset$ for all $n$ in (K3). The events are disjoint, so $P(\emptyset) = P\!\left(\bigcup_n \emptyset\right) = \sum_n P(\emptyset)$. If $P(\emptyset) > 0$ then the right-hand side is $+\infty$, contradicting $P(\emptyset) \leq 1$. So $P(\emptyset) = 0$.
+
+**(2)** $\Omega = A \sqcup A^c$ disjointly, so by (K3) applied to the finite sequence $(A, A^c, \emptyset, \emptyset, \ldots)$ and (1), $1 = P(\Omega) = P(A) + P(A^c)$.
+
+**(3)** Write $B = A \sqcup (B \setminus A)$ disjointly. By (K3) (or by (4) applied to a 2-element disjoint family), $P(B) = P(A) + P(B \setminus A) \geq P(A)$ since $P(B \setminus A) \geq 0$ by (K1).
+
+**(4)** Pad the finite disjoint sequence with empty sets: $A_1, \ldots, A_n, \emptyset, \emptyset, \ldots$. Apply (K3) and use (1) to discard the empty-set terms.
+
+**(5)** Set $B_1 = A_1$ and $B_k = A_k \setminus A_{k-1}$ for $k \geq 2$. The $(B_k)$ are pairwise disjoint, $\bigcup_n B_n = \bigcup_n A_n$ (since the chain is increasing), and $\bigcup_{k \leq n} B_k = A_n$ for every $n$. By (K3) and (4):
+
+$$P\!\left(\bigcup_n A_n\right) = P\!\left(\bigcup_n B_n\right) = \sum_{k=1}^\infty P(B_k) = \lim_{n \to \infty} \sum_{k=1}^n P(B_k) = \lim_{n \to \infty} P(A_n).$$
+
+The convergence of the limit on the right is automatic — partial sums of a non-negative series are monotone increasing and bounded by $1$, so they converge.  $\blacksquare$
+
+</TheoremBlock>
+
+Three examples anchor the axioms in concrete computations.
+
+<TheoremBlock type="example" number={1} title="The fair die">
+
+Let $\Omega = \{1, 2, 3, 4, 5, 6\}$, $\mathcal{F} = 2^\Omega$, $P(\{k\}) = 1/6$ for each $k$. By finite additivity, the probability of any event is the sum of the per-outcome probabilities of its members. For instance, $P(\text{even roll}) = P(\{2, 4, 6\}) = 3/6 = 1/2$, and $P(\text{roll is at most 4}) = P(\{1, 2, 3, 4\}) = 4/6 = 2/3$. The axioms reduce to "count and divide."
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={2} title="A countable, non-uniform sample space">
+
+Let $\Omega = \{1, 2, 3, \ldots\}$ and define $P(\{k\}) = 2^{-k}$. Since $\sum_{k=1}^\infty 2^{-k} = 1$, this defines a probability measure on $\Omega$ by countable additivity: $P(A) = \sum_{k \in A} 2^{-k}$ for every $A \subseteq \Omega$. This is the "geometric trials" model — the probability of needing exactly $k$ trials until the first success, when each trial is a fair coin. The sample space is countably infinite; the axioms still apply unchanged.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={3} title="Continuous uniform on [0, 1] (informal)">
+
+Let $\Omega = [0, 1]$ and define $P([a, b]) = b - a$ for $0 \leq a \leq b \leq 1$. This is the "uniform random number" model. To say *which* subsets of $[0, 1]$ are in $\mathcal{F}$ in full generality requires the measure-theoretic machinery of [Sigma-Algebras & Measures](/topics/sigma-algebras) *(forward)*. For this topic, take $P([a, b]) = b - a$ on intervals as an oracle and proceed; no construction in the body of this topic depends on which specific subsets of $[0, 1]$ are measurable.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={2} title="Why countable, not finite">
+
+Why does (K3) ask for *countable* additivity rather than just finite additivity? Because the most important consequences — continuity from below (Proposition 1(v)), the first Borel–Cantelli lemma (Theorem 3), and the convergence of partial-sum probabilities — all require taking limits of an infinite sequence of disjoint events. A theory built on finite additivity alone cannot say "the probability that heads occurs infinitely often is zero" — that statement is about an infinite intersection of unions, and finite additivity gives no access to the limit. The price of countable additivity is the sigma-algebra constraint on $\mathcal{F}$; the reward is the entire analytic machinery of the rest of this topic.
+
+</TheoremBlock>
+
+## 3. Conditional Probability and Independence
+
+Conditioning is how probability talks about evidence. The formula is one division.
+
+<TheoremBlock type="definition" number={2} title="Conditional probability">
+
+For events $A, B \in \mathcal{F}$ with $P(B) > 0$, the *conditional probability of $A$ given $B$* is
+
+$$P(A \mid B) = \frac{P(A \cap B)}{P(B)}.$$
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={3} title="What conditioning does">
+
+Conditioning on $B$ rescales the universe to the part of $\Omega$ where $B$ occurred. Three things follow immediately: (i) $P(\Omega \mid B) = P(B)/P(B) = 1$, so $P(\cdot \mid B)$ is normalized; (ii) $P(A \mid B) \geq 0$ for every $A$, so it is non-negative; (iii) countable additivity of $P(\cdot \mid B)$ follows from countable additivity of $P$ applied to the numerator. So $P(\cdot \mid B)$ is itself a probability measure on $(\Omega, \mathcal{F})$ — a fact we will use without further comment.
+
+</TheoremBlock>
+
+<TheoremBlock type="proposition" number={2} title="Multiplication rule">
+
+For events $A_1, A_2, \ldots, A_n$ with $P(A_1 \cap \cdots \cap A_{n-1}) > 0$,
+
+$$P(A_1 \cap A_2 \cap \cdots \cap A_n) = P(A_1) \cdot P(A_2 \mid A_1) \cdot P(A_3 \mid A_1 \cap A_2) \cdots P(A_n \mid A_1 \cap \cdots \cap A_{n-1}).$$
+
+</TheoremBlock>
+
+<TheoremBlock type="proposition" number={3} title="Law of total probability">
+
+If $(B_i)_{i \in I}$ is a finite or countable partition of $\Omega$ (the $B_i$ are pairwise disjoint and $\bigcup_i B_i = \Omega$) with each $P(B_i) > 0$, then for any event $A$:
+
+$$P(A) = \sum_i P(A \mid B_i) \, P(B_i).$$
+
+</TheoremBlock>
+
+<TheoremBlock type="proposition" number={4} title="Bayes' rule">
+
+For events $A, B$ with $P(A), P(B) > 0$:
+
+$$P(A \mid B) = \frac{P(B \mid A) \, P(A)}{P(B)}.$$
+
+Combined with the law of total probability (when the denominator is unknown), for any partition $(A_j)$ with $P(A_j) > 0$:
+
+$$P(A_j \mid B) = \frac{P(B \mid A_j) \, P(A_j)}{\sum_i P(B \mid A_i) \, P(A_i)}.$$
+
+</TheoremBlock>
+
+Bayes' rule is a corollary, not a headline. It says: to invert a conditional, multiply by the marginal of the new conditioner and divide by the marginal of the old. Every proof is the same line —  $P(A \cap B) = P(A \mid B) P(B) = P(B \mid A) P(A)$, divide.
+
+Independence is the structural property that makes joint probabilities factor.
+
+<TheoremBlock type="definition" number={3} title="Independence (pair, family)">
+
+- Events $A$ and $B$ are *independent* if $P(A \cap B) = P(A) \, P(B)$.
+- A family $(A_i)_{i \in I}$ is *mutually independent* (or simply *independent*) if for every finite subset $J \subseteq I$,
+
+$$P\!\left(\bigcap_{i \in J} A_i\right) = \prod_{i \in J} P(A_i).$$
+
+- A family is *pairwise independent* if every pair of events in the family is independent.
+
+</TheoremBlock>
+
+Mutual independence is strictly stronger than pairwise independence. The standard counterexample uses three events constructed from two fair coin tosses.
+
+<TheoremBlock type="example" number={4} title="Pairwise but not mutually independent — the 3-coin example">
+
+Take $\Omega = \{(0, 0, 0), (0, 1, 1), (1, 0, 1), (1, 1, 0)\}$ — four outcomes, each with probability $1/4$. Let $A_i$ be the event "the $i$-th coordinate equals $1$." Then $P(A_i) = 1/2$ for each $i$ (two of the four outcomes have a $1$ in position $i$).
+
+For any $i \neq j$, exactly one of the four outcomes has $1$s in both positions, so $P(A_i \cap A_j) = 1/4 = P(A_i) P(A_j)$. Every pair is independent.
+
+But $A_1 \cap A_2 \cap A_3$ would require an outcome with $1$s in all three positions — and there is no such outcome in $\Omega$. So $P(A_1 \cap A_2 \cap A_3) = 0$, while $P(A_1) P(A_2) P(A_3) = 1/8$. The three events are pairwise independent but **not** mutually independent.
+
+The structural reason: the third coordinate of each outcome equals the parity (XOR) of the first two. Knowing any one coordinate tells you nothing about another; knowing any two determines the third. Independence is a *family*-level property, not a sum of pairwise properties.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={4} title="Independence is a probability statement, not a logical one">
+
+Two events $A$ and $B$ are independent under one probability measure $P$ and dependent under another, even when the underlying sets $A, B \subseteq \Omega$ are the same. Independence is a property of the *triple* $(A, B, P)$, not of the events alone. In statistical practice this means independence is an *assumption* that needs justification, not a logical certainty — two events about completely different physical systems can still be statistically dependent if the data-generating distribution links them.
+
+</TheoremBlock>
+
