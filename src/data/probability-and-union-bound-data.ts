@@ -83,11 +83,19 @@ function halton(i: number, base: number): number {
   return r;
 }
 
+// Module-level cache: Halton sequences are deterministic and the requested
+// sizes are constants, so regenerating arrays on every drag-driven
+// `computeEventOverlap` call wastes work.
+const haltonCache = new Map<number, Array<[number, number]>>();
+
 function haltonPoints(n: number): Array<[number, number]> {
+  const cached = haltonCache.get(n);
+  if (cached) return cached;
   const pts: Array<[number, number]> = new Array(n);
   for (let i = 0; i < n; i++) {
     pts[i] = [halton(i + 1, 2), halton(i + 1, 3)];
   }
+  haltonCache.set(n, pts);
   return pts;
 }
 
@@ -387,21 +395,24 @@ function distributionStats(id: DistributionId, params: Record<string, number>): 
     };
   }
   if (id === 'beta-scaled') {
-    // Beta(α, β) on [0, 1] approximated via sum-of-uniforms acceptance-rejection.
-    // For a viz we use a cheap symmetric Beta(2, 2) shaped via x = (u1 + u2)/2.
-    const alpha = params.alpha ?? 2;
-    const beta = params.beta ?? 2;
+    // The viz only exposes symmetric Beta(2, 2) — we ignore params.alpha/beta
+    // and sample exactly by taking the median of three i.i.d. uniforms on
+    // [0, 1]. The order statistic U_{(2)} of three uniforms has density
+    // 6 x (1 - x), which is exactly the Beta(2, 2) density. Mean = 1/2,
+    // variance = 1/20. Average-of-two would have given a triangular
+    // distribution with variance 1/24, mismatching the analytic bounds.
+    const alpha = 2;
+    const beta = 2;
     const mean = alpha / (alpha + beta);
     const variance = (alpha * beta) / ((alpha + beta) ** 2 * (alpha + beta + 1));
     return {
       mean,
       variance,
-      // Beta sample via inverse-CDF approximation: average two uniforms to
-      // emulate symmetric Beta(2, 2); fall back to mean-shifted uniform otherwise.
       sample: (rng) => {
         const u1 = rng.next();
         const u2 = rng.next();
-        return Math.min(Math.max((u1 + u2) / 2, 0), 1);
+        const u3 = rng.next();
+        return u1 + u2 + u3 - Math.min(u1, u2, u3) - Math.max(u1, u2, u3);
       },
     };
   }

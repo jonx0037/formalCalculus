@@ -34,7 +34,6 @@ const PANEL_HEIGHT = 220;
 const margin = { top: 18, right: 32, bottom: 32, left: 52 };
 
 const COLOR_AXIS = '#64748b';
-const COLOR_GRID = '#cbd5e1';
 const COLOR_PSEQ = '#c026d3';
 const COLOR_PSUM = '#dc2626';
 const COLOR_TRAJ = '#2563eb';
@@ -88,7 +87,7 @@ export default function BorelCantelliExplorer() {
       const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
 
       const xScale = d3.scaleLog().domain([1, N]).range([0, innerW]).clamp(true);
-      const yMaxLow = Math.max(...pSequence.slice(1)) || 1;
+      const yMaxLow = d3.max(pSequence, (d, i) => (i > 0 ? d : undefined)) ?? 1;
       const yMaxHigh = Math.max(finalPartialSum, yMaxLow * 2);
       const yScale = d3.scaleLog().domain([1e-6, yMaxHigh]).range([innerH, 0]).clamp(true);
 
