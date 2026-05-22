@@ -123,6 +123,7 @@ import CharacteristicPolynomialVisualizer from '../../components/viz/Characteris
 import DiagonalizationExplorer from '../../components/viz/DiagonalizationExplorer.tsx';
 import SpectralDecompositionVisualizer from '../../components/viz/SpectralDecompositionVisualizer.tsx';
 import QuadraticFormVisualizer from '../../components/viz/QuadraticFormVisualizer.tsx';
+import RayleighQuotientExplorer from '../../components/viz/RayleighQuotientExplorer.tsx';
 
 ## 1. The Question of Invariant Directions
 
@@ -869,5 +870,234 @@ Many naturally occurring symmetric matrices fail to be positive-definite but *ar
 <figure className="my-6">
   <img src="/images/topics/eigenvalues-eigenvectors/quadratic-form-zoo.png" alt="Five-panel figure: positive-definite isotropic (circular contours), positive-definite elongated (elliptical), positive-semidefinite (parallel lines), indefinite saddle (hyperbolas), negative-definite (inverted)" className="rounded-lg border border-gray-200 dark:border-gray-700" />
   <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">The zoo of quadratic forms in ℝ², classified by eigenvalue signs. Positive-definite → ellipses (bowl). Positive-semidefinite → parallel lines (trough). Indefinite → hyperbolas (saddle). Negative-definite → ellipses (dome). The sign pattern of the eigenvalues determines the contour topology.</figcaption>
+</figure>
+
+## 8. The Rayleigh Quotient
+
+The spectral theorem and the eigenvalue/definiteness picture (§§6-7) gave us *static* information about a symmetric matrix: its decomposition, its quadratic form, its principal axes. The **Rayleigh quotient** gives us a *variational* characterization — eigenvalues as extrema of a scalar function. This is the picture in which PCA's "find the direction of maximum variance" lives, and the bridge from spectral theory to constrained optimization.
+
+<TheoremBlock type="definition" number={12} title="Rayleigh Quotient">
+
+For a real symmetric matrix $A$ and a nonzero vector $\mathbf{x} \in \mathbb{R}^n$, the **Rayleigh quotient** is
+
+$$R_A(\mathbf{x}) = \frac{\mathbf{x}^\top A \mathbf{x}}{\mathbf{x}^\top \mathbf{x}}.$$
+
+Defined on $\mathbb{R}^n \setminus \{\mathbf{0}\}$ and **scale-invariant**: $R_A(c \mathbf{x}) = R_A(\mathbf{x})$ for any $c \neq 0$. Restricting to unit vectors $\|\mathbf{x}\| = 1$ gives $R_A(\mathbf{x}) = \mathbf{x}^\top A \mathbf{x}$ — just the quadratic form on the unit sphere.
+
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={9} title="Rayleigh Quotient Bounds (Extremal Eigenvalues)">
+
+Let $A$ be real symmetric with eigenvalues $\lambda_1 \geq \lambda_2 \geq \cdots \geq \lambda_n$ and orthonormal eigenvectors $\mathbf{q}_1, \ldots, \mathbf{q}_n$. For every $\mathbf{x} \neq \mathbf{0}$:
+
+$$\lambda_n \leq R_A(\mathbf{x}) \leq \lambda_1.$$
+
+The upper bound is achieved at $\mathbf{x} = \mathbf{q}_1$; the lower bound at $\mathbf{x} = \mathbf{q}_n$. Therefore
+
+$$\lambda_1 = \max_{\mathbf{x} \neq \mathbf{0}} R_A(\mathbf{x}), \qquad \lambda_n = \min_{\mathbf{x} \neq \mathbf{0}} R_A(\mathbf{x}).$$
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+Expand $\mathbf{x}$ in the orthonormal eigenbasis: $\mathbf{x} = \sum_{i=1}^n c_i \mathbf{q}_i$ with $c_i = \mathbf{q}_i^\top \mathbf{x}$.
+
+By Parseval (orthonormality of the basis): $\mathbf{x}^\top \mathbf{x} = \sum_i c_i^2$. By the outer-product expansion (Corollary 3): $A \mathbf{x} = \sum_i \lambda_i c_i \mathbf{q}_i$, so $\mathbf{x}^\top A \mathbf{x} = \sum_i \lambda_i c_i^2$.
+
+Therefore
+
+$$R_A(\mathbf{x}) = \frac{\sum_i \lambda_i c_i^2}{\sum_i c_i^2} = \sum_{i=1}^n w_i \, \lambda_i,$$
+
+where $w_i = c_i^2 / \sum_j c_j^2 \in [0, 1]$ are weights summing to $1$. So $R_A(\mathbf{x})$ is a *convex combination* of the eigenvalues. Any convex combination of numbers lies between the smallest and largest:
+
+$$\lambda_n = \sum w_i \lambda_n \leq \sum w_i \lambda_i \leq \sum w_i \lambda_1 = \lambda_1.$$
+
+Equality on the upper bound requires all the weight to be on indices where $\lambda_i = \lambda_1$ — i.e. $\mathbf{x}$ lies in the eigenspace $E_{\lambda_1}$. The simplest choice is $\mathbf{x} = \mathbf{q}_1$. Similarly the lower bound is achieved at $\mathbf{x} = \mathbf{q}_n$.  $\blacksquare$
+
+</TheoremBlock>
+
+<TheoremBlock type="corollary" number={5} title="Variational Characterization of λ₁ and λₙ">
+
+$$\lambda_1 = \max_{\|\mathbf{x}\| = 1} \mathbf{x}^\top A \mathbf{x}, \qquad \lambda_n = \min_{\|\mathbf{x}\| = 1} \mathbf{x}^\top A \mathbf{x}.$$
+
+The maximizer is $\mathbf{q}_1$ (top eigenvector); the minimizer is $\mathbf{q}_n$ (bottom eigenvector), each up to sign and unit-norm scaling.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={11} title="Computing λ_max by maximization">
+
+Let $A = \begin{pmatrix} 2 & 1 \\ 1 & 2 \end{pmatrix}$. Parameterize the unit circle as $\mathbf{x}(\theta) = (\cos\theta, \sin\theta)^\top$. Compute
+
+$$\mathbf{x}(\theta)^\top A \mathbf{x}(\theta) = 2\cos^2\theta + 2\sin\theta\cos\theta + 2\sin^2\theta = 2 + \sin(2\theta).$$
+
+The maximum over $\theta$ is $3$ at $\theta = \pi/4$ (where $\sin(2\theta) = 1$); the minimum is $1$ at $\theta = 3\pi/4$ (where $\sin(2\theta) = -1$). So $\lambda_{\max} = 3$, $\lambda_{\min} = 1$. Top eigenvector $\mathbf{q}_1 = (\cos(\pi/4), \sin(\pi/4))^\top = (1, 1)^\top / \sqrt{2}$, bottom eigenvector $\mathbf{q}_2 = (-1, 1)^\top / \sqrt{2}$.
+
+Sanity-check via the characteristic polynomial: $\lambda^2 - 4\lambda + 3 = (\lambda - 1)(\lambda - 3)$ ✓.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={11} title="The Rayleigh quotient as a Lagrangian critical-point equation">
+
+The maximization
+
+$$\max_{\mathbf{x}} \mathbf{x}^\top A \mathbf{x} \quad \text{subject to} \quad \mathbf{x}^\top \mathbf{x} = 1$$
+
+is a constrained-optimization problem. By Lagrange multipliers (Topic 16), the Lagrangian is
+
+$$\mathcal{L}(\mathbf{x}, \mu) = \mathbf{x}^\top A \mathbf{x} - \mu (\mathbf{x}^\top \mathbf{x} - 1).$$
+
+Setting $\nabla_{\mathbf{x}} \mathcal{L} = \mathbf{0}$: $2 A \mathbf{x} - 2 \mu \mathbf{x} = \mathbf{0}$, i.e. $A \mathbf{x} = \mu \mathbf{x}$. *The Lagrange multiplier at a critical point is an eigenvalue.* The critical point $\mathbf{x}$ is the corresponding eigenvector. Maximizing the Rayleigh quotient *is* solving the eigenvalue equation — eigenvalues fall out of constrained optimization without any extra machinery.
+
+</TheoremBlock>
+
+**ML aside.** The first principal component of a mean-centered data matrix $X$ is the unit vector $\mathbf{q}_1$ maximizing $\mathbf{q}^\top (X^\top X) \mathbf{q}$ — the direction of maximum variance. By Corollary 5, that maximizer is the top eigenvector of $X^\top X$, achieving value $\lambda_1$. Each subsequent component maximizes the same Rayleigh quotient *subject to* orthogonality with the previous components — exactly the Courant-Fischer characterization of $\lambda_2, \lambda_3, \ldots$ in the next section. PCA is the iterative application of the Rayleigh quotient. <a className="formalml-badge" href="https://www.formalml.com/topics/pca-and-spectral-methods">pca-and-spectral-methods →</a>
+
+<RayleighQuotientExplorer client:visible />
+
+<figure className="my-6">
+  <img src="/images/topics/eigenvalues-eigenvectors/rayleigh-quotient-circle.png" alt="Two-panel figure: unit circle with eigenvector directions on the left, Rayleigh quotient as a function of angle on the right with horizontal dashed lines at lambda_max and lambda_min" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">The Rayleigh quotient on the unit circle. Peaks coincide with the eigenvector angles; peak values are the eigenvalues. The horizontal dashed lines mark λ_max and λ_min as the upper and lower envelopes of R_A.</figcaption>
+</figure>
+
+## 9. The Courant-Fischer Min-Max Principle
+
+The Rayleigh quotient (§8) characterized $\lambda_1$ and $\lambda_n$ as extrema. What about $\lambda_2, \lambda_3, \ldots$? Restricting the Rayleigh quotient to vectors orthogonal to $\mathbf{q}_1$ removes the top eigendirection, and the remaining max becomes $\lambda_2$. But this construction requires already *knowing* $\mathbf{q}_1$ — a chicken-and-egg problem when we want to characterize eigenvalues without first computing the others.
+
+The **Courant-Fischer min-max principle** avoids the dependence. It characterizes the $k$-th eigenvalue as a max-over-$k$-dimensional-subspaces of a min, or equivalently a min-over-$(n-k+1)$-dimensional-subspaces of a max. Either formulation captures $\lambda_k$ without first computing $\lambda_1, \ldots, \lambda_{k-1}$.
+
+<TheoremBlock type="theorem" number={10} title="Courant-Fischer Min-Max Principle">
+
+Let $A$ be real symmetric with eigenvalues $\lambda_1 \geq \cdots \geq \lambda_n$. For each $k = 1, 2, \ldots, n$:
+
+$$\lambda_k = \max_{\substack{S \subseteq \mathbb{R}^n \\ \dim S = k}} \; \min_{\substack{\mathbf{x} \in S \\ \|\mathbf{x}\| = 1}} \mathbf{x}^\top A \mathbf{x} = \min_{\substack{S \subseteq \mathbb{R}^n \\ \dim S = n - k + 1}} \; \max_{\substack{\mathbf{x} \in S \\ \|\mathbf{x}\| = 1}} \mathbf{x}^\top A \mathbf{x}.$$
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+We prove the max-min form; the min-max form is the same argument with signs flipped. Let $\mathbf{q}_1, \ldots, \mathbf{q}_n$ be the orthonormal eigenbasis from the spectral theorem, with $A \mathbf{q}_i = \lambda_i \mathbf{q}_i$ and $\lambda_1 \geq \cdots \geq \lambda_n$.
+
+**Lower bound** ($\lambda_k \leq \max_S \min_{\mathbf{x} \in S, \|\mathbf{x}\|=1} \mathbf{x}^\top A \mathbf{x}$). Take $S = \operatorname{span}(\mathbf{q}_1, \ldots, \mathbf{q}_k)$, a $k$-dimensional subspace. For any unit $\mathbf{x} = \sum_{i=1}^k c_i \mathbf{q}_i \in S$ with $\sum c_i^2 = 1$:
+
+$$\mathbf{x}^\top A \mathbf{x} = \sum_{i=1}^k \lambda_i c_i^2 \geq \lambda_k \sum_{i=1}^k c_i^2 = \lambda_k,$$
+
+since each $\lambda_i \geq \lambda_k$ for $i \leq k$. The min over this particular $S$ is at least $\lambda_k$, so the max over *all* $k$-dim subspaces is at least $\lambda_k$.
+
+**Upper bound** ($\max_S \min_{\mathbf{x} \in S, \|\mathbf{x}\|=1} \mathbf{x}^\top A \mathbf{x} \leq \lambda_k$). For any $k$-dimensional subspace $S$, consider its intersection with $T = \operatorname{span}(\mathbf{q}_k, \mathbf{q}_{k+1}, \ldots, \mathbf{q}_n)$, an $(n - k + 1)$-dimensional subspace. By dimension counting (Topic 33, §8):
+
+$$\dim(S \cap T) \geq \dim S + \dim T - n = k + (n - k + 1) - n = 1.$$
+
+So $S \cap T$ contains a unit vector $\mathbf{x}^*$. Since $\mathbf{x}^* \in T$, expand $\mathbf{x}^* = \sum_{i=k}^n c_i \mathbf{q}_i$ with $\sum c_i^2 = 1$. Then
+
+$$(\mathbf{x}^*)^\top A \mathbf{x}^* = \sum_{i=k}^n \lambda_i c_i^2 \leq \lambda_k \sum_{i=k}^n c_i^2 = \lambda_k,$$
+
+since each $\lambda_i \leq \lambda_k$ for $i \geq k$. So for every choice of $k$-dim $S$, the min is at most $(\mathbf{x}^*)^\top A \mathbf{x}^* \leq \lambda_k$, and therefore the max over all $S$ is at most $\lambda_k$.
+
+Combining both bounds: $\lambda_k = \max_S \min_{\mathbf{x} \in S, \|\mathbf{x}\|=1} \mathbf{x}^\top A \mathbf{x}$.  $\blacksquare$
+
+</TheoremBlock>
+
+The Courant-Fischer principle has two important consequences. Cauchy interlacing tells us how eigenvalues of a leading principal submatrix relate to those of the full matrix — a structural fact about how eigenvalues "thin out" as we restrict to subspaces. Weyl's inequality bounds how much the eigenvalues of a symmetric matrix can move under a perturbation, the foundation of *eigenvalue stability* in approximate PCA, noise-perturbed kernel methods, and spectral clustering on noisy graphs.
+
+<TheoremBlock type="corollary" number={6} title="Cauchy Interlacing">
+
+Let $A$ be a real symmetric $n \times n$ matrix with eigenvalues $\lambda_1 \geq \cdots \geq \lambda_n$, and let $B$ be the $(n-1) \times (n-1)$ leading principal submatrix of $A$ (delete the last row and column). Let $\mu_1 \geq \cdots \geq \mu_{n-1}$ be the eigenvalues of $B$. Then
+
+$$\lambda_k \geq \mu_k \geq \lambda_{k+1} \quad \text{for each } k = 1, \ldots, n-1.$$
+
+The eigenvalues of $B$ *interlace* those of $A$ — between consecutive eigenvalues of $A$.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+The $k$-dimensional subspaces of $\mathbb{R}^{n-1}$ embed canonically into $\mathbb{R}^n$ as $k$-dimensional subspaces orthogonal to $\mathbf{e}_n$. Apply Courant-Fischer to $B$ (working in $\mathbb{R}^{n-1}$) and to $A$ (over the same subspaces, restricted to $\mathbb{R}^{n-1} \subset \mathbb{R}^n$). The max over a smaller family of subspaces is no larger than the max over the full family, giving $\mu_k \leq \lambda_k$. The dual min-max form gives $\mu_k \geq \lambda_{k+1}$.  $\blacksquare$
+
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={11} title="Weyl's Inequality (stated)">
+
+For real symmetric matrices $A$ and $E$ of the same size, let $\lambda_k(A)$ denote the $k$-th eigenvalue (in non-increasing order). Then
+
+$$|\lambda_k(A + E) - \lambda_k(A)| \leq \|E\|_2,$$
+
+where $\|E\|_2 = \max_i |\lambda_i(E)|$ is the operator norm. Perturbing $A$ by $E$ moves each eigenvalue by at most $\|E\|_2$.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={12} title="Why Courant-Fischer matters in practice">
+
+Many ML quantities are eigenvalues of matrices that are *perturbations* of simpler ones — empirical covariance perturbing a population covariance, noisy kernel matrices perturbing the clean kernel, finite-sample graph Laplacians perturbing their continuum limits. Weyl's inequality (a consequence of Courant-Fischer) says these perturbations move eigenvalues by at most the operator-norm magnitude of the noise — the foundation of **eigenvalue stability**. The Davis-Kahan theorem extends stability to *eigenvectors* with sharper conditions; we mention it as the next step in spectral perturbation theory but defer the development.
+
+The min-max characterization also reads as a *constrained optimization*: "find the best $k$-dimensional approximation of the eigenvalue structure of $A$." For PCA, this becomes "find the $k$-dim projection that maximizes captured variance" — and Courant-Fischer says the optimal projection is onto the span of the top $k$ eigenvectors. Spectral clustering's "the Fiedler vector gives the best balanced cut" is the same statement for $\lambda_2$ of the Laplacian.
+
+</TheoremBlock>
+
+<figure className="my-6">
+  <img src="/images/topics/eigenvalues-eigenvectors/courant-fischer-subspaces.png" alt="Three-panel figure showing the Courant-Fischer min-max principle: free max equals top eigenvalue, constrained to 2D subspace orthogonal to top eigenvector gives second eigenvalue, constrained to a 1D subspace gives a specific Rayleigh-quotient value" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">Courant-Fischer: every eigenvalue is a max-min over subspaces. Constraining to a subspace of dimension k caps the Rayleigh quotient between λ_k and λ_max. The k-th eigenvalue is the max over all k-dim subspaces of the constrained minimum.</figcaption>
+</figure>
+
+## 10. Principal Axes Geometry
+
+Three pictures from §§6-8 — the spectral theorem's ellipsoid (Definition 11), the quadratic form's level sets (Theorem 7), and the Rayleigh quotient's extrema on the unit sphere (Theorem 9) — are *the same geometric object* read three ways. This short consolidating section names the unification and applies it to three apparently unrelated ML contexts that all reduce to the same spectral picture.
+
+<TheoremBlock type="definition" number={13} title="Principal Axes">
+
+Let $A \succ 0$ be symmetric positive-definite with spectral decomposition $A = Q \Lambda Q^\top$. The **principal axes** of $A$ are the eigenvectors $\mathbf{q}_1, \ldots, \mathbf{q}_n$. The **principal-axis lengths** of the unit ellipsoid $\mathcal{E}(A)$ are the semi-axes, equal to $1/\sqrt{\lambda_i}$ along $\mathbf{q}_i$.
+
+</TheoremBlock>
+
+The interpretation: a positive-definite symmetric matrix is "a uniform stretching along an orthogonal set of axes." The axes are the eigenvectors; the stretch factors are the eigenvalues. This is the picture every covariance ellipse, every quadratic loss landscape, and every Mahalanobis ball is invoking.
+
+<TheoremBlock type="proposition" number={4} title="Whitening Transformation">
+
+Let $\Sigma \succ 0$ be a symmetric positive-definite matrix with spectral decomposition $\Sigma = Q \Lambda Q^\top$. The **whitening transformation**
+
+$$W = \Sigma^{-1/2} = Q \, \Lambda^{-1/2} \, Q^\top$$
+
+satisfies $W \Sigma W^\top = I$. Equivalently, if $X$ is a random vector with covariance $\Sigma$, then $WX$ has covariance $I$.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+$W$ is symmetric: $W^\top = (Q \Lambda^{-1/2} Q^\top)^\top = Q \Lambda^{-1/2} Q^\top = W$. So $W^\top = W$, and the conjugation $W \Sigma W^\top$ simplifies:
+
+$$W \Sigma W = (Q \Lambda^{-1/2} Q^\top)(Q \Lambda Q^\top)(Q \Lambda^{-1/2} Q^\top) = Q \Lambda^{-1/2} (Q^\top Q) \Lambda (Q^\top Q) \Lambda^{-1/2} Q^\top.$$
+
+Using $Q^\top Q = I$ (orthogonality of $Q$) at each step: $W \Sigma W = Q \Lambda^{-1/2} \Lambda \Lambda^{-1/2} Q^\top = Q I Q^\top = I$.  $\blacksquare$
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={12} title="Whitening a 2D Gaussian">
+
+Let $\Sigma = \begin{pmatrix} 4 & 2 \\ 2 & 2 \end{pmatrix}$. Eigenvalues from the characteristic polynomial $\lambda^2 - 6\lambda + 4 = 0$: $\lambda_1 = 3 + \sqrt{5} \approx 5.236$, $\lambda_2 = 3 - \sqrt{5} \approx 0.764$.
+
+Eigenvectors: $\mathbf{q}_1 \approx (0.851, 0.526)^\top$ (high-variance direction); $\mathbf{q}_2 \approx (-0.526, 0.851)^\top$ (low-variance direction). The data ellipse — the locus where the multivariate-normal density takes any fixed value — is an ellipse with semi-axes $\sqrt{5.236} \approx 2.29$ and $\sqrt{0.764} \approx 0.87$, oriented along $\mathbf{q}_1$ and $\mathbf{q}_2$.
+
+The whitening transformation $W = Q \operatorname{diag}(1/\sqrt{5.236}, 1/\sqrt{0.764}) Q^\top$ stretches the data along $\mathbf{q}_2$ (where variance is small) and *compresses* along $\mathbf{q}_1$ (where variance is large), so the resulting distribution is circularly symmetric. Linear regression after whitening becomes well-conditioned; Mahalanobis distance becomes Euclidean distance in the whitened coordinates.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={13} title="The three pictures, unified">
+
+A positive-definite symmetric matrix $A$ is simultaneously three different objects:
+
+(a) **A quadratic form** $\mathbf{x}^\top A \mathbf{x}$ whose level sets are ellipsoids (Definition 11);
+
+(b) **A linear map** whose action on the unit sphere stretches it to an ellipsoid (the spectral-theorem picture from the `<SpectralDecompositionVisualizer />` above);
+
+(c) **An inner product structure** $\langle \mathbf{x}, \mathbf{y} \rangle_A = \mathbf{x}^\top A \mathbf{y}$ that defines the Mahalanobis distance $d_A(\mathbf{x}, \mathbf{y}) = \sqrt{(\mathbf{x} - \mathbf{y})^\top A (\mathbf{x} - \mathbf{y})}$.
+
+The eigenvalues and eigenvectors are the same in all three pictures; only the visualization differs. This is the unifying observation that makes spectral methods so reusable across ML and statistics. <a className="formalstatistics-badge" href="https://www.formalstatistics.com/topics/mahalanobis-distance">mahalanobis-distance →</a>
+
+</TheoremBlock>
+
+**ML aside.** Adam, RMSProp, and AdaGrad are **approximate whitening** methods for gradient descent. Each maintains a running estimate of (the diagonal of) the loss Hessian and uses it to rescale per-coordinate step sizes — effectively applying a diagonal approximation of $\Sigma^{-1/2}$ to the gradient at each step. Full whitening would require the full eigendecomposition of the Hessian; the diagonal approximation is what is computationally tractable. The condition number $\kappa(H) = \lambda_{\max} / \lambda_{\min}$ from the Hessian topic is the *anisotropy* of the loss ellipsoid — the ratio of longest to shortest axis. Newton's method whitens *fully* (uses $H^{-1}$ as preconditioner) and converges in one step on a pure quadratic.
+
+<figure className="my-6">
+  <img src="/images/topics/eigenvalues-eigenvectors/principal-axes-unified.png" alt="Four-panel figure: data ellipse for a covariance matrix, loss landscape with Hessian eigenvectors as principal axes, whitening transformation mapping ellipse to circle, generic ellipsoid of x'Ax = 1" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">The same spectral picture, four contexts. (1) Data ellipse from a covariance matrix Σ. (2) Loss landscape with Hessian H. (3) Whitening transformation Σ^(-1/2). (4) Generic ellipsoid of xᵀAx = 1. The eigenvectors are the principal axes everywhere; the eigenvalues are the variances/curvatures/semi-axis lengths.</figcaption>
 </figure>
 
