@@ -119,6 +119,8 @@ references:
 
 import TheoremBlock from '../../components/ui/TheoremBlock.astro';
 import EigenvectorExplorer from '../../components/viz/EigenvectorExplorer.tsx';
+import CharacteristicPolynomialVisualizer from '../../components/viz/CharacteristicPolynomialVisualizer.tsx';
+import DiagonalizationExplorer from '../../components/viz/DiagonalizationExplorer.tsx';
 
 ## 1. The Question of Invariant Directions
 
@@ -270,5 +272,356 @@ The definition insists that $\mathbf{v} \neq \mathbf{0}$ for an eigenvector. The
 <figure className="my-6">
   <img src="/images/topics/eigenvalues-eigenvectors/eigenspace-examples.png" alt="Three-panel figure: a diagonal matrix with coordinate axes as eigenspaces, a projection with x-axis as E_1 and y-axis as E_0, a 90-degree rotation showing no real invariant directions" className="rounded-lg border border-gray-200 dark:border-gray-700" />
   <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">Three eigenspace pictures from Examples 1–3. The diagonal matrix has the coordinate axes as its two eigenspaces. The projection has E₁ = x-axis and E₀ = y-axis. The 90° rotation has no real eigenvectors — every line through the origin rotates by 90°, so none is invariant.</figcaption>
+</figure>
+
+## 3. The Characteristic Polynomial
+
+Definition 1 names the eigenvalue equation $T(\mathbf{v}) = \lambda \mathbf{v}$, but it does not yet tell us how to *find* the eigenvalues of a given matrix. The bridge from "what is an eigenvalue?" to "compute the eigenvalues" is the *characteristic polynomial*: a single polynomial in one variable $\lambda$ whose roots are exactly the eigenvalues, and whose degree is the dimension of the underlying space.
+
+The construction starts with a rewriting of the eigenvalue equation. The condition $T(\mathbf{v}) = \lambda \mathbf{v}$ is the same as $T(\mathbf{v}) - \lambda \mathbf{v} = \mathbf{0}$, which is the same as $(T - \lambda I)(\mathbf{v}) = \mathbf{0}$. So $\mathbf{v}$ is a nonzero element of $\ker(T - \lambda I)$. By the invertibility characterization of [Linear Algebra](/topics/linear-algebra) (Corollary 1 of §8), a square matrix is non-invertible exactly when its determinant is zero. Therefore $\lambda$ is an eigenvalue if and only if $\det(T - \lambda I) = 0$ — which is a *single equation* in the *single variable* $\lambda$.
+
+<TheoremBlock type="definition" number={3} title="Characteristic Polynomial">
+
+For an $n \times n$ matrix $A$, the **characteristic polynomial** of $A$ is
+
+$$p_A(\lambda) = \det(\lambda I - A).$$
+
+It is a monic polynomial in $\lambda$ of degree $n$ with real coefficients (assuming $A$ is real). The **characteristic equation** is $p_A(\lambda) = 0$.
+
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={1} title="Eigenvalues Are Roots of the Characteristic Polynomial">
+
+For any $n \times n$ matrix $A$ and any scalar $\lambda \in \mathbb{C}$:
+
+$$\lambda \text{ is an eigenvalue of } A \quad \Longleftrightarrow \quad p_A(\lambda) = 0.$$
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+$\lambda$ is an eigenvalue of $A$ iff there exists a nonzero $\mathbf{v}$ with $(A - \lambda I)\mathbf{v} = \mathbf{0}$, i.e. $\ker(A - \lambda I) \neq \{\mathbf{0}\}$. By the invertibility characterization (Corollary 1 of §8 of [Linear Algebra](/topics/linear-algebra)), this is equivalent to $A - \lambda I$ being non-invertible, which is equivalent to $\det(A - \lambda I) = 0$.
+
+Finally, $\det(\lambda I - A) = (-1)^n \det(A - \lambda I)$ — multiplying every row of a matrix by $-1$ multiplies the determinant by $(-1)^n$ — so the two determinants vanish together. Therefore $p_A(\lambda) = \det(\lambda I - A) = 0$ if and only if $\lambda$ is an eigenvalue.  $\blacksquare$
+
+</TheoremBlock>
+
+Theorem 1 changes the entire character of the eigenvalue problem. We no longer have to *guess* eigenvalues — we *compute* them by finding roots of a polynomial. The polynomial has degree $n$, so by the Fundamental Theorem of Algebra it has exactly $n$ roots over $\mathbb{C}$, counted with multiplicity. A real $n \times n$ matrix therefore has exactly $n$ eigenvalues over the complex numbers, though fewer may be real.
+
+<TheoremBlock type="definition" number={4} title="Algebraic Multiplicity">
+
+The **algebraic multiplicity** of an eigenvalue $\lambda$ of $A$ is its multiplicity as a root of the characteristic polynomial: the largest integer $m \geq 1$ such that $(\lambda - \lambda_0)^m$ divides $p_A(\lambda)$ when $\lambda_0$ is the eigenvalue in question. We write $m_a(\lambda)$ for this number.
+
+</TheoremBlock>
+
+A natural question follows immediately. We have two notions of "multiplicity" for an eigenvalue: the *geometric* one (Definition 2, the dimension of $E_\lambda$) and the *algebraic* one we just named. How do they relate? The answer is that geometric multiplicity is bounded above by algebraic multiplicity, and the gap between them is the source of all the eigenvalue pathology to come.
+
+<TheoremBlock type="proposition" number={3} title="Geometric ≤ Algebraic Multiplicity">
+
+For any eigenvalue $\lambda$ of $A$, the geometric multiplicity is at most the algebraic multiplicity:
+
+$$\dim E_\lambda = m_g(\lambda) \;\leq\; m_a(\lambda).$$
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+Let $k = \dim E_\lambda$ be the geometric multiplicity. Choose a basis $\{\mathbf{v}_1, \ldots, \mathbf{v}_k\}$ of the eigenspace $E_\lambda$, and extend it to a basis $\mathcal{B} = \{\mathbf{v}_1, \ldots, \mathbf{v}_k, \mathbf{w}_1, \ldots, \mathbf{w}_{n - k}\}$ of $V$ (using the basis-extension lemma from §3 of [Linear Algebra](/topics/linear-algebra)). In this basis, the matrix of $A$ has block form
+
+$$[A]_{\mathcal{B}} = \begin{pmatrix} \lambda I_k & B \\ 0 & C \end{pmatrix}$$
+
+for some $k \times (n-k)$ block $B$ and $(n-k) \times (n-k)$ block $C$. The reason: $A \mathbf{v}_i = \lambda \mathbf{v}_i$ for each $i \leq k$, so the first $k$ columns of $[A]_{\mathcal{B}}$ are $\lambda$ times the corresponding standard basis vectors. The bottom-left block is zero because the eigenvectors $\mathbf{v}_i$ have no $\mathbf{w}_j$ components. The remaining columns are arbitrary, filling out the blocks $B$ and $C$.
+
+Similar matrices share the characteristic polynomial (Lemma 1 below), so
+
+$$p_A(\lambda') = \det(\lambda' I - [A]_{\mathcal{B}}) = \det\begin{pmatrix} (\lambda' - \lambda) I_k & -B \\ 0 & \lambda' I_{n-k} - C \end{pmatrix} = (\lambda' - \lambda)^k \cdot \det(\lambda' I_{n-k} - C),$$
+
+using the block-triangular determinant formula. The factor $(\lambda' - \lambda)^k$ contributes at least $k$ to the multiplicity of $\lambda$ as a root, so $m_a(\lambda) \geq k = m_g(\lambda)$. $\blacksquare$
+
+</TheoremBlock>
+
+The proof used a fact we now make explicit: similar matrices have the same characteristic polynomial. The intuition is that similarity corresponds to a change of basis, and the characteristic polynomial is a property of the underlying linear map — not of the matrix that happens to represent it in a particular basis.
+
+<TheoremBlock type="lemma" number={1} title="Similar Matrices Have the Same Characteristic Polynomial">
+
+If $A$ and $A'$ are similar — meaning $A' = P^{-1} A P$ for some invertible $P$ — then $p_{A'}(\lambda) = p_A(\lambda)$.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+Using the multiplicativity of the determinant (Theorem 6 of [Linear Algebra](/topics/linear-algebra)) and $\det(P^{-1}) \det(P) = 1$:
+
+$$p_{A'}(\lambda) = \det(\lambda I - P^{-1} A P) = \det\bigl(P^{-1}(\lambda I - A) P\bigr).$$
+
+Pulling the determinants apart and rearranging gives
+
+$$\det(P^{-1}) \det(\lambda I - A) \det(P) = \det(\lambda I - A) = p_A(\lambda).$$
+
+So $p_{A'}(\lambda) = p_A(\lambda)$. $\blacksquare$
+
+</TheoremBlock>
+
+In particular, $A$ and $A'$ have the same eigenvalue multiset (with algebraic multiplicities), the same trace (sum of eigenvalues), and the same determinant (product of eigenvalues) — all because the characteristic polynomial is a similarity invariant.
+
+The next examples compute $p_A(\lambda)$ for small matrices and illustrate the three qualitatively different scenarios: distinct real roots, a repeated real root, and a complex conjugate pair.
+
+<TheoremBlock type="example" number={4} title="Characteristic polynomial of a 2×2 matrix">
+
+For $A = \begin{pmatrix} a & b \\ c & d \end{pmatrix}$:
+
+$$p_A(\lambda) = \det\begin{pmatrix} \lambda - a & -b \\ -c & \lambda - d \end{pmatrix} = (\lambda - a)(\lambda - d) - bc = \lambda^2 - (a + d)\lambda + (ad - bc).$$
+
+The coefficients are familiar: $a + d = \operatorname{tr}(A)$ and $ad - bc = \det A$, so
+
+$$p_A(\lambda) = \lambda^2 - \operatorname{tr}(A)\,\lambda + \det A.$$
+
+Solving the quadratic gives the eigenvalues
+
+$$\lambda = \frac{\operatorname{tr}(A) \pm \sqrt{\operatorname{tr}(A)^2 - 4 \det A}}{2}.$$
+
+Apply to $A = \begin{pmatrix} 4 & -2 \\ 1 & 1 \end{pmatrix}$: $\operatorname{tr}(A) = 5$, $\det A = 6$, so $p_A(\lambda) = \lambda^2 - 5\lambda + 6 = (\lambda - 2)(\lambda - 3)$. Eigenvalues $\lambda_1 = 3$, $\lambda_2 = 2$.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={5} title="A 2×2 matrix with complex eigenvalues">
+
+For the 90° rotation $A = \begin{pmatrix} 0 & -1 \\ 1 & 0 \end{pmatrix}$ from Example 3: $\operatorname{tr}(A) = 0$, $\det A = 1$, so $p_A(\lambda) = \lambda^2 + 1$. The roots are $\lambda = \pm i$ — *no real eigenvalues*. Over the complex numbers the eigenvectors are $\mathbf{v}_{+i} = (1, -i)^\top$ and $\mathbf{v}_{-i} = (1, i)^\top$. A real matrix can have complex eigenvalues; when it does, they come in complex conjugate pairs (because the characteristic polynomial has real coefficients, so non-real roots arise in conjugate pairs).
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={6} title="A 3×3 characteristic polynomial">
+
+For $A = \begin{pmatrix} 2 & 1 & 0 \\ 0 & 2 & 1 \\ 0 & 0 & 3 \end{pmatrix}$ — upper-triangular, so the characteristic polynomial factors immediately:
+
+$$p_A(\lambda) = (\lambda - 2)(\lambda - 2)(\lambda - 3) = (\lambda - 2)^2 (\lambda - 3).$$
+
+Eigenvalues: $\lambda = 2$ with algebraic multiplicity 2 and $\lambda = 3$ with algebraic multiplicity 1. Whether $\lambda = 2$'s geometric multiplicity is 1 or 2 depends on the off-diagonal entries — this matrix happens to be *defective* (geometric multiplicity 1), so it is not diagonalizable. We return to this in §5.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={2} title="Real vs. complex eigenvalues">
+
+Over the real numbers, a polynomial of degree $n$ may have fewer than $n$ real roots: as Example 5 showed, $\lambda^2 + 1$ has no real roots even though its degree is 2. The Fundamental Theorem of Algebra guarantees that over the complex numbers, every degree-$n$ polynomial has *exactly* $n$ roots counted with multiplicity. So a real $n \times n$ matrix *always* has $n$ complex eigenvalues (with multiplicity), but possibly fewer real ones.
+
+Real eigenvalues correspond to invariant directions in the geometric sense of §1 — directions the map stretches without rotating. Complex eigenvalues correspond to *rotational* behavior: when $\lambda = a + bi$ is complex, the action of $A$ on the real 2-plane spanned by the real and imaginary parts of the complex eigenvector is a rotation by angle $\arctan(b/a)$ combined with a scaling by $|\lambda| = \sqrt{a^2 + b^2}$. The 90° rotation in Example 5 has $|\lambda| = 1$ (pure rotation, no scaling) and angle $\pi/2$. Real symmetric matrices — the headline case of §6 — never have complex eigenvalues, because their characteristic polynomials factor over the reals.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={3} title="Computational reality">
+
+Computing eigenvalues by writing down $p_A(\lambda)$ and factoring it works fine for $n = 2$ and $n = 3$ and is *unusable* for $n \geq 5$. Wilkinson's polynomial — the characteristic polynomial of a deliberately constructed $20 \times 20$ matrix — is so ill-conditioned that floating-point errors of order $2^{-23}$ in the coefficients move the roots by order 1. Even for benign-looking matrices, the polynomial coefficients accumulate cancellation error and the roots become hopelessly inaccurate.
+
+Production eigenvalue solvers use the *QR algorithm* (Francis, 1961) — an iterative orthogonal-similarity transformation that converges to a Schur form, from which eigenvalues read off the diagonal — and the *Lanczos / Arnoldi* iterations for sparse matrices when only a few extremal eigenvalues are needed. Both algorithms bypass the characteristic polynomial entirely. We cite this without developing the numerical theory; Trefethen & Bau, *Numerical Linear Algebra* (Lectures 24–30) is the right reference. The notebook for this topic uses `np.linalg.eig` and `np.linalg.eigh` for matrices larger than $3 \times 3$ — and so, in practice, do you.
+
+</TheoremBlock>
+
+**ML aside.** When the [Hessian](/topics/hessian) topic spoke of "the eigenvalues of $H$," it implicitly used the characteristic polynomial to define them. For low-dimensional examples (e.g., a $2 \times 2$ Hessian of a 2-feature regression), you can write $p_H(\lambda) = \lambda^2 - \operatorname{tr}(H) \lambda + \det H$ and solve. For real ML problems with $H \in \mathbb{R}^{p \times p}$ for $p$ in the millions, the characteristic polynomial is unreachable, and practitioners use truncated iterative methods (Lanczos for the top-$k$ eigenvalues of a sparse PSD Hessian) to extract just the eigenvalues that matter — typically the largest few (governing the loss landscape's dominant curvatures) and the smallest few (governing convergence-limiting slow modes).
+
+The viz below plots $p_A(\lambda)$ as a curve in the $(\lambda, p_A)$ plane for a user-controlled $2 \times 2$ or $3 \times 3$ matrix. Real eigenvalues appear as filled circles where the curve crosses zero; complex roots appear in an inset Argand plane.
+
+<CharacteristicPolynomialVisualizer client:visible />
+
+<figure className="my-6">
+  <img src="/images/topics/eigenvalues-eigenvectors/characteristic-polynomial-2x2.png" alt="Two-panel figure: a 2x2 matrix and its characteristic polynomial plotted alongside, with eigenvalues highlighted as filled circles where the curve crosses zero" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">The characteristic polynomial of a 2×2 matrix is a downward-opening parabola. Its roots — the points where it crosses the λ-axis — are the eigenvalues.</figcaption>
+</figure>
+
+<figure className="my-6">
+  <img src="/images/topics/eigenvalues-eigenvectors/characteristic-polynomial-3x3.png" alt="Two-panel figure: a 3x3 matrix and its cubic characteristic polynomial with three real roots highlighted" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">The characteristic polynomial of a 3×3 matrix is a cubic. For a generic real matrix it has either three real roots or one real and a complex conjugate pair.</figcaption>
+</figure>
+
+## 4. Diagonalizability and Similarity
+
+The characteristic polynomial tells us how many eigenvalues a matrix has and what they are. The next question is whether the eigenvectors form a *basis* of $V$ — because when they do, the matrix becomes *diagonal* in that basis, and most calculations involving the matrix (powers, exponentials, system solutions) collapse to trivial scalar arithmetic along the eigenbasis.
+
+<TheoremBlock type="definition" number={5} title="Diagonalizable Matrix">
+
+An $n \times n$ matrix $A$ is **diagonalizable** (over the field $\mathbb{F}$, typically $\mathbb{R}$ or $\mathbb{C}$) if there exists an invertible $P$ and a diagonal matrix $D$ — both with entries in $\mathbb{F}$ — such that
+
+$$A = P D P^{-1}.$$
+
+Equivalently, $A$ is similar to a diagonal matrix.
+
+</TheoremBlock>
+
+The factorization $A = P D P^{-1}$ is the *eigendecomposition*. Geometrically: change of basis to the eigenbasis (apply $P^{-1}$), scale along each eigendirection independently (apply $D$), change back to the standard basis (apply $P$). Algebraically: every action of $A$ on a vector reduces to $n$ independent scalar scalings in the eigenbasis.
+
+<TheoremBlock type="theorem" number={2} title="Diagonalizability and Eigenbases">
+
+An $n \times n$ matrix $A$ is diagonalizable if and only if there exists a basis of $\mathbb{R}^n$ (or $\mathbb{C}^n$, depending on the field) consisting of eigenvectors of $A$. In that case, the columns of $P$ are the eigenvectors, and the diagonal entries of $D$ are the corresponding eigenvalues.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+**($\Rightarrow$)** Suppose $A = P D P^{-1}$ with $D = \operatorname{diag}(\lambda_1, \ldots, \lambda_n)$ and $P$ invertible with columns $\mathbf{p}_1, \ldots, \mathbf{p}_n$. Multiply both sides on the right by $P$ to clear the inverse: $A P = P D$. Reading column $j$ of both sides: $A \mathbf{p}_j = \lambda_j \mathbf{p}_j$. So each column of $P$ is an eigenvector with eigenvalue equal to the corresponding diagonal entry of $D$. Since $P$ is invertible, its columns are linearly independent, hence a basis of $\mathbb{R}^n$.
+
+**($\Leftarrow$)** Suppose $\{\mathbf{p}_1, \ldots, \mathbf{p}_n\}$ is a basis of eigenvectors with eigenvalues $\lambda_1, \ldots, \lambda_n$. Form the matrix $P$ whose columns are these eigenvectors; $P$ is invertible because its columns are linearly independent. Form $D = \operatorname{diag}(\lambda_1, \ldots, \lambda_n)$. Then $A P = P D$ by column-by-column computation (each column of $A P$ is $A \mathbf{p}_j = \lambda_j \mathbf{p}_j$, and each column of $P D$ is $\lambda_j \mathbf{p}_j$). Multiply both sides on the right by $P^{-1}$ to conclude $A = P D P^{-1}$.  $\blacksquare$
+
+</TheoremBlock>
+
+The most useful immediate consequence is that *distinct eigenvalues are enough* to guarantee diagonalizability. We never have to check geometric vs. algebraic multiplicities for distinct-eigenvalue matrices.
+
+<TheoremBlock type="corollary" number={2} title="Distinct Eigenvalues Imply Diagonalizable">
+
+If an $n \times n$ matrix $A$ has $n$ distinct eigenvalues (each with algebraic multiplicity 1), then $A$ is diagonalizable.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+Pick one eigenvector $\mathbf{v}_i$ from each eigenspace $E_{\lambda_i}$. By Proposition 2 (§2), eigenvectors for distinct eigenvalues are linearly independent. So $\{\mathbf{v}_1, \ldots, \mathbf{v}_n\}$ is a list of $n$ linearly independent vectors in $\mathbb{R}^n$, hence a basis. By Theorem 2, $A$ is diagonalizable.  $\blacksquare$
+
+</TheoremBlock>
+
+For repeated eigenvalues, diagonalizability is no longer automatic. The criterion is multiplicity-by-multiplicity equality: every repeated eigenvalue must have a geometric multiplicity that matches its algebraic multiplicity.
+
+<TheoremBlock type="theorem" number={3} title="Diagonalizability Criterion via Multiplicities">
+
+An $n \times n$ matrix $A$ is diagonalizable (over a field containing all its eigenvalues) if and only if, for every eigenvalue $\lambda$, the geometric multiplicity equals the algebraic multiplicity:
+
+$$m_g(\lambda) = m_a(\lambda) \quad \text{for every } \lambda \in \sigma(A).$$
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+**($\Leftarrow$)** Suppose $m_g(\lambda) = m_a(\lambda)$ for every eigenvalue. The eigenspaces $E_{\lambda_i}$ for distinct eigenvalues are linearly independent subspaces (extending Proposition 2 from single eigenvectors to whole eigenspaces — the same induction works with bases of $E_{\lambda_i}$ in place of single vectors). The total dimension of the direct sum is
+
+$$\sum_i m_g(\lambda_i) = \sum_i m_a(\lambda_i) = \deg p_A = n,$$
+
+so the eigenspaces span all of $\mathbb{R}^n$ (assuming the field contains all the eigenvalues). Concatenating bases of each eigenspace gives a basis of $\mathbb{R}^n$ consisting of eigenvectors; by Theorem 2, $A$ is diagonalizable.
+
+**($\Rightarrow$)** Suppose $A = P D P^{-1}$ with $D = \operatorname{diag}(d_1, \ldots, d_n)$. The eigenspace $E_\lambda$ in this representation is the span of the standard basis vectors $\mathbf{e}_j$ for which $d_j = \lambda$ — so $m_g(\lambda)$ equals the count of diagonal entries equal to $\lambda$. The characteristic polynomial is $p_A(\lambda') = \prod_j (\lambda' - d_j)$ (the diagonal makes this immediate), so $m_a(\lambda)$ is also the count of diagonal entries equal to $\lambda$. The two counts agree.  $\blacksquare$
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={7} title="Diagonalization of a 2×2 matrix">
+
+Continue with $A = \begin{pmatrix} 4 & -2 \\ 1 & 1 \end{pmatrix}$. Eigenvalues $\lambda_1 = 3$ and $\lambda_2 = 2$ (Example 4) — distinct, so $A$ is diagonalizable by Corollary 2. Find eigenvectors:
+
+- For $\lambda_1 = 3$: solve $(A - 3I)\mathbf{v} = \mathbf{0}$, i.e. $\begin{pmatrix} 1 & -2 \\ 1 & -2 \end{pmatrix}\mathbf{v} = \mathbf{0}$. The kernel is spanned by $\mathbf{v}_1 = (2, 1)^\top$.
+- For $\lambda_2 = 2$: solve $(A - 2I)\mathbf{v} = \mathbf{0}$, i.e. $\begin{pmatrix} 2 & -2 \\ 1 & -1 \end{pmatrix}\mathbf{v} = \mathbf{0}$. The kernel is spanned by $\mathbf{v}_2 = (1, 1)^\top$.
+
+Form $P = \begin{pmatrix} 2 & 1 \\ 1 & 1 \end{pmatrix}$ and $D = \begin{pmatrix} 3 & 0 \\ 0 & 2 \end{pmatrix}$. Verify by direct multiplication that $A P = P D$. Then $A = P D P^{-1}$ where $P^{-1} = \begin{pmatrix} 1 & -1 \\ -1 & 2 \end{pmatrix}$. In the eigenbasis, $A$ is the pair of independent scalings — by 3 along $\mathbf{v}_1$ and by 2 along $\mathbf{v}_2$.
+
+</TheoremBlock>
+
+When two matrices represent the same linear map in different bases, they are *similar* — and similarity preserves every invariant of the underlying map. The list of similarity invariants is exactly the data we can read off from the eigenvalue picture.
+
+<TheoremBlock type="theorem" number={4} title="Similarity Invariants">
+
+If $A$ and $A'$ are similar matrices, they share:
+
+(a) the characteristic polynomial (and hence the eigenvalue multiset with algebraic multiplicities),
+
+(b) the trace,
+
+(c) the determinant,
+
+(d) the rank,
+
+(e) the nullity,
+
+(f) the geometric multiplicity of each eigenvalue.
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+(a) is Lemma 1 (§3). (b) Trace equals minus the coefficient of $\lambda^{n-1}$ in $p_A(\lambda)$ (this is the elementary-symmetric-polynomial identity), so trace is determined by the characteristic polynomial, hence invariant. (c) Determinant equals $(-1)^n$ times the constant term of $p_A(\lambda)$, so it too is determined by the characteristic polynomial. (d) The column space of $P A P^{-1}$ has the same dimension as the column space of $A$: $P^{-1}$ on the right doesn't change dimension (it's a bijection from $\mathbb{R}^n$ to itself), and $P$ on the left maps the column space isomorphically. So rank is preserved. (e) Nullity equals $n - \operatorname{rank}$, so it follows from (d) by rank-nullity. (f) The geometric multiplicity of $\lambda$ is
+
+$$m_g(\lambda) = \dim \ker(A - \lambda I) = \dim \ker(P^{-1}(A - \lambda I) P) = \dim \ker(A' - \lambda I),$$
+
+the same in both bases.  $\blacksquare$
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={4} title="Powers and exponentials via diagonalization">
+
+For diagonalizable $A = P D P^{-1}$ with $D = \operatorname{diag}(\lambda_1, \ldots, \lambda_n)$:
+
+$$A^k = (P D P^{-1})^k = P D^k P^{-1} \quad \text{where} \quad D^k = \operatorname{diag}(\lambda_1^k, \ldots, \lambda_n^k).$$
+
+The $P^{-1} P$ pairs telescope. The same identity holds for any function $f$ defined on the spectrum:
+
+$$f(A) = P f(D) P^{-1} \quad \text{where} \quad f(D) = \operatorname{diag}(f(\lambda_1), \ldots, f(\lambda_n)).$$
+
+In particular,
+
+$$e^A = P \, e^D \, P^{-1} = P \operatorname{diag}(e^{\lambda_1}, \ldots, e^{\lambda_n}) P^{-1}.$$
+
+This is the **spectral mapping** observation: functions of a diagonalizable matrix are computed by applying the function to the diagonal of $D$, then sandwich-wrapping. Closed-form matrix exponentials, square roots of positive-definite matrices, and whitening transformations are all instances.
+
+</TheoremBlock>
+
+**ML aside.** When the [Linear Systems](/topics/linear-systems) topic wrote $e^{At} = P e^{Dt} P^{-1}$ for the solution of $\mathbf{y}' = A \mathbf{y}$, it was applying exactly Remark 4. The matrix exponential of a diagonalizable matrix reduces to $n$ independent scalar exponentials along the eigenbasis. The continuous-time gradient flow $\dot{\boldsymbol{\theta}} = -H \boldsymbol{\theta}$ has solution $\boldsymbol{\theta}(t) = e^{-Ht} \boldsymbol{\theta}_0 = P e^{-Dt} P^{-1} \boldsymbol{\theta}_0$, and each eigencomponent $y_i(t) = e^{-\lambda_i t} y_i(0)$ decays independently. The eigenbasis is the basis in which the dynamics *decouple* — that is the actual reason eigenvalues control convergence.
+
+<DiagonalizationExplorer client:visible />
+
+<figure className="my-6">
+  <img src="/images/topics/eigenvalues-eigenvectors/diagonalization-three-steps.png" alt="Three-panel figure: the action of A on a vector x decomposed as change to eigenbasis, scale, change back" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">The eigendecomposition A = PDP⁻¹ as a three-step action: change to the eigenbasis via P⁻¹, scale along each eigenvector by the eigenvalue (D), change back via P.</figcaption>
+</figure>
+
+## 5. Defective Matrices — A Brief Detour
+
+Not every matrix is diagonalizable. When an eigenvalue's algebraic multiplicity strictly exceeds its geometric multiplicity — the eigenspace is "smaller than it should be" — the matrix is called *defective*. The defective case is structurally important enough to name and exhibit, but the full theory of canonical forms for defective matrices (Jordan canonical form) is mathematically heavy and rarely needed in ML practice. We name the form, give one example, and forward the full development to a future topic.
+
+<TheoremBlock type="definition" number={6} title="Defective Matrix">
+
+An $n \times n$ matrix $A$ is **defective** if it has an eigenvalue whose geometric multiplicity is strictly less than its algebraic multiplicity. Equivalently, $A$ has fewer than $n$ linearly independent eigenvectors, so it admits no eigenbasis and is not diagonalizable.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={8} title="A defective 2×2 matrix">
+
+Let $J_2 = \begin{pmatrix} 2 & 1 \\ 0 & 2 \end{pmatrix}$. Characteristic polynomial: $p_{J_2}(\lambda) = (\lambda - 2)^2$. So $\lambda = 2$ is the only eigenvalue, with algebraic multiplicity 2.
+
+Compute the eigenspace by solving $(J_2 - 2I)\mathbf{v} = \mathbf{0}$:
+
+$$(J_2 - 2I) = \begin{pmatrix} 0 & 1 \\ 0 & 0 \end{pmatrix}, \qquad \ker(J_2 - 2I) = \operatorname{span}\{(1, 0)^\top\}.$$
+
+The eigenspace is one-dimensional. Geometric multiplicity 1, algebraic multiplicity 2: $J_2$ is defective. There is no basis of $\mathbb{R}^2$ consisting of eigenvectors of $J_2$, so $J_2$ is not diagonalizable. The matrix is already in *Jordan form* — it *is* a Jordan block.
+
+</TheoremBlock>
+
+<TheoremBlock type="definition" number={7} title="Jordan Block (informal)">
+
+A **Jordan block** of size $k$ with eigenvalue $\lambda$ is the $k \times k$ matrix
+
+$$J_k(\lambda) = \begin{pmatrix} \lambda & 1 & & \\ & \lambda & 1 & \\ & & \ddots & \ddots \\ & & & \lambda & 1 \\ & & & & \lambda \end{pmatrix}$$
+
+with $\lambda$ on the diagonal, $1$s on the immediate superdiagonal, and $0$s elsewhere. The matrix $J_2$ in Example 8 is the Jordan block of size 2 with eigenvalue 2.
+
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={5} title="Jordan Canonical Form (stated, not proved)">
+
+Every $n \times n$ matrix $A$ over the complex numbers is similar to a block-diagonal matrix $J$ whose blocks are Jordan blocks $J_{k_i}(\lambda_i)$. The list of Jordan blocks — their sizes and eigenvalues — is unique up to ordering, and is the **Jordan canonical form** of $A$. The Jordan form is the canonical generalization of diagonalization: diagonalizable matrices are exactly those whose Jordan form has all $1 \times 1$ blocks.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={5} title="Why we don't develop Jordan form">
+
+The proof of Theorem 5 (see Hoffman-Kunze Chapter 7 or Horn-Johnson Chapter 3) requires *generalized eigenvectors*, *Jordan chains*, and a careful induction on the algebraic multiplicity of each eigenvalue. The development is mathematically beautiful but long, and the practical payoff is modest: defective matrices are rare in clean applications, and when they do arise (linear-systems repeated eigenvalues, bifurcation analysis), the relevant techniques can be developed locally on a case-by-case basis.
+
+We treat [Linear Systems & Matrix Exponential](/topics/linear-systems) as the place where case-by-case handling for $2 \times 2$ defective systems lives; the full Jordan theory belongs to a future topic on canonical forms or numerical linear algebra. For the rest of *this* topic, we proceed as if all matrices are diagonalizable — a working assumption that holds for the symmetric matrices §6 puts at the center, and for generic random matrices in general.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={6} title="Defective matrices are measure-zero but not negligible">
+
+The set of $n \times n$ matrices with all distinct eigenvalues is *open and dense* in the space of all matrices $\mathbb{R}^{n \times n}$; its complement, where some eigenvalues coincide, is a set of measure zero (the discriminant of the characteristic polynomial vanishes on a hypersurface). So a *random* matrix is diagonalizable with probability 1.
+
+But defective matrices live on the *boundary* between qualitatively different behaviors — e.g. the boundary between a stable spiral and a stable node in a 2D phase portrait, or the boundary between under-damped and over-damped oscillation in a second-order linear system. Bifurcation theory studies exactly what happens at such boundaries, and there defectiveness is the central object, not an exception. ML reality: repeated eigenvalues of the Hessian at a critical point are a measure-zero coincidence in a generic loss landscape, but at *symmetric* critical points (e.g. loss invariant under permutation of neurons in a wide network) they become structural rather than accidental.
+
+</TheoremBlock>
+
+<figure className="my-6">
+  <img src="/images/topics/eigenvalues-eigenvectors/defective-matrix.png" alt="Two-panel figure: the Jordan block J_2 acting on a unit square, showing shear-like distortion with one fixed direction" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">The defective Jordan block J₂ = [[2, 1], [0, 2]] acts on the unit square as a stretch-and-shear. The only invariant direction is the x-axis (eigenspace for λ = 2). The other direction is "almost" an eigenvector but not quite — it shears as it stretches.</figcaption>
 </figure>
 
