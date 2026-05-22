@@ -1101,3 +1101,88 @@ The eigenvalues and eigenvectors are the same in all three pictures; only the vi
   <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">The same spectral picture, four contexts. (1) Data ellipse from a covariance matrix Σ. (2) Loss landscape with Hessian H. (3) Whitening transformation Σ^(-1/2). (4) Generic ellipsoid of xᵀAx = 1. The eigenvectors are the principal axes everywhere; the eigenvalues are the variances/curvatures/semi-axis lengths.</figcaption>
 </figure>
 
+## 11. Connections to Machine Learning
+
+The spectral theorem and its corollaries are the most heavily reused piece of linear algebra in machine learning. Three applications span the full breadth of the topic, each pulling on a different part of what we built. We do not develop the algorithms here — that is the job of the formalML site — but the mathematics each technique invokes is *contained in this topic*.
+
+### 11.1. Gradient descent and the Hessian spectrum
+
+Near a strict local minimum $\boldsymbol{\theta}^*$ of a smooth loss $L \colon \mathbb{R}^p \to \mathbb{R}$, the gradient flow $\dot{\boldsymbol{\theta}} = -\nabla L(\boldsymbol{\theta})$ linearizes to $\dot{\boldsymbol{\delta}} = -H \boldsymbol{\delta}$ where $H = \nabla^2 L(\boldsymbol{\theta}^*)$ and $\boldsymbol{\delta} = \boldsymbol{\theta} - \boldsymbol{\theta}^*$. The Hessian is symmetric (Clairaut, Topic 11) and positive-definite at a strict local minimum, so the spectral theorem applies: $H = Q \Lambda Q^\top$.
+
+Change coordinates to $\mathbf{y} = Q^\top \boldsymbol{\delta}$ — the eigenbasis. The dynamics *decouple* into $p$ independent scalar ODEs:
+
+$$\dot y_i = -\lambda_i y_i, \qquad y_i(t) = e^{-\lambda_i t} \, y_i(0).$$
+
+Each eigencomponent decays at rate $\lambda_i$; the slowest mode (smallest eigenvalue) dominates the long-time behavior.
+
+Discrete gradient descent with step size $\eta$ replaces $e^{-\lambda_i t}$ with $(1 - \eta \lambda_i)^k$, where $k$ is the iteration count. Convergence requires $|1 - \eta \lambda_i| < 1$ for every $i$, i.e. $\eta < 2/\lambda_{\max}$. The optimal step size $\eta^* = 2/(\lambda_{\max} + \lambda_{\min})$ minimizes the worst-case rate, giving convergence at rate
+
+$$\left(\frac{\kappa - 1}{\kappa + 1}\right)^k, \qquad \kappa = \frac{\lambda_{\max}}{\lambda_{\min}}.$$
+
+The **condition number** $\kappa$ is the principal-axis aspect ratio of the loss ellipsoid. Ill-conditioned problems ($\kappa \gg 1$) train slowly along the small-eigenvalue direction. Newton's method effectively rescales the dynamics to $\kappa = 1$ (preconditioning by $H^{-1}$) — one step suffices for an exact quadratic loss. <a className="formalml-badge" href="https://www.formalml.com/topics/gradient-descent">gradient-descent →</a>
+
+<TheoremBlock type="example" number={13} title="Convergence rate on a quadratic loss">
+
+Let $L(\boldsymbol{\theta}) = \frac{1}{2} \boldsymbol{\theta}^\top H \boldsymbol{\theta}$ with $H = \operatorname{diag}(1, 10, 100)$. Eigenvalues $\lambda_{\min} = 1$, $\lambda_{\max} = 100$, $\kappa = 100$. Optimal step size $\eta^* = 2/101 \approx 0.0198$.
+
+After 100 iterations of optimal-step gradient descent, the *slow* direction (eigenvalue 1) has residual
+
+$$(1 - 2/101)^{100} = (99/101)^{100} \approx e^{-2} \approx 0.135.$$
+
+Only ~87% reduction — a hundred iterations bought you about two halvings of the error. The *fast* direction (eigenvalue 100) has residual $(1 - 200/101)^{100} \approx (-0.98)^{100} \approx 0.13$ — about the same magnitude, but oscillating in sign because the step is "too large" for this direction. Newton's method on the same $L$ converges in *one step*: $\boldsymbol{\theta}_1 = \boldsymbol{\theta}_0 - H^{-1} \nabla L(\boldsymbol{\theta}_0) = \boldsymbol{\theta}_0 - \boldsymbol{\theta}_0 = \boldsymbol{0}$.
+
+</TheoremBlock>
+
+### 11.2. PCA as the spectral theorem
+
+Let $X \in \mathbb{R}^{n \times p}$ be a mean-centered data matrix ($n$ observations, $p$ features). The sample covariance is
+
+$$\Sigma = \frac{1}{n - 1} X^\top X,$$
+
+a symmetric positive-semidefinite matrix. By the spectral theorem, $\Sigma = Q \Lambda Q^\top$ with $\Lambda = \operatorname{diag}(\lambda_1, \ldots, \lambda_p)$ ordered non-increasingly. The columns of $Q$ are the **principal components** $\mathbf{q}_1, \ldots, \mathbf{q}_p$; the diagonal entries are the **variances along those directions**.
+
+The first principal component $\mathbf{q}_1$ is the unit vector maximizing $\mathbf{q}^\top \Sigma \mathbf{q}$ — the direction of maximum variance. By Theorem 9 (Rayleigh quotient), the maximum is $\lambda_1$ achieved at $\mathbf{q}_1$. The first $k$ components capture variance $\sum_{i=1}^k \lambda_i$; the **explained-variance ratio** is
+
+$$\frac{\sum_{i=1}^k \lambda_i}{\sum_{i=1}^p \lambda_i}.$$
+
+PCA truncation to the top $k$ components gives the best rank-$k$ approximation in Frobenius norm (Eckart-Young, which we do not prove). All of this — the variance maximization, the orthogonality, the explained-variance ordering — is the spectral theorem read as a statistical procedure. PCA *is* the spectral decomposition of a covariance matrix. <a className="formalstatistics-badge" href="https://www.formalstatistics.com/topics/principal-components-analysis">principal-components-analysis →</a>
+
+### 11.3. Spectral clustering and kernel methods
+
+**Spectral clustering.** Let $G$ be a graph with weighted adjacency matrix $W$ (entries $w_{ij} \geq 0$). The **graph Laplacian** is
+
+$$L = D - W, \qquad D = \operatorname{diag}\left(\textstyle\sum_j w_{ij}\right),$$
+
+symmetric positive-semidefinite. Its smallest eigenvalue is $0$ with eigenvector $\mathbf{1}$ (when $G$ is connected); the *next* smallest is the **Fiedler value**, and its eigenvector — the **Fiedler vector** — gives an approximate minimum balanced cut of $G$ by sign: vertices with positive Fiedler-vector entry form one cluster, negative the other. Spectral clustering uses the bottom $k$ nontrivial eigenvectors as features and applies $k$-means in that feature space. <a className="formalml-badge" href="https://www.formalml.com/topics/spectral-clustering">spectral-clustering →</a>
+
+**Kernel methods.** A kernel $k : \mathcal{X} \times \mathcal{X} \to \mathbb{R}$ is *positive-semidefinite* if its Gram matrix $K_{ij} = k(\mathbf{x}_i, \mathbf{x}_j)$ is symmetric PSD for every finite point set $\{\mathbf{x}_i\}$. Mercer's theorem decomposes the kernel as an infinite-dimensional spectral expansion:
+
+$$k(\mathbf{x}, \mathbf{y}) = \sum_{i=1}^\infty \lambda_i \, \phi_i(\mathbf{x}) \, \phi_i(\mathbf{y}).$$
+
+The finite-dimensional version is the spectral decomposition of the Gram matrix $K = U \Lambda U^\top$. Kernel PCA, kernel ridge regression, Gaussian-process predictive means — all of them are matrix-spectrum computations on this Gram matrix. <a className="formalml-badge" href="https://www.formalml.com/topics/kernel-methods">kernel-methods →</a>
+
+Both constructions are the spectral theorem applied to a structured positive-semidefinite matrix. The construction is the same; only the matrix changes.
+
+<figure className="my-6">
+  <img src="/images/topics/eigenvalues-eigenvectors/gradient-descent-spectrum.png" alt="Three-panel figure showing gradient descent on an ill-conditioned quadratic loss: contour plot with eigenvector axes, trajectories at three step sizes, loss vs iteration curves" className="rounded-lg border border-gray-200 dark:border-gray-700" />
+  <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">Gradient descent on a quadratic loss with κ = 100. Left: the loss contours form long thin ellipses oriented along the eigenvectors of H. Middle: gradient descent at three step sizes; too small wastes iterations on the fast direction, too large oscillates. Right: loss-vs-iteration on a log scale shows the asymptotic rate (κ−1)/(κ+1) ≈ 0.98 — painfully slow.</figcaption>
+</figure>
+
+## 12. Where This Leads
+
+We have built the spectral picture of symmetric matrices: orthogonal eigenvectors, real eigenvalues, the factorization $A = Q \Lambda Q^\top$, the definiteness classification, the Rayleigh quotient as a variational characterization, and Courant-Fischer as its extension to every eigenvalue. Four natural sequels extend this story in different directions, each living elsewhere in the curriculum (or on a sister site).
+
+**Singular value decomposition (SVD)** extends the spectral theorem to *rectangular* matrices. For any $m \times n$ real matrix $A$ — not necessarily square, not necessarily symmetric — there exist orthogonal $U$ ($m \times m$), $V$ ($n \times n$), and a diagonal $\Sigma$ ($m \times n$, non-negative entries called **singular values**) such that
+
+$$A = U \, \Sigma \, V^\top.$$
+
+The construction reduces to the spectral theorem on $A^\top A$ and $A A^\top$ (both symmetric positive-semidefinite). The geometric reading is that *every* linear map between inner-product spaces factors as "rotate, scale along orthogonal axes, rotate again." SVD is the foundation of low-rank approximation (Eckart-Young), the Moore-Penrose pseudoinverse, and the bulk of modern numerical linear algebra. It is the natural next topic on this track, currently planned for a future curriculum cycle.
+
+**Principal Component Analysis (PCA)** is the statistical sibling of SVD: PCA on a centered data matrix $X$ is the singular value decomposition of $X$ with the singular values squared giving the variances. We previewed PCA in §11.2; the full statistical treatment lives on [formalstatistics.com](https://www.formalstatistics.com/topics/principal-components-analysis), and the ML treatment on [formalml.com](https://www.formalml.com/topics/pca-and-spectral-methods). The mathematics is entirely contained in this topic — PCA adds no new linear algebra.
+
+**Perturbation theory of eigenvalues** asks how the spectrum of $A + E$ relates to the spectrum of $A$ for small $E$. Weyl's inequality (Theorem 11) is the entry point; Bauer-Fike, Davis-Kahan, and the resolvent expansion are the next steps. The theory is essential for understanding numerical stability of eigenvalue solvers and for proving consistency results in statistical learning theory — e.g. that empirical PCA on a sample converges to population PCA as $n \to \infty$. Trefethen & Bau, Stewart-Sun, and Kato are the standard references; we do not develop perturbation theory here.
+
+**Infinite-dimensional spectral theory** extends every finite-dimensional theorem in this topic to compact self-adjoint operators on a Hilbert space. The spectral theorem becomes a sum over a countable orthonormal basis of eigenvectors with eigenvalues converging to zero. The [Hilbert Spaces](/topics/hilbert-spaces) topic states the infinite-dimensional theorem and uses it for Fourier series, Sturm-Liouville theory, and integral operators. The finite-dimensional intuition and proof developed here are exactly the right preparation for that material.
+
+Within the Linear Algebra track, this topic completes the currently planned curriculum. Future track extensions might include SVD as a dedicated topic, quadratic forms in optimization (closing the loop with Hessian), and a numerical-linear-algebra topic covering the QR algorithm, power iteration, Lanczos, and Arnoldi. Those are deferred to a future curriculum cycle.
+
