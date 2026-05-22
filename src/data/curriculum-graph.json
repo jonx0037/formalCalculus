@@ -31,6 +31,7 @@
     { "id": "numerical-odes", "label": "Numerical Methods for ODEs", "domain": "odes", "status": "published", "url": "/topics/numerical-odes" },
 
     { "id": "linear-algebra", "label": "Linear Algebra", "domain": "linear-algebra", "status": "published", "url": "/topics/linear-algebra" },
+    { "id": "eigenvalues-eigenvectors", "label": "Eigenvalues & Eigenvectors", "domain": "linear-algebra", "status": "published", "url": "/topics/eigenvalues-eigenvectors" },
 
     { "id": "sigma-algebras", "label": "Sigma-Algebras & Measures", "domain": "measure-integration", "status": "published", "url": "/topics/sigma-algebras" },
     { "id": "lebesgue-integral", "label": "The Lebesgue Integral", "domain": "measure-integration", "status": "published", "url": "/topics/lebesgue-integral" },
@@ -111,6 +112,9 @@
     { "source": "lp-spaces", "target": "banach-spaces" },
     { "source": "banach-spaces", "target": "hilbert-spaces" },
     { "source": "hilbert-spaces", "target": "calculus-of-variations" },
-    { "source": "mean-value-taylor", "target": "calculus-of-variations" }
+    { "source": "mean-value-taylor", "target": "calculus-of-variations" },
+
+    { "source": "linear-algebra", "target": "eigenvalues-eigenvectors" },
+    { "source": "hessian", "target": "eigenvalues-eigenvectors" }
   ]
 }
