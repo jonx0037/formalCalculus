@@ -99,6 +99,7 @@ references:
 
 import TheoremBlock from '../../components/ui/TheoremBlock.astro';
 import UnionBoundTightnessExplorer from '../../components/viz/UnionBoundTightnessExplorer.tsx';
+import BorelCantelliExplorer from '../../components/viz/BorelCantelliExplorer.tsx';
 
 ## 1. Three Puzzles the Union Bound Solves
 
@@ -441,6 +442,207 @@ Boole's inequality is the first member of a hierarchy. Truncating the inclusion�
 $$\sum_i P(A_i) - \sum_{i < j} P(A_i \cap A_j) \leq P\!\left(\bigcup_i A_i\right) \leq \sum_i P(A_i) - \sum_{i < j} P(A_i \cap A_j) + \sum_{i < j < k} P(A_i \cap A_j \cap A_k).$$
 
 (The lower bound is the "Bonferroni depth-2" bar in the flagship visualization.) The full hierarchy — Bonferroni's inequalities — provides arbitrarily tight bounds at the cost of summing $\binom{m}{k}$ joint probabilities at depth $k$. In practice we rarely go past depth 2, because the gain in tightness beyond that is small relative to the explosion of joint terms.
+
+</TheoremBlock>
+
+## 6. The Borel–Cantelli Lemmas
+
+Boole's inequality is the engine; the Borel–Cantelli lemmas are its first major application. They convert a question about the *infinite tail* of a sequence of events — does the event $A_n$ occur infinitely often? — into a question about a *series of probabilities* $\sum_n P(A_n)$. The two halves of the dichotomy are mirror images of one another: one is union-bound short, the other uses the inequality $1 - x \leq e^{-x}$ and independence.
+
+<TheoremBlock type="definition" number={4} title="The 'infinitely often' event">
+
+For a sequence of events $(A_n)_{n \geq 1}$, the event "$A_n$ occurs infinitely often" is
+
+$$\{A_n \text{ i.o.}\} := \limsup_n A_n = \bigcap_{N = 1}^\infty \bigcup_{n = N}^\infty A_n.$$
+
+Its complement is the event "$A_n$ occurs only finitely many times":
+
+$$\{A_n \text{ f.o.}\} = (\limsup_n A_n)^c = \liminf_n A_n^c = \bigcup_{N = 1}^\infty \bigcap_{n = N}^\infty A_n^c.$$
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={7} title="Set-theoretic limsup, revisited">
+
+The definition is the set-theoretic limsup the reader saw in [Sequences, Limits & Convergence](/topics/sequences-limits) translated into events. A point $\omega \in \Omega$ is in $\limsup_n A_n$ precisely when $\omega$ belongs to *infinitely many* of the $A_n$. The "for every $N$ there exists $n \geq N$" structure of the definition is exactly the standard $\forall N \, \exists n \geq N$ unwinding of "infinitely often."
+
+The complementation rule $(\limsup A_n)^c = \liminf A_n^c$ — a countable De Morgan — is used in the proof of the second Borel–Cantelli lemma. Verify by chasing definitions:
+
+$$\left(\bigcap_N \bigcup_{n \geq N} A_n\right)^c = \bigcup_N \bigcap_{n \geq N} A_n^c.$$
+
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={3} title="First Borel–Cantelli lemma">
+
+If $\sum_n P(A_n) < \infty$, then
+
+$$P(A_n \text{ i.o.}) = 0.$$
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+By monotonicity of $P$ and Boole's inequality, for every $N \geq 1$:
+
+$$P\!\left(\bigcup_{n \geq N} A_n\right) \leq \sum_{n \geq N} P(A_n).$$
+
+Since $\sum_n P(A_n) < \infty$, the tail of the series satisfies $\sum_{n \geq N} P(A_n) \to 0$ as $N \to \infty$ — this is the definition of convergence of a series of non-negative terms (see [Series Convergence & Tests](/topics/series-convergence)).
+
+Now $\{A_n \text{ i.o.}\} = \bigcap_N \bigcup_{n \geq N} A_n$ is a *decreasing* intersection: as $N$ grows, fewer terms are in the union, so $\bigcup_{n \geq N} A_n$ shrinks. By continuity of probability (Proposition 1(v) applied to complements, or its mirror image for decreasing sequences):
+
+$$P(A_n \text{ i.o.}) = \lim_{N \to \infty} P\!\left(\bigcup_{n \geq N} A_n\right) \leq \lim_{N \to \infty} \sum_{n \geq N} P(A_n) = 0.$$
+
+Since probabilities are non-negative, $P(A_n \text{ i.o.}) = 0$.  $\blacksquare$
+
+</TheoremBlock>
+
+<TheoremBlock type="theorem" number={4} title="Second Borel–Cantelli lemma">
+
+If the events $(A_n)$ are *mutually independent* and $\sum_n P(A_n) = \infty$, then
+
+$$P(A_n \text{ i.o.}) = 1.$$
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+It suffices to show that $P\!\left(\bigcap_{n \geq N} A_n^c\right) = 0$ for every $N$, because then by countable subadditivity (Boole) on the union $\bigcup_N \bigcap_{n \geq N} A_n^c$, the event $\{A_n \text{ f.o.}\}$ has probability $0$ and its complement $\{A_n \text{ i.o.}\}$ has probability $1$.
+
+Fix $N$ and any finite truncation $M \geq N$. By mutual independence of the $A_n$'s, the events $A_N^c, A_{N+1}^c, \ldots, A_M^c$ are also mutually independent (the complement of an independent event is independent of the original family). So
+
+$$P\!\left(\bigcap_{n = N}^M A_n^c\right) = \prod_{n = N}^M P(A_n^c) = \prod_{n = N}^M (1 - P(A_n)).$$
+
+Use the inequality $1 - x \leq e^{-x}$ for $x \in [0, 1]$ on each factor:
+
+$$\prod_{n = N}^M (1 - P(A_n)) \leq \prod_{n = N}^M e^{-P(A_n)} = \exp\!\left(- \sum_{n = N}^M P(A_n)\right).$$
+
+Now let $M \to \infty$. The partial sum $\sum_{n = N}^M P(A_n)$ diverges to $+\infty$ (because the full series does, and the partial sum from $N$ onward differs from the full sum by a finite quantity). So the exponential tends to $0$:
+
+$$P\!\left(\bigcap_{n \geq N} A_n^c\right) = \lim_{M \to \infty} P\!\left(\bigcap_{n = N}^M A_n^c\right) \leq \lim_{M \to \infty} \exp\!\left(- \sum_{n = N}^M P(A_n)\right) = 0.$$
+
+The first equality uses continuity of probability for decreasing intersections (Proposition 1(v) applied to complements). Since probabilities are non-negative, $P(\bigcap_{n \geq N} A_n^c) = 0$.  $\blacksquare$
+
+</TheoremBlock>
+
+The two lemmas are not symmetric. The first uses only countable subadditivity and the convergence of a series — no independence. The second requires independence (or some substitute, like pairwise independence with a Kolmogorov-style covariance bound), and the inequality $1 - x \leq e^{-x}$ does the work that $1 - x \approx e^{-x}$ would do asymptotically. Two examples make the transition between the two regimes concrete.
+
+<TheoremBlock type="example" number={10} title="The harmonic-versus-quadratic threshold">
+
+Take independent events with $P(A_n) = 1/n^\alpha$. The series $\sum_n 1/n^\alpha$ converges iff $\alpha > 1$ (the $p$-series test from [Series Convergence & Tests](/topics/series-convergence)). So:
+
+- $\alpha > 1$: BC-I applies, $P(A_n \text{ i.o.}) = 0$. The events stop occurring after some finite point with probability one.
+- $\alpha \leq 1$: BC-II applies, $P(A_n \text{ i.o.}) = 1$. The events recur forever.
+
+The threshold is exactly at $\alpha = 1$ — the harmonic series. The accompanying interactive visualization sweeps $\alpha$ across the threshold and shows the cumulative-indicator trajectories diverging or stabilizing in real time.
+
+</TheoremBlock>
+
+<TheoremBlock type="example" number={11} title="Independence cannot be dropped from BC-II">
+
+Take all events equal: $A_n = A_1$ for every $n$, with $P(A_1) = p \in (0, 1)$. The events are *not* independent — they are perfectly dependent — and $\sum_n P(A_n) = \infty$ trivially. But
+
+$$P(A_n \text{ i.o.}) = P(A_1) = p,$$
+
+which is not $1$ in general. Independence is what makes the BC-II conclusion robust: under independence, the divergent sum forces the product $\prod (1 - P(A_n))$ to $0$; without it, the joint probabilities can conspire to keep the all-fail event positive.
+
+There are partial substitutes — pairwise independence plus a Kolmogorov bound on covariances, exchangeability, etc. — but they are downstream of the full machinery of conditional expectation, and we defer them to [Sigma-Algebras & Measures](/topics/sigma-algebras) *(forward)* and to formalStatistics's hypothesis-testing topic.
+
+</TheoremBlock>
+
+The viz below lets you toggle between $p_n = 1/n$ (BC-II divergent) and $p_n = 1/n^2$ (BC-I convergent), and watch the trajectories diverge or stabilize. The power-law slider sweeps $\alpha$ across the threshold at $\alpha = 1$.
+
+<BorelCantelliExplorer client:visible />
+
+<TheoremBlock type="remark" number={8} title="Toward Kolmogorov's 0–1 law">
+
+The Borel–Cantelli lemmas are special cases of a deeper structural fact: any *tail event* of an independent sequence — an event in the σ-algebra generated by $\{A_n, A_{n+1}, A_{n+2}, \ldots\}$ for every $N$ — has probability $0$ or $1$. The event $\{A_n \text{ i.o.}\}$ is a tail event by construction. Kolmogorov's 0–1 law extends this to *any* tail event of an independent sequence, including the event "the Strong Law of Large Numbers holds for this sequence" (i.e., $\bar X_n \to \mu$). The full statement and proof require the measure-theoretic σ-algebra apparatus of [Sigma-Algebras & Measures](/topics/sigma-algebras) *(forward)* and is the entry point to the Strong Law and the law of the iterated logarithm.
+
+</TheoremBlock>
+
+## 7. Markov's and Chebyshev's Inequalities
+
+The Borel–Cantelli lemmas convert "probability of an asymptotic event" into "convergence of a series." We now turn to the other half of the picture: bounding $P(X \geq a)$ — the probability that a single random variable exceeds a threshold — by an expectation. The first two rungs of the concentration ladder are short and useful; both are direct corollaries of the axioms.
+
+<TheoremBlock type="theorem" number={5} title="Markov's inequality">
+
+Let $X$ be a non-negative random variable with finite expectation $E[X]$, and let $a > 0$. Then
+
+$$P(X \geq a) \leq \frac{E[X]}{a}.$$
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+For $X \geq 0$ and $a > 0$, observe the pointwise inequality
+
+$$a \cdot \mathbf{1}_{\{X \geq a\}} \leq X.$$
+
+To see it: on the event $\{X \geq a\}$, the indicator is $1$, so the left-hand side is $a$, and $a \leq X$ by hypothesis; on the complement, the indicator is $0$, so the left-hand side is $0$, and $0 \leq X$ since $X \geq 0$. Taking expectations of both sides (using linearity and monotonicity of expectation),
+
+$$a \, P(X \geq a) = E[a \cdot \mathbf{1}_{\{X \geq a\}}] \leq E[X].$$
+
+Divide by $a > 0$.  $\blacksquare$
+
+</TheoremBlock>
+
+Markov is a one-line inequality whose strength is its lack of assumptions: no second moment, no boundedness, no independence — just non-negativity and a finite mean. The price is looseness: a bound polynomial in $a$ rather than exponential. The geometric reading sharpens the intuition.
+
+<TheoremBlock type="remark" number={9} title="Geometric reading of Markov">
+
+For non-negative $X$, the tail-integral identity from [Improper Integrals & Special Functions](/topics/improper-integrals)
+
+$$E[X] = \int_0^\infty P(X > t) \, dt$$
+
+says the area under the survival curve $t \mapsto P(X > t)$ equals the mean. Markov's inequality says that **no rectangle inscribed under the survival curve can have area greater than the total area**:
+
+$$a \cdot P(X \geq a) \leq \int_0^\infty P(X > t) \, dt = E[X].$$
+
+The rectangle in question has width $a$ and height $P(X \geq a)$, and it fits under the survival curve because the survival function is non-increasing. The figure in §10 below visualizes this construction.
+
+</TheoremBlock>
+
+Chebyshev's inequality is the next rung. It is *not* a new technique — it is Markov applied to a particular transformation of $X$.
+
+<TheoremBlock type="theorem" number={6} title="Chebyshev's inequality">
+
+Let $X$ be a random variable with $E[X] = \mu$ and finite variance $\sigma^2 = \mathrm{Var}(X) < \infty$. Then for any $\epsilon > 0$:
+
+$$P(|X - \mu| \geq \epsilon) \leq \frac{\sigma^2}{\epsilon^2}.$$
+
+</TheoremBlock>
+
+<TheoremBlock type="proof">
+
+Apply Markov's inequality to the non-negative random variable $Y = (X - \mu)^2$ at the threshold $a = \epsilon^2$:
+
+$$P(Y \geq \epsilon^2) \leq \frac{E[Y]}{\epsilon^2} = \frac{\mathrm{Var}(X)}{\epsilon^2} = \frac{\sigma^2}{\epsilon^2}.$$
+
+But $\{Y \geq \epsilon^2\} = \{(X - \mu)^2 \geq \epsilon^2\} = \{|X - \mu| \geq \epsilon\}$. So $P(|X - \mu| \geq \epsilon) \leq \sigma^2 / \epsilon^2$.  $\blacksquare$
+
+</TheoremBlock>
+
+Chebyshev gives a polynomial tail $1/\epsilon^2$ rather than the constant $1/\epsilon$ of Markov — a strict improvement whenever $\epsilon$ is large enough that the squaring helps. It is also distribution-free: any random variable with finite variance gets the same bound. The single most important application is the Weak Law of Large Numbers.
+
+<TheoremBlock type="example" number={12} title="Chebyshev gives a 1/n rate (Weak Law of Large Numbers)">
+
+Let $X_1, X_2, \ldots, X_n$ be independent and identically distributed with mean $\mu$ and finite variance $\sigma^2$. Let $\bar X_n = \frac{1}{n} \sum_{i=1}^n X_i$ be the sample mean. By the linearity of expectation and the variance of an independent sum,
+
+$$E[\bar X_n] = \mu, \quad \mathrm{Var}(\bar X_n) = \frac{\sigma^2}{n}.$$
+
+Chebyshev applied to $\bar X_n$ gives, for any $\epsilon > 0$:
+
+$$P(|\bar X_n - \mu| \geq \epsilon) \leq \frac{\sigma^2}{n \epsilon^2}.$$
+
+As $n \to \infty$, the right-hand side tends to $0$, so $\bar X_n \to \mu$ *in probability*. This is the Weak Law of Large Numbers, derived from one inequality. The rate is *polynomial in $n$*: doubling $n$ halves the bound.
+
+Hoeffding's inequality (Theorem 7 below) replaces this polynomial rate with an exponential one when the $X_i$ are bounded — a strict improvement for moderate-to-large deviations.
+
+</TheoremBlock>
+
+<TheoremBlock type="remark" number={10} title="Why Chebyshev is loose for sub-Gaussian tails">
+
+For a Gaussian random variable $X \sim N(0, 1)$, the actual tail is $P(|X| \geq t) \leq 2 e^{-t^2 / 2}$ — exponentially decaying. Chebyshev gives only $1/t^2$ — polynomial. At $t = 3$, the Gaussian tail is $\approx 0.0027$, while Chebyshev says $\leq 1/9 \approx 0.111$ — off by nearly two orders of magnitude.
+
+This gap between polynomial Chebyshev bounds and exponential true tails is what motivates Hoeffding's inequality: when we know more about the random variable (boundedness, sub-Gaussian moment generating function), we can replace the polynomial decay with an exponential one. The MGF method developed in §8 is the standard route.
 
 </TheoremBlock>
 
