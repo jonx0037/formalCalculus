@@ -10,20 +10,109 @@ tags:
   - "linear-algebra"
   - "spectral-theory"
   - "eigenvalues"
+  - "eigenvectors"
+  - "diagonalization"
+  - "spectral-theorem"
+  - "symmetric-matrices"
   - "quadratic-forms"
+  - "positive-definite"
+  - "rayleigh-quotient"
+  - "principal-axes"
 domain: "linear-algebra"
 notebookPath: "notebooks/eigenvalues-eigenvectors/34_eigenvalues_eigenvectors.ipynb"
 datePublished: 2026-05-20
-estimatedReadTime: 0
+estimatedReadTime: 55
 abstract: >-
-  Eigenvalue / eigenvector definitions, the characteristic polynomial,
-  diagonalizability and similarity, the spectral theorem for symmetric matrices,
-  positive-(semi)definiteness and quadratic forms, the Rayleigh quotient and
-  Courant–Fischer min-max, and the geometric reading of eigenvalues as variances
-  along principal axes.
+  Eigenvalues and eigenvectors organize a linear map by its invariant directions
+  — the vectors a map merely stretches without rotating. We define eigenvalues
+  via the equation Av = λv, develop the characteristic polynomial
+  p_A(λ) = det(λI − A) as their generator, characterize diagonalizability as
+  the existence of an eigenbasis, and prove the spectral theorem for symmetric
+  matrices: every real symmetric matrix factors as A = QΛQᵀ with Q orthogonal
+  and Λ diagonal-real. The geometric reading is that a symmetric matrix is a
+  uniform scaling along a set of mutually perpendicular axes. From the spectral
+  theorem we read off the classification of quadratic forms x^T A x as
+  positive-definite, indefinite, or negative-definite by the signs of the
+  eigenvalues, the Rayleigh quotient characterization of the largest and
+  smallest eigenvalues as extrema on the unit sphere, and the Courant-Fischer
+  min-max principle that captures every eigenvalue as a constrained extremum.
+  The same eigenvalues are the variances along the principal axes of a data
+  ellipsoid, the curvatures of a smooth loss surface at a critical point, and
+  the decay rates of gradient descent — three apparently different ML
+  quantities that are the same spectral object read three ways. The reader
+  leaves with the spectral picture that every later optimization, PCA, SVD,
+  and kernel-methods argument quietly assumes.
 formalstatisticsConnections:
   - topic: "multivariate-distributions"
     site: "formalstatistics"
-    relationship: "Spectral decomposition Σ = QΛQᵀ provides the principal-axes geometry of the multivariate normal and is the mathematical core of PCA."
-references: []
+    relationship: "Spectral decomposition Σ = QΛQᵀ provides the principal-axes geometry of the multivariate normal and is the mathematical core of PCA. The contours of the density are ellipsoids whose axes are the eigenvectors of Σ and whose half-lengths are the square roots of the eigenvalues."
+  - topic: "principal-components-analysis"
+    site: "formalstatistics"
+    relationship: "PCA on mean-centered data X solves the eigenproblem ΣQ = QΛ for Σ = XᵀX/(n−1). The principal components are the eigenvectors qᵢ ordered by descending eigenvalues λᵢ, and the variance captured by the k-th component is exactly λₖ. Every PCA derivation reduces to the spectral theorem on a real symmetric matrix."
+  - topic: "covariance-correlation"
+    site: "formalstatistics"
+    relationship: "A covariance matrix Σ is symmetric and positive-semidefinite, so it has real non-negative eigenvalues and an orthonormal eigenbasis. The eigenvalues are the variances of the principal-component scores, and Σ is positive-definite if and only if no nontrivial linear combination of the variables has zero variance — a rank-vs-null-space statement in spectral language."
+  - topic: "mahalanobis-distance"
+    site: "formalstatistics"
+    relationship: "The Mahalanobis distance d(x, y) = √((x − y)ᵀ Σ⁻¹ (x − y)) is the Euclidean distance in the basis where Σ becomes the identity — the whitening transformation Σ^(−1/2) is constructed by the spectral decomposition Σ = QΛQᵀ via Σ^(−1/2) = QΛ^(−1/2)Qᵀ. Mahalanobis geometry is spectral geometry in disguise."
+formalmlConnections:
+  - topic: "pca-and-spectral-methods"
+    site: "formalml"
+    relationship: "PCA is the spectral theorem applied to a covariance matrix. The first k principal components are the top k eigenvectors of XᵀX/(n−1), and the k-dimensional projection retaining maximum variance is the projection onto their span. Spectral methods for clustering, embedding, and dimensionality reduction all instantiate the same construction on different positive-semidefinite matrices."
+  - topic: "gradient-descent"
+    site: "formalml"
+    relationship: "Gradient descent on a quadratic loss L(θ) = ½θᵀHθ decomposes along the eigenbasis of H: each eigencomponent decays at rate e^{−λᵢt} in continuous time or (1 − ηλᵢ)^k in discrete time. The condition number κ(H) = λ_max/λ_min bounds the convergence rate, and the principal-axis picture of the loss landscape — ellipsoidal level sets oriented along eigenvectors — explains why ill-conditioned problems train slowly."
+  - topic: "spectral-clustering"
+    site: "formalml"
+    relationship: "Spectral clustering uses the eigenvectors of a graph Laplacian L = D − W (or its normalized variants) to partition data points. L is symmetric positive-semidefinite, and the Fiedler vector (the eigenvector for the second-smallest eigenvalue) gives an approximate balanced cut. The construction is a direct application of the spectral theorem to a structured PSD matrix."
+  - topic: "kernel-methods"
+    site: "formalml"
+    relationship: "Mercer's theorem decomposes a positive-semidefinite kernel as K(x, y) = Σᵢ λᵢ φᵢ(x) φᵢ(y) — an eigenvalue expansion. The finite-dimensional version is the spectral decomposition of the Gram matrix Kᵢⱼ = k(xᵢ, xⱼ). Kernel PCA, kernel ridge regression, and Gaussian-process predictive means are all matrix-spectrum computations on this Gram matrix."
+references:
+  - type: "book"
+    title: "Linear Algebra Done Right"
+    authors: "Axler"
+    year: 2024
+    edition: "4th"
+    note: "The eigenvalue-first textbook. Chapters 5 and 7 develop spectral theory before determinants — the opposite of our ordering. Read for the cleanest possible treatment of invariant subspaces, the spectral theorem for self-adjoint operators (Axler's Theorem 7.13), and the inner-product-space approach to quadratic forms."
+  - type: "book"
+    title: "Introduction to Linear Algebra"
+    authors: "Strang"
+    year: 2023
+    edition: "6th"
+    note: "Chapter 6 (eigenvalues and eigenvectors) and Chapter 7 (SVD) are the closest published match to our pedagogical line for this topic. Strang's emphasis on the geometric meaning of Ax = λx — directions that don't rotate — is the framing we take."
+  - type: "book"
+    title: "Matrix Analysis"
+    authors: "Horn & Johnson"
+    year: 2013
+    edition: "2nd"
+    note: "The rigorous reference. Chapter 1 covers the characteristic polynomial and similarity; Chapter 2 covers unitary similarity and triangularization; Chapter 4 covers Hermitian matrices and variational characterizations (Courant-Fischer). Use for cross-checking statements; not for pedagogy."
+  - type: "book"
+    title: "Matrix Analysis and Applied Linear Algebra"
+    authors: "Meyer"
+    year: 2000
+    note: "Chapter 7 (eigenvalues and eigenvectors) is the source for our proof of the spectral theorem via induction on dimension. The geometric pictures of quadratic forms in §7.5 are the visual templates for our principal-axes visualizations."
+  - type: "book"
+    title: "Numerical Linear Algebra"
+    authors: "Trefethen & Bau"
+    year: 1997
+    note: "Lectures 24–30 cover eigenvalue algorithms in depth — QR iteration, Hessenberg form, divide-and-conquer. We cite this only as the right place to learn the numerical theory we explicitly do not develop. Lecture 24's discussion of why the characteristic polynomial is the wrong way to compute eigenvalues is the source for our computational-reality remark in §3."
+  - type: "book"
+    title: "Linear Algebra"
+    authors: "Hoffman & Kunze"
+    year: 1971
+    edition: "2nd"
+    note: "Chapter 6 (elementary canonical forms) and Chapter 7 (the rational and Jordan forms) are the standard rigorous treatment of diagonalizability and Jordan normal form. Used here as the reference for the defective-matrix detour."
+  - type: "book"
+    title: "Linear Algebra and Its Applications"
+    authors: "Lax"
+    year: 2007
+    edition: "2nd"
+    note: "Lax's chapters on spectral theory of self-adjoint operators and the Courant-Fischer min-max principle are the cleanest finite-dimensional treatment of the material we cover in §§7–9. Bridges naturally to the functional-analysis topics in Track 8."
+  - type: "paper"
+    title: "On Lines and Planes of Closest Fit to Systems of Points in Space"
+    authors: "Pearson"
+    year: 1901
+    url: "https://doi.org/10.1080/14786440109462720"
+    note: "Karl Pearson's original PCA paper. Cited as the historical origin of the principal-axes geometry of data — predates the modern statistical formulation but contains the geometric idea in its first form."
 ---

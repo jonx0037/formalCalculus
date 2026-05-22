@@ -2,10 +2,13 @@
  * Shared utility module for the Linear Algebra track (Track 9).
  *
  * Created by Topic 33 (linear-algebra).
- * Will be extended by Topic 34 (eigenvalues-eigenvectors): eigenvalue and
- * eigenvector computation, characteristic polynomial, diagonalization, and
- * matrix powers via diagonalization. No eigenvalue or SVD content lives in
- * this file — Topic 33 stops before spectral theory.
+ * Extended by Topic 34 (eigenvalues-eigenvectors): characteristic polynomial,
+ * 2×2 and 3×3 closed-form eigenvalue/eigenvector computation, diagonalization,
+ * symmetric/spectral decomposition, quadratic forms, Rayleigh quotient,
+ * definiteness classification. For n > 3, eigenvalue routines throw — viz
+ * components never exceed 3×3, and a hand-rolled QR pseudo-implementation
+ * would inflate the module without serving any reader. Trefethen & Bau is
+ * the right place to learn the production numerical theory.
  *
  * All functions are pure and deterministic — no Math.random(), no module-
  * level computation. The module has no D3 or React dependencies, so it can
@@ -551,4 +554,558 @@ export function parallelepipedEdges(): [number, number][] {
     // Along c
     [0, 3], [1, 5], [2, 6], [4, 7],
   ];
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// Eigenvalues, characteristic polynomial, diagonalization, spectral theorem
+// ════════════════════════════════════════════════════════════════════════
+//
+// Added by Topic 34 (Eigenvalues & Eigenvectors). All routines below operate
+// on 2×2 or 3×3 real matrices in closed form; larger sizes throw. Eigenvalues
+// are returned in canonical { real: number[]; imag: number[] } form, with
+// real eigenvalues sorted non-increasingly and complex conjugate pairs grouped
+// (positive imag first by convention).
+
+const EIG_TOL = 1e-9;
+
+// ── Internal polynomial root finders ────────────────────────
+
+/**
+ * Solve a·x² + b·x + c = 0 with real coefficients. Returns a length-2
+ * { real, imag }. For real roots the two entries are sorted non-increasingly;
+ * for a complex conjugate pair the positive-imag root is first.
+ */
+function solveQuadraticReal(
+  a: number,
+  b: number,
+  c: number,
+): { real: [number, number]; imag: [number, number] } {
+  if (Math.abs(a) < 1e-14) {
+    throw new Error('solveQuadraticReal: leading coefficient ≈ 0');
+  }
+  const disc = b * b - 4 * a * c;
+  if (disc >= -EIG_TOL) {
+    const safeDisc = Math.max(disc, 0);
+    const sq = Math.sqrt(safeDisc);
+    const r1 = (-b + sq) / (2 * a);
+    const r2 = (-b - sq) / (2 * a);
+    return r1 >= r2
+      ? { real: [r1, r2], imag: [0, 0] }
+      : { real: [r2, r1], imag: [0, 0] };
+  }
+  const sq = Math.sqrt(-disc);
+  const re = -b / (2 * a);
+  const im = sq / (2 * a);
+  return { real: [re, re], imag: [im, -im] };
+}
+
+/**
+ * Solve x³ + a·x² + b·x + c = 0 (monic cubic with real coefficients) in closed
+ * form via the depressed-cubic substitution. Returns a length-3 { real, imag };
+ * real roots are sorted non-increasingly, complex conjugate pairs are grouped
+ * with positive imag first.
+ *
+ * The three branches handle:
+ *   - Triple/repeated root case (p ≈ 0 and q ≈ 0)
+ *   - Three real roots (discriminant Δ ≥ 0): trigonometric method
+ *   - One real + complex conjugate pair (Δ < 0): Cardano's formula
+ */
+function solveMonicCubicReal(
+  a: number,
+  b: number,
+  c: number,
+): { real: [number, number, number]; imag: [number, number, number] } {
+  // Depressed cubic: x = t − a/3, t³ + p·t + q = 0
+  const p = b - (a * a) / 3;
+  const q = (2 * a * a * a) / 27 - (a * b) / 3 + c;
+  const shift = -a / 3;
+
+  // Triple root (p ≈ 0 and q ≈ 0): everything at the shift.
+  if (Math.abs(p) < EIG_TOL && Math.abs(q) < EIG_TOL) {
+    return { real: [shift, shift, shift], imag: [0, 0, 0] };
+  }
+
+  // Discriminant of the depressed cubic: Δ = −4p³ − 27q²
+  const D = -4 * p * p * p - 27 * q * q;
+
+  if (D >= -EIG_TOL && p < 0) {
+    // Three real roots — trigonometric formula.
+    const r = 2 * Math.sqrt(-p / 3);
+    const cosArg = Math.max(-1, Math.min(1, (3 * q) / (p * r)));
+    const phi = Math.acos(cosArg);
+    const roots: number[] = [
+      r * Math.cos(phi / 3) + shift,
+      r * Math.cos((phi - 2 * Math.PI) / 3) + shift,
+      r * Math.cos((phi + 2 * Math.PI) / 3) + shift,
+    ];
+    roots.sort((x, y) => y - x);
+    return {
+      real: [roots[0], roots[1], roots[2]],
+      imag: [0, 0, 0],
+    };
+  }
+
+  // One real root + complex conjugate pair (or repeated real with p ≥ 0).
+  const halfQ = q / 2;
+  const inner = halfQ * halfQ + (p * p * p) / 27;
+  const sq = Math.sqrt(Math.max(inner, 0));
+  const u = Math.cbrt(-halfQ + sq);
+  const v = Math.cbrt(-halfQ - sq);
+  const tReal = u + v;
+  const realRoot = tReal + shift;
+  const otherReal = -tReal / 2 + shift;
+  const otherImag = (Math.sqrt(3) / 2) * (u - v);
+  if (Math.abs(otherImag) < EIG_TOL) {
+    // Numerically real (double root case).
+    const roots = [realRoot, otherReal, otherReal].sort((x, y) => y - x);
+    return {
+      real: [roots[0], roots[1], roots[2]],
+      imag: [0, 0, 0],
+    };
+  }
+  return {
+    real: [realRoot, otherReal, otherReal],
+    imag: [0, Math.abs(otherImag), -Math.abs(otherImag)],
+  };
+}
+
+// ── Internal: null-space basis via reduced row echelon form ─
+
+/**
+ * Compute an orthonormal basis of the null space of M via Gauss-Jordan
+ * elimination to reduced row echelon form, then Gram-Schmidt on the kernel
+ * generators. Returns the empty list when M has trivial kernel.
+ */
+function nullSpaceBasis(M: Matrix, tol: number = EIG_TOL): Vector[] {
+  const m = M.length;
+  if (m === 0) return [];
+  const n = M[0].length;
+  const R: Matrix = M.map((row) => row.slice());
+  let pivotRow = 0;
+  const pivotCols: number[] = [];
+  for (let col = 0; col < n && pivotRow < m; col++) {
+    let bestRow = pivotRow;
+    let pivotMag = Math.abs(R[pivotRow][col]);
+    for (let r = pivotRow + 1; r < m; r++) {
+      const mag = Math.abs(R[r][col]);
+      if (mag > pivotMag) {
+        pivotMag = mag;
+        bestRow = r;
+      }
+    }
+    if (pivotMag < tol) continue;
+    if (bestRow !== pivotRow) {
+      [R[pivotRow], R[bestRow]] = [R[bestRow], R[pivotRow]];
+    }
+    const pivot = R[pivotRow][col];
+    for (let c = 0; c < n; c++) R[pivotRow][c] /= pivot;
+    for (let r = 0; r < m; r++) {
+      if (r === pivotRow) continue;
+      const factor = R[r][col];
+      if (Math.abs(factor) < tol) continue;
+      for (let c = 0; c < n; c++) R[r][c] -= factor * R[pivotRow][c];
+    }
+    pivotCols.push(col);
+    pivotRow++;
+  }
+
+  const pivotSet = new Set(pivotCols);
+  const rawBasis: Vector[] = [];
+  for (let col = 0; col < n; col++) {
+    if (pivotSet.has(col)) continue;
+    const v: Vector = new Array(n).fill(0);
+    v[col] = 1;
+    for (let i = 0; i < pivotCols.length; i++) {
+      v[pivotCols[i]] = -R[i][col];
+    }
+    rawBasis.push(v);
+  }
+  if (rawBasis.length === 0) return [];
+  // Orthonormalize so callers get a tidy basis they can use directly.
+  return gramSchmidt(rawBasis).Q;
+}
+
+// ── Characteristic polynomial ───────────────────────────────
+
+/**
+ * Coefficients [c₀, c₁, …, cₙ] of the characteristic polynomial
+ * p_A(λ) = det(λI − A) for an n×n matrix A. The polynomial is monic of
+ * degree n (cₙ = 1). Computed via direct expansion for n ≤ 3 and Faddeev-
+ * Le Verrier for n ≥ 4.
+ *
+ * @example
+ *   characteristicPolynomial([[4, -2], [1, 1]]) // → [6, -5, 1]  (λ² − 5λ + 6)
+ */
+export function characteristicPolynomial(A: Matrix): number[] {
+  const n = A.length;
+  if (n === 0) return [1];
+  if (A.some((row) => row.length !== n)) {
+    throw new Error('characteristicPolynomial: matrix must be square');
+  }
+  if (n === 1) return [-A[0][0], 1];
+  if (n === 2) {
+    const a = A[0][0];
+    const b = A[0][1];
+    const c = A[1][0];
+    const d = A[1][1];
+    return [a * d - b * c, -(a + d), 1];
+  }
+  if (n === 3) {
+    // p(λ) = λ³ − tr(A)λ² + s₂λ − det(A)
+    // where s₂ = sum of all 2×2 principal minors of A.
+    const tr = A[0][0] + A[1][1] + A[2][2];
+    const m01 = A[0][0] * A[1][1] - A[0][1] * A[1][0];
+    const m02 = A[0][0] * A[2][2] - A[0][2] * A[2][0];
+    const m12 = A[1][1] * A[2][2] - A[1][2] * A[2][1];
+    const s2 = m01 + m02 + m12;
+    const det = determinant(A);
+    return [-det, s2, -tr, 1];
+  }
+  // Faddeev-Le Verrier for n ≥ 4. p(λ) = λⁿ + p₁λⁿ⁻¹ + … + pₙ.
+  const coeffsHigh: number[] = new Array(n + 1).fill(0);
+  coeffsHigh[n] = 1;
+  let Mk: Matrix = identity(n).map((row) => row.map(() => 0));
+  for (let k = 1; k <= n; k++) {
+    // M_k = A·(M_{k-1} + p_{k-1}·I); but easier to track via M_k = A·prev + coeff·A
+    // Equivalent: M_k = A·M_{k-1} + p_{k-1}·A (using p_0 = 1).
+    const prevCoeff = coeffsHigh[n - k + 1];
+    const prev: Matrix =
+      k === 1
+        ? identity(n)
+        : Mk.map((row, i) =>
+            row.map((val, j) => val + (i === j ? prevCoeff : 0)),
+          );
+    Mk = matMul(A, prev);
+    let trace = 0;
+    for (let i = 0; i < n; i++) trace += Mk[i][i];
+    coeffsHigh[n - k] = -trace / k;
+  }
+  return coeffsHigh;
+}
+
+/** Evaluate the characteristic polynomial of A at λ via Horner's method. */
+export function characteristicPolynomialAt(A: Matrix, lambda: number): number {
+  const c = characteristicPolynomial(A);
+  let acc = 0;
+  for (let i = c.length - 1; i >= 0; i--) {
+    acc = acc * lambda + c[i];
+  }
+  return acc;
+}
+
+// ── Eigenvalues: closed-form for n ≤ 3 ──────────────────────
+
+/**
+ * Eigenvalues of a 2×2 real matrix in closed form via the quadratic formula
+ * on the characteristic polynomial λ² − tr(A)λ + det(A). Real eigenvalues are
+ * sorted non-increasingly; complex conjugate pairs are returned with positive
+ * imag first.
+ *
+ * @example
+ *   eigenvalues2x2([[4, -2], [1, 1]]) // → { real: [3, 2], imag: [0, 0] }
+ *   eigenvalues2x2([[0, -1], [1, 0]]) // → { real: [0, 0], imag: [1, -1] }
+ */
+export function eigenvalues2x2(A: Matrix): { real: [number, number]; imag: [number, number] } {
+  if (A.length !== 2 || A[0].length !== 2 || A[1].length !== 2) {
+    throw new Error('eigenvalues2x2: expected a 2×2 matrix');
+  }
+  return solveQuadraticReal(1, -(A[0][0] + A[1][1]), A[0][0] * A[1][1] - A[0][1] * A[1][0]);
+}
+
+/**
+ * Eigenvalues of a 3×3 real matrix in closed form via the cubic formula on
+ * the characteristic polynomial. Real eigenvalues are sorted non-increasingly;
+ * a single real + complex conjugate pair returns the real root first, then
+ * the conjugate pair with positive imag first.
+ */
+export function eigenvalues3x3(A: Matrix): {
+  real: [number, number, number];
+  imag: [number, number, number];
+} {
+  if (A.length !== 3 || A.some((row) => row.length !== 3)) {
+    throw new Error('eigenvalues3x3: expected a 3×3 matrix');
+  }
+  // Char poly is λ³ + (−tr)λ² + s₂λ + (−det). Solve the monic cubic.
+  const tr = A[0][0] + A[1][1] + A[2][2];
+  const m01 = A[0][0] * A[1][1] - A[0][1] * A[1][0];
+  const m02 = A[0][0] * A[2][2] - A[0][2] * A[2][0];
+  const m12 = A[1][1] * A[2][2] - A[1][2] * A[2][1];
+  const s2 = m01 + m02 + m12;
+  const det = determinant(A);
+  return solveMonicCubicReal(-tr, s2, -det);
+}
+
+/**
+ * Orthonormal basis of the eigenspace E_λ = ker(A − λI) for a (real) eigenvalue
+ * λ. Returns the empty array if (A − λI) has trivial kernel within tolerance
+ * (i.e. λ is not an eigenvalue at this precision).
+ */
+export function eigenvectorsForEigenvalue(
+  A: Matrix,
+  lambda: number,
+  tol: number = EIG_TOL,
+): Vector[] {
+  const n = A.length;
+  if (A.some((row) => row.length !== n)) {
+    throw new Error('eigenvectorsForEigenvalue: matrix must be square');
+  }
+  const M: Matrix = A.map((row, i) =>
+    row.map((val, j) => (i === j ? val - lambda : val)),
+  );
+  return nullSpaceBasis(M, tol);
+}
+
+// ── Diagonalization ─────────────────────────────────────────
+
+/**
+ * Test whether a 2×2 or 3×3 real matrix is diagonalizable over the reals.
+ * Returns true iff every eigenvalue is real and its geometric multiplicity
+ * equals its algebraic multiplicity. Complex eigenvalues cause a false return
+ * unless `allowComplex: true` is passed (in which case the real-Jordan form
+ * is still consulted but never returned — this routine only asks about
+ * real diagonalizability).
+ */
+export function isDiagonalizable(
+  A: Matrix,
+  options: { allowComplex?: boolean; tol?: number } = {},
+): boolean {
+  const tol = options.tol ?? EIG_TOL;
+  const n = A.length;
+  if (n === 0) return true;
+  if (A.some((row) => row.length !== n)) {
+    throw new Error('isDiagonalizable: matrix must be square');
+  }
+  if (n > 3) {
+    throw new Error('isDiagonalizable: only 2×2 and 3×3 matrices are supported');
+  }
+  const { real, imag } = n === 2 ? eigenvalues2x2(A) : eigenvalues3x3(A);
+  // Reject complex eigenvalues unless allowComplex.
+  for (let i = 0; i < imag.length; i++) {
+    if (Math.abs(imag[i]) > tol && !options.allowComplex) return false;
+  }
+  // For each distinct real eigenvalue, geometric mult must equal algebraic.
+  const reals: number[] = [];
+  for (let i = 0; i < real.length; i++) {
+    if (Math.abs(imag[i]) <= tol) reals.push(real[i]);
+  }
+  const sorted = [...reals].sort((a, b) => a - b);
+  // Group into multiplicity buckets.
+  const groups: { value: number; mult: number }[] = [];
+  for (const r of sorted) {
+    const last = groups[groups.length - 1];
+    if (last !== undefined && Math.abs(last.value - r) <= 1e-6) last.mult++;
+    else groups.push({ value: r, mult: 1 });
+  }
+  for (const g of groups) {
+    if (g.mult > 1) {
+      const eigvecs = eigenvectorsForEigenvalue(A, g.value, tol);
+      if (eigvecs.length < g.mult) return false;
+    }
+  }
+  return true;
+}
+
+/**
+ * Compute the diagonalization A = P·D·P⁻¹ when it exists. Throws if A is
+ * defective or has complex eigenvalues (use `allowComplex` only for testing
+ * via `isDiagonalizable`). Columns of P are eigenvectors; D is the diagonal
+ * matrix of corresponding eigenvalues, ordered non-increasingly.
+ */
+export function diagonalize(A: Matrix): { P: Matrix; D: Matrix; Pinv: Matrix } {
+  const n = A.length;
+  if (n === 0) return { P: [], D: [], Pinv: [] };
+  if (A.some((row) => row.length !== n)) {
+    throw new Error('diagonalize: matrix must be square');
+  }
+  if (n > 3) {
+    throw new Error('diagonalize: only 2×2 and 3×3 matrices are supported');
+  }
+  const { real, imag } = n === 2 ? eigenvalues2x2(A) : eigenvalues3x3(A);
+  for (const im of imag) {
+    if (Math.abs(im) > EIG_TOL) {
+      throw new Error('diagonalize: matrix has complex eigenvalues — not diagonalizable over ℝ');
+    }
+  }
+  // Gather eigenvectors, distinct value by distinct value.
+  const usedIndices = new Set<number>();
+  const columns: Vector[] = [];
+  const eigList: number[] = [];
+  for (let i = 0; i < real.length; i++) {
+    if (usedIndices.has(i)) continue;
+    const lambda = real[i];
+    // Find all sibling indices (within tolerance) and skip them after.
+    const siblings: number[] = [i];
+    for (let j = i + 1; j < real.length; j++) {
+      if (Math.abs(real[j] - lambda) <= 1e-6 && Math.abs(imag[j]) <= EIG_TOL) {
+        siblings.push(j);
+      }
+    }
+    const eigvecs = eigenvectorsForEigenvalue(A, lambda);
+    if (eigvecs.length < siblings.length) {
+      throw new Error(
+        `diagonalize: matrix is defective (eigenvalue ${lambda.toFixed(4)} has algebraic mult ${siblings.length} but geometric mult ${eigvecs.length})`,
+      );
+    }
+    for (let k = 0; k < siblings.length; k++) {
+      columns.push(eigvecs[k]);
+      eigList.push(lambda);
+      usedIndices.add(siblings[k]);
+    }
+  }
+  // Assemble P (columns become rows of the transpose then transpose back).
+  const P: Matrix = transpose(columns);
+  const D: Matrix = identity(n).map((row, i) => row.map((_, j) => (i === j ? eigList[i] : 0)));
+  const Pinv = inverse(P);
+  return { P, D, Pinv };
+}
+
+// ── Symmetric matrices and spectral theorem ─────────────────
+
+/**
+ * Test whether a matrix is square and symmetric within tolerance.
+ *
+ * @example
+ *   isSymmetric([[1, 2], [2, 3]]) // → true
+ *   isSymmetric([[1, 2], [3, 4]]) // → false
+ */
+export function isSymmetric(A: Matrix, tol: number = EIG_TOL): boolean {
+  const n = A.length;
+  if (n === 0) return true;
+  if (A.some((row) => row.length !== n)) return false;
+  for (let i = 0; i < n; i++) {
+    for (let j = i + 1; j < n; j++) {
+      if (Math.abs(A[i][j] - A[j][i]) > tol) return false;
+    }
+  }
+  return true;
+}
+
+/**
+ * Spectral decomposition A = Q·Λ·Qᵀ of a real symmetric matrix. Returns
+ * { Q, Lambda } with Q orthogonal (columns are orthonormal eigenvectors) and
+ * Lambda diagonal (eigenvalues sorted non-increasingly). For non-symmetric
+ * input, symmetrizes to (A + Aᵀ)/2 unless `strict: true`. Supported for
+ * n ≤ 3; throws for larger n.
+ */
+export function spectralDecompositionSymmetric(
+  A: Matrix,
+  options: { strict?: boolean } = {},
+): { Q: Matrix; Lambda: Matrix } {
+  const n = A.length;
+  if (n === 0) return { Q: [], Lambda: [] };
+  if (A.some((row) => row.length !== n)) {
+    throw new Error('spectralDecompositionSymmetric: matrix must be square');
+  }
+  if (n > 3) {
+    throw new Error('spectralDecompositionSymmetric: only 2×2 and 3×3 matrices are supported');
+  }
+  let S: Matrix = A.map((row) => row.slice());
+  if (!isSymmetric(A)) {
+    if (options.strict) {
+      throw new Error('spectralDecompositionSymmetric: input is not symmetric and strict mode is on');
+    }
+    // Symmetrize: S = (A + Aᵀ)/2
+    S = A.map((row, i) => row.map((_, j) => (A[i][j] + A[j][i]) / 2));
+  }
+  const { real, imag } = n === 2 ? eigenvalues2x2(S) : eigenvalues3x3(S);
+  // Symmetric ⇒ all eigenvalues real (within numerical noise).
+  for (const im of imag) {
+    if (Math.abs(im) > 1e-6) {
+      throw new Error('spectralDecompositionSymmetric: numerical instability — complex eigenvalue from symmetric input');
+    }
+  }
+  // Gather eigenvectors per distinct eigenvalue (with multiplicity).
+  const eigValuesDesc = [...real].sort((a, b) => b - a);
+  const usedSlots = new Array(eigValuesDesc.length).fill(false);
+  const columnsByEig: { value: number; vec: Vector }[] = [];
+  for (let i = 0; i < eigValuesDesc.length; i++) {
+    if (usedSlots[i]) continue;
+    const lambda = eigValuesDesc[i];
+    const siblings: number[] = [i];
+    for (let j = i + 1; j < eigValuesDesc.length; j++) {
+      if (Math.abs(eigValuesDesc[j] - lambda) <= 1e-6) siblings.push(j);
+    }
+    const eigvecs = eigenvectorsForEigenvalue(S, lambda);
+    if (eigvecs.length < siblings.length) {
+      // Symmetric should never be defective — numerical edge. Fall back to perturbation.
+      throw new Error(`spectralDecompositionSymmetric: numerical instability finding eigenvectors for λ=${lambda.toFixed(6)}`);
+    }
+    for (let k = 0; k < siblings.length; k++) {
+      columnsByEig.push({ value: lambda, vec: eigvecs[k] });
+      usedSlots[siblings[k]] = true;
+    }
+  }
+  // Final Gram-Schmidt across all columns ensures orthonormality even when
+  // eigenvectors come from different (numerically close) eigenspaces.
+  const rawCols = columnsByEig.map((c) => c.vec);
+  const { Q: orthoCols } = gramSchmidt(rawCols);
+  const Q: Matrix = transpose(orthoCols);
+  const Lambda: Matrix = identity(n).map((row, i) =>
+    row.map((_, j) => (i === j ? columnsByEig[i].value : 0)),
+  );
+  return { Q, Lambda };
+}
+
+// ── Quadratic forms, Rayleigh quotient, definiteness ────────
+
+/**
+ * Evaluate the quadratic form xᵀ·A·x. A is assumed (but not checked) to be
+ * symmetric; for asymmetric A the result is xᵀ((A + Aᵀ)/2)x, i.e. the
+ * symmetric part dominates.
+ *
+ * @example
+ *   quadraticForm([[2, 0], [0, 3]], [1, 1]) // → 5
+ */
+export function quadraticForm(A: Matrix, x: Vector): number {
+  return dot(x, matVec(A, x));
+}
+
+/**
+ * Rayleigh quotient R_A(x) = xᵀ·A·x / xᵀ·x. Throws on the zero vector.
+ */
+export function rayleighQuotient(A: Matrix, x: Vector): number {
+  const denom = dot(x, x);
+  if (denom < 1e-14) {
+    throw new Error('rayleighQuotient: undefined at the zero vector');
+  }
+  return quadraticForm(A, x) / denom;
+}
+
+/**
+ * Classify the definiteness of a symmetric matrix by inspecting its eigenvalue
+ * signs within tolerance for "approximately zero" eigenvalues.
+ *  - All λ > tol:                positive-definite
+ *  - All λ ≥ -tol, some |λ| ≤ tol: positive-semidefinite
+ *  - All λ < -tol:               negative-definite
+ *  - All λ ≤ tol, some |λ| ≤ tol: negative-semidefinite
+ *  - Mixed signs:                indefinite
+ *  - All |λ| ≤ tol:              zero
+ */
+export function classifyDefiniteness(
+  A: Matrix,
+  tol: number = 1e-7,
+):
+  | 'positive-definite'
+  | 'positive-semidefinite'
+  | 'negative-definite'
+  | 'negative-semidefinite'
+  | 'indefinite'
+  | 'zero' {
+  const n = A.length;
+  if (n === 0) return 'zero';
+  const { Lambda } = spectralDecompositionSymmetric(A);
+  const eigvals: number[] = [];
+  for (let i = 0; i < n; i++) eigvals.push(Lambda[i][i]);
+  let hasPos = false;
+  let hasNeg = false;
+  let hasZero = false;
+  for (const lam of eigvals) {
+    if (lam > tol) hasPos = true;
+    else if (lam < -tol) hasNeg = true;
+    else hasZero = true;
+  }
+  if (!hasPos && !hasNeg) return 'zero';
+  if (hasPos && hasNeg) return 'indefinite';
+  if (hasPos) return hasZero ? 'positive-semidefinite' : 'positive-definite';
+  return hasZero ? 'negative-semidefinite' : 'negative-definite';
 }
