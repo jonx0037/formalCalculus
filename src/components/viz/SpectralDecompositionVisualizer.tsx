@@ -110,12 +110,8 @@ export default function SpectralDecompositionVisualizer({
     setMatrix((prev) => {
       const next = prev.map((r) => r.slice()) as [[number, number], [number, number]];
       next[row][col] = value;
-      // For 2x2 symmetric viz, mirror off-diagonal entry
-      if (row !== col) {
-        next[col === 1 ? 1 : 0][row === 1 ? 1 : 0] = value;
-        // Actually we just set [row][col]; mirror at [col][row]:
-        next[col][row] = value;
-      }
+      // For symmetric-form viz, mirror off-diagonal entries.
+      if (row !== col) next[col][row] = value;
       return next;
     });
   }, []);

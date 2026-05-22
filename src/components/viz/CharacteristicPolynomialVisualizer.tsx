@@ -198,7 +198,13 @@ export default function CharacteristicPolynomialVisualizer({
       }
 
       // y-axis scale: clamp to a sensible range based on the values we see.
-      const yMax = d3.max(ys.map((y) => Math.abs(y))) ?? 1;
+      // Single-pass max avoids an intermediate `.map(...)` allocation on every
+      // re-render — matters because this fires on every slider tick.
+      let yMax = 0;
+      for (const y of ys) {
+        const val = Math.abs(y);
+        if (val > yMax) yMax = val;
+      }
       const yLim = Math.min(Math.max(yMax * 1.1, 1), 60); // cap to avoid huge cubic excursions
 
       const xScale = d3.scaleLinear().domain(lambdaRange).range([0, innerW]);

@@ -566,7 +566,22 @@ export function parallelepipedEdges(): [number, number][] {
 // real eigenvalues sorted non-increasingly and complex conjugate pairs grouped
 // (positive imag first by convention).
 
+/**
+ * Tolerance for "approximately zero" floating-point comparisons (imaginary
+ * parts of eigenvalues, kernel entries, etc.). Tighter than the rank
+ * tolerance used by Topic 33's existing routines because the eigenvalue
+ * pipeline accumulates extra error from the char-poly-plus-root-finding step.
+ */
 const EIG_TOL = 1e-9;
+
+/**
+ * Tolerance for clustering "approximately equal" eigenvalues.  Looser than
+ * EIG_TOL because the closed-form 2×2 / 3×3 root finders can return repeated
+ * eigenvalues with absolute difference of order ~1e-9 (and worse for
+ * ill-conditioned matrices).  This is the threshold for "treat these two
+ * computed eigenvalues as the same true eigenvalue with multiplicity > 1."
+ */
+const EIG_CLUSTER_TOL = 1e-6;
 
 // ── Internal polynomial root finders ────────────────────────
 
@@ -762,19 +777,34 @@ export function characteristicPolynomial(A: Matrix): number[] {
     return [-det, s2, -tr, 1];
   }
   // Faddeev-Le Verrier for n ≥ 4. p(λ) = λⁿ + p₁λⁿ⁻¹ + … + pₙ.
+  // Recurrence: M_1 = A, then M_k = A·(M_{k-1} + p_{k-1}·I) for k ≥ 2.
+  // Equivalently, set prev = I when k = 1 and prev = M_{k-1} + p_{k-1}·I
+  // otherwise.  The prev matrix is built with standard nested loops rather
+  // than nested .map() calls — for large n the intermediate-array
+  // allocations are non-trivial.
   const coeffsHigh: number[] = new Array(n + 1).fill(0);
   coeffsHigh[n] = 1;
   let Mk: Matrix = identity(n).map((row) => row.map(() => 0));
   for (let k = 1; k <= n; k++) {
-    // M_k = A·(M_{k-1} + p_{k-1}·I); but easier to track via M_k = A·prev + coeff·A
-    // Equivalent: M_k = A·M_{k-1} + p_{k-1}·A (using p_0 = 1).
     const prevCoeff = coeffsHigh[n - k + 1];
-    const prev: Matrix =
-      k === 1
-        ? identity(n)
-        : Mk.map((row, i) =>
-            row.map((val, j) => val + (i === j ? prevCoeff : 0)),
-          );
+    const prev: Matrix = new Array(n);
+    if (k === 1) {
+      // prev = I.
+      for (let i = 0; i < n; i++) {
+        const row: Vector = new Array(n);
+        for (let j = 0; j < n; j++) row[j] = i === j ? 1 : 0;
+        prev[i] = row;
+      }
+    } else {
+      // prev = Mk + prevCoeff·I.
+      for (let i = 0; i < n; i++) {
+        const row: Vector = new Array(n);
+        for (let j = 0; j < n; j++) {
+          row[j] = Mk[i][j] + (i === j ? prevCoeff : 0);
+        }
+        prev[i] = row;
+      }
+    }
     Mk = matMul(A, prev);
     let trace = 0;
     for (let i = 0; i < n; i++) trace += Mk[i][i];
@@ -893,7 +923,7 @@ export function isDiagonalizable(
   const groups: { value: number; mult: number }[] = [];
   for (const r of sorted) {
     const last = groups[groups.length - 1];
-    if (last !== undefined && Math.abs(last.value - r) <= 1e-6) last.mult++;
+    if (last !== undefined && Math.abs(last.value - r) <= EIG_CLUSTER_TOL) last.mult++;
     else groups.push({ value: r, mult: 1 });
   }
   for (const g of groups) {
@@ -936,7 +966,7 @@ export function diagonalize(A: Matrix): { P: Matrix; D: Matrix; Pinv: Matrix } {
     // Find all sibling indices (within tolerance) and skip them after.
     const siblings: number[] = [i];
     for (let j = i + 1; j < real.length; j++) {
-      if (Math.abs(real[j] - lambda) <= 1e-6 && Math.abs(imag[j]) <= EIG_TOL) {
+      if (Math.abs(real[j] - lambda) <= EIG_CLUSTER_TOL && Math.abs(imag[j]) <= EIG_TOL) {
         siblings.push(j);
       }
     }
@@ -1010,7 +1040,7 @@ export function spectralDecompositionSymmetric(
   const { real, imag } = n === 2 ? eigenvalues2x2(S) : eigenvalues3x3(S);
   // Symmetric ⇒ all eigenvalues real (within numerical noise).
   for (const im of imag) {
-    if (Math.abs(im) > 1e-6) {
+    if (Math.abs(im) > EIG_CLUSTER_TOL) {
       throw new Error('spectralDecompositionSymmetric: numerical instability — complex eigenvalue from symmetric input');
     }
   }
@@ -1023,7 +1053,7 @@ export function spectralDecompositionSymmetric(
     const lambda = eigValuesDesc[i];
     const siblings: number[] = [i];
     for (let j = i + 1; j < eigValuesDesc.length; j++) {
-      if (Math.abs(eigValuesDesc[j] - lambda) <= 1e-6) siblings.push(j);
+      if (Math.abs(eigValuesDesc[j] - lambda) <= EIG_CLUSTER_TOL) siblings.push(j);
     }
     const eigvecs = eigenvectorsForEigenvalue(S, lambda);
     if (eigvecs.length < siblings.length) {

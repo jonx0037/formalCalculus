@@ -12,7 +12,7 @@
  * parallel.
  */
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import { useD3 } from './shared/useD3';
 import { useResizeObserver } from './shared/useResizeObserver';
@@ -129,12 +129,28 @@ export default function DiagonalizationExplorer({
     [presets],
   );
 
-  const handlePlayAll = useCallback(() => {
-    setStage(0);
-    setTimeout(() => setStage(1), 700);
-    setTimeout(() => setStage(2), 1700);
-    setTimeout(() => setStage(3), 2700);
+  // Track in-flight play-through timers so we can cancel on re-trigger or
+  // unmount — otherwise overlapping clicks queue conflicting setStage calls
+  // and a navigation-away mid-animation produces "setState on unmounted
+  // component" warnings.
+  const playTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  const cancelPlay = useCallback(() => {
+    for (const id of playTimersRef.current) clearTimeout(id);
+    playTimersRef.current = [];
   }, []);
+
+  const handlePlayAll = useCallback(() => {
+    cancelPlay();
+    setStage(0);
+    playTimersRef.current = [
+      setTimeout(() => setStage(1), 700),
+      setTimeout(() => setStage(2), 1700),
+      setTimeout(() => setStage(3), 2700),
+    ];
+  }, [cancelPlay]);
+
+  useEffect(() => cancelPlay, [cancelPlay]);
 
   // ── Layout ──────────────────────────────────────────────────
   const svgSize = useMemo(() => {
