@@ -341,11 +341,11 @@ The central principle of Fourier analysis: **smoothness of $f$ controls the deca
 **(c)** The smooth periodic function $f(x) = 1/(2 - \cos x)$ has coefficients that decay exponentially: $a_n = O(r^n)$ with $r = 2 - \sqrt{3} \approx 0.268$. This is the Fourier counterpart of the smooth-vs-analytic distinction from [Power Series & Taylor Series](/topics/power-taylor-series).
 </TheoremBlock>
 
-Compare the three decay regimes in the explorer. On a log scale, $O(1/n)$ decay is a straight line with slope $-1$, $O(1/n^2)$ has slope $-2$, and exponential decay drops off a cliff.
+Compare the three decay regimes in the explorer, which plots coefficient magnitudes on a semilog scale: logarithmic magnitude against a linear harmonic index $n$. On these axes, exponential decay is the one that plots as a straight line — $\log|a_n| \approx n \log r + \text{const}$, so $O(r^n)$ falls at a constant slope of $\log r$ per harmonic, dropping many orders of magnitude within a few dozen terms. The power laws $O(1/n)$ and $O(1/n^2)$ instead bend upward and flatten as $n$ grows, with $O(1/n^2)$ sitting below $O(1/n)$ and falling faster. (Plotting against $\log n$ instead — log-log axes — would straighten the power laws into lines of slope $-1$ and $-2$.)
 
 <CoefficientDecayExplorer client:visible />
 
-![Coefficient decay on log scale for three smoothness classes — discontinuous (1/n), C⁰ (1/n²), and analytic (exponential)](/images/topics/fourier-series/coefficient-decay.png)
+![Coefficient decay on a semilog scale (log magnitude, linear n) for three smoothness classes — discontinuous (1/n), C⁰ (1/n²), and analytic (exponential)](/images/topics/fourier-series/coefficient-decay.png)
 
 ## 7. Uniform Convergence & $C^1$ Functions
 
