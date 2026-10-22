@@ -325,9 +325,9 @@ Increase $n$ in the explorer below and watch: the overshoot region gets narrower
 The central principle of Fourier analysis: **smoothness of $f$ controls the decay rate of Fourier coefficients**, and conversely.
 
 <TheoremBlock type="proposition" number={1} title="Coefficient Decay and Smoothness">
-**(a)** If $f$ is $C^k$ (i.e., $k$ times continuously differentiable) and $2\pi$-periodic, then $a_n, b_n = O(1/n^k)$ as $n \to \infty$. In particular:
-- Discontinuous $\Rightarrow$ $O(1/n)$
-- $C^1 \Rightarrow O(1/n^2)$
+**(a)** If $f$ is $C^k$ (i.e., $k$ times continuously differentiable) and $2\pi$-periodic, then $a_n, b_n = O(1/n^k)$ as $n \to \infty$. The same rate holds one degree lower, with corners or jumps allowed in the last derivative: if $f, f', \ldots, f^{(k-2)}$ are continuous and $2\pi$-periodic and $f^{(k-1)}$ is piecewise $C^1$, then $a_n, b_n = O(1/n^k)$, because the final integration by parts picks up only bounded jump terms. In particular:
+- Piecewise $C^1$ with jump discontinuities $\Rightarrow$ $O(1/n)$ (the square wave)
+- Continuous and piecewise $C^2$, corners allowed $\Rightarrow O(1/n^2)$ (the triangle wave); a $C^1$ function is only guaranteed $O(1/n)$, and $C^2$ gives $O(1/n^2)$
 - $C^\infty \Rightarrow$ faster than any polynomial (superpolynomial decay)
 
 **(b)** The mechanism: integration by parts $k$ times transfers $k$ powers of $n$ from the coefficient to the function. Specifically, if $f$ is $C^k$ and periodic, then the Fourier coefficients of $f^{(k)}$ satisfy $(f^{(k)})^\wedge(n) = (in)^k \hat{f}(n)$, so $|c_n| = |c_n^{(k)}|/n^k$ where $c_n^{(k)}$ are the (bounded) coefficients of $f^{(k)}$.
