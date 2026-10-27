@@ -47,6 +47,15 @@ formalstatisticsConnections:
   - topic: "continuous-distributions"
     site: "formalstatistics"
     relationship: "Every continuous distribution on ℝ is characterized by its Fourier transform (characteristic function). The Normal's characteristic function e^(-σ²t²/2) is itself Gaussian — the analytical fact that makes the CLT proof so clean."
+formalnlpConnections:
+  - topic: "attention-as-kernel-smoothing"
+    title: "Attention as Kernel Smoothing"
+    site: "formalnlp"
+    relationship: "Put the keys at equispaced points around a circle and attention is diagonalized by this page's Fourier basis; Parseval's identity, applied to the attention kernel's Bessel gains, then gives the smoother's exact risk."
+  - topic: "positional-encodings-geometry"
+    title: "Positional Encodings: Sinusoids, Rotations, and RoPE"
+    site: "formalnlp"
+    relationship: "The sinusoidal positional code uses geometric, not integer, frequencies, so Theorem 1's orthogonality does not apply: its Gram matrix is the stationary kernel κ(m − n), not the identity, and the added code fails past its training length."
 connections:
   - topic: "power-taylor-series"
     relationship: "Power series use the monomial basis {xⁿ} for local approximation around a center c with radius of convergence R. Fourier series use the trigonometric basis {1, cos(nx), sin(nx)} for global periodic approximation on [−π, π]. The conceptual shift from local to global is the central theme of Topic 19."

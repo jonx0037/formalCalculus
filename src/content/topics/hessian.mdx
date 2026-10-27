@@ -57,6 +57,11 @@ formalstatisticsConnections:
   - topic: "linear-regression"
     site: "formalstatistics"
     relationship: "Topic 21's §21.7 characterizes the hat matrix H = X(X^T X)⁻¹X^T as a symmetric idempotent projector with eigenvalues in {0, 1} — exactly the spectral fact about symmetric matrices the Hessian topic develops. §21.8 Proof 9's Cochran theorem on quadratic forms in Normal vectors splits sums-of-squares into independent χ² components via the same eigenstructure."
+formalnlpConnections:
+  - topic: "word2vec-implicit-factorization"
+    title: "word2vec as Implicit Matrix Factorization"
+    site: "formalnlp"
+    relationship: "The second derivative of each word–context cell's loss at its optimum is the local weight skip-gram puts on that pair, so near the optimum skip-gram behaves as a weighted least-squares matrix factorization."
 connections:
   - topic: "jacobian"
     relationship: "The Hessian is the Jacobian of the gradient: H_f(a) = J(∇f)(a). This is the foundational identity — it says the Hessian is not a new concept but the Jacobian machinery from Topic 10 applied to the specific vector-valued function ∇f. The chain rule from Topic 10 also enables the second-order chain rule for composed functions."

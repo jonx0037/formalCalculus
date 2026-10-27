@@ -31,6 +31,11 @@ formalstatisticsConnections:
   - topic: "bayesian-computation-and-mcmc"
     site: "formalstatistics"
     relationship: "The leapfrog integrator in HMC is a 2nd-order symplectic numerical ODE scheme. Its volume-preservation and reversibility are exactly the properties that make HMC's Metropolis-Hastings correction a Bernoulli variable with computable acceptance probability. Step-size tuning (the h parameter) is the bias–computational-cost tradeoff familiar from numerical ODE analysis."
+formalnlpPrereqs:
+  - topic: "transformer-block-residual-stream"
+    title: "The Transformer Block and the Residual Stream"
+    site: "formalnlp"
+    relationship: "A residual block x + f(x) is one forward-Euler step of size one for the flow x′ = f(x), so a deep stack of small updates discretizes a continuous trajectory of token representations — the neural-ODE reading of a transformer."
 connections:
   - topic: "first-order-odes"
     relationship: "Euler's method and RK4 were introduced computationally in Topic 21. This topic provides the full error analysis and explains why RK4 is O(h⁴) and what conditions guarantee convergence."
