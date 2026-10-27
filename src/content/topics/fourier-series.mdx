@@ -112,7 +112,7 @@ references:
     authors: "Vaswani, Shazeer, Parmar, Uszkoreit, Jones, Gomez, Kaiser & Polosukhin"
     year: 2017
     url: "https://arxiv.org/abs/1706.03762"
-    note: "Sinusoidal positional encodings PE(pos, 2i) = sin(pos/10000^(2i/d)) use the Fourier basis to encode sequence position — a direct application of the orthogonal trigonometric system to representation learning."
+    note: "Sinusoidal positional encodings PE(pos, 2i) = sin(pos/10000^(2i/d)) encode sequence position with sinusoids at geometrically spaced frequencies — angle addition makes a shift of position a rotation, though the encodings of different positions are not orthogonal."
   - type: "paper"
     title: "Random Features for Large-Scale Kernel Machines"
     authors: "Rahimi & Recht"
@@ -135,7 +135,7 @@ What if we want to approximate a function on an *entire interval*? And what if t
 
 Fourier series replace the monomial basis with the trigonometric basis $\{1, \cos x, \sin x, \cos 2x, \sin 2x, \ldots\}$. Instead of matching derivatives at a single point (Taylor), a Fourier series matches the function *globally* by decomposing it into periodic components at different frequencies. The coefficients are computed not from derivatives at a center, but from integrals over the entire period — an inherently global operation.
 
-**Why this matters in ML.** Transformer architectures encode sequence position using sinusoidal functions: $\text{PE}(\text{pos}, 2i) = \sin(\text{pos}/10000^{2i/d_{\text{model}}})$. This is a Fourier basis — each dimension of the positional encoding is a trigonometric function at a different frequency. The orthogonality of the Fourier basis means each frequency carries independent information, and the smooth structure allows the model to generalize to sequence lengths unseen during training.
+**Why this matters in ML.** Transformer architectures encode sequence position using sinusoidal functions: $\text{PE}(\text{pos}, 2i) = \sin(\text{pos}/10000^{2i/d_{\text{model}}})$. Each pair of dimensions of the positional encoding is a sine and a cosine at its own frequency. Those frequencies are geometrically spaced rather than integer harmonics, and that difference matters: §12 shows which parts of this topic's trigonometric machinery carry over to a transformer and which do not.
 
 This topic sits at the intersection of four prerequisites. [The Riemann Integral & FTC](/topics/riemann-integral) provides the integration machinery for computing Fourier coefficients. [Uniform Convergence](/topics/uniform-convergence) provides the framework for analyzing when Fourier series converge uniformly. [Series Convergence & Tests](/topics/series-convergence) provides the convergence tests for bounding coefficient decay rates. [Power Series & Taylor Series](/topics/power-taylor-series) provides the comparison — local Taylor vs. global Fourier — that motivates the entire discussion.
 
@@ -482,7 +482,11 @@ The Transformer architecture encodes sequence position using
 
 $$\text{PE}(\text{pos}, 2i) = \sin(\text{pos}/10000^{2i/d_{\text{model}}}), \qquad \text{PE}(\text{pos}, 2i+1) = \cos(\text{pos}/10000^{2i/d_{\text{model}}})$$
 
-This is a Fourier basis at geometrically spaced frequencies. The orthogonality of the trigonometric system means the encoding at each frequency carries independent positional information. The choice of sinusoidal functions (rather than polynomial functions of position) enables the model to attend to *relative* positions via linear transformations — because $\sin(a + b)$ and $\cos(a + b)$ are linear combinations of $\sin a, \cos a, \sin b, \cos b$.
+These are sinusoids, but they are not the Fourier basis of this topic. Write $\omega_i = 10000^{-2i/d_{\text{model}}}$ for the frequency of the $i$-th sine–cosine pair. The $\omega_i$ are geometrically spaced, not the integer harmonics $1, 2, 3, \ldots$ of Theorem 1, and positions are sampled at integers rather than integrated over a full period. So Theorem 1's orthogonality does not transfer. What does transfer is angle addition. Because $\sin(a + b)$ and $\cos(a + b)$ are linear combinations of $\sin a, \cos a, \sin b, \cos b$, shifting the position by $k$ rotates each sine–cosine pair through the angle $k\omega_i$. That rotation does not depend on where we start, so the inner product of two encodings depends only on their offset:
+
+$$\langle \text{PE}(m), \text{PE}(n) \rangle = \sum_{i=0}^{d_{\text{model}}/2 - 1} \cos\big((n - m)\,\omega_i\big) = \kappa(n - m).$$
+
+The Gram matrix of the encodings is this stationary kernel $\kappa(m - n)$, not the identity: the encodings of different positions are not orthogonal. Nor does the smoothness of sinusoids make a model generalize to lengths it never saw. The rotation structure lets a model attend by offset, but nothing forces a trained model to use it. A single attention head trained with the code added to its inputs answers a which-token-came-last task with accuracy $0.996$ at its training length of $32$ and $0.201$ at length $64$. Its learned scores depend on absolute position, and past the training window every absolute position is new. See <a href="https://www.formalnlp.com/topics/positional-encodings-geometry" class="formalnlp-badge" target="_blank" rel="noopener">formalNLP</a> **Positional Encodings: Sinusoids, Rotations, and RoPE** for the proof that the Gram matrix is $\kappa$, the experiment, and the relative schemes (RoPE, ALiBi) that behave differently.
 
 → formalML: [PAC Learning](https://formalml.com/topics/pac-learning) — Fourier analysis on Boolean functions uses the same orthogonal decomposition structure.
 
