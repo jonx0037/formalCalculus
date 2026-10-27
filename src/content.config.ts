@@ -51,6 +51,30 @@ const topics = defineCollection({
         }),
       )
       .optional(),
+    // formalNLP reciprocals. formalnlpConnections mirrors formalNLP topics that
+    // cite this one as a prerequisite; formalnlpPrereqs mirrors formalNLP's
+    // lateral connections. formalCalculus never assumes formalNLP knowledge, so
+    // both render as forward references, not as prerequisites.
+    formalnlpConnections: z
+      .array(
+        z.object({
+          topic: z.string(),
+          title: z.string().optional(),
+          site: z.literal('formalnlp'),
+          relationship: z.string(),
+        }),
+      )
+      .optional(),
+    formalnlpPrereqs: z
+      .array(
+        z.object({
+          topic: z.string(),
+          title: z.string().optional(),
+          site: z.literal('formalnlp'),
+          relationship: z.string(),
+        }),
+      )
+      .optional(),
     // Prereq annotations. The auto section already reads graph predecessors
     // from curriculum-graph.json; entries here layer prose onto specific ids.
     // Optional and defaults to [] so topics with no curated annotations don't

@@ -17,7 +17,8 @@ const currentPath = Astro.url.pathname;
       </span>
     </a>
 
-    <!-- Links -->
+    <!-- Links. Sibling-site links hide below sm (they repeat in the footer) so the
+         bar fits a phone without horizontal scroll. -->
     <div class="flex items-center gap-6">
       <a
         href="/paths"
@@ -29,7 +30,7 @@ const currentPath = Astro.url.pathname;
         href="https://formalstatistics.com"
         target="_blank"
         rel="noopener"
-        class="text-sm font-medium text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
+        class="hidden sm:inline text-sm font-medium text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
       >
         formalStatistics →
       </a>
@@ -37,9 +38,17 @@ const currentPath = Astro.url.pathname;
         href="https://formalml.com"
         target="_blank"
         rel="noopener"
-        class="text-sm font-medium text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
+        class="hidden sm:inline text-sm font-medium text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
       >
         formalML →
+      </a>
+      <a
+        href="https://www.formalnlp.com"
+        target="_blank"
+        rel="noopener"
+        class="hidden sm:inline text-sm font-medium text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
+      >
+        formalNLP →
       </a>
 
       <!-- Theme toggle -->

@@ -25,7 +25,12 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import matter from 'gray-matter';
 
-const CROSS_SITE_FIELDS = new Set(['formalmlConnections', 'formalstatisticsConnections']);
+const CROSS_SITE_FIELDS = new Set([
+  'formalmlConnections',
+  'formalstatisticsConnections',
+  'formalnlpConnections',
+  'formalnlpPrereqs',
+]);
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(scriptDir, '..');
