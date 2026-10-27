@@ -100,7 +100,7 @@ import CurriculumGraph from '../components/viz/CurriculumGraph.tsx';
     <CurriculumGraph client:visible />
   </section>
 
-  <!-- Bridges to downstream sites: formalStatistics and formalML -->
+  <!-- Bridges to downstream sites: formalStatistics, formalML, and formalNLP -->
   <section
     class="border-t py-12"
     style="border-color: var(--color-border); background: var(--color-surface-alt);"
@@ -109,7 +109,7 @@ import CurriculumGraph from '../components/viz/CurriculumGraph.tsx';
       <p class="text-lg mb-6" style="color: var(--color-text-heading); font-family: var(--font-serif); font-weight: 700;">
         Where this leads →
       </p>
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
         <div class="rounded-lg border p-5" style="border-color: var(--color-warning); background: var(--color-surface);">
           <p class="text-sm mb-3" style="color: var(--color-text-muted);">
             Probability and statistics built on this calculus — distributions, estimation, hypothesis testing, Bayesian inference.
@@ -136,6 +136,20 @@ import CurriculumGraph from '../components/viz/CurriculumGraph.tsx';
             style="color: var(--color-primary);"
           >
             Visit formalML →
+          </a>
+        </div>
+        <div class="rounded-lg border p-5" style="border-color: var(--color-nlp); background: var(--color-surface);">
+          <p class="text-sm mb-3" style="color: var(--color-text-muted);">
+            Natural language processing built on this calculus — embeddings, attention, positional encodings, scaling laws.
+          </p>
+          <a
+            href="https://www.formalnlp.com"
+            target="_blank"
+            rel="noopener"
+            class="inline-flex items-center gap-2 font-semibold hover:underline"
+            style="color: var(--color-nlp);"
+          >
+            Visit formalNLP →
           </a>
         </div>
       </div>

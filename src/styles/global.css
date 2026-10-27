@@ -56,6 +56,11 @@
   /* formalStatistics cross-site link palette (amber, distinct from formalML blue) */
   --color-statistics-bg: #FEF3C7;
 
+  /* formalNLP cross-site link palette (oxblood, formalNLP's identity color).
+     WCAG AA: #9F1D35 is 6.5:1 on --color-nlp-bg and 7.4:1 on --color-surface-alt. */
+  --color-nlp: #9F1D35;
+  --color-nlp-bg: #F6E7E8;
+
   /* Viz */
   --color-viz-bg: #FFFFFF;
   --color-viz-grid: #F3F4F6;
@@ -89,6 +94,10 @@
 
     --color-statistics-bg: #2A1E0E;
 
+    /* #E0697C is 5.4:1 on --color-nlp-bg and 4.5:1 on --color-surface-alt. */
+    --color-nlp: #E0697C;
+    --color-nlp-bg: #2A1418;
+
     --color-viz-bg: #1F2937;
     --color-viz-grid: #374151;
   }
@@ -114,6 +123,9 @@
   --color-example-bg: #14231A;
 
   --color-statistics-bg: #2A1E0E;
+
+  --color-nlp: #E0697C;
+  --color-nlp-bg: #2A1418;
 
   --color-viz-bg: #1F2937;
   --color-viz-grid: #374151;
@@ -280,5 +292,33 @@ html[data-theme="dark"] .astro-code {
 }
 
 .formalstatistics-badge::before {
+  content: '→';
+}
+
+/* ============================================================
+   formalNLP forward-link badge (oxblood, parallel to formalML)
+   ============================================================ */
+
+.formalnlp-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-nlp);
+  background-color: var(--color-nlp-bg);
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  text-decoration: none;
+  border: 1px solid var(--color-nlp);
+}
+
+/* No resting opacity dimming, unlike the sibling badges: at 0.8 the dark-theme
+   oxblood falls to 3.9:1, below WCAG AA. Hover underlines instead. */
+.formalnlp-badge:hover {
+  text-decoration: underline;
+}
+
+.formalnlp-badge::before {
   content: '→';
 }

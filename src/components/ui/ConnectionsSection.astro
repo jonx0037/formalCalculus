@@ -25,6 +25,18 @@ interface Props {
     site: 'formalstatistics';
     relationship: string;
   }>;
+  formalnlpConnections?: Array<{
+    topic: string;
+    title?: string;
+    site: 'formalnlp';
+    relationship: string;
+  }>;
+  formalnlpPrereqs?: Array<{
+    topic: string;
+    title?: string;
+    site: 'formalnlp';
+    relationship: string;
+  }>;
 }
 
 const {
@@ -33,6 +45,8 @@ const {
   downstreamConnections = [],
   formalmlConnections = [],
   formalstatisticsConnections = [],
+  formalnlpConnections = [],
+  formalnlpPrereqs = [],
 } = Astro.props;
 
 const prereqs = getPrerequisites(slug, connections);
@@ -42,13 +56,15 @@ const hasAny =
   prereqs.length > 0 ||
   downstream.length > 0 ||
   formalmlConnections.length > 0 ||
-  formalstatisticsConnections.length > 0;
+  formalstatisticsConnections.length > 0 ||
+  formalnlpConnections.length > 0 ||
+  formalnlpPrereqs.length > 0;
 
 // ML / analysis jargon that should stay uppercase. Extend as needed.
 const ACRONYMS = new Set([
   'ai', 'ml', 'ai', 'pac', 'rkhs', 'kl', 'sgd', 'mcmc', 'vae', 'gan',
   'ode', 'pde', 'sde', 'fft', 'dft', 'rl', 'nn', 'cnn', 'rnn', 'lstm',
-  'dkw', 'ubp', 'ftc', 'ivt', 'evt',
+  'dkw', 'ubp', 'ftc', 'ivt', 'evt', 'nlp',
 ]);
 
 function titleize(id: string, explicit?: string): string {
@@ -212,6 +228,61 @@ const downstreamCards = enrichCards(downstream);
                 href={`https://formalml.com/topics/${c.topic}`}
                 relationship={c.relationship}
                 variant="formalml"
+                external
+              />
+            ))}
+          </div>
+        </div>
+      )}
+      {formalnlpConnections.length > 0 && (
+        <div class="mb-8">
+          <h3
+            class="text-xs font-semibold mb-3 uppercase tracking-wider flex items-center gap-2"
+            style="color: var(--color-nlp);"
+          >
+            <span
+              class="inline-block w-1 h-4 rounded"
+              style="background: var(--color-nlp);"
+              aria-hidden="true"
+            />
+            On to formalNLP — where this calculus powers language models
+          </h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {formalnlpConnections.map((c) => (
+              <ConnectionCard
+                title={titleize(c.topic, c.title)}
+                href={`https://www.formalnlp.com/topics/${c.topic}`}
+                relationship={c.relationship}
+                variant="formalnlp"
+                external
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* formalNLP's lateral connections. Never framed as prerequisites:
+          formalCalculus assumes nothing from a downstream site. */}
+      {formalnlpPrereqs.length > 0 && (
+        <div class="mb-8">
+          <h3
+            class="text-xs font-semibold mb-3 uppercase tracking-wider flex items-center gap-2"
+            style="color: var(--color-nlp);"
+          >
+            <span
+              class="inline-block w-1 h-4 rounded"
+              style="background: var(--color-nlp);"
+              aria-hidden="true"
+            />
+            Alongside on formalNLP — the same idea at work in language models
+          </h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {formalnlpPrereqs.map((c) => (
+              <ConnectionCard
+                title={titleize(c.topic, c.title)}
+                href={`https://www.formalnlp.com/topics/${c.topic}`}
+                relationship={c.relationship}
+                variant="formalnlp"
                 external
               />
             ))}

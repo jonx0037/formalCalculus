@@ -68,6 +68,15 @@ formalstatisticsConnections:
   - topic: "exponential-families"
     site: "formalstatistics"
     relationship: "The cumulant generating function K(t) = log M_X(t) has Taylor coefficients equal to the cumulants κ_n: K(t) = Σ κ_n t^n/n!. The exponential-family structure makes these derivatives tractable in closed form."
+formalnlpConnections:
+  - topic: "glove-embedding-geometry"
+    title: "GloVe and the Geometry of Word Embeddings"
+    site: "formalnlp"
+    relationship: "Taylor's theorem with the Lagrange remainder (Theorem 5) sandwiches the Poisson loss on each co-occurrence cell between two quadratics, which is why GloVe's weighted least squares approximates it."
+  - topic: "neural-language-models"
+    title: "Neural Language Models: From Bengio's NPLM to Recurrent Networks"
+    site: "formalnlp"
+    relationship: "The mean value theorem (Theorem 2), applied on the segment between two context embeddings with the softmax's gradient bounded along it, shows that nearby contexts get nearby next-word distributions — smoothing by geometry."
 connections:
   - topic: "derivative"
     relationship: "The derivative definition and differentiation rules from Topic 5 are the raw material. Rolle's theorem and MVT are statements about the derivative — they assert the existence of points where f' takes specific values. Taylor's theorem builds polynomial approximations from higher-order derivatives f', f'', ..., f⁽ⁿ⁾."

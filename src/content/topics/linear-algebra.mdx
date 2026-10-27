@@ -58,6 +58,11 @@ formalmlConnections:
   - topic: "embeddings"
     site: "formalml"
     relationship: "Word2Vec, BERT, and graph-embedding methods produce vectors in ℝᵈ where cosine similarity ⟨u, v⟩ / (‖u‖ ‖v‖) measures semantic proximity. Choosing an embedding is choosing a basis for the latent space; analogies (king − man + woman ≈ queen) are linear-combination statements; PCA and SVD post-processing are spectral operations on the embedding matrix."
+formalnlpConnections:
+  - topic: "positional-encodings-geometry"
+    title: "Positional Encodings: Sinusoids, Rotations, and RoPE"
+    site: "formalnlp"
+    relationship: "A 2-D rotation is a linear map with the standard matrix of Example 9, and matrix products compose maps (Theorem 3), so shifting a sinusoidal code is one block-diagonal rotation and RoPE's scores depend on R(n − m) alone."
 references:
   - type: "book"
     title: "Linear Algebra Done Right"

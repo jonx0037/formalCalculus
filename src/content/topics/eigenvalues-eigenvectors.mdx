@@ -68,6 +68,16 @@ formalmlConnections:
   - topic: "kernel-methods"
     site: "formalml"
     relationship: "Mercer's theorem decomposes a positive-semidefinite kernel as K(x, y) = Σᵢ λᵢ φᵢ(x) φᵢ(y) — an eigenvalue expansion. The finite-dimensional version is the spectral decomposition of the Gram matrix Kᵢⱼ = k(xᵢ, xⱼ). Kernel PCA, kernel ridge regression, and Gaussian-process predictive means are all matrix-spectrum computations on this Gram matrix."
+formalnlpConnections:
+  - topic: "knowledge-graph-embeddings"
+    title: "Knowledge-Graph Embeddings: TransE and RotatE"
+    site: "formalnlp"
+    relationship: "Remark 2 reads a complex eigenvalue a + bi of a real matrix as a rotation and scaling of a real plane; RotatE's relations are the unit-modulus case, rotating each coordinate plane of an entity embedding."
+formalnlpPrereqs:
+  - topic: "positional-encodings-geometry"
+    title: "Positional Encodings: Sinusoids, Rotations, and RoPE"
+    site: "formalnlp"
+    relationship: "A complex-conjugate eigenvalue pair acts on its real plane as a rotation-scaling (Remark 2) — the block that commutes with a rotation and the building block of an orthogonal matrix's real normal form, which is how RoPE is characterized."
 references:
   - type: "book"
     title: "Linear Algebra Done Right"

@@ -37,6 +37,11 @@ formalstatisticsConnections:
   - topic: "bayesian-computation-and-mcmc"
     site: "formalstatistics"
     relationship: "Hamiltonian Monte Carlo simulates Hamilton's equations (a first-order ODE system) to propose samples. Langevin dynamics dθ = ∇log p(θ|x) dt + √2 dW is a stochastic ODE whose stationary distribution is the target posterior. The deterministic ODE theory from this topic is the first-principles foundation for these MCMC samplers."
+formalnlpConnections:
+  - topic: "word2vec-implicit-factorization"
+    title: "word2vec as Implicit Matrix Factorization"
+    site: "formalnlp"
+    relationship: "Gradient descent on skip-gram is the Euler discretization of gradient flow, and along that ODE the difference between the word and context Gram matrices is conserved — a conservation law that fixes the factorization's balance."
 connections:
   - topic: "derivative"
     relationship: "An ODE y' = f(t, y) is an equation involving the derivative — the foundational object from Topic 5. The product rule drives the integrating factor method, implicit differentiation verifies solutions obtained by separation, and the chain rule underpins the conversion between implicit and explicit solution forms."

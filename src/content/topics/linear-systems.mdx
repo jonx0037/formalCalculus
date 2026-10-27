@@ -35,6 +35,15 @@ formalstatisticsConnections:
   - topic: "bayesian-computation-and-mcmc"
     site: "formalstatistics"
     relationship: "Gaussian state-space models dx = Ax dt + dW are linear stochastic ODEs. The Kalman filter is the exact posterior recursion for such systems. HMC for Gaussian targets is exactly a linear Hamiltonian ODE whose trajectories preserve the target measure."
+formalnlpConnections:
+  - topic: "knowledge-graph-embeddings"
+    title: "Knowledge-Graph Embeddings: TransE and RotatE"
+    site: "formalnlp"
+    relationship: "Example 5 and Remark 3 turn the eigenvalues ±iω of a rotation generator into cosine and sine terms; RotatE relies on the same correspondence between multiplying by e^(iθ) and rotating a plane."
+  - topic: "positional-encodings-geometry"
+    title: "Positional Encodings: Sinusoids, Rotations, and RoPE"
+    site: "formalnlp"
+    relationship: "Shifting a sinusoidal positional code by k steps is the matrix exponential exp(kA) of a block-skew generator (Example 5), so k ↦ R(k) is a one-parameter group — the structure behind both the sinusoidal code and RoPE."
 connections:
   - topic: "first-order-odes"
     relationship: "The scalar linear ODE y' + p(t)y = q(t) from Topic 21 is the 1×1 case of y' = Ay + g(t). The integrating factor e^{∫p(t)dt} becomes the matrix exponential e^{At}. The Picard-Lindelöf theorem extends to vector IVPs with the same proof — the Lipschitz constant is the operator norm ‖A‖."
