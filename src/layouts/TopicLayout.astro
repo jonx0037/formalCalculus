@@ -1,5 +1,6 @@
 ---
 import BaseLayout from './BaseLayout.astro';
+import TopicVideos from '../components/ui/TopicVideos.astro';
 import ReferencesSection from '../components/ui/ReferencesSection.astro';
 import ConnectionsSection from '../components/ui/ConnectionsSection.astro';
 import { DIFFICULTY_BADGE_CLASSES, domainLabel } from '../lib/topicMeta';
@@ -13,6 +14,7 @@ interface Props {
     estimatedReadTime: number;
     abstract: string;
     domain: string;
+    videoId?: string | string[] | null;
     datePublished: Date;
     tags: string[];
     connections?: Array<{
@@ -105,6 +107,9 @@ const { slug, frontmatter } = Astro.props;
         <strong>Abstract.</strong> {frontmatter.abstract}
       </p>
     </div>
+
+    <!-- Video embeds (conditional, one per part) -->
+    <TopicVideos videoId={frontmatter.videoId} title={frontmatter.title} />
 
     <!-- Topic content (MDX) -->
     <div class="topic-content">

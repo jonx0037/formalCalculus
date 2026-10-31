@@ -22,7 +22,7 @@ const topics = defineCollection({
       'measure-integration',
       'functional-analysis',
     ]),
-    videoId: z.string().nullable().optional(),
+    videoId: z.union([z.string(), z.array(z.string())]).nullable().optional(),
     notebookPath: z.string(),
     githubUrl: z.string().url().nullable().optional(),
     datePublished: z.coerce.date(),
