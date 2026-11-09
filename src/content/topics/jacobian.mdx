@@ -432,7 +432,7 @@ primals, vjp_fn = jax.vjp(f, x)
 grad = vjp_fn(w)
 ```
 
-![Comparison of Jacobian computation methods: numerical central differences, forward-mode AD (JVPs), and reverse-mode AD (VJPs), with cost annotations.](/images/topics/jacobian/forward-vs-reverse-mode.png)
+![Forward-mode AD (JVPs) versus reverse-mode AD (VJPs), with cost annotations.](/images/topics/jacobian/forward-vs-reverse-mode.png)
 
 ## Connections to Statistics
 

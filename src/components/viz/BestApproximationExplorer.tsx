@@ -78,7 +78,7 @@ export default function BestApproximationExplorer() {
       l2Pts.push({ x, y: l2Val });
       l2ErrPts.push({ x, y: fVal - l2Val });
 
-      // Chebyshev interpolation as near-minimax uniform approximation
+      // Best uniform (minimax) approximation, computed by Remez exchange
       const uVal = analysis.uniformBestEval(n, x);
       uniformPts.push({ x, y: uVal });
       uniformErrPts.push({ x, y: fVal - uVal });
@@ -124,10 +124,11 @@ export default function BestApproximationExplorer() {
       pts.push({ x: errArr[errArr.length - 1].x, err: errArr[errArr.length - 1].y });
     }
 
-    // Keep only the n+2 largest-magnitude points
-    pts.sort((a2, b2) => Math.abs(b2.err) - Math.abs(a2.err));
-    return pts.slice(0, n + 2);
-  }, [curves, n]);
+    // Keep every extremum that reaches the max error level. The theorem
+    // guarantees at least n + 2; some targets have more (|x| at n = 2 has 5).
+    const level = Math.max(...pts.map((p) => Math.abs(p.err)));
+    return pts.filter((p) => Math.abs(p.err) >= 0.98 * level);
+  }, [curves]);
 
   // ── Handlers ──────────────────────────────────────────────
 
