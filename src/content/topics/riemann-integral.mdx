@@ -539,7 +539,7 @@ Absorbing $\frac{f^{(n)}(a)}{n!}(x - a)^n$ into the Taylor polynomial of degree 
 </TheoremBlock>
 
 <TheoremBlock type="remark" number={6} title="Lagrange remainder from the integral remainder">
-The Lagrange form $R_n(x) = \frac{f^{(n+1)}(c)}{(n+1)!}(x - a)^{n+1}$ (from [Mean Value Theorem & Taylor Expansion](/topics/mean-value-taylor), Theorem 4) follows from the integral form by the Mean Value Theorem for Integrals. The integral form is *stronger*: it gives the *exact* remainder as an integral, not just a bound involving an unknown intermediate point $c$.
+The Lagrange form $R_n(x) = \frac{f^{(n+1)}(c)}{(n+1)!}(x - a)^{n+1}$ (from [Mean Value Theorem & Taylor Expansion](/topics/mean-value-taylor), Theorem 5) follows from the integral form by the Mean Value Theorem for Integrals. The integral form is *stronger*: it gives the *exact* remainder as an integral, not just a bound involving an unknown intermediate point $c$.
 </TheoremBlock>
 
 ![Taylor remainder: integral form vs Lagrange bound for e^x](/images/topics/riemann-integral/taylor-remainder-integral.png)
@@ -563,9 +563,9 @@ Approximate $\int_0^1 e^x \, dx = e - 1 \approx 1.71828$ with $n = 10$ subinterv
 
 | Rule | Approximation | $|E_{10}|$ | Bound |
 |------|---------------|-----------|-------|
-| Left | $\approx 1.5819$ | $\approx 0.136$ | $\le 0.136$ |
-| Trapezoidal | $\approx 1.7197$ | $\approx 0.00136$ | $\le 0.00227$ |
-| Simpson's | $\approx 1.718282$ | $\approx 1.5 \times 10^{-6}$ | $\le 1.5 \times 10^{-6}$ |
+| Left | $\approx 1.6338$ | $\approx 0.0845$ | $\le 0.136$ |
+| Trapezoidal | $\approx 1.7197$ | $\approx 0.00143$ | $\le 0.00227$ |
+| Simpson's | $\approx 1.718283$ | $\approx 9.5 \times 10^{-7}$ | $\le 1.5 \times 10^{-6}$ |
 
 Simpson's rule achieves 6 digits of accuracy with just 10 subintervals. The convergence rates — $O(1/n)$, $O(1/n^2)$, $O(1/n^4)$ — explain why higher-order methods dominate in practice.
 </TheoremBlock>

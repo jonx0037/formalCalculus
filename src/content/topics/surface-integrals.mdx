@@ -207,7 +207,7 @@ The $\hat{\mathbf{j}}$-component: $(0)(R\cos\phi\cos\theta) - (-R\sin\phi\sin\th
 
 The $\hat{\mathbf{k}}$-component: $(-R\sin\phi\sin\theta)(R\cos\phi\sin\theta) - (R\sin\phi\cos\theta)(R\cos\phi\cos\theta) = -R^2\sin\phi\cos\phi$.
 
-So $\mathbf{r}_\theta \times \mathbf{r}_\phi = -R^2\sin\phi\,(R\sin\phi\cos\theta,\; \sin\phi\sin\theta,\; \cos\phi)$. Wait — let us be more careful. Factoring:
+Collecting the components and factoring out $-R^2\sin\phi$:
 
 $$\mathbf{r}_\theta \times \mathbf{r}_\phi = (-R^2\sin^2\phi\cos\theta,\; -R^2\sin^2\phi\sin\theta,\; -R^2\sin\phi\cos\phi).$$
 
@@ -529,13 +529,9 @@ so $\frac{\partial}{\partial y}(P + Rg_x) = P_y + P_z g_y + R_y g_x + R_z g_y g_
 
 $$\frac{\partial(Q + Rg_y)}{\partial x} - \frac{\partial(P + Rg_x)}{\partial y} = (Q_x - P_y) + (Q_z g_x - P_z g_y) + (R_x g_y - R_y g_x).$$
 
-Rearranging:
+Grouping the last two brackets by the $g$ factors, $(Q_z g_x - P_z g_y) + (R_x g_y - R_y g_x) = -g_x(R_y - Q_z) - g_y(P_z - R_x)$, so
 
 $$= (Q_x - P_y) + (-g_x)(R_y - Q_z) + (-g_y)(P_z - R_x).$$
-
-Wait — let us verify. We have $(Q_z g_x - P_z g_y) + (R_x g_y - R_y g_x)$. Grouping by the $g$ factors:
-
-$$= -g_x(R_y - Q_z) - g_y(P_z - R_x) + (Q_x - P_y).$$
 
 This is exactly $(\nabla \times \mathbf{F}) \cdot (-g_x, -g_y, 1) = (\nabla \times \mathbf{F}) \cdot (\mathbf{r}_x \times \mathbf{r}_y)$.
 

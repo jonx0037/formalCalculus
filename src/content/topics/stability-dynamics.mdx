@@ -341,14 +341,14 @@ When $A$ is Hurwitz, $V(\mathbf{y}) = \mathbf{y}^T P \mathbf{y}$ is a strict Lya
 </TheoremBlock>
 
 <TheoremBlock type="example" number={7} title="Solving the Lyapunov Equation for a 2×2 Hurwitz Matrix">
-Let $A = \begin{pmatrix} -1 & 2 \\ -3 & -2 \end{pmatrix}$. The eigenvalues are $\lambda \approx -1.5 \pm 2.18i$ — both have negative real part, so $A$ is Hurwitz.
+Let $A = \begin{pmatrix} -1 & 2 \\ -3 & -2 \end{pmatrix}$. The characteristic polynomial is $\lambda^2 + 3\lambda + 8$, so the eigenvalues are $\lambda = -\tfrac{3}{2} \pm \tfrac{\sqrt{23}}{2}\,i \approx -1.5 \pm 2.40i$ — both have negative real part, so $A$ is Hurwitz.
 
 Choose $Q = I$ (the simplest positive-definite choice). The Lyapunov equation $A^T P + PA = -I$ is a linear system in the entries of $P = \begin{pmatrix} p_{11} & p_{12} \\ p_{12} & p_{22} \end{pmatrix}$:
 $$-2p_{11} - 6p_{12} = -1, \qquad 2p_{11} - 3p_{12} - 3p_{22} = 0, \qquad 4p_{12} - 4p_{22} = -1$$
 
-Solving: $P \approx \begin{pmatrix} 1.50 & 0.10 \\ 0.10 & 0.65 \end{pmatrix}$. The eigenvalues of $P$ are approximately $1.52$ and $0.63$, both positive — confirming $P \succ 0$.
+Solving: $P = \begin{pmatrix} 7/16 & 1/48 \\ 1/48 & 13/48 \end{pmatrix} \approx \begin{pmatrix} 0.438 & 0.021 \\ 0.021 & 0.271 \end{pmatrix}$. The eigenvalues of $P$ are approximately $0.44$ and $0.27$, both positive — confirming $P \succ 0$.
 
-The Lyapunov function $V(\mathbf{y}) = 1.50\,y_1^2 + 0.20\,y_1 y_2 + 0.65\,y_2^2$ has elliptical level curves, and $\dot{V} = -(y_1^2 + y_2^2) < 0$.
+The Lyapunov function $V(\mathbf{y}) = \tfrac{7}{16}\,y_1^2 + \tfrac{1}{24}\,y_1 y_2 + \tfrac{13}{48}\,y_2^2 \approx 0.44\,y_1^2 + 0.04\,y_1 y_2 + 0.27\,y_2^2$ has elliptical level curves, and $\dot{V} = -(y_1^2 + y_2^2) < 0$.
 </TheoremBlock>
 
 <TheoremBlock type="example" number={8} title="Quadratic Lyapunov Function for Training Dynamics">
@@ -356,14 +356,14 @@ Gradient descent on the quadratic loss $L(\theta) = \frac{1}{2}\theta^T H \theta
 
 The loss function itself is a Lyapunov function: $V(\theta) = L(\theta) = \frac{1}{2}\theta^T H \theta$ with $\dot{V} = -\theta^T H^2 \theta < 0$. This proves gradient descent converges — the loss decreases monotonically along the gradient flow.
 
-More precisely, $P = \frac{1}{2}H$ solves $A^T P + PA = -H^2$ (the Lyapunov equation with $Q = H^2$). The condition number $\kappa(H) = \lambda_{\max}/\lambda_{\min}$ controls the eccentricity of the level ellipses — ill-conditioned Hessians produce elongated ellipses where gradient descent zig-zags.
+More precisely, $P = \frac{1}{2}H$ solves $A^T P + PA = -H^2$ (the Lyapunov equation with $Q = H^2$). The condition number $\kappa(H) = \lambda_{\max}/\lambda_{\min}$ controls the eccentricity of the level ellipses — ill-conditioned Hessians produce elongated ellipses where discrete gradient descent, with its finite step size, zig-zags across the valley. (The continuous flow $\dot{\theta} = -H\theta$ does not zig-zag; it curves smoothly, but slowly, along the valley.)
 </TheoremBlock>
 
 <TheoremBlock type="remark" number={4} title="The Lyapunov Equation as a Linear System">
 The Lyapunov equation $A^T P + PA = -Q$ can be rewritten using the Kronecker product:
 $$(I \otimes A^T + A^T \otimes I) \operatorname{vec}(P) = -\operatorname{vec}(Q)$$
 
-This is a linear system of size $n^2 \times n^2$, solvable by standard methods. In Python: `scipy.linalg.solve_continuous_lyapunov(A.T, -Q)`. The condition for unique solvability is that $A$ and $-A^T$ share no eigenvalues — which holds precisely when $A$ is Hurwitz (since then all eigenvalues of $A$ have negative real parts, while eigenvalues of $-A^T$ have positive real parts).
+This is a linear system of size $n^2 \times n^2$, solvable by standard methods. In Python: `scipy.linalg.solve_continuous_lyapunov(A.T, -Q)`. The condition for unique solvability is that $A$ and $-A^T$ share no eigenvalues, that is, $\lambda_i + \lambda_j \neq 0$ for every pair of eigenvalues of $A$. This holds in particular when $A$ is Hurwitz (all eigenvalues of $A$ have negative real parts, while those of $-A^T$ have positive real parts), though Hurwitz is not necessary: $A = \operatorname{diag}(1, 2)$ also gives a unique solution, just not a positive definite one.
 </TheoremBlock>
 
 ![Level curves of the quadratic Lyapunov function V = yᵀPy (left) with trajectories confined inside shrinking ellipses. Eigenvalues of P and A shown side by side (right).](/images/topics/stability-dynamics/lyapunov-equation.png)
@@ -447,7 +447,7 @@ For $\mu$ small, the limit cycle is nearly circular with radius $\approx 2$. As 
 </TheoremBlock>
 
 <TheoremBlock type="remark" number={6} title="Poincaré-Bendixson is Special to 2D">
-The Poincaré-Bendixson theorem critically uses 2D topology — the Jordan Curve Theorem, which has no analog in higher dimensions. In 3D, bounded trajectories that avoid equilibria need not converge to periodic orbits. Instead, they can exhibit **chaotic** behavior: the Lorenz attractor ($\dot{x} = \sigma(y - x)$, $\dot{y} = x(\rho - z) - y$, $\dot{z} = xy - \beta z$) is bounded, has no periodic orbits, and is a strange attractor with sensitive dependence on initial conditions. Chaos is impossible in 2D autonomous systems — a fundamental constraint of planar topology.
+The Poincaré-Bendixson theorem critically uses 2D topology — the Jordan Curve Theorem, which has no analog in higher dimensions. In 3D, bounded trajectories that avoid equilibria need not converge to periodic orbits. Instead, they can exhibit **chaotic** behavior: the Lorenz attractor ($\dot{x} = \sigma(y - x)$, $\dot{y} = x(\rho - z) - y$, $\dot{z} = xy - \beta z$) is bounded, is not attracted to any equilibrium or periodic orbit (the attractor contains infinitely many periodic orbits, all unstable), and is a strange attractor with sensitive dependence on initial conditions. Chaos is impossible in 2D autonomous systems — a fundamental constraint of planar topology.
 </TheoremBlock>
 
 ![Van der Pol oscillator: phase portrait with the stable limit cycle (left) and the time series x(t) showing convergence to periodic oscillation from both inside and outside the limit cycle (right).](/images/topics/stability-dynamics/limit-cycles.png)
@@ -543,7 +543,7 @@ The predator-prey system $\dot{x} = \alpha x - \beta xy$, $\dot{y} = \delta xy -
 The damped pendulum $\dot{\theta} = \omega$, $\dot{\omega} = -\sin\theta - b\omega$ with $b = 0.3$:
 
 - **Equilibria:** $(\theta, \omega) = (n\pi, 0)$. Even multiples of $\pi$ are stable spirals (downward rest positions); odd multiples are saddle points (upward balance points).
-- **Separatrices:** The stable and unstable manifolds of the saddle points form **heteroclinic connections** — curves connecting one saddle to the next. These separatrices divide the phase plane into basins of attraction for the different stable equilibria.
+- **Separatrices:** The stable manifolds of the saddle points are the **separatrices**. They divide the phase plane into basins of attraction for the different stable equilibria. Each saddle's unstable manifold runs downhill into the neighboring stable spirals. Because damping makes the energy strictly decrease, no trajectory can run from one saddle to another: saddle-to-saddle **heteroclinic connections** exist only in the undamped case $b = 0$.
 - **Physical interpretation:** A trajectory starting with just enough energy to pass over the top of the pendulum follows a separatrix. Slightly less energy and it oscillates back; slightly more and it whips over the top and settles into the next well.
 </TheoremBlock>
 
@@ -626,7 +626,7 @@ This is *not* a gradient system — it's a saddle-point optimization (min-max). 
 <TheoremBlock type="example" number={17} title="Simplified GAN Dynamics">
 Consider the simplified GAN: $\dot{x} = -xy$, $\dot{y} = x^2 - 1$ where $x$ represents the generator and $y$ the discriminator.
 
-The equilibrium at $(1, 0)$ has Jacobian $J = \begin{pmatrix} 0 & -1 \\ 2 & 0 \end{pmatrix}$ with eigenvalues $\lambda = \pm i\sqrt{2}$ — a center. The linearization predicts perpetual oscillation, and indeed the nonlinear system has a conserved quantity $H(x, y) = \frac{1}{2}y^2 + x^2 - \ln(x^2)$.
+The equilibrium at $(1, 0)$ has Jacobian $J = \begin{pmatrix} 0 & -1 \\ 2 & 0 \end{pmatrix}$ with eigenvalues $\lambda = \pm i\sqrt{2}$ — a center. The linearization predicts perpetual oscillation, and indeed the nonlinear system has a conserved quantity $H(x, y) = y^2 + x^2 - \ln(x^2)$.
 
 Adding regularization (spectral normalization of $D$, gradient penalties) modifies the Jacobian to have $\operatorname{Re}(\lambda) < 0$ — turning the center into a stable spiral and stabilizing training.
 </TheoremBlock>

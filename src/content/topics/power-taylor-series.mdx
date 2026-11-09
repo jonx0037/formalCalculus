@@ -407,7 +407,7 @@ The six essential Taylor series at $c = 0$ (Maclaurin series):
 
 **5.** $\frac{1}{1-x} = \sum_{n=0}^{\infty} x^n$, $R = 1$
 
-**6.** $(1+x)^\alpha = \sum_{n=0}^{\infty} \binom{\alpha}{n} x^n$ (binomial series), $R = 1$ for non-integer $\alpha$
+**6.** $(1+x)^\alpha = \sum_{n=0}^{\infty} \binom{\alpha}{n} x^n$ (binomial series), $R = 1$ unless $\alpha$ is a non-negative integer (then the series terminates)
 </TheoremBlock>
 
 The flagship explorer below shows partial sums of these Taylor series converging to their target functions. Select a function, drag the $n$ slider, and watch $S_n(x)$ approach $f(x)$ inside the radius of convergence — and diverge wildly outside it.
@@ -445,7 +445,11 @@ For $|x-c| < 1/K$, this is a geometric sequence converging to $0$, so $R_n(x) \t
 </TheoremBlock>
 
 <TheoremBlock type="example" number={11} title="e^x, sin x, cos x are entire (analytic everywhere)">
-For $e^x$: on any interval $[-B, B]$, $|f^{(n)}(x)| = e^x \leq e^B$. Setting $M = e^B$ and $K = 1$ gives the bound $|f^{(n)}(x)| \leq e^B \cdot 1^n \cdot n!$ — but we need $M K^n n!$, and the actual derivatives satisfy the much tighter bound $|f^{(n)}(x)| \leq e^B$ (without the $n!$ factor). This means $R_n(x) \leq e^B |x|^{n+1}/(n+1)! \to 0$ for every $x$, so $R = \infty$.
+For $e^x$: on any interval $[-B, B]$, $|f^{(n)}(x)| = e^x \leq e^B$ for every $n$. This implies the hypothesis of Theorem 8 with $M = e^B$ and $K = 1$, but Theorem 8 alone would only certify $R \geq 1$. The actual bound is much tighter — it has no $n!$ factor — so we use it directly in the Lagrange remainder: for $|x| \leq B$,
+
+$$|R_n(x)| \leq \frac{e^B |x|^{n+1}}{(n+1)!} \to 0 \quad (n \to \infty),$$
+
+because the factorial eventually dominates any fixed power. Since $B$ is arbitrary, the Taylor series converges to $e^x$ for every real $x$, so $R = \infty$.
 
 The same argument applies to $\sin x$ and $\cos x$, where all derivatives are bounded by $1$.
 </TheoremBlock>

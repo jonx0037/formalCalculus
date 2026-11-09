@@ -386,7 +386,7 @@ So $S$ is compact by the Heine-Borel theorem, and the tail of $(x_n)$ lies in $S
 ![Compactness in optimization: compact domain vs. coercive function](/images/topics/completeness-compactness/compactness-optimization.png)
 
 <TheoremBlock type="remark" number={5}>
-Coercivity is why $L_2$ regularization guarantees a unique minimizer for convex losses. The regularized loss $\mathcal{L}(\theta) + \lambda\|\theta\|_2^2$ is coercive for any $\lambda > 0$: the quadratic penalty dominates as $\|\theta\| \to \infty$, regardless of what $\mathcal{L}$ does. The sublevel sets are compact (closed and bounded), so the Weierstrass theorem guarantees a minimizer exists. Without regularization, the loss might decrease asymptotically — approaching its infimum along a sequence $\theta_n$ with $\|\theta_n\| \to \infty$ — without ever being attained.
+Coercivity is why $L_2$ regularization guarantees a unique minimizer for convex losses. The regularized loss $\mathcal{L}(\theta) + \lambda\|\theta\|_2^2$ is coercive for any $\lambda > 0$ whenever $\mathcal{L}$ is bounded below (as every nonnegative loss is): the quadratic penalty dominates as $\|\theta\| \to \infty$. The sublevel sets are compact (closed and bounded), so the Weierstrass theorem guarantees a minimizer exists. Without regularization, the loss might decrease asymptotically — approaching its infimum along a sequence $\theta_n$ with $\|\theta_n\| \to \infty$ — without ever being attained.
 </TheoremBlock>
 
 ## Connections to Machine Learning
@@ -399,7 +399,7 @@ The unconstrained parameter space $\mathbb{R}^d$ is not compact. Regularization 
 
 - **$L_2$ weight decay** constrains $\|\theta\|_2 \leq R$, a closed ball in $\mathbb{R}^d$ — compact by Heine-Borel.
 - **$L_1$ lasso** constrains $\|\theta\|_1 \leq R$, a closed "diamond" (cross-polytope) — also compact.
-- **Elastic net** combines both: $\alpha\|\theta\|_1 + (1-\alpha)\|\theta\|_2 \leq R$ — the intersection of compact sets, still compact.
+- **Elastic net** combines both: $\alpha\|\theta\|_1 + (1-\alpha)\|\theta\|_2 \leq R$ — a single closed ball of the norm $\alpha\|\cdot\|_1 + (1-\alpha)\|\cdot\|_2$, so closed, bounded, and compact.
 - **Weight clipping** ($|\theta_i| \leq C$ for all $i$) constrains parameters to a closed hypercube — compact.
 - **Spectral normalization** constrains the spectral norm (largest singular value) of weight matrices, creating a compact set of matrices.
 

@@ -27,7 +27,7 @@ abstract: "The Weierstrass approximation theorem guarantees that every continuou
 formalmlConnections:
   - topic: "pac-learning"
     site: "formalml"
-    relationship: "The universal approximation theorem for neural networks (Cybenko 1989, Hornik 1991) is the neural-network analog of the Weierstrass theorem. The proof structure mirrors Stone-Weierstrass: networks form an algebra that separates points. Barron's theorem gives O(1/√n) approximation rates for networks with bounded first moments — the same rate as Bernstein polynomials."
+    relationship: "The universal approximation theorem for neural networks (Cybenko 1989; Hornik, Stinchcombe & White 1990) is the neural-network analog of the Weierstrass theorem. The proof structure mirrors Stone-Weierstrass: networks form an algebra that separates points. Barron's theorem gives O(1/√n) approximation rates for networks with bounded first moments — the same rate as Bernstein polynomials."
   - topic: "gradient-descent"
     site: "formalml"
     relationship: "Polynomial and Chebyshev approximation of activation functions enables private ML inference via homomorphic encryption. Bernstein polynomials preserve the bounded range [0,1], making them suitable for approximating sigmoid and ReLU in encrypted computation."
@@ -306,7 +306,7 @@ In ML: $L^2$ approximation corresponds to minimizing mean squared error (trainin
 </TheoremBlock>
 
 <TheoremBlock type="example" number={6} title="Comparing L² and uniform best approximation of |x|">
-For $f(x) = |x|$ on $[-1,1]$ with $n = 2$ (quadratic approximation): the best $L^2$ approximant is the orthogonal projection $p_2^{L^2}(x) = \frac{1}{2} + \frac{15}{8}\left(x^2 - \frac{1}{3}\right)$ (computed from Legendre coefficients), while the best uniform approximant $p_2^*(x)$ has an equioscillation property — the error alternates between $+E_2(f)$ and $-E_2(f)$ at three points. The two approximants are *different polynomials* — the norm determines the answer.
+For $f(x) = |x|$ on $[-1,1]$ with $n = 2$ (quadratic approximation): the best $L^2$ approximant is the orthogonal projection $p_2^{L^2}(x) = \frac{1}{2} + \frac{15}{16}\left(x^2 - \frac{1}{3}\right)$ (computed from Legendre coefficients), while the best uniform approximant $p_2^*(x) = x^2 + \frac{1}{8}$ has an equioscillation property — the error alternates between $-E_2(f)$ and $+E_2(f)$, with $E_2(f) = \frac{1}{8}$, at the five points $x = -1, -\frac{1}{2}, 0, \frac{1}{2}, 1$ (at least $n + 2 = 4$ are required by Proposition 1). The two approximants are *different polynomials* — the norm determines the answer.
 </TheoremBlock>
 
 <BestApproximationExplorer client:visible />
@@ -396,7 +396,7 @@ The converse of Jackson's theorem: fast approximation rates *imply* smoothness.
 
 **(b)** $f(x) = x|x|$ is $C^1$ with Lipschitz derivative, so $E_n(f) = O(1/n^2)$.
 
-**(c)** $f \in C^\infty$ (analytic) has $E_n(f) = O(e^{-cn})$ — superalgebraic convergence.
+**(c)** If $f$ is analytic on a neighborhood of $[-1, 1]$, then $E_n(f) = O(e^{-cn})$ — geometric convergence. This rate is beyond Jackson's theorem: applied to every derivative, Jackson shows only that a $C^\infty$ function has $E_n(f) = O(n^{-k})$ for every $k$ (superalgebraic convergence). The exponential rate needs analyticity.
 
 This mirrors the Fourier coefficient decay hierarchy from [Topic 19](/topics/fourier-series): the same smoothness conditions control both Fourier coefficient decay and polynomial approximation rates.
 </TheoremBlock>

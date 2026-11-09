@@ -292,7 +292,7 @@ The direct comparison test requires an explicit inequality $a_n \leq b_n$ or $a_
 The comparison tests require an external benchmark series. The ratio and root tests are *self-contained*: they use the series's own terms to determine convergence by detecting whether the terms eventually decay faster than a geometric series.
 
 <TheoremBlock type="theorem" number={6} title="The Ratio Test (d'Alembert)">
-Let $(a_n)$ be a sequence with $a_n \neq 0$ for all $n$. Define $L = \lim_{n \to \infty} \left|\frac{a_{n+1}}{a_n}\right|$ (if the limit exists, or use $\limsup$).
+Let $(a_n)$ be a sequence with $a_n \neq 0$ for all $n$. Define $L = \lim_{n \to \infty} \left|\frac{a_{n+1}}{a_n}\right|$ (when the limit exists). Without a limit, part 1 still holds with $\limsup$ in place of $L$, and part 2 holds with $\liminf$ — but not with $\limsup$: the series with terms $1/2^n$ and $1/3^n$ interleaved converges even though its ratios are unbounded above.
 
 1. If $L < 1$, the series $\sum a_n$ converges absolutely.
 2. If $L > 1$ (or $L = \infty$), the series diverges.

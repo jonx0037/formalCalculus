@@ -465,7 +465,7 @@ $$|R(z)| = \frac{1}{|1 - z|} \leq 1.$$
 Equality $|R(z)| = 1$ holds iff $x = 0$ and $y = 0$ — that is, only at $z = 0$. Everywhere else in the closed left half-plane, $|R(z)| < 1$ strictly. So implicit Euler is A-stable, and in fact *strongly* damping for any $\text{Re}(\lambda) < 0$. $\blacksquare$
 </TheoremBlock>
 
-The geometric picture is illuminating. Forward Euler's stability region was a unit disk centered at $z = -1$ (a small island in the left half-plane). Implicit Euler's stability region is everything *outside* the disk $|1 - z| < 1$ — that is, the complement of the open unit disk centered at $z = +1$. This complement contains the *entire* left half-plane, and most of the right half-plane as well. Implicit Euler is so stable that it actually damps numerical solutions for some unstable continuous problems (those with $\text{Re}(\lambda) > 0$ but small) — a property called "L-stability" that makes it useful for stiff transients but can also mask physical instabilities.
+The geometric picture is illuminating. Forward Euler's stability region was a unit disk centered at $z = -1$ (a small island in the left half-plane). Implicit Euler's stability region is everything *outside* the disk $|1 - z| < 1$ — that is, the complement of the open unit disk centered at $z = +1$. This complement contains the *entire* left half-plane, and most of the right half-plane as well. Implicit Euler is so stable that it actually damps numerical solutions for some unstable continuous problems (those with $\text{Re}(\lambda) > 0$ but small) — over-damping that makes it useful for stiff transients but can also mask physical instabilities. A related but different property is **L-stability**: a method is L-stable if it is A-stable *and* $R(z) \to 0$ as $|z| \to \infty$, so the stiffest modes are wiped out in a single step. Implicit Euler is L-stable, since $R(z) = 1/(1 - z) \to 0$; the trapezoidal rule is A-stable but not L-stable, since its $R(z) = (1 + z/2)/(1 - z/2) \to -1$.
 
 <TheoremBlock type="example" number={11} title="Implicit Euler on the Robertson system: stable with large step sizes">
 On the Robertson kinetics from Example 9, implicit Euler (with Newton iteration on the $3 \times 3$ Jacobian) can use $h = 10^{-2}$ to $h = 1$ throughout the integration. To reach $t = 100$, that's $\sim 100$ to $10^4$ steps — six to seven orders of magnitude fewer than the $10^9$ steps an explicit method would need. Each implicit step is more expensive (Newton iteration costs $\sim 4 \times$ what one Euler step does), but $4 \cdot 10^4$ is still vastly less than $10^9$.
@@ -513,7 +513,7 @@ Adams-Bashforth methods are very efficient per step: only one $f$ evaluation per
 
 <TheoremBlock type="theorem" number={6} title="Convergence of Multistep Methods (Dahlquist Equivalence)">
 A linear multistep method is **convergent** (the numerical solution converges to the exact solution as $h \to 0$) if and only if it is both:
-1. **Consistent**: the local truncation error tends to zero as $h \to 0$.
+1. **Consistent**: the local truncation error tends to zero faster than $h$, i.e., $\tau_n / h \to 0$ as $h \to 0$.
 2. **Zero-stable**: the roots of the characteristic polynomial $\rho(\zeta) = \sum \alpha_j \zeta^j$ all lie in the closed unit disk $|\zeta| \leq 1$, with simple roots on the boundary.
 
 This is **Dahlquist's equivalence theorem** for linear multistep methods, the multistep analog of the Lax equivalence theorem we'll prove for one-step methods in Section 9.
@@ -533,14 +533,18 @@ For traditional scientific computing where $f$ is cheap (a polynomial or a finit
 
 ## 9. Convergence Theory — The Lax Equivalence Theorem
 
-We've now seen many methods, each with its own analysis of accuracy and stability. We've appealed to "consistency" (local truncation error → 0) and "stability" (errors don't amplify) as the two conditions a good method must satisfy. Now we make this precise and prove the unifying theorem.
+We've now seen many methods, each with its own analysis of accuracy and stability. We've appealed to "consistency" (local truncation error per unit step, $\tau_n / h$, → 0) and "stability" (errors don't amplify) as the two conditions a good method must satisfy. Now we make this precise and prove the unifying theorem.
 
 The result is due to Peter Lax (1956) for finite-difference methods on PDEs, but the same statement holds for one-step methods on ODEs. It's the most important theorem in numerical analysis.
 
 <TheoremBlock type="theorem" number={7} title="The Lax Equivalence Theorem (One-Step Version)">
-Let $\Phi(t, y, h)$ be the increment function of a one-step method $y_{n+1} = y_n + h \Phi(t_n, y_n, h)$ applied to the IVP $y' = f(t, y)$, $y(t_0) = y_0$, with $f$ Lipschitz in $y$. Then the method is **convergent** — meaning $\max_n |y_n - y(t_n)| \to 0$ as $h \to 0$ over any fixed interval $[t_0, T]$ — if and only if it is both:
-1. **Consistent**: the local truncation error satisfies $\tau_n \to 0$ uniformly in $n$ as $h \to 0$.
-2. **Stable**: the increment function $\Phi$ is Lipschitz in its second argument, with a constant $L_\Phi$ that does not depend on $h$.
+Let $\Phi(t, y, h)$ be the increment function of a one-step method $y_{n+1} = y_n + h \Phi(t_n, y_n, h)$ applied to the IVP $y' = f(t, y)$, $y(t_0) = y_0$, with $f$ Lipschitz in $y$, and assume the method is
+- **Stable**: the increment function $\Phi$ is Lipschitz in its second argument, with a constant $L_\Phi$ that does not depend on $h$.
+
+Then the method is **convergent** — meaning $\max_n |y_n - y(t_n)| \to 0$ as $h \to 0$ over any fixed interval $[t_0, T]$ — if and only if it is
+- **Consistent**: the local truncation error satisfies $\tau_n / h \to 0$ uniformly in $n$ as $h \to 0$. (Requiring only $\tau_n \to 0$ is not enough: the method $\Phi \equiv 0$, which never moves, has $\tau_n = y(t_{n+1}) - y(t_n) = O(h) \to 0$, yet it does not converge.)
+
+Stability is a standing hypothesis here, not a necessary condition: for one-step methods it holds automatically for every standard Runge–Kutta scheme when $f$ is Lipschitz, and the theorem's content is that, given it, consistency and convergence are the same thing.
 
 Moreover, if the method has order $p$ (meaning $\tau_n = O(h^{p+1})$), then the global error satisfies $|y_n - y(t_n)| = O(h^p)$ uniformly on $[t_0, T]$.
 </TheoremBlock>
@@ -570,7 +574,7 @@ This bound has three pieces:
 - The factor $(e^{L_\Phi (t_n - t_0)} - 1)$ is the error amplification, growing exponentially in both the Lipschitz constant and the integration time. This is the "stability cost" — even a stable method amplifies errors over a long interval.
 - Both factors are independent of $n$ (uniform bound) and of $h$ (the bound is $O(h^p)$ as $h \to 0$).
 
-Conversely, if either consistency or stability fails, convergence fails. If the method is inconsistent ($\tau_n \not\to 0$), then even at $t = t_0 + h$ the single-step error doesn't shrink, so we can't have $|e_1| \to 0$. If the method is unstable (there's no uniform Lipschitz constant for $\Phi$), then small perturbations get amplified by an unbounded factor, and any roundoff or initial error grows without bound as $h \to 0$.
+Conversely, if either consistency or stability fails, convergence fails. If the method is inconsistent ($\tau_n / h \not\to 0$), each step commits an error comparable to $h$ itself, and over the $\sim 1/h$ steps of $[t_0, T]$ these per-step errors need not wash out; the method $\Phi \equiv 0$ is the extreme case, with $y_n = y_0$ for every $n$. (Looking at a single step is not enough here: $e_1 = -\tau_0 \to 0$ even for $\Phi \equiv 0$.) If the method is unstable (there's no uniform Lipschitz constant for $\Phi$), then small perturbations get amplified by an unbounded factor, and any roundoff or initial error grows without bound as $h \to 0$.
 
 So consistency $+$ stability $\iff$ convergence. This is the equivalence theorem: convergence is *equivalent* to the conjunction of two simpler, locally checkable conditions. $\blacksquare$
 </TheoremBlock>

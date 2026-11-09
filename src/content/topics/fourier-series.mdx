@@ -129,7 +129,7 @@ import FourierInnerProductExplorer from '../../components/viz/FourierInnerProduc
 
 ## 1. Overview & Motivation — From Local to Global Approximation
 
-[Power Series & Taylor Series](/topics/power-taylor-series) showed that Taylor series $\sum f^{(n)}(c)/n! \cdot (x-c)^n$ approximate a function near a center $c$ using the monomial basis $\{1, x, x^2, \ldots\}$. But Taylor series are intrinsically *local* — the radius of convergence $R$ limits how far from $c$ the approximation reaches. And if $f$ has a discontinuity, the Taylor series at any interior point has $R = 0$ at the jump — Taylor theory cannot even see the discontinuity.
+[Power Series & Taylor Series](/topics/power-taylor-series) showed that Taylor series $\sum f^{(n)}(c)/n! \cdot (x-c)^n$ approximate a function near a center $c$ using the monomial basis $\{1, x, x^2, \ldots\}$. But Taylor series are intrinsically *local* — the radius of convergence $R$ limits how far from $c$ the approximation reaches. And if $f$ has a jump discontinuity, Taylor theory cannot even see it: there is no Taylor series centered at the jump (the derivatives do not exist there), and a Taylor series centered anywhere else describes a single analytic function, which cannot jump. For $\text{sgn}(x)$ centered at any $c > 0$, the Taylor series is the constant $1$: it converges everywhere and misses the jump entirely.
 
 What if we want to approximate a function on an *entire interval*? And what if the function has discontinuities — which automatically destroy Taylor convergence?
 
@@ -421,7 +421,7 @@ which yields $\sum_{n=1}^{\infty}\frac{1}{n^2} = \frac{\pi^2}{6}$ — the **Base
 <TheoremBlock type="theorem" number={7} title="Term-by-Term Integration of Fourier Series">
 If $f$ is integrable on $[-\pi, \pi]$ with Fourier series $f(x) \sim \frac{a_0}{2} + \sum(a_n \cos nx + b_n \sin nx)$, then for any $x \in [-\pi, \pi]$:
 
-$$\int_{-\pi}^{x} f(t)\,dt = \frac{a_0}{2}(x + \pi) + \sum_{n=1}^{\infty}\left(\frac{a_n \sin nx}{n} + \frac{b_n(1 - \cos nx)}{n}\right)$$
+$$\int_{-\pi}^{x} f(t)\,dt = \frac{a_0}{2}(x + \pi) + \sum_{n=1}^{\infty}\left(\frac{a_n \sin nx}{n} + \frac{b_n\left((-1)^n - \cos nx\right)}{n}\right)$$
 
 The integrated series converges **uniformly**, even if the original Fourier series does not.
 </TheoremBlock>
@@ -437,13 +437,13 @@ The Weierstrass M-test from [Uniform Convergence](/topics/uniform-convergence) t
 <TheoremBlock type="example" number={8} title="Integrating the square wave">
 Integrating $\text{sgn}(x) \sim \frac{4}{\pi}\sum_{k=0}^{\infty}\frac{\sin((2k+1)x)}{2k+1}$ from $-\pi$ to $x$ gives
 
-$$|x| - \pi \sim -\frac{4}{\pi}\sum_{k=0}^{\infty}\frac{1 - \cos((2k+1)x)}{(2k+1)^2}$$
+$$|x| - \pi \sim -\frac{4}{\pi}\sum_{k=0}^{\infty}\frac{1 + \cos((2k+1)x)}{(2k+1)^2}$$
 
 which converges *uniformly* — the integrated series of a non-uniformly convergent Fourier series is uniformly convergent. Integration improves convergence by one order.
 </TheoremBlock>
 
 <TheoremBlock type="remark" number={6} title="Differentiation caveats">
-Term-by-term *differentiation* of Fourier series is not generally valid. Differentiating the square wave's Fourier series gives $\frac{4}{\pi}\sum_{k=0}^{\infty}\cos((2k+1)x)$, which diverges everywhere. Differentiation multiplies the $n$th coefficient by $n$, making decay *worse*. For term-by-term differentiation to be valid, $f$ must be $C^1$ and periodic (so that $f'$ also has a convergent Fourier series). Compare with [power series](/topics/power-taylor-series), where differentiation preserves the radius of convergence — Fourier series are more delicate.
+Term-by-term *differentiation* of Fourier series is not generally valid. Differentiating the square wave's Fourier series gives $\frac{4}{\pi}\sum_{k=0}^{\infty}\cos((2k+1)x)$, which diverges everywhere. Differentiation multiplies the $n$th coefficient by $n$, making decay *worse*. For term-by-term differentiation to be valid, it is enough that $f$ be continuous and $2\pi$-periodic with $f'$ piecewise $C^1$: then the differentiated series is the Fourier series of $f'$, which converges by Dirichlet's theorem (uniformly if $f$ is $C^2$). Being $C^1$ alone is not enough, since a merely continuous $f'$ can have a divergent Fourier series. Compare with [power series](/topics/power-taylor-series), where differentiation preserves the radius of convergence — Fourier series are more delicate.
 </TheoremBlock>
 
 ![Term-by-term integration: the integrated series converges uniformly even though the original does not](/images/topics/fourier-series/term-by-term-integration.png)
@@ -476,7 +476,7 @@ Every continuous distribution on $\mathbb{R}$ is characterized by its Fourier tr
 
 ## 12. Connections to ML — Positional Encodings, Spectral Methods, Signal Processing
 
-### 11.1. Sinusoidal positional encodings in transformers
+### 12.1. Sinusoidal positional encodings in transformers
 
 The Transformer architecture encodes sequence position using
 
@@ -490,7 +490,7 @@ The Gram matrix of the encodings is this stationary kernel $\kappa(m - n)$, not 
 
 → formalML: [PAC Learning](https://formalml.com/topics/pac-learning) — Fourier analysis on Boolean functions uses the same orthogonal decomposition structure.
 
-### 11.2. Random Fourier Features
+### 12.2. Random Fourier Features
 
 For shift-invariant kernels $k(x, y) = k(x - y)$, Bochner's theorem says $k(z) = \int e^{i\omega^T z}\,dp(\omega)$ for some probability measure $p$. Random Fourier Features approximate the kernel using random trigonometric functions:
 
@@ -500,11 +500,11 @@ with $\omega_j \sim p$ and $b_j \sim \text{Uniform}[0, 2\pi]$. Each random featu
 
 → formalML: [Gradient Descent](https://formalml.com/topics/gradient-descent) — Random Fourier Features enable scalable kernel methods in optimization.
 
-### 11.3. Spectral normalization
+### 12.3. Spectral normalization
 
 In GANs and deep networks, spectral normalization constrains the Lipschitz constant of each layer by dividing the weight matrix by its largest singular value. The singular values are the "spectral" (frequency-domain) quantities of the linear map — a generalization of Fourier analysis from functions to linear operators. Understanding Parseval's identity (energy conservation under the Fourier transform) motivates why spectral normalization preserves representational power while constraining capacity.
 
-### 11.4. Frequency-domain signal processing
+### 12.4. Frequency-domain signal processing
 
 Convolutional neural networks process signals in the spatial domain, but the convolution theorem says $\widehat{f * g} = \hat{f} \cdot \hat{g}$ — convolution in the spatial domain is pointwise multiplication in the Fourier domain. Fast implementations of large-kernel convolutions use FFT to compute convolutions in $O(n \log n)$ rather than $O(n^2)$. The Fourier basis makes this possible because multiplication of Fourier coefficients is equivalent to function convolution.
 
