@@ -649,7 +649,7 @@ Support vector machines solve a classification problem by finding a maximum-marg
 </TheoremBlock>
 
 <TheoremBlock type="example" number={14} title="Gaussian Processes as Projections in RKHS">
-A Gaussian process (GP) prior on functions induces an RKHS. The GP posterior mean at a test point $x^*$, given training data, is the orthogonal projection of $K(\cdot, x^*)$ onto the subspace $\text{span}\{K(\cdot, x_1), \ldots, K(\cdot, x_n)\}$. The posterior variance measures the squared distance from $K(\cdot, x^*)$ to this subspace — it is $K(x^*, x^*) - k^T (K + \sigma^2 I)^{-1} k$ where $k_i = K(x^*, x_i)$. See <a href="https://formalml.com/topics/generative-modeling" target="_blank" rel="noopener noreferrer">Generative Modeling</a> on formalML.
+A Gaussian process (GP) prior on functions induces an RKHS. Write $k_i = K(x^*, x_i)$ for a test point $x^*$ and $K$ for the Gram matrix of the training inputs. In the noise-free case, the GP posterior variance at $x^*$ is $K(x^*, x^*) - k^T K^{-1} k$, which is exactly the squared RKHS distance from $K(\cdot, x^*)$ to the subspace $\text{span}\{K(\cdot, x_1), \ldots, K(\cdot, x_n)\}$ — the residual of the orthogonal projection onto that subspace. The noise-free posterior mean $k^T K^{-1} y$ is the value at $x^*$ of the minimum-norm interpolant of the data, which is the orthogonal projection of any interpolant onto the same subspace. With observation noise $\sigma^2 > 0$, $K$ becomes $K + \sigma^2 I$ in both formulas (posterior variance $K(x^*, x^*) - k^T (K + \sigma^2 I)^{-1} k$), and the exact projection picture becomes a regularized version of it. See <a href="https://formalml.com/topics/generative-modeling" target="_blank" rel="noopener noreferrer">Generative Modeling</a> on formalML.
 </TheoremBlock>
 
 <TheoremBlock type="example" number={15} title="Proximal Operators as Projections">
@@ -657,7 +657,7 @@ The proximal operator $\text{prox}_f(x) = \arg\min_y \{f(y) + \frac{1}{2}\|y - x
 </TheoremBlock>
 
 <TheoremBlock type="example" number={16} title="Attention as Projection">
-In the transformer attention mechanism, the output for a query $q$ is $\text{Attention}(q) = \sum_i \text{softmax}(\langle q, k_i \rangle) v_i$ — a weighted combination of values $v_i$, where the weights are inner-product similarities between the query and keys. This is a "soft projection" of $q$ onto the subspace spanned by keys, with the inner product determining the projection weights. Standard orthogonal projection is the "hard" limit as the softmax temperature goes to zero.
+In the transformer attention mechanism, the output for a query $q$ is $\text{Attention}(q) = \sum_i \text{softmax}(\langle q, k_i \rangle) v_i$ — a weighted combination of values $v_i$, where the weights are inner-product similarities between the query and keys. The resemblance to projection is an analogy, not an identity: orthogonal projection onto the span of an orthonormal set also weights each basis vector by an inner product, $P x = \sum_i \langle x, e_i \rangle e_i$. Attention differs in two ways. Its output is a convex combination of the values $v_i$, not the nearest point of a subspace, and as the softmax temperature goes to zero the weights concentrate on the single key with the largest inner product, so attention returns that key's value (an argmax selection, not an orthogonal projection).
 </TheoremBlock>
 
 <figure className="my-6">

@@ -52,7 +52,7 @@ export default function ChainRuleMatrixExplorer() {
     if (mode === 'reverse') {
       // Reverse mode (backprop): accumulate from output toward input.
       // Start with J_last, then multiply J_{last} · J_{last-1}, etc.
-      // This is how VJPs propagate: right-to-left through the chain.
+      // This is how VJPs propagate: left-to-right through the chain, starting from the loss.
       let product = jacobians[n - 1].map((row) => [...row]);
       steps.push({ label: preset.layers[n - 1].label, product: product.map((r) => [...r]) });
       for (let k = n - 2; k >= 0; k--) {

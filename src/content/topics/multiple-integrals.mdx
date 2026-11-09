@@ -190,7 +190,7 @@ Let $f(x, y) = x + y$ on $R = [0, 1]^2$. Using a uniform partition with $n$ subd
 
 $$S_n = \sum_{i=1}^{n} \sum_{j=1}^{n} \left(\frac{2i - 1}{2n} + \frac{2j - 1}{2n}\right) \frac{1}{n^2} = \frac{1}{n^2} \sum_{i=1}^{n} \sum_{j=1}^{n} \frac{2i + 2j - 2}{2n}.$$
 
-As $n \to \infty$, this converges to $\iint_R (x + y) \, dA = 1$.
+Since $\sum_{i=1}^{n} (2i - 1) = n^2$, the double sum equals $2n^3/(2n) = n^2$, so $S_n = 1$ for every $n$: center sample points make the Riemann sum exact for a linear integrand. The limit is therefore $\iint_R (x + y) \, dA = 1$.
 
 Try the interactive explorer below — increase $n$ and watch the boxes fill the volume:
 </TheoremBlock>
@@ -296,7 +296,7 @@ $$\iint_R f(x, y) \, dA = \int_a^b A(x) \, dx = \int_a^b \left[\int_c^d f(x, y) 
 </TheoremBlock>
 
 <TheoremBlock type="remark" number={3} title="Fubini Beyond Continuity">
-Fubini's theorem extends well beyond continuous functions. The **Fubini-Tonelli theorem** applies to Lebesgue-integrable functions: if $\int |f| \, dA < \infty$ (or if $f \ge 0$), then the iterated integrals exist and are equal to the double integral. The continuity hypothesis above is a convenient sufficient condition, but not necessary. The full generalization lives in measure theory — a topic for the Measure & Integration track *(coming soon)*.
+Fubini's theorem extends well beyond continuous functions. The **Fubini-Tonelli theorem** applies to Lebesgue-integrable functions: if $\int |f| \, dA < \infty$ (or if $f \ge 0$), then the iterated integrals exist and are equal to the double integral. The continuity hypothesis above is a convenient sufficient condition, but not necessary. The full generalization lives in measure theory — see the Fubini-Tonelli section of [The Lebesgue Integral](/topics/lebesgue-integral) in the Measure & Integration track.
 </TheoremBlock>
 
 <TheoremBlock type="example" number={5} title="∫∫ x sin(xy) dA over [0, π] × [0, 1]">

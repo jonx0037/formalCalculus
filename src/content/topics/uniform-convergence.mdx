@@ -258,7 +258,7 @@ Since $\|f_n - f\|_\infty \to 0$ by uniform convergence, the right side tends to
 The proof is clean and direct — the sup-norm bound converts a pointwise inequality into a uniform one, and the integral of a uniform bound is just the bound times the interval length.
 
 <TheoremBlock type="example" number={3}>
-The interchange **fails** for pointwise convergence. Our "moving bump" sequence has $\int f_n = 1$ for all $n$ but $f_n \to 0$ pointwise, so $\int (\lim f_n) = 0 \neq 1 = \lim (\int f_n)$.
+The interchange **fails** for pointwise convergence. Our "moving bump" sequence has $\int f_n = n^2/((n+1)(n+2)) \to 1$ but $f_n \to 0$ pointwise, so $\int (\lim f_n) = 0 \neq 1 = \lim (\int f_n)$.
 </TheoremBlock>
 
 ![Interchange of limit and integral](/images/topics/uniform-convergence/interchange-integration.png)

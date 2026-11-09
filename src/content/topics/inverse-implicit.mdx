@@ -524,9 +524,9 @@ At our point: $D_y F(1, 2, 1, 0) = \begin{pmatrix} 1 & 2 \\ 2 & 0 \end{pmatrix}$
 
 The ImFT guarantees a $C^1$ function $g = (g_1, g_2): U \to \mathbb{R}^2$ with $g(1, 2) = (1, 0)$ and $F(x, g(x)) = 0$ near $(1, 2)$. The derivative is:
 
-$$J_g(x) = -[D_y F]^{-1} D_x F = -\frac{1}{-4}\begin{pmatrix} 0 & -2 \\ -2 & 1 \end{pmatrix}\begin{pmatrix} y_1 & y_2 \\ 2x_1 & 0 \end{pmatrix}.$$
+$$J_g(x) = -[D_y F]^{-1} D_x F = -\frac{1}{-4}\begin{pmatrix} 0 & -2 \\ -2 & 1 \end{pmatrix}\begin{pmatrix} y_1 & y_2 \\ 2x_1 & -1 \end{pmatrix}.$$
 
-At our point: $D_x F = \begin{pmatrix} 1 & 0 \\ 2 & 0 \end{pmatrix}$, so $J_g = \frac{1}{4}\begin{pmatrix} 0 & -2 \\ -2 & 1 \end{pmatrix}\begin{pmatrix} 1 & 0 \\ 2 & 0 \end{pmatrix} = \frac{1}{4}\begin{pmatrix} -4 & 0 \\ 0 & 0 \end{pmatrix} = \begin{pmatrix} -1 & 0 \\ 0 & 0 \end{pmatrix}$.
+At our point: $D_x F = \begin{pmatrix} 1 & 0 \\ 2 & -1 \end{pmatrix}$, so $J_g = \frac{1}{4}\begin{pmatrix} 0 & -2 \\ -2 & 1 \end{pmatrix}\begin{pmatrix} 1 & 0 \\ 2 & -1 \end{pmatrix} = \frac{1}{4}\begin{pmatrix} -4 & 2 \\ 0 & -1 \end{pmatrix} = \begin{pmatrix} -1 & \tfrac{1}{2} \\ 0 & -\tfrac{1}{4} \end{pmatrix}$.
 </TheoremBlock>
 
 <TheoremBlock type="remark" number={3} title="The ImFT as a corollary of the IFT">
@@ -675,9 +675,9 @@ From the second equation: either $y = 0$ or $\lambda = 1$.
 
 **Case $\lambda = 1$:** Equation 1 gives $2x = 2x - 4z$, so $z = 0$. Equation 3 gives $2z = 2z - 4x$, so $x = 0$. Then $G(0, y, 0) = y^2 = 0$, so $y = 0$. The origin satisfies $G = 0$ but $f = 0$ — this is the minimum, but it's a degenerate case (the origin is on the surface).
 
-**Case $y = 0$:** Equations 1 and 3 become $2x = \lambda(2x - 4z)$ and $2z = \lambda(2z - 4x)$. Adding: $2(x+z) = 2\lambda(x+z) - 4\lambda(x+z) = -2\lambda(x+z)$. So $(1+\lambda)(x+z) = 0$. If $\lambda = -1$: $2x = -2x + 4z$, giving $4x = 4z$, so $x = z$. Then $G = x^2 + x^2 - 4x^2 = -2x^2 = 0$, requiring $x = 0$. If $x + z = 0$: $z = -x$. Then $G = x^2 + 4x^2 = 5x^2 = 0$, giving $x = 0$ again.
+**Case $y = 0$:** Equations 1 and 3 become $2x = \lambda(2x - 4z)$ and $2z = \lambda(2z - 4x)$. Adding: $2(x+z) = 2\lambda(x+z) - 4\lambda(x+z) = -2\lambda(x+z)$. So $(1+\lambda)(x+z) = 0$. If $\lambda = -1$: $2x = -2x + 4z$, giving $4x = 4z$, so $x = z$. Then $G = x^2 + x^2 - 4x^2 = -2x^2 = 0$, requiring $x = 0$. If $x + z = 0$: $z = -x$. Then $G = x^2 + x^2 + 4x^2 = 6x^2 = 0$, giving $x = 0$ again.
 
-The geometry reveals that the only point where $G = 0$ and $y = 0$ is the origin — the surface passes through the origin as an isolated point (in this particular slice). The nearest nonzero point requires a more careful analysis of the full surface structure.
+So the Lagrange condition singles out only the origin. The geometry explains why: $G$ is a quadratic form with eigenvalues $3, 1, -1$, so $G = 0$ is a double cone with its vertex at the origin (the slice $y = 0$, for instance, is the pair of lines $z = (2 \pm \sqrt{3})\,x$). The nearest point is the vertex itself, where $\nabla G(0) = 0$, so the regularity hypothesis of Theorem 4 fails there. Every other point of the cone can slide along its ray toward the vertex, decreasing $f$, so no nonzero point is nearest — and the Lagrange system correctly finds no nonzero critical point.
 </TheoremBlock>
 
 <LagrangeMultiplierExplorer client:visible />

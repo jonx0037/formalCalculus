@@ -402,10 +402,10 @@ Notation: $f''$ or $\frac{d^2f}{dx^2}$ for the second derivative; $f^{(n)}$ or $
 <TheoremBlock type="remark" number={4} title="Concavity and the second derivative">
 The sign of $f''(a)$ determines the **concavity** of $f$ at $a$:
 
-- $f''(a) > 0$: $f$ is **concave up** at $a$ — the graph curves upward, and the tangent line lies *below* the graph. This is the 1D condition for a **local minimum**.
-- $f''(a) < 0$: $f$ is **concave down** at $a$ — the graph curves downward, and the tangent line lies *above* the graph. This is the 1D condition for a **local maximum**.
+- $f''(a) > 0$: $f$ is **concave up** at $a$ — the graph curves upward, and the tangent line lies *below* the graph. At a critical point ($f'(a) = 0$), this is the 1D sufficient condition for a **local minimum** (the second-derivative test).
+- $f''(a) < 0$: $f$ is **concave down** at $a$ — the graph curves downward, and the tangent line lies *above* the graph. At a critical point, this is the 1D sufficient condition for a **local maximum**.
 
-In higher dimensions, the second derivative becomes the **Hessian matrix** $H_f(a)$, and "concave up" becomes "positive definite" — the multi-dimensional criterion for a local minimum. This is the foundation of Newton's method and second-order optimization. (**The Hessian & Second-Order Analysis** *(coming soon)*)
+In higher dimensions, the second derivative becomes the **Hessian matrix** $H_f(a)$, and "concave up" becomes "positive definite" — at a critical point, the multi-dimensional sufficient condition for a local minimum. This is the foundation of Newton's method and second-order optimization. ([The Hessian & Second-Order Analysis](/topics/hessian))
 </TheoremBlock>
 
 ![Higher-order derivatives: f, f', f'' for x³ - 3x](/images/topics/derivative/higher-order-derivatives.png)
@@ -429,7 +429,7 @@ is continuous everywhere (by the Weierstrass M-test, which we proved in [Uniform
 <TheoremBlock type="remark" number={5} title="Non-differentiability in ML">
 ReLU$(x) = \max(0, x)$ has a corner at $x = 0$ — the same non-differentiability as $|x|$ shifted. In practice, ML frameworks assign a conventional "derivative" at the kink ($0$ or $1$), and this works because:
 
-1. The set of inputs landing exactly on the kink has **Lebesgue measure zero** — almost every input avoids it. (**Sigma-Algebras & Measures** *(coming soon)*)
+1. The set of inputs landing exactly on the kink has **Lebesgue measure zero** — almost every input avoids it. ([Sigma-Algebras & Measures](/topics/sigma-algebras))
 2. The difference quotient from either side is well-defined (it's $0$ or $1$), so the "gradient" used in practice is the one-sided derivative — which is fine for optimization.
 
 The Weierstrass function shows that pathology can be extreme — continuous everywhere, differentiable nowhere — but such functions don't arise as loss landscapes in practice. Real neural network losses are piecewise smooth (smooth between the ReLU kinks), and that's smooth enough for gradient descent.

@@ -22,11 +22,11 @@ notebookPath: "notebooks/jacobian/10_jacobian_chain_rule.ipynb"
 githubUrl: "https://github.com/jonx0037/formalCalculus/blob/main/src/content/topics/jacobian.mdx"
 datePublished: 2026-04-02
 estimatedReadTime: 50
-abstract: "The Jacobian matrix extends differentiation from scalar-valued functions f: ℝⁿ → ℝ to vector-valued functions f: ℝⁿ → ℝᵐ. Where the gradient is a single row of partial derivatives (the derivative of a function with one output), the Jacobian stacks m such rows — one for each output component. The Jacobian J_f(a) is the matrix representation of the total derivative Df(a): ℝⁿ → ℝᵐ, the best linear approximation to f near a. The central result is the multivariate chain rule: if g: ℝⁿ → ℝᵏ and f: ℝᵏ → ℝᵐ are differentiable, then the Jacobian of the composition f ∘ g is the matrix product J_{f∘g}(a) = J_f(g(a)) · J_g(a). This is the chain rule from single-variable calculus (multiply the derivatives along the chain) generalized to arbitrary dimensions — and it is exactly backpropagation. Every layer in a neural network computes a function fₖ: ℝⁿₖ → ℝⁿₖ₊₁, and the end-to-end Jacobian is the product J_L · J_fₖ · ⋯ · J_f₁. Reverse-mode automatic differentiation (backprop) computes this product right-to-left, one vector-Jacobian product at a time, at a cost independent of the number of parameters, which is why deep learning works at scale. For square Jacobians (n = m), the Jacobian determinant det J_f(a) measures how f distorts local volumes: areas near a are scaled by |det J_f(a)|, and the sign encodes orientation. This appears in the change-of-variables formula for integration (the r in r dr dθ for polar coordinates is the Jacobian determinant) and in normalizing flows, where the density of a transformed variable requires dividing by |det J_f|."
+abstract: "The Jacobian matrix extends differentiation from scalar-valued functions f: ℝⁿ → ℝ to vector-valued functions f: ℝⁿ → ℝᵐ. Where the gradient is a single row of partial derivatives (the derivative of a function with one output), the Jacobian stacks m such rows — one for each output component. The Jacobian J_f(a) is the matrix representation of the total derivative Df(a): ℝⁿ → ℝᵐ, the best linear approximation to f near a. The central result is the multivariate chain rule: if g: ℝⁿ → ℝᵏ and f: ℝᵏ → ℝᵐ are differentiable, then the Jacobian of the composition f ∘ g is the matrix product J_{f∘g}(a) = J_f(g(a)) · J_g(a). This is the chain rule from single-variable calculus (multiply the derivatives along the chain) generalized to arbitrary dimensions — and it is exactly backpropagation. Every layer in a neural network computes a function fₖ: ℝⁿₖ → ℝⁿₖ₊₁, and the end-to-end Jacobian is the product J_L · J_fₖ · ⋯ · J_f₁. Reverse-mode automatic differentiation (backprop) computes this product left-to-right, starting from the loss, one vector-Jacobian product at a time, at a cost independent of the number of parameters, which is why deep learning works at scale. For square Jacobians (n = m), the Jacobian determinant det J_f(a) measures how f distorts local volumes: areas near a are scaled by |det J_f(a)|, and the sign encodes orientation. This appears in the change-of-variables formula for integration (the r in r dr dθ for polar coordinates is the Jacobian determinant) and in normalizing flows, where the density of a transformed variable requires dividing by |det J_f|."
 formalmlConnections:
   - topic: "gradient-descent"
     site: "formalml"
-    relationship: "Backpropagation computes ∇L by applying the multivariate chain rule through each layer of the network. The Jacobian of each layer is multiplied in sequence: J_{L∘fₖ∘⋯∘f₁} = J_L · J_fₖ ⋯ J_f₁. Reverse-mode AD evaluates this product right-to-left via vector-Jacobian products, computing the full gradient in O(1) backward passes regardless of parameter count."
+    relationship: "Backpropagation computes ∇L by applying the multivariate chain rule through each layer of the network. The Jacobian of each layer is multiplied in sequence: J_{L∘fₖ∘⋯∘f₁} = J_L · J_fₖ ⋯ J_f₁. Reverse-mode AD evaluates this product left-to-right, starting from J_L, via vector-Jacobian products, computing the full gradient in O(1) backward passes regardless of parameter count."
   - topic: "smooth-manifolds"
     site: "formalml"
     relationship: "The Jacobian of a smooth map f: M → N between manifolds is the pushforward map df_p: T_pM → T_{f(p)}N between tangent spaces. The chain rule d(g∘f)_p = dg_{f(p)} ∘ df_p is the functoriality of the tangent functor."
@@ -460,7 +460,7 @@ $$J_{L \circ f_K \circ \cdots \circ f_1}(x) = J_L \cdot J_{f_K} \cdot J_{f_{K-1}
 
 where each $J_{f_k}$ is evaluated at the activation from the forward pass. For a scalar loss ($L: \mathbb{R}^{n_{K+1}} \to \mathbb{R}$), $J_L$ is a $1 \times n_{K+1}$ row vector — the gradient of $L$ with respect to the network output. The gradient with respect to *any* intermediate layer is obtained by multiplying Jacobians from the loss backward through the chain.
 
-This is not an analogy. Backpropagation is literally the multivariate chain rule, evaluated right-to-left.
+This is not an analogy. Backpropagation is literally the multivariate chain rule, evaluated left-to-right — from the loss backward through the layers.
 
 ### Forward mode vs. reverse mode
 
@@ -481,18 +481,18 @@ or equivalently, $\log p_x(f(z)) = \log p_z(z) - \log|\det J_f(z)|$. The Jacobia
 
 ### Jacobian regularization
 
-Adding $\|J_f\|_F^2$ (the squared Frobenius norm of the Jacobian) as a regularization term encourages smoothness: a small Jacobian norm means small sensitivity to input perturbations. From the linear approximation (Proposition 1):
+Adding $\|J_f\|_F^2$ (the squared Frobenius norm of the Jacobian) as a regularization term encourages smoothness: a small Jacobian norm means small sensitivity to input perturbations. Proposition 1 is only a local statement; its global counterpart is the mean value inequality along the segment from $x'$ to $x$:
 
-$$\|f(x) - f(x')\| \le \|J_f\| \cdot \|x - x'\|,$$
+$$\|f(x) - f(x')\| \le \sup_{z \in [x', x]} \|J_f(z)\|_{\mathrm{op}} \cdot \|x - x'\|.$$
 
-so bounding the Jacobian norm bounds the Lipschitz constant. This appears in adversarial robustness (small perturbations to $x$ produce small changes in $f(x)$), generative models, and physics-informed neural networks.
+Since the operator norm never exceeds the Frobenius norm, $\|J_f(z)\|_{\mathrm{op}} \le \|J_f(z)\|_F$, so bounding the Jacobian norm uniformly bounds the Lipschitz constant. This appears in adversarial robustness (small perturbations to $x$ produce small changes in $f(x)$), generative models, and physics-informed neural networks.
 
 **Forward links to formalML:**
 - <a href="https://formalml.com/topics/gradient-descent" target="_blank" rel="noopener">Gradient Descent</a> — backpropagation as the chain rule through computation graphs
 - <a href="https://formalml.com/topics/smooth-manifolds" target="_blank" rel="noopener">Smooth Manifolds</a> — the Jacobian as the pushforward between tangent spaces
 - <a href="https://formalml.com/topics/information-geometry" target="_blank" rel="noopener">Information Geometry</a> — the Fisher information matrix transformation under reparametrization via the Jacobian
 
-![Backpropagation as the chain rule: forward pass computes activations (top), backward pass multiplies Jacobians right-to-left via VJPs (bottom).](/images/topics/jacobian/backpropagation-chain-rule.png)
+![Backpropagation as the chain rule: forward pass computes activations (top), backward pass multiplies Jacobians left-to-right, starting from the loss, via VJPs (bottom).](/images/topics/jacobian/backpropagation-chain-rule.png)
 
 ![Normalizing flows: a Gaussian base density transformed through an invertible map f, with the Jacobian determinant providing the volume correction for the output density.](/images/topics/jacobian/normalizing-flows-jacobian.png)
 

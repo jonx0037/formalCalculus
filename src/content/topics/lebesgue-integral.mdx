@@ -791,9 +791,9 @@ This closed form is used inside the reparametrization-trick KL term of the varia
 Suppose the per-sample loss is $L(\theta, x) = \ell(\theta, x) + (\lambda / 2) \|\theta\|^2$ for some baseline loss $\ell$ and regularization strength $\lambda > 0$. The gradient is $\nabla_\theta L(\theta, x) = \nabla_\theta \ell(\theta, x) + \lambda \theta$.
 
 Suppose $\nabla_\theta \ell$ is uniformly bounded: $|\nabla_\theta \ell(\theta, x)| \leq G$ for all $\theta$ in a compact set $\Theta$ and $\mu$-a.e. $x$. (This is the standard "bounded gradient" assumption that holds for any logistic-regression-style model with bounded features.) Then for $\theta \in \Theta$,
-$$|\nabla_\theta L(\theta, x)| \;\leq\; G + \lambda \cdot \mathrm{diam}(\Theta) \;:=\; M.$$
+$$|\nabla_\theta L(\theta, x)| \;\leq\; G + \lambda \cdot \max_{\theta' \in \Theta} \|\theta'\| \;:=\; M.$$
 
-The constant $M$ is finite. The constant function $g(x) = M$ is integrable with respect to any probability measure $P$ on $\mathbb{R}^d$ (its integral is just $M$). So the DCT hypothesis is satisfied with dominator $g \equiv M$, and the interchange $\nabla_\theta E[L(\theta, X)] = E[\nabla_\theta L(\theta, X)]$ is justified for $\theta \in \Theta$. The minibatch gradient is therefore an unbiased estimator of the population gradient — this is the precise statement that makes SGD work, and the verification took three lines once we knew the dominator structure to look for.
+The constant $M$ is finite, because $\Theta$ is compact and so $\|\theta'\|$ attains a finite maximum on it. (The diameter of $\Theta$ would not do here unless $0 \in \Theta$.) The constant function $g(x) = M$ is integrable with respect to any probability measure $P$ on $\mathbb{R}^d$ (its integral is just $M$). So the DCT hypothesis is satisfied with dominator $g \equiv M$, and the interchange $\nabla_\theta E[L(\theta, X)] = E[\nabla_\theta L(\theta, X)]$ is justified for $\theta \in \Theta$. The minibatch gradient is therefore an unbiased estimator of the population gradient — this is the precise statement that makes SGD work, and the verification took three lines once we knew the dominator structure to look for.
 </TheoremBlock>
 
 ![Four-panel ML connections: expected value, KL divergence, gradient-expectation swap, and the ELBO](/images/topics/lebesgue-integral/ml-connections-26.png)

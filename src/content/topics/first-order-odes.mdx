@@ -323,7 +323,7 @@ $$y_{n+1}(t) = y_0 + \int_{t_0}^{t} f(s, y_n(s))\,ds \quad\text{for } n \geq 0.$
 <TheoremBlock type="proof" title="Proof of Theorem 3 (Picard-Lindelöf)">
 We give the full proof via the contraction mapping principle.
 
-**Setup.** Choose a closed rectangle $R = \{(t, y) : |t - t_0| \leq a,\, |y - y_0| \leq b\} \subseteq D$. Let $M = \max_R |f|$ (which exists since $f$ is continuous on the compact set $R$). Set $\delta = \min(a, b/M)$. Let $X = C([t_0 - \delta, t_0 + \delta])$ with the sup-norm $\|y\|_\infty = \max_{|t - t_0| \leq \delta} |y(t)|$, and let $S = \{y \in X : \|y - y_0\|_\infty \leq b\}$. The set $S$ is closed in the [complete metric space](/topics/completeness-compactness) $(X, \|\cdot\|_\infty)$.
+**Setup.** Choose a closed rectangle $R = \{(t, y) : |t - t_0| \leq a,\, |y - y_0| \leq b\} \subseteq D$. Let $M = \max_R |f|$ (which exists since $f$ is continuous on the compact set $R$). Set $\delta = \min(a, b/M)$. Let $X = C([t_0 - \delta, t_0 + \delta])$ with the sup-norm $\|y\|_\infty = \max_{|t - t_0| \leq \delta} |y(t)|$, and let $S = \{y \in X : \|y - y_0\|_\infty \leq b\}$. The set $S$ is closed in the metric space $(X, \|\cdot\|_\infty)$, which is [complete](/topics/uniform-convergence) (a uniformly Cauchy sequence of continuous functions converges uniformly to a continuous function).
 
 **Step 1 — $T$ maps $S$ into $S$.** Define the Picard operator $T: S \to X$ by
 
@@ -463,7 +463,7 @@ $$\dot{a}(t) = -a(t) \cdot \frac{\partial f_\theta}{\partial h}(h(t), t),$$
 
 integrated backward from $a(T) = \partial \mathcal{L} / \partial h(T)$. The gradient with respect to parameters is
 
-$$\frac{d\mathcal{L}}{d\theta} = -\int_0^T a(t) \cdot \frac{\partial f_\theta}{\partial \theta}(h(t), t)\,dt.$$
+$$\frac{d\mathcal{L}}{d\theta} = \int_0^T a(t) \cdot \frac{\partial f_\theta}{\partial \theta}(h(t), t)\,dt.$$
 
 This is another first-order ODE — and its existence is guaranteed by Picard-Lindelöf under the same Lipschitz conditions.
 

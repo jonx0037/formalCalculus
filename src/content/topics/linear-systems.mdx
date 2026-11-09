@@ -200,7 +200,7 @@ Let $A, B \in \mathbb{R}^{n \times n}$ and $t, s \in \mathbb{R}$. Then:
 </TheoremBlock>
 
 <TheoremBlock type="remark" number={2} title="The commutativity caveat">
-Property (e) fails without commutativity. The Baker-Campbell-Hausdorff formula gives the correction: $e^A e^B = e^{A + B + \frac{1}{2}[A,B] + \cdots}$ where $[A, B] = AB - BA$ is the commutator. This non-commutativity is why matrix exponentials are harder than scalar exponentials, and why Lie theory is the natural language for matrix groups. In ML, this matters when composing transformations that don't commute — rotation followed by scaling is not the same as scaling followed by rotation.
+Property (e) fails without commutativity. The Baker-Campbell-Hausdorff formula gives the correction: $e^A e^B = e^{A + B + \frac{1}{2}[A,B] + \cdots}$ where $[A, B] = AB - BA$ is the commutator. This non-commutativity is why matrix exponentials are harder than scalar exponentials, and why Lie theory is the natural language for matrix groups. In ML, this matters when composing transformations that don't commute — rotation followed by a non-uniform scaling (different factors along different axes) is not the same as that scaling followed by rotation. (A uniform scaling $cI$ commutes with everything.)
 </TheoremBlock>
 
 <TheoremBlock type="example" number={3} title="Diagonal and nilpotent exponentials">
@@ -334,7 +334,7 @@ This is a finite sum because $N_k$ is nilpotent ($N_k^m = 0$ for some $m$). Each
 </TheoremBlock>
 
 <TheoremBlock type="remark" number={5} title="Defective matrices are rare but important">
-Generically, matrices are diagonalizable — defective matrices form a set of measure zero in matrix space. But in applications, defective matrices arise naturally at *bifurcation points* — the boundary between qualitatively different behaviors. The transition from a stable spiral to a stable node passes through a defective node at $\tau^2 = 4\Delta$ on the trace-determinant diagram. [Stability & Dynamical Systems](/topics/stability-dynamics) will examine these transitions systematically.
+Generically, matrices are diagonalizable — defective matrices form a set of measure zero in matrix space. But in applications, defective matrices arise naturally at *bifurcation points* — the boundary between qualitatively different behaviors. Every defective $2 \times 2$ matrix sits on the parabola $\tau^2 = 4\Delta$ of the trace-determinant diagram, so the transition from a stable spiral to a stable node generically passes through a defective node there. (The converse fails: the scalar matrix $\lambda I$ also lies on the parabola but is diagonalizable — a star node, not a defective one.) [Stability & Dynamical Systems](/topics/stability-dynamics) will examine these transitions systematically.
 </TheoremBlock>
 
 ![Defective node phase portrait with te^{λt} growth, and Jordan block exponential showing polynomial times exponential terms](/images/topics/linear-systems/repeated-eigenvalues.png)

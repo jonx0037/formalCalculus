@@ -334,7 +334,7 @@ where $R$ is determined by the endpoint condition. The cycloid is about 19% fast
 <BrachistochroneExplorer client:visible />
 
 <TheoremBlock type="example" number={10} title="Geodesics on Surfaces">
-A geodesic minimizes the arc-length functional $L[\gamma] = \int_a^b \sqrt{g_{ij}\dot{\gamma}^i\dot{\gamma}^j}\,dt$ (cf. [Topic 20](/topics/line-integrals)). On a sphere of radius $R$, the Euler-Lagrange equation yields great circles — the shortest paths between points on the sphere.
+A geodesic minimizes the arc-length functional $L[\gamma] = \int_a^b \sqrt{g_{ij}\dot{\gamma}^i\dot{\gamma}^j}\,dt$ (cf. [Topic 15](/topics/line-integrals)). On a sphere of radius $R$, the Euler-Lagrange equation yields great circles — the shortest paths between points on the sphere.
 </TheoremBlock>
 
 <TheoremBlock type="example" number={11} title="The Catenary">
@@ -493,7 +493,7 @@ In contrast, $u(x) = x^{-1/3}$ on $(0,1]$ has $u' = -\frac{1}{3}x^{-4/3}$, and $
 </TheoremBlock>
 
 <TheoremBlock type="remark" number={6} title="Sobolev Spaces as Hilbert Spaces">
-The key point: $H^1_0(\Omega)$ with the inner product $\langle u, v\rangle_{H^1} = \int (uv + u'v')\,dx$ is a Hilbert space (Theorem 5). This means we can apply the entire Hilbert-space toolkit from [Topic 31](/topics/hilbert-spaces) — projection theorem, Riesz representation, spectral theory — to variational problems posed on Sobolev spaces. This closes the obligation from [Topic 31](/topics/hilbert-spaces) and [Topic 23](/topics/surface-integrals) to explain why Sobolev spaces are the right function spaces for PDEs.
+The key point: $H^1_0(\Omega)$ with the inner product $\langle u, v\rangle_{H^1} = \int (uv + u'v')\,dx$ is a Hilbert space (Theorem 5). This means we can apply the entire Hilbert-space toolkit from [Topic 31](/topics/hilbert-spaces) — projection theorem, Riesz representation, spectral theory — to variational problems posed on Sobolev spaces. This closes the obligation from [Topic 31](/topics/hilbert-spaces) and [Topic 16](/topics/surface-integrals) to explain why Sobolev spaces are the right function spaces for PDEs.
 </TheoremBlock>
 
 <img src="/images/topics/calculus-of-variations/sobolev-spaces.png" alt="Smooth function, H¹ function with a corner, and a function not in H¹." className="my-6 rounded-lg shadow-md" />
@@ -543,7 +543,7 @@ By the direct method, a minimizer exists. This is the variational proof of exist
 </TheoremBlock>
 
 <TheoremBlock type="example" number={16} title="Best Approximation as a Variational Problem">
-Given $f \in L^2(\Omega)$ and a closed subspace $V \subset L^2(\Omega)$, the best approximation problem is: minimize $J[v] = \|f - v\|_{L^2}^2$ over $v \in V$. This is a quadratic functional on a Hilbert space — coercive and w.l.s.c. The direct method guarantees existence, and the minimizer is the orthogonal projection $P_V f$ (cf. [Topic 31](/topics/hilbert-spaces) and [Topic 15](/topics/approximation-theory)).
+Given $f \in L^2(\Omega)$ and a closed subspace $V \subset L^2(\Omega)$, the best approximation problem is: minimize $J[v] = \|f - v\|_{L^2}^2$ over $v \in V$. This is a quadratic functional on a Hilbert space — coercive and w.l.s.c. The direct method guarantees existence, and the minimizer is the orthogonal projection $P_V f$ (cf. [Topic 31](/topics/hilbert-spaces) and [Topic 20](/topics/approximation-theory)).
 </TheoremBlock>
 
 <TheoremBlock type="remark" number={7} title="The Direct Method as the Infinite-Dimensional Extreme Value Theorem">
@@ -716,7 +716,7 @@ $$
 W_p^p(\mu,\nu) = \inf_{\gamma \in \Pi(\mu,\nu)} \int |x - y|^p\,d\gamma(x,y).
 $$
 
-The Wasserstein distance $W_p$ metrizes the space of probability measures. This is a variational problem over a function space — the direct method applies because the set of transport plans is weakly compact and the cost functional is lower semicontinuous.
+The Wasserstein distance $W_p$ is a metric on the space of probability measures with finite $p$-th moments ($\int |x|^p \, d\mu < \infty$). This is a variational problem over a function space — the direct method applies because the set of transport plans is weakly compact and the cost functional is lower semicontinuous.
 </TheoremBlock>
 
 <TheoremBlock type="example" number={22} title="Variational Autoencoders (VAEs)">
@@ -834,7 +834,7 @@ We have reached the summit.
 
 Topic 32 is the 32nd and final topic on formalCalculus — the last node in a directed graph that began with [epsilon-delta definitions](/topics/epsilon-delta) and ends here, with the calculus of variations. Let us take a moment to see where we have been.
 
-The journey through **single-variable calculus** (Topics 1–8) built the foundations: limits, continuity, derivatives, integrals, and Taylor series — the language in which all subsequent mathematics is written. **Multivariable calculus** (Topics 9–14) extended this machinery to $\mathbb{R}^n$: gradients, Jacobians, Hessians, multiple integrals, line integrals, surface integrals. **Series and approximation** (Topics 15–18) taught us to represent functions as infinite sums — power series, Fourier series, uniform convergence — and to quantify the quality of approximations. **Ordinary differential equations** (Topics 19–22) showed how derivatives drive dynamics: first-order equations, linear systems, stability theory, and numerical methods. **Measure and integration** (Topics 23–28) rebuilt the integral from the ground up: sigma-algebras, the Lebesgue integral, $L^p$ spaces, the Radon-Nikodym theorem — replacing the Riemann integral with a theory powerful enough for modern analysis. And **functional analysis** (Topics 29–32, this track) assembled the abstract framework: metric spaces, normed and Banach spaces, inner-product and Hilbert spaces, and finally the calculus of variations.
+The journey through **single-variable calculus** (Topics 1–8) built the foundations: limits, continuity, derivatives, integrals, and Taylor series — the language in which all subsequent mathematics is written. **Multivariable calculus** (Topics 9–16) extended this machinery to $\mathbb{R}^n$: gradients, Jacobians, Hessians, multiple integrals, line integrals, surface integrals. **Series and approximation** (Topics 17–20) taught us to represent functions as infinite sums — power series, Fourier series, uniform convergence — and to quantify the quality of approximations. **Ordinary differential equations** (Topics 21–24) showed how derivatives drive dynamics: first-order equations, linear systems, stability theory, and numerical methods. **Measure and integration** (Topics 25–28) rebuilt the integral from the ground up: sigma-algebras, the Lebesgue integral, $L^p$ spaces, the Radon-Nikodym theorem — replacing the Riemann integral with a theory powerful enough for modern analysis. And **functional analysis** (Topics 29–32, this track) assembled the abstract framework: metric spaces, normed and Banach spaces, inner-product and Hilbert spaces, and finally the calculus of variations.
 
 At each level, the pattern was the same: **add one axiom, gain an enormous amount of power.** A metric gives completeness and fixed-point theorems. A norm gives bounded operators and the big four theorems. An inner product gives projection, Riesz representation, and spectral decomposition. And the variational perspective — optimizing functionals on function spaces — gives the Euler-Lagrange equation, the direct method for existence, Sobolev spaces, and the Lax-Milgram theorem.
 

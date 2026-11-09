@@ -165,11 +165,9 @@ So $f \in L^p((0, 1])$ for every $p < 3$, with $\|f\|_p$ growing as $p$ approach
 
 <TheoremBlock type="example" number={2} title="A function in every finite $L^p$ but not in $L^\infty$">
 
-Let $f(x) = (\log(1/x))^{-1}$ on $(0, 1/2)$ extended by zero outside. As $x \to 0^+$, $\log(1/x) \to \infty$, so $f(x) \to 0$ — the function is bounded near $0$. But near $x = 1/2$ from below, $\log(1/x) \to \log 2 > 0$, so $f$ approaches a finite positive value. The essential supremum is finite on most of the interval but blows up on the *upper* boundary in a different way:
+Let $f(x) = (\log(1/x))^{1/2}$ on $(0, 1)$, extended by zero outside. For every finite $p$, the integral $\int_0^1 (\log(1/x))^{p/2} \, dx$ is finite (the logarithm grows slower than any power, so integrating against it converges for every $p$), so $f \in L^p$. But $f(x) \to \infty$ as $x \to 0^+$, so $\operatorname{ess\,sup} |f| = \infty$ and $f \notin L^\infty$.
 
-$$\sup_{x \in (0, 1/2)} f(x) \;=\; \lim_{x \to 1/2^-} \frac{1}{\log(1/x)} \;=\; \frac{1}{\log 2} \;\approx\; 1.44.$$
-
-So this particular $f$ is in fact in $L^\infty$. To get a function in every finite $L^p$ but *not* in $L^\infty$, take instead $f(x) = (\log(1/x))^{1/2}$ on $(0, 1)$: the integrals $\int_0^1 (\log(1/x))^{p/2} \, dx$ are all finite (the logarithm grows slower than any power, so integrating against it converges for every $p$), but $f(x) \to \infty$ as $x \to 0$, so $\operatorname{ess\,sup} |f| = \infty$ and $f \notin L^\infty$. The membership patterns of $L^p$ as $p$ varies are surprisingly subtle, and they reflect different ways a function can fail to be "small."
+A tempting first candidate, $(\log(1/x))^{-1}$ on $(0, 1/2)$, does not work: it tends to $0$ as $x \to 0^+$ and is bounded by $1/\log 2 \approx 1.44$ on the whole interval, so it lies in $L^\infty$. The membership patterns of $L^p$ as $p$ varies are surprisingly subtle, and they reflect different ways a function can fail to be "small."
 
 </TheoremBlock>
 
@@ -439,7 +437,7 @@ $$\|f + g\|_2 \;=\; \left( \int_0^1 1 \, dx \right)^{1/2} \;=\; 1.$$
 
 $$1 \;\leq\; \frac{1}{\sqrt{2}} + \frac{1}{\sqrt{2}} \;=\; \sqrt{2} \;\approx\; 1.4142.$$
 
-This is a strict inequality with a healthy gap — about $41\%$ slack. The reason: in the $L^2$ norm, "disjoint supports" is not the same as "orthogonal." The two functions overlap at exactly one point (a measure-zero set), but the $L^2$ geometry treats them as if they were in different "directions" yet still adds them in a non-orthogonal way. The disjoint indicators are *orthogonal* in the inner-product sense ($\langle f, g \rangle = 0$, by Section 9), and for orthogonal vectors the Pythagorean identity says $\|f + g\|_2^2 = \|f\|_2^2 + \|g\|_2^2$, which is $1 = 1/2 + 1/2$. So the Minkowski inequality holds with strict inequality, but the Pythagorean identity holds with equality — these are two different statements about the same pair, and they are both true.
+This is a strict inequality with a healthy gap — about $41\%$ slack. The reason: the two functions point in perpendicular "directions." Their supports overlap only at the single point $x = 1/2$ (a measure-zero set), so the disjoint indicators are *orthogonal* in the inner-product sense ($\langle f, g \rangle = 0$, by Section 9), and for orthogonal vectors the Pythagorean identity says $\|f + g\|_2^2 = \|f\|_2^2 + \|g\|_2^2$, which is $1 = 1/2 + 1/2$. So the Minkowski inequality holds with strict inequality, but the Pythagorean identity holds with equality — these are two different statements about the same pair, and they are both true.
 
 </TheoremBlock>
 
@@ -589,7 +587,7 @@ $$f_n(t) \;=\; \frac{1}{2}\bigl(1 + \tanh(n t)\bigr) \cdot \frac{1}{2}\bigl(1 + 
 
 are smooth approximations to the indicator $\mathbf{1}_{[0, 1]}$. As $n$ grows the two $\tanh$ transitions sharpen, and $f_n(t) \to \mathbf{1}_{[0, 1]}(t)$ pointwise on the interior $(-1/2, 0) \cup (0, 1) \cup (1, 3/2)$ and at every interior point of $[0, 1]$ — so the convergence is pointwise everywhere except at the two boundary points $\{0, 1\}$, which are a null set.
 
-Numerically, $\|f_n - \mathbf{1}_{[0, 1]}\|_2$ decays rapidly: at $n = 10$ it is around $0.18$, at $n = 50$ around $0.08$, at $n = 200$ around $0.04$. The sequence $(f_n)$ is Cauchy in $L^2$ — for any $m, n$ both large, the two functions both approximate the indicator and so are close to each other — and Riesz–Fischer guarantees a limit in $L^2$. That limit is the equivalence class $[\mathbf{1}_{[0, 1]}]$. The interactive viz below lets you advance $n$ and watch both the function and the $L^p$-norm difference.
+Numerically, $\|f_n - \mathbf{1}_{[0, 1]}\|_2$ decays rapidly: at $n = 10$ it is around $0.20$, at $n = 50$ around $0.09$, at $n = 200$ around $0.04$. The sequence $(f_n)$ is Cauchy in $L^2$ — for any $m, n$ both large, the two functions both approximate the indicator and so are close to each other — and Riesz–Fischer guarantees a limit in $L^2$. That limit is the equivalence class $[\mathbf{1}_{[0, 1]}]$. The interactive viz below lets you advance $n$ and watch both the function and the $L^p$-norm difference.
 
 </TheoremBlock>
 
