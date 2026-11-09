@@ -506,7 +506,7 @@ The **error function** $\text{erf}(x) = \frac{2}{\sqrt{\pi}}\int_0^x e^{-t^2}\,d
 
 $$\Phi(x) = \frac{1}{2}\left[1 + \text{erf}\left(\frac{x}{\sqrt{2}}\right)\right].$$
 
-The error function has no closed-form antiderivative — $e^{-t^2}$ cannot be integrated in terms of elementary functions. But it can be computed numerically to machine precision by standard libraries (`scipy.special.erf`, `torch.special.erf`). The rapid convergence of the Gaussian tail ($\Phi(x) \approx 1 - \frac{1}{x\sqrt{2\pi}}e^{-x^2/2}$ for large $x$, known as Mill's ratio) is what makes sub-Gaussian concentration inequalities so powerful.
+The error function has no closed-form antiderivative — $e^{-t^2}$ cannot be integrated in terms of elementary functions. But it can be computed numerically to machine precision by standard libraries (`scipy.special.erf`, `torch.special.erf`). The rapid convergence of the Gaussian tail ($\Phi(x) \approx 1 - \frac{1}{x\sqrt{2\pi}}e^{-x^2/2}$ for large $x$, known as the Mills ratio) is what makes sub-Gaussian concentration inequalities so powerful.
 </TheoremBlock>
 
 <GaussianIntegralExplorer client:visible />
@@ -662,7 +662,7 @@ The tail probability $P(X > t) = \int_t^{\infty} f(x)\,dx$ is an improper integr
 
 $$P(X > t) = \frac{1}{2}\text{erfc}\left(\frac{t}{\sqrt{2}}\right) \le \frac{1}{t\sqrt{2\pi}}e^{-t^2/2}$$
 
-(Mill's ratio bound). The tail decay rate determines whether the distribution is sub-Gaussian, sub-exponential, or heavy-tailed, and thereby governs the strength of available concentration inequalities.
+(Mills ratio bound). The tail decay rate determines whether the distribution is sub-Gaussian, sub-exponential, or heavy-tailed, and thereby governs the strength of available concentration inequalities.
 
 *Forward link:* [Concentration Inequalities](https://formalml.com/topics/concentration-inequalities) on formalML develops sub-Gaussian and sub-exponential tail bounds.
 
