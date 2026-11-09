@@ -278,9 +278,9 @@ In $\mathbb{R}$, this means the compact sets are precisely the closed, bounded i
 </TheoremBlock>
 
 <TheoremBlock type="proof">
-We prove the theorem for $\mathbb{R}$; the $\mathbb{R}^n$ case follows by the same argument applied coordinate-wise.
+We prove the theorem for $\mathbb{R}$; the $\mathbb{R}^n$ case is the standard extension to closed boxes, which we cite rather than repeat.
 
-**(⟸) Closed and bounded implies compact:** Suppose $K = [a, b]$ and let $\{U_\alpha\}$ be any open cover. Define
+**(⟸) Closed and bounded implies compact:** First take $K = [a, b]$ and let $\{U_\alpha\}$ be any open cover. Define
 
 $$S = \{x \in [a, b] : [a, x] \text{ can be covered by finitely many } U_\alpha\}.$$
 
@@ -290,9 +290,9 @@ $S$ is bounded above by $b$. Let $c = \sup S$, which exists by the completeness 
 
 Since $c \in [a, b]$ and $\{U_\alpha\}$ covers $[a, b]$, there exists $U_\gamma$ with $c \in U_\gamma$. Since $U_\gamma$ is open, there exists $\delta > 0$ with $(c - \delta, c + \delta) \subseteq U_\gamma$.
 
-Since $c = \sup S$, there exists $x \in S$ with $x > c - \delta$. Then $[a, x]$ is covered by finitely many $U_\alpha$, and $[x, \min(c + \delta, b)] \subseteq U_\gamma$. So $[a, \min(c + \delta, b)]$ is covered by finitely many $U_\alpha$.
+Since $c = \sup S$, there exists $x \in S$ with $x > c - \delta$. Then $[a, x]$ is covered by finitely many $U_\alpha$, and $[x, \min(c + \delta/2, b)] \subseteq (c - \delta, c + \delta) \subseteq U_\gamma$. So $[a, \min(c + \delta/2, b)]$ is covered by finitely many $U_\alpha$.
 
-If $c < b$, then $\min(c + \delta, b) > c$, contradicting $c = \sup S$. Therefore $c = b$, and $[a, b]$ has a finite subcover.
+If $c < b$, then $\min(c + \delta/2, b) > c$, contradicting $c = \sup S$. Therefore $c = b$, and $[a, b]$ has a finite subcover. For a general closed, bounded $K$, choose $[a, b] \supseteq K$. Adding the open set $\mathbb{R} \setminus K$ to an open cover of $K$ gives an open cover of $[a, b]$; its finite subcover, with $\mathbb{R} \setminus K$ dropped, still covers $K$.
 
 **(⟹) Compact implies bounded:** Cover $K$ by $\{(-n, n) : n \in \mathbb{N}\}$. A finite subcover gives $K \subseteq (-N, N)$ for some $N$, so $K$ is bounded.
 
