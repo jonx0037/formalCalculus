@@ -65,7 +65,7 @@ export default function ChainRuleMatrixExplorer() {
     } else {
       // Forward mode: accumulate from input toward output.
       // Start with J_first, then multiply J_2 · J_1, then J_3 · (J_2 · J_1), etc.
-      // This is how JVPs propagate: left-to-right through the chain.
+      // This is how JVPs propagate: right-to-left through the product, starting from the input.
       let product = jacobians[0].map((row) => [...row]);
       steps.push({ label: preset.layers[0].label, product: product.map((r) => [...r]) });
       for (let k = 1; k < n; k++) {

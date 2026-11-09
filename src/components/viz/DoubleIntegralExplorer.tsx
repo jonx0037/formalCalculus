@@ -49,17 +49,22 @@ export default function DoubleIntegralExplorer() {
     return doubleRiemannSum(preset.f, preset.domain.x, preset.domain.y, n, n, sampleRule);
   }, [selectedIdx, n, sampleRule]);
 
+  // Convergence curve follows the selected rule (random falls back to center
+  // so the curve stays deterministic). Center is O(1/n²); lower-left is O(1/n).
+  const convergenceRule: SampleRule = sampleRule === 'lower-left' ? 'lower-left' : 'center';
+  const refOrder = convergenceRule === 'lower-left' ? 1 : 2;
+
   // Convergence data: error vs n
   const convergenceData = useMemo(() => {
     if (preset.exactIntegral === null) return null;
     const exact = preset.exactIntegral;
     const nValues = [2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30, 35, 40];
     return nValues.map((nVal) => {
-      const result = doubleRiemannSum(preset.f, preset.domain.x, preset.domain.y, nVal, nVal, 'center');
+      const result = doubleRiemannSum(preset.f, preset.domain.x, preset.domain.y, nVal, nVal, convergenceRule);
       const error = Math.abs(result.value - exact);
       return { n: nVal, error: Math.max(error, 1e-16) };
     });
-  }, [selectedIdx]);
+  }, [selectedIdx, convergenceRule]);
 
   const exact = preset.exactIntegral;
   const error = exact !== null ? Math.abs(rsResult.value - exact) : null;
@@ -130,15 +135,33 @@ export default function DoubleIntegralExplorer() {
     const h = totalHeight - margin.top - margin.bottom;
     const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
 
+    // Sums that are exact at every n (e.g. center points on a linear integrand)
+    // have no error to plot on a log scale; say so instead of drawing a flat line.
+    if ((d3.max(convergenceData, (d) => d.error) ?? 0) < 1e-12) {
+      g.append('text')
+        .attr('x', w / 2).attr('y', h / 2 - 10)
+        .style('fill', 'currentColor').style('font-size', '13px').style('text-anchor', 'middle')
+        .text('Error is zero at every n:');
+      g.append('text')
+        .attr('x', w / 2).attr('y', h / 2 + 10)
+        .style('fill', 'currentColor').style('font-size', '13px').style('text-anchor', 'middle')
+        .text('this rule is exact for this integrand.');
+      g.append('text')
+        .attr('x', w / 2).attr('y', h / 2 + 32)
+        .style('fill', '#9CA3AF').style('font-size', '11px').style('text-anchor', 'middle')
+        .text('Switch to Lower-left to watch the sums converge.');
+      return;
+    }
+
     const xScale = d3.scaleLog().domain([2, 40]).range([0, w]);
     const yScale = d3.scaleLog()
       .domain([Math.max(1e-6, d3.min(convergenceData, (d) => d.error) ?? 1e-6), d3.max(convergenceData, (d) => d.error) ?? 1])
       .range([h, 0]);
 
-    // Reference line: O(1/n²)
+    // Reference line: O(1/n²) for center, O(1/n) for lower-left
     const refData = convergenceData.map((d) => ({
       n: d.n,
-      error: convergenceData[0].error * (convergenceData[0].n / d.n) ** 2,
+      error: convergenceData[0].error * (convergenceData[0].n / d.n) ** refOrder,
     }));
 
     g.append('path')
@@ -199,8 +222,8 @@ export default function DoubleIntegralExplorer() {
     g.append('text')
       .attr('x', w - 10).attr('y', 20)
       .style('fill', '#9CA3AF').style('font-size', '10px').style('text-anchor', 'end')
-      .text('-- O(1/n²)');
-  }, [selectedIdx, n, width, totalHeight, convergenceData, error]);
+      .text(refOrder === 1 ? '-- O(1/n)' : '-- O(1/n²)');
+  }, [selectedIdx, n, width, totalHeight, convergenceData, error, refOrder]);
 
   return (
     <div ref={containerRef} style={{ width: '100%' }}>

@@ -197,7 +197,7 @@ Try the interactive explorer below — increase $n$ and watch the boxes fill the
 
 <DoubleIntegralExplorer client:visible />
 
-![Three-panel visualization showing 2D Riemann sums converging at 4×4, 8×8, and 20×20 partitions for f(x,y) = x+y on the unit square](/images/topics/multiple-integrals/double-riemann-sum.png)
+![Three-panel visualization of center-point double Riemann sums at 4×4, 8×8, and 20×20 partitions for f(x,y) = sin x cos y + 1.5 on [0, π]². By symmetry the center sums equal the exact value 1.5π² ≈ 14.8044 at every resolution; the boxes track the surface more closely as n grows.](/images/topics/multiple-integrals/double-riemann-sum.png)
 
 ## Iterated Integrals
 
@@ -362,7 +362,7 @@ The area of the unit disk $D = \{(x,y) : x^2 + y^2 \le 1\}$ as a Type I integral
 
 $$\int_{-1}^{1} \int_{-\sqrt{1 - x^2}}^{\sqrt{1 - x^2}} 1 \, dy \, dx = \int_{-1}^{1} 2\sqrt{1 - x^2} \, dx = \pi.$$
 
-This is computable (via $x = \sin\theta$ substitution) but awkward. In [**polar coordinates**](/topics/change-of-variables) the same integral becomes $\int_0^{2\pi} \int_0^1 r \, dr \, d\theta = \pi$ — trivially. This is the motivation for the next topic: [Change of Variables & the Jacobian Determinant](/topics/change-of-variables).
+This is computable (via $x = \sin\theta$ substitution) but awkward. In [**polar coordinates**](/topics/change-of-variables) the same integral becomes $\int_0^{2\pi} \int_0^1 r \, dr \, d\theta = \pi$ in one line. This is the motivation for the next topic: [Change of Variables & the Jacobian Determinant](/topics/change-of-variables).
 </TheoremBlock>
 
 <TheoremBlock type="remark" number={4} title="Regions That Are Neither Type I Nor Type II">

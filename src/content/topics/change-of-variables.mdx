@@ -441,7 +441,7 @@ where $z_0 = z$ and $z_k = f_k(z_{k-1})$. The entire architecture of flow-based 
 </TheoremBlock>
 
 <TheoremBlock type="example" number={15} title="Affine Coupling Layer (RealNVP)">
-The RealNVP coupling layer splits $z = (z_a, z_b)$ and defines $x_a = z_a$, $x_b = z_b \odot \exp(s(z_a)) + t(z_a)$. The Jacobian is lower-triangular with diagonal entries $1$ (for $x_a$) and $\exp(s_i(z_a))$ (for $x_b$). So $\log|\det J| = \sum_i s_i(z_a)$ — a sum, not a determinant. This is $O(n)$ and trivially differentiable. The IFT ([Topic 12](/topics/inverse-implicit)) guarantees invertibility since $\exp(s_i) > 0$ everywhere.
+The RealNVP coupling layer splits $z = (z_a, z_b)$ and defines $x_a = z_a$, $x_b = z_b \odot \exp(s(z_a)) + t(z_a)$. The Jacobian is lower-triangular with diagonal entries $1$ (for $x_a$) and $\exp(s_i(z_a))$ (for $x_b$). So $\log|\det J| = \sum_i s_i(z_a)$ — a sum, not a determinant. This is $O(n)$ and cheap to differentiate. The IFT ([Topic 12](/topics/inverse-implicit)) guarantees invertibility since $\exp(s_i) > 0$ everywhere.
 </TheoremBlock>
 
 <TheoremBlock type="remark" number={9} title="The Reparameterization Trick">

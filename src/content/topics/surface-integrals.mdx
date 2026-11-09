@@ -265,7 +265,7 @@ Taking magnitudes and applying the change of variables theorem ([Topic 14](/topi
 
 $$\iint_{\tilde{D}^*} \|\tilde{\mathbf{r}}_s \times \tilde{\mathbf{r}}_t\|\,ds\,dt = \iint_{\tilde{D}^*} \|\mathbf{r}_u \times \mathbf{r}_v\| \cdot |\det J_\phi|\,ds\,dt = \iint_{D^*} \|\mathbf{r}_u \times \mathbf{r}_v\|\,du\,dv.$$
 
-The $|\det J_\phi|$ from the cross product formula is absorbed by the $|\det J_\phi|^{-1}$ from the change-of-variables substitution, leaving the original integral. $\square$
+The second equality is the change-of-variables formula itself, applied to the substitution $(u, v) = \phi(s, t)$: the $|\det J_\phi|$ produced by the cross product is exactly the Jacobian factor that substitution requires, so no factor is left over and the original integral is recovered. $\square$
 </TheoremBlock>
 
 ![Parameterized surface with tangent vectors, normal vector, and infinitesimal area element](/images/topics/surface-integrals/parameterized-surfaces.png)
@@ -287,7 +287,7 @@ This is a double Riemann integral ([Topic 13](/topics/multiple-integrals)) of th
 </TheoremBlock>
 
 <TheoremBlock type="remark" number={2} title="Parameterization Independence">
-The scalar surface integral $\iint_S f\,dS$ is independent of the parameterization, including orientation. The proof is identical to Proposition 1: the $|\det J_\phi|$ from the area element cancels with the $|\det J_\phi|^{-1}$ from the change of variables in the double integral. The absolute value ensures the result holds regardless of whether the reparameterization preserves or reverses orientation.
+The scalar surface integral $\iint_S f\,dS$ is independent of the parameterization, including orientation. The proof is identical to Proposition 1: the $|\det J_\phi|$ from the area element is exactly the Jacobian factor of the change of variables in the double integral. The absolute value ensures the result holds regardless of whether the reparameterization preserves or reverses orientation.
 </TheoremBlock>
 
 <TheoremBlock type="example" number={4} title="Mass of a Hemispherical Shell">

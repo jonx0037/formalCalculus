@@ -53,7 +53,7 @@ export interface BestApproximation {
   presetName: string;
   l2BestCoeffs: (n: number) => number[];
   l2BestEval: (n: number, x: number) => number;
-  /** Chebyshev-based near-minimax approximation */
+  /** Best uniform (minimax) approximation, via the Remez exchange algorithm */
   uniformBestEval: (n: number, x: number) => number;
   l2Error: (n: number) => number;
   uniformError: (n: number) => number;
@@ -154,31 +154,125 @@ function evaluateL2Best(f: (x: number) => number, n: number, x: number): number 
   return result;
 }
 
-// ── Chebyshev near-minimax approximation ───────────────────
+// ── Best uniform (minimax) approximation: Remez exchange ───
+
+/** Solve the dense linear system A·x = b by Gaussian elimination with partial pivoting. */
+function solveLinear(A: number[][], b: number[]): number[] {
+  const m = b.length;
+  const M = A.map((row, i) => [...row, b[i]]);
+  for (let col = 0; col < m; col++) {
+    let piv = col;
+    for (let r = col + 1; r < m; r++) {
+      if (Math.abs(M[r][col]) > Math.abs(M[piv][col])) piv = r;
+    }
+    [M[col], M[piv]] = [M[piv], M[col]];
+    for (let r = col + 1; r < m; r++) {
+      const factor = M[r][col] / M[col][col];
+      for (let c = col; c <= m; c++) M[r][c] -= factor * M[col][c];
+    }
+  }
+  const x = new Array<number>(m).fill(0);
+  for (let r = m - 1; r >= 0; r--) {
+    let s = M[r][m];
+    for (let c = r + 1; c < m; c++) s -= M[r][c] * x[c];
+    x[r] = s / M[r][r];
+  }
+  return x;
+}
+
+const REMEZ_GRID = 2000;
+const remezCache = new Map<string, number[]>();
 
 /**
- * Compute Chebyshev interpolation coefficients for f on [−1, 1].
- * Uses Chebyshev nodes of the first kind and the discrete
- * orthogonality relation to compute coefficients in O(n²).
+ * Best uniform (minimax) approximation of degree n on [−1, 1] by the
+ * Remez exchange algorithm on a fine grid. Returns Chebyshev-basis
+ * coefficients (evaluate with evaluateChebyshevExpansion).
  *
- * The Chebyshev interpolant is within O(log n) of the true
- * minimax polynomial — much closer than the L² best, and it
- * exhibits near-equioscillation behavior.
+ * Each step solves Σ c_k T_k(x_i) + (−1)^i E = f(x_i) on a reference set
+ * of n + 2 points, then moves the reference to the alternating extrema of
+ * the new error, until the reference error |E| matches the max error.
+ * The result equioscillates, as the Equioscillation Theorem requires.
+ * For |x| at n = 2 it returns x² + 1/8 with E₂ = 1/8.
  */
-function chebyshevCoefficients(f: (x: number) => number, n: number): number[] {
-  const nodes = chebyshevNodes(n + 1); // n+1 nodes for degree n
-  const fvals = nodes.map(f);
-  const coeffs: number[] = [];
+function remezCoefficients(key: string, f: (x: number) => number, n: number): number[] {
+  const cacheKey = `${key}:${n}`;
+  const cached = remezCache.get(cacheKey);
+  if (cached) return cached;
 
-  for (let j = 0; j <= n; j++) {
-    let sum = 0;
-    for (let k = 0; k < n + 1; k++) {
-      const theta = ((2 * (k + 1) - 1) * Math.PI) / (2 * (n + 1));
-      sum += fvals[k] * Math.cos(j * theta);
+  const N = REMEZ_GRID;
+  const grid = Array.from({ length: N + 1 }, (_, i) => -1 + (2 * i) / N);
+  const fGrid = grid.map(f);
+  const basis = (x: number, k: number) => Math.cos(k * Math.acos(Math.max(-1, Math.min(1, x))));
+
+  // Initial reference: Chebyshev extreme points, snapped to the grid.
+  let ref = Array.from({ length: n + 2 }, (_, i) =>
+    Math.round(((1 - Math.cos((i * Math.PI) / (n + 1))) / 2) * N),
+  );
+  let coeffs = new Array<number>(n + 1).fill(0);
+
+  for (let iter = 0; iter < 60; iter++) {
+    const A = ref.map((gi, i) => [
+      ...Array.from({ length: n + 1 }, (_, k) => basis(grid[gi], k)),
+      i % 2 === 0 ? 1 : -1,
+    ]);
+    const sol = solveLinear(A, ref.map((gi) => fGrid[gi]));
+    coeffs = sol.slice(0, n + 1);
+    const levelE = Math.abs(sol[n + 1]);
+
+    const err = grid.map((x, i) => fGrid[i] - evaluateChebyshevExpansion(coeffs, x));
+    const maxErr = Math.max(...err.map(Math.abs));
+    if (maxErr - levelE < 1e-10 * Math.max(1, maxErr)) break;
+
+    // New reference: the largest |error| in each run of constant sign.
+    const cand: number[] = [];
+    let i = 0;
+    while (i <= N) {
+      if (err[i] === 0) {
+        i++;
+        continue;
+      }
+      const s = Math.sign(err[i]);
+      let best = i;
+      let j = i;
+      while (j + 1 <= N && (Math.sign(err[j + 1]) === s || err[j + 1] === 0)) {
+        j++;
+        if (Math.abs(err[j]) > Math.abs(err[best])) best = j;
+      }
+      cand.push(best);
+      i = j + 1;
     }
-    coeffs.push((j === 0 ? 1 : 2) * sum / (n + 1));
+    // Trim to n + 2 points while keeping the signs alternating.
+    while (cand.length > n + 2) {
+      const mags = cand.map((gi) => Math.abs(err[gi]));
+      const m = mags.indexOf(Math.min(...mags));
+      if (m === 0 || m === cand.length - 1) {
+        cand.splice(m, 1);
+      } else if (cand.length === n + 3) {
+        cand.splice(mags[0] < mags[cand.length - 1] ? 0 : cand.length - 1, 1);
+      } else {
+        const nb = mags[m - 1] < mags[m + 1] ? m - 1 : m + 1;
+        cand.splice(Math.min(m, nb), 2);
+      }
+    }
+    if (cand.length < n + 2) {
+      // Degenerate step: the error has too few sign changes (e.g. the level
+      // came out E = 0 on a symmetric reference for an even target). Swap the
+      // global-max point into the reference in place of its nearest point.
+      let gmax = 0;
+      for (let k = 1; k <= N; k++) if (Math.abs(err[k]) > Math.abs(err[gmax])) gmax = k;
+      if (ref.includes(gmax)) break;
+      let nearest = 0;
+      for (let k = 1; k < ref.length; k++) {
+        if (Math.abs(ref[k] - gmax) < Math.abs(ref[nearest] - gmax)) nearest = k;
+      }
+      ref = [...ref];
+      ref[nearest] = gmax;
+      continue;
+    }
+    ref = cand;
   }
 
+  remezCache.set(cacheKey, coeffs);
   return coeffs;
 }
 
@@ -388,12 +482,11 @@ export function getChebyshevInterpolations(): ChebyshevInterpolation[] {
 // ── Best approximation analyses ────────────────────────────
 
 /**
- * Build L² and Chebyshev (near-minimax) best approximation data.
+ * Build L² and uniform (minimax) best approximation data.
  *
  * L² best: orthogonal projection onto Legendre polynomials.
- * Uniform best: Chebyshev interpolation at Chebyshev nodes, which
- * is within O(log n) of the true minimax polynomial and produces
- * visibly different curves from the L² projection.
+ * Uniform best: the minimax polynomial, computed by the Remez exchange
+ * algorithm, so its error equioscillates at n + 2 or more points.
  */
 export function getBestApproximations(): BestApproximation[] {
   const presets: { name: string; f: (x: number) => number }[] = [
@@ -406,7 +499,7 @@ export function getBestApproximations(): BestApproximation[] {
     l2BestCoeffs: (n: number) => getCachedCoefficients(f, n),
     l2BestEval: (n: number, x: number) => evaluateL2Best(f, n, x),
     uniformBestEval: (n: number, x: number) => {
-      const coeffs = chebyshevCoefficients(f, n);
+      const coeffs = remezCoefficients(name, f, n);
       return evaluateChebyshevExpansion(coeffs, x);
     },
     l2Error: (n: number) => {
@@ -420,7 +513,7 @@ export function getBestApproximations(): BestApproximation[] {
       return Math.sqrt(integral);
     },
     uniformError: (n: number) => {
-      const coeffs = chebyshevCoefficients(f, n);
+      const coeffs = remezCoefficients(name, f, n);
       return computeMaxError(
         f,
         (x) => evaluateChebyshevExpansion(coeffs, x),
