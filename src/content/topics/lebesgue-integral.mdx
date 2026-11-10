@@ -574,7 +574,7 @@ In machine learning, $f(x, \theta) = L(\theta, x)$ is the per-sample loss as a f
 </TheoremBlock>
 
 <TheoremBlock type="remark" number={6} title="The domination hypothesis is essential — do not skip it">
-The spike sequence $f_n = n \cdot \mathbf{1}_{[0, 1/n]}$ from Example 1 is the canonical witness that the domination hypothesis cannot be dropped. Any candidate dominator $g$ would have to satisfy $g \geq n$ on $[0, 1/n]$ for every $n$, so $g(x) \geq 1/x$ near $x = 0$, which is not integrable on $(0, 1]$. There is no integrable dominator. DCT therefore does not apply, and indeed the conclusion fails: $\int f_n = 1$ for every $n$, but $\int \lim f_n = 0$. Whenever you write down an SGD-style identity that swaps a limit and an integral, the cost of skipping the domination check is exactly this kind of failure — silent and wrong, with no warning from the theorem.
+The spike sequence $f_n = n \cdot \mathbf{1}_{[0, 1/n]}$ from Example 1 is the canonical witness that the domination hypothesis cannot be dropped. Any candidate dominator $g$ would have to satisfy $g \geq n$ on $[0, 1/n]$ for every $n$, so $g(x) \geq \lfloor 1/x \rfloor > 1/x - 1$ on $(0, 1]$, which is not integrable on $(0, 1]$. There is no integrable dominator. DCT therefore does not apply, and indeed the conclusion fails: $\int f_n = 1$ for every $n$, but $\int \lim f_n = 0$. Whenever you write down an SGD-style identity that swaps a limit and an integral, the cost of skipping the domination check is exactly this kind of failure — silent and wrong, with no warning from the theorem.
 </TheoremBlock>
 
 ![Three-panel dominated convergence: f_n with dominator envelope, shaded areas, and integral convergence plot](/images/topics/lebesgue-integral/dominated-convergence.png)
