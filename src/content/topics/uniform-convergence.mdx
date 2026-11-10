@@ -356,13 +356,13 @@ A subset $\mathcal{F} \subseteq C([a,b])$ is **relatively compact** (every seque
 
 **Step 1 (Diagonal extraction on the rationals).** Let $\{r_1, r_2, \ldots\}$ be an enumeration of the rationals in $[a,b]$. By pointwise boundedness, $(f_n(r_1))$ is a bounded sequence in $\mathbb{R}$, so by the Bolzano-Weierstrass theorem ([Sequences, Limits & Convergence](/topics/sequences-limits), Theorem 4), we can extract a subsequence that converges at $r_1$. From that subsequence, extract a further subsequence converging at $r_2$. Continue. The **diagonal subsequence** — the $k$-th term of the $k$-th subsequence — converges at *every* rational $r_j$.
 
-**Step 2 (Extend from rationals to all of $[a,b]$).** By equicontinuity, for any $\varepsilon > 0$, choose $\delta$ from the definition. For any $x \in [a,b]$, find a rational $r$ with $|x - r| < \delta$. Then for indices $n_k, n_j$ in our diagonal subsequence:
+**Step 2 (Extend from rationals to all of $[a,b]$).** By equicontinuity, for any $\varepsilon > 0$, choose $\delta$ from the definition (with $\varepsilon/3$ in place of $\varepsilon$). Because $[a,b]$ is bounded, finitely many rationals $r_{i_1}, \ldots, r_{i_m}$ have $\delta$-neighborhoods that cover $[a,b]$. The diagonal subsequence converges at each of these finitely many points, so there is a single $K$ with $|f_{n_k}(r_{i_\ell}) - f_{n_j}(r_{i_\ell})| < \varepsilon/3$ for all $k, j \geq K$ and every $\ell = 1, \ldots, m$. For any $x \in [a,b]$, pick one of these rationals $r$ with $|x - r| < \delta$. Then for $k, j \geq K$:
 
 $$|f_{n_k}(x) - f_{n_j}(x)| \leq |f_{n_k}(x) - f_{n_k}(r)| + |f_{n_k}(r) - f_{n_j}(r)| + |f_{n_j}(r) - f_{n_j}(x)| < \frac{\varepsilon}{3} + \frac{\varepsilon}{3} + \frac{\varepsilon}{3} = \varepsilon$$
 
-for $k, j$ sufficiently large. The first and third terms use equicontinuity ($\delta$ works for *all* $f$); the middle term uses convergence at $r$.
+The first and third terms use equicontinuity ($\delta$ works for *all* $f$); the middle term uses convergence at the finitely many chosen rationals.
 
-**Step 3 (Convergence is uniform).** The same $\delta$ from equicontinuity works at *every* $x$, so the bound above is independent of $x$. This gives $\|f_{n_k} - f_{n_j}\|_\infty < \varepsilon$, so the diagonal subsequence is uniformly Cauchy and hence uniformly convergent.
+**Step 3 (Convergence is uniform).** Both $\delta$ and $K$ were chosen before $x$ — $\delta$ by equicontinuity, $K$ as the largest of finitely many thresholds — so the bound above holds at every $x$ at once. This gives $\|f_{n_k} - f_{n_j}\|_\infty < \varepsilon$, so the diagonal subsequence is uniformly Cauchy and hence uniformly convergent.
 
 **(⟹, sketch.)** If $\mathcal{F}$ is relatively compact, a finite $\varepsilon$-net argument shows equicontinuity: cover $\mathcal{F}$ with finitely many $\varepsilon/3$-balls, use the uniform continuity of each center function, and take the minimum $\delta$. Pointwise boundedness follows similarly. $\blacksquare$
 </TheoremBlock>
