@@ -184,7 +184,7 @@ We prove statement (1); statement (2) follows by a time-reversal argument.
 
 Set $\mathbf{z} = \mathbf{y} - \mathbf{y}^*$. Taylor expansion gives:
 $$\dot{\mathbf{z}} = \mathbf{f}(\mathbf{y}^* + \mathbf{z}) = \underbrace{\mathbf{f}(\mathbf{y}^*)}_{= \mathbf{0}} + J\mathbf{z} + \mathbf{r}(\mathbf{z})$$
-where the remainder $\mathbf{r}(\mathbf{z})$ satisfies $\|\mathbf{r}(\mathbf{z})\| \leq C\|\mathbf{z}\|^2$ for $\|\mathbf{z}\|$ sufficiently small (since $\mathbf{f}$ is $C^1$).
+where, if $\mathbf{f}$ is $C^2$ (or merely has a locally Lipschitz Jacobian), the remainder satisfies $\|\mathbf{r}(\mathbf{z})\| \leq C\|\mathbf{z}\|^2$ for $\|\mathbf{z}\|$ sufficiently small. We give the proof under this assumption. Continuous differentiability alone gives only $\|\mathbf{r}(\mathbf{z})\| = o(\|\mathbf{z}\|)$; the same argument then goes through with $\|\mathbf{r}(\mathbf{z})\| \leq \eta\|\mathbf{z}\|$ on a small ball, where $\eta$ is chosen so that $2M\eta \leq \alpha$ (with $M$, $\alpha$ from Step 1).
 
 **Step 1: The linear part decays exponentially.** Since all eigenvalues of $J$ have $\operatorname{Re}(\lambda_i) < 0$, there exist constants $M > 0$ and $\alpha > 0$ such that $\|e^{Jt}\| \leq Me^{-\alpha t}$ for all $t \geq 0$. (This uses the Jordan normal form and the fact that $\alpha$ can be taken as any number smaller than $\min_i |\operatorname{Re}(\lambda_i)|$.)
 
@@ -194,12 +194,14 @@ $$\mathbf{z}(t) = e^{Jt}\mathbf{z}(0) + \int_0^t e^{J(t-s)}\mathbf{r}(\mathbf{z}
 **Step 3: Gronwall estimate.** Let $u(t) = \|\mathbf{z}(t)\|$. Then:
 $$u(t) \leq Me^{-\alpha t}\,u(0) + \int_0^t Me^{-\alpha(t-s)} C\,u(s)^2\,ds$$
 
-For $u(0)$ sufficiently small (say $u(0) \leq \varepsilon$ with $\varepsilon < \alpha/(2MC)$), a continuation argument shows that $u(t) \leq 2M\varepsilon\, e^{-\alpha t/2}$ for all $t \geq 0$.
+For $u(0)$ sufficiently small (say $u(0) \leq \varepsilon$ with $\varepsilon \leq \alpha/(4M^2C)$, and $\varepsilon$ small enough that the remainder bound holds for $\|\mathbf{z}\| \leq 2M\varepsilon$), a continuation argument shows that $u(t) \leq 2M\varepsilon\, e^{-\alpha t/2}$ for all $t \geq 0$.
 
 Specifically: suppose $u(t) \leq 2M\varepsilon$ on $[0, T]$. Then on this interval:
 $$u(t) \leq Me^{-\alpha t}\varepsilon + \int_0^t Me^{-\alpha(t-s)} C \cdot (2M\varepsilon) \cdot u(s)\,ds$$
 
-By Gronwall's inequality, if $2MC\varepsilon < \alpha$, the integral term does not overcome the exponential decay of the first term. The bound $u(t) \leq 2M\varepsilon\,e^{-\alpha t/2}$ holds on $[0, T]$, and since the bound does not saturate, it extends beyond $T$ — by continuity, the bound holds for all $t \geq 0$.
+Multiply by $e^{\alpha t}$ and set $v(t) = e^{\alpha t}u(t)$: then $v(t) \leq M\varepsilon + \int_0^t 2M^2C\varepsilon\, v(s)\,ds$. By Gronwall's inequality, $v(t) \leq M\varepsilon\, e^{2M^2C\varepsilon t}$, that is,
+$$u(t) \leq M\varepsilon\, e^{-(\alpha - 2M^2C\varepsilon)t}.$$
+If $4M^2C\varepsilon \leq \alpha$, the exponent is at most $-\alpha t/2$, so $u(t) \leq M\varepsilon\,e^{-\alpha t/2} \leq 2M\varepsilon\,e^{-\alpha t/2}$ on $[0, T]$. (The factor is $M^2$, not $M$: since $M \geq \|e^{J \cdot 0}\| = 1$, the weaker condition $2MC\varepsilon < \alpha$ would not even make the exponent negative.) The bound stays strictly below $2M\varepsilon$, so it does not saturate and extends beyond $T$ — by continuity, the bound holds for all $t \geq 0$.
 
 **Conclusion:** $\|\mathbf{z}(t)\| \to 0$ exponentially, so $\mathbf{y}^*$ is asymptotically stable. $\blacksquare$
 </TheoremBlock>
