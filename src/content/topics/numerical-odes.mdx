@@ -179,9 +179,9 @@ The exponential factor $e^{L(T - t_0)}$ is the punchline. For long integration i
 <TheoremBlock type="example" number={1} title="Euler on $y' = y$ — error grows exponentially">
 Take $y' = y$, $y(0) = 1$, with exact solution $y(t) = e^t$. Here $f(t, y) = y$, so $L = 1$ and $y'' = y$, giving $M = e^T$ on $[0, T]$. The Euler iteration is $y_{n+1} = y_n + h y_n = (1+h) y_n$, so $y_n = (1+h)^n$.
 
-At $T = 1$ with $h = 0.1$: $y_{10} = (1.1)^{10} \approx 2.594$, while the true value is $e \approx 2.718$. The error is $\approx 0.124$, which matches the bound $|e_n| \leq (Mh/2L)(e^L - 1) = (e \cdot 0.1 / 2)(e - 1) \approx 0.234$ (the bound is loose by a factor of 2 — Grönwall is conservative).
+At $T = 1$ with $h = 0.1$: $y_{10} = (1.1)^{10} \approx 2.594$, while the true value is $e \approx 2.718$. The error is $\approx 0.125$, which matches the bound $|e_n| \leq (Mh/2L)(e^L - 1) = (e \cdot 0.1 / 2)(e - 1) \approx 0.234$ (the bound is loose by a factor of 2 — Grönwall is conservative).
 
-Halving the step to $h = 0.05$: $y_{20} = (1.05)^{20} \approx 2.653$, error $\approx 0.065$ — exactly half. This is the linear-in-$h$ scaling that defines a first-order method. To get an error of $10^{-6}$, you'd need $h \approx 10^{-6}$ — *one million steps* on the unit interval. Euler's method is honest about its accuracy, but it makes you pay for it.
+Halving the step to $h = 0.05$: $y_{20} = (1.05)^{20} \approx 2.653$, error $\approx 0.065$ — about half (the ratio is $0.52$). This is the linear-in-$h$ scaling that defines a first-order method. To get an error of $10^{-6}$, you'd need $h \approx 10^{-6}$ — *one million steps* on the unit interval. Euler's method is honest about its accuracy, but it makes you pay for it.
 </TheoremBlock>
 
 <TheoremBlock type="example" number={2} title="Euler on $y' = -10y$ — accuracy vs. stability">
