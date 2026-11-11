@@ -193,7 +193,7 @@ Before we prove Hölder and Minkowski, we need one preparatory inequality that i
 
 <TheoremBlock type="theorem" number={1} title="Jensen's inequality">
 
-Let $(\Omega, \mathcal{F}, \mu)$ be a probability space ($\mu(\Omega) = 1$), let $f \in L^1(\mu)$, and let $\phi: \mathbb{R} \to \mathbb{R}$ be convex. Then
+Let $(\Omega, \mathcal{F}, \mu)$ be a probability space ($\mu(\Omega) = 1$), let $I \subseteq \mathbb{R}$ be an interval, let $f \in L^1(\mu)$ take its values in $I$ ($\mu$-a.e.), and let $\phi: I \to \mathbb{R}$ be convex. Then $\int f \, d\mu \in I$, the integral of $\phi \circ f$ is well defined (possibly $+\infty$), and
 
 $$\phi\!\left( \int f \, d\mu \right) \;\leq\; \int \phi \circ f \, d\mu.$$
 
@@ -201,21 +201,21 @@ $$\phi\!\left( \int f \, d\mu \right) \;\leq\; \int \phi \circ f \, d\mu.$$
 
 <TheoremBlock type="proof">
 
-The proof uses one fact about convex functions: at every point, a convex function has a *supporting line*. That is, for every $a \in \mathbb{R}$ there exists a slope $\lambda \in \mathbb{R}$ (the right or left derivative of $\phi$ at $a$, or any value in between if $\phi$ is not differentiable at $a$) such that
+The proof uses one fact about convex functions: at every interior point of $I$, a convex function has a *supporting line*. That is, for every $a$ in the interior of $I$ there exists a slope $\lambda \in \mathbb{R}$ (the right or left derivative of $\phi$ at $a$, or any value in between if $\phi$ is not differentiable at $a$) such that
 
-$$\phi(t) \;\geq\; \phi(a) + \lambda (t - a) \quad \text{for all } t \in \mathbb{R}.$$
+$$\phi(t) \;\geq\; \phi(a) + \lambda (t - a) \quad \text{for all } t \in I.$$
 
-This is the definition of $\phi$ being convex, restated geometrically: the graph of $\phi$ lies above every one of its tangent lines.
+This is a characterization of convexity (on an open interval it is equivalent to the chord definition), restated geometrically: the graph of $\phi$ lies above each of its supporting lines. A supporting line touches the graph at $a$ but need not be tangent: at a kink such as $|t|$ at $0$, every slope in $[-1, 1]$ supports.
 
-**Step 1: Choose $a$.** Set $a = \int f \, d\mu$ — the integral of $f$ against $\mu$. Since $\mu$ is a probability measure and $f \in L^1$, this integral is a finite real number. Choose any supporting line of $\phi$ at $a$ with slope $\lambda$.
+**Step 1: Choose $a$.** Set $a = \int f \, d\mu$ — the integral of $f$ against $\mu$. Since $\mu$ is a probability measure and $f \in L^1$, this integral is a finite real number, and it lies in $I$ because $f$ does. If $c$ is the left endpoint of $I$, then $f \geq c$ a.e. gives $a \geq c$; and $a = c$ would mean $\int (f - c) \, d\mu = 0$ with $f - c \geq 0$, which forces $f = c$ a.e. So $a = c$ can happen only when $c \in I$ and $f = c$ a.e. The right endpoint is symmetric. In that degenerate case both sides of Jensen equal $\phi(a)$ and we are done. Otherwise $a$ is an interior point of $I$; choose any supporting line of $\phi$ at $a$ with slope $\lambda$.
 
-**Step 2: Apply the supporting-line inequality pointwise.** For each $x \in \Omega$ we have $f(x) \in \mathbb{R}$, so the supporting-line inequality with $t = f(x)$ gives
+**Step 2: Apply the supporting-line inequality pointwise.** For $\mu$-a.e. $x \in \Omega$ we have $f(x) \in I$, so the supporting-line inequality with $t = f(x)$ gives
 
 $$\phi(f(x)) \;\geq\; \phi(a) + \lambda (f(x) - a).$$
 
-This holds at every point $x$, with the same constants $\phi(a)$ and $\lambda$.
+This holds at almost every point $x$, with the same constants $\phi(a)$ and $\lambda$.
 
-**Step 3: Integrate against $\mu$.** Both sides of the pointwise inequality are measurable functions of $x$, and the right-hand side is integrable because it is an affine function of $f$ and $f \in L^1$. Integrating preserves the inequality:
+**Step 3: Integrate against $\mu$.** Both sides of the pointwise inequality are measurable functions of $x$, and the right-hand side is integrable because it is an affine function of $f$ and $f \in L^1$. That integrable lower bound controls the negative part of $\phi \circ f$, so $\int \phi \circ f \, d\mu$ is well defined (possibly $+\infty$). Integrating preserves the inequality:
 
 $$\int \phi(f(x)) \, d\mu(x) \;\geq\; \int \bigl[ \phi(a) + \lambda (f(x) - a) \bigr] \, d\mu(x).$$
 
@@ -227,7 +227,7 @@ We used $\mu(\Omega) = 1$ (probability measure) for the first term and $\int (f 
 
 </TheoremBlock>
 
-The proof is short but geometrically sharp: convexity says the graph of $\phi$ lies above its tangent line, and integration is linear, so anything you can say about a tangent line you can say about its integral. Jensen's inequality is, in essence, the statement that integration commutes with affine transformations and convex functions only "lose" information in the right direction.
+The proof is short but geometrically sharp: convexity says the graph of $\phi$ lies above its supporting line, and integration is linear, so anything you can say about a supporting line you can say about its integral. Jensen's inequality is, in essence, the statement that integration commutes with affine transformations and convex functions only "lose" information in the right direction.
 
 <TheoremBlock type="example" number={3} title="KL divergence is non-negative — the first Jensen application">
 
@@ -235,15 +235,15 @@ Let $P$ and $Q$ be probability measures on $\Omega$ with $P \ll Q$ (i.e., $P$ is
 
 $$D_{\mathrm{KL}}(P \,\|\, Q) \;=\; \int \log g \, dP \;=\; -\int \log(1/g) \, dP.$$
 
-The function $\phi(t) = -\log t$ is convex on $(0, \infty)$. Apply Jensen's inequality to $f = 1/g$ against the probability measure $P$:
+The function $\phi(t) = -\log t$ is convex on $I = (0, \infty)$. Apply Jensen's inequality to $f = 1/g$ against the probability measure $P$; $f$ takes values in $I$ $P$-a.e. because $P(g = 0) = \int_{\{g = 0\}} g \, dQ = 0$:
 
 $$-\log\!\left( \int (1/g) \, dP \right) \;\leq\; \int -\log(1/g) \, dP \;=\; D_{\mathrm{KL}}(P \,\|\, Q).$$
 
-Now compute the integral on the left. Since $g = dP/dQ$, we have $\int (1/g) \, dP = \int (1/g) \cdot g \, dQ = \int 1 \, dQ = 1$. So $-\log(1) = 0$, and we get
+Now compute the integral on the left. Since $g = dP/dQ$ and $P$ puts no mass on $\{g = 0\}$, we have $\int (1/g) \, dP = \int_{\{g > 0\}} (1/g) \cdot g \, dQ = Q(g > 0) \leq 1$. (It equals $1$ only when $Q(g = 0) = 0$; in general $Q$ can charge sets that $P$ misses.) Since $-\log$ is decreasing, $-\log Q(g > 0) \geq -\log 1 = 0$, and we get
 
 $$0 \;\leq\; D_{\mathrm{KL}}(P \,\|\, Q),$$
 
-with equality iff $1/g$ is constant $P$-a.e. (the equality case of Jensen for strictly convex $\phi$), which means $g$ is constant, which means $g = 1$ a.e., which means $P = Q$. This is **Gibbs' inequality**, the foundational non-negativity result of information theory.
+with equality iff both steps are equalities: $Q(g > 0) = 1$, and $1/g$ is constant $P$-a.e. (the equality case of Jensen for strictly convex $\phi$). Together these make $g$ constant $Q$-a.e., and $\int g \, dQ = 1$ makes the constant $1$, which means $P = Q$. This is **Gibbs' inequality**, the foundational non-negativity result of information theory.
 
 </TheoremBlock>
 
