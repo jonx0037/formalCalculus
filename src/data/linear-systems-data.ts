@@ -171,7 +171,7 @@ export function getForcedSystemPresets(): ForcedSystemPreset[] {
       gLabel: 'g(t) = (1, 0.5)^T \\cdot \\mathbf{1}_{t \\geq 1}',
       domain: { t: [0, 8] },
       description:
-        'Stable node (λ = −2, −1) with a step forcing that turns on at t = 1. The system transitions from the origin to a new steady state.',
+        'Stable node (λ = −2, −1) with a step forcing that turns on at t = 1. From the default y₀ = (1, 0) the state decays toward the origin until the step turns on, then relaxes to the new steady state y* = −A⁻¹g = (1/2, 1/2).',
     },
     {
       name: 'spiral-impulse',
@@ -186,7 +186,7 @@ export function getForcedSystemPresets(): ForcedSystemPreset[] {
       gLabel: 'g(t) \\approx (\\delta(t-2), 0)^T',
       domain: { t: [0, 20] },
       description:
-        'Stable spiral (α = −0.3, β ≈ 1) kicked by an impulse at t = 2. The response is a decaying oscillation — the impulse response of the system.',
+        'Stable spiral (α = −0.3, β = 1: eigenvalues exactly −0.3 ± i) kicked by an impulse at t = 2. The response is a decaying oscillation — the impulse response of the system.',
     },
   ];
 }
