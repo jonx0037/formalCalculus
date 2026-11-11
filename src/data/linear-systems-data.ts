@@ -68,7 +68,7 @@ export function getSystemPresets(): SystemPreset[] {
       trace: -4,
       determinant: 3,
       description:
-        'Both eigenvalues negative (λ₁ = −1, λ₂ = −3). All trajectories converge to the origin along the slow eigendirection.',
+        'Both eigenvalues negative (λ₁ = −1, λ₂ = −3). All trajectories converge to the origin; those with c₁ ≠ 0 become tangent to the slow eigendirection v₁ as t → ∞, while those with c₁ = 0 stay on the v₂ line.',
       tags: ['stable', 'real-eigenvalues', 'node'],
     },
     {

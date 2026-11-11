@@ -246,7 +246,7 @@ Consider $A = \begin{pmatrix} -1 & 2 \\ 0 & -3 \end{pmatrix}$. The eigenvalues a
 
 $$\mathbf{y}(t) = c_1 e^{-t}\begin{pmatrix} 1 \\ 0 \end{pmatrix} + c_2 e^{-3t}\begin{pmatrix} 1 \\ -1 \end{pmatrix}.$$
 
-Both eigenvalues are negative, so all solutions decay to the origin — a *stable node*. The fast component ($e^{-3t}$) dies out first, and trajectories ultimately align with the slow eigendirection $\mathbf{v}_1$.
+Both eigenvalues are negative, so all solutions decay to the origin — a *stable node*. The fast component ($e^{-3t}$) dies out first, so every trajectory with $c_1 \neq 0$ becomes tangent to the slow eigendirection $\mathbf{v}_1$ as $t \to \infty$; those with $c_1 = 0$ stay on the $\mathbf{v}_2$ line.
 </TheoremBlock>
 
 <TheoremBlock type="example" number={5} title="Complex eigenvalues">
