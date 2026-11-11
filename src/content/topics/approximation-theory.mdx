@@ -340,9 +340,9 @@ achieved uniquely by the normalized Chebyshev polynomial.
 <TheoremBlock type="proposition" number={1} title="The Equioscillation Theorem (Chebyshev's Theorem)">
 For $f \in C[a,b]$, a polynomial $p^* \in \mathcal{P}_n$ is the best uniform approximation if and only if the error $f - p^*$ **equioscillates** at least $n + 2$ times: there exist $a \leq x_0 < x_1 < \cdots < x_{n+1} \leq b$ such that
 
-$$f(x_j) - p^*(x_j) = (-1)^j \|f - p^*\|_\infty$$
+$$f(x_j) - p^*(x_j) = \sigma\,(-1)^j \|f - p^*\|_\infty$$
 
-(alternating sign, full magnitude). This characterizes the best approximant uniquely.
+for a fixed sign $\sigma \in \{\pm 1\}$ (alternating sign, full magnitude). The global sign $\sigma$ is needed: for $f(x) = x$ on $[-1, 1]$ with $n = 0$, the best constant is $0$ and the error runs $-1, +1$, so it starts negative. This characterizes the best approximant uniquely.
 </TheoremBlock>
 
 <TheoremBlock type="example" number={7} title="The Runge phenomenon">
