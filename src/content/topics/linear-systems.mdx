@@ -464,7 +464,7 @@ The slowest mode ($\lambda_{\min}$) dominates: convergence is governed by $e^{-\
 <TheoremBlock type="example" number={10} title="Quadratic loss and eigen-decomposition of convergence">
 Consider $L(\theta) = \frac{1}{2}\theta^T H \theta$ with $H = \text{diag}(1, 10, 100)$. The gradient flow $\dot{\theta} = -H\theta$ has solution $\theta_i(t) = \theta_{i,0} e^{-\lambda_i t}$.
 
-After time $t$, the residual error in each direction is $e^{-\lambda_i t}$: direction 3 converges 100× faster than direction 1. The loss $L(t) = \frac{1}{2}\sum \theta_{i,0}^2 e^{-2\lambda_i t}$ shows multi-scale decay — a fast initial drop (the large-eigenvalue components) followed by a long tail (the small-eigenvalue component).
+After time $t$, the residual error in each direction is $e^{-\lambda_i t}$: direction 3 converges 100× faster than direction 1. The loss $L(t) = \frac{1}{2}\sum \lambda_i \theta_{i,0}^2 e^{-2\lambda_i t}$ shows multi-scale decay — a fast initial drop (the large-eigenvalue components) followed by a long tail (the small-eigenvalue component).
 </TheoremBlock>
 
 <TrainingDynamicsExplorer client:visible />

@@ -218,7 +218,7 @@ If each $f_n: D \to \mathbb{R}$ is continuous at $a \in D$ and $f_n \to f$ unifo
 <TheoremBlock type="proof">
 Fix $\varepsilon > 0$. We need $\delta > 0$ such that $|x - a| < \delta \implies |f(x) - f(a)| < \varepsilon$. Apply the triangle inequality:
 
-$$|f(x) - f(a)| \leq |f(x) - f_n(x)| + |f_n(x) - f_n(a)| + |f_n(a) - f(a)|.$$
+$$|f(x) - f(a)| \leq |f(x) - f_N(x)| + |f_N(x) - f_N(a)| + |f_N(a) - f(a)|.$$
 
 **Step 1 (Uniform convergence).** Choose $N$ such that $\|f_N - f\|_\infty < \varepsilon/3$. Then $|f(x) - f_N(x)| < \varepsilon/3$ for **all** $x$, and $|f_N(a) - f(a)| < \varepsilon/3$.
 

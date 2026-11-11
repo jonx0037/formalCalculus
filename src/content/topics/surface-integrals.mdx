@@ -539,7 +539,7 @@ So by Green's theorem:
 
 $$\oint_C \mathbf{F} \cdot d\mathbf{r} = \iint_D (\nabla \times \mathbf{F}) \cdot (\mathbf{r}_x \times \mathbf{r}_y)\,dA = \iint_S (\nabla \times \mathbf{F}) \cdot d\mathbf{S}.$$
 
-For a general oriented surface $S$ that is not a single graph, we decompose $S$ into graph patches $S_1, \ldots, S_k$ using a partition of unity. The interior boundary contributions from adjacent patches cancel (their normals point in opposite directions along the shared edge), leaving only the exterior boundary $C = \partial S$. $\square$
+For a general oriented surface $S$ that is not a single graph, we decompose $S$ into graph patches $S_1, \ldots, S_k$ using a partition of unity. The interior boundary contributions from adjacent patches cancel (each shared edge is traversed in opposite directions by the two adjacent patches), leaving only the exterior boundary $C = \partial S$. $\square$
 </TheoremBlock>
 
 <TheoremBlock type="example" number={10} title="Verifying Stokes' on a Hemisphere">
