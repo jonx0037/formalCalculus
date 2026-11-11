@@ -308,7 +308,7 @@ $$\int_0^1 x \sin(xy) \, dy = \left[-\cos(xy)\right]_{y=0}^{y=1} = -\cos(x) + 1 
 Outer integral:
 $$\int_0^\pi (1 - \cos x) \, dx = \left[x - \sin x\right]_0^\pi = \pi - 0 = \pi.$$
 
-The other order ($dx$-first) requires integration by parts twice — both orders give $\pi$, but $dy$-first is dramatically simpler.
+The other order ($dx$-first) needs one integration by parts: the inner integral is $\int_0^\pi x \sin(xy) \, dx = -\frac{\pi \cos(\pi y)}{y} + \frac{\sin(\pi y)}{y^2}$, which you then have to recognize as the derivative of $-\sin(\pi y)/y$ to finish. Both orders give $\pi$, but $dy$-first is dramatically simpler.
 </TheoremBlock>
 
 <FubiniOrderExplorer client:visible />
