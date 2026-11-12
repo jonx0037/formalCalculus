@@ -64,9 +64,11 @@ export default function FubiniProductIntegralExplorer() {
     return cells;
   }, [scenario]);
 
-  // For the slice plot: x ↦ ∫₀¹ f(x, y) dy, sampled at 60 x-values via the
-  // midpoint Riemann rule on a 50-point y-grid (sample at (j+0.5)/N_Y, sum,
-  // multiply by step size). Cheap and good enough for the visual story.
+  // For the slice plot: x ↦ ∫₀¹ f(x, y) dy, sampled at 60 x-values. When the
+  // scenario supplies a closed form (the pathological case, where a fixed grid
+  // misses the ridge along y = x near the origin), plot it exactly. Otherwise
+  // use the midpoint Riemann rule on a 50-point y-grid (sample at (j+0.5)/N_Y,
+  // sum, multiply by step size), which is accurate for the smooth scenarios.
   const sliceData = useMemo(() => {
     const N_X = 60;
     const N_Y = 50;
@@ -74,6 +76,10 @@ export default function FubiniProductIntegralExplorer() {
     const points: Array<[number, number]> = [];
     for (let i = 0; i < N_X; i++) {
       const x = (i + 0.5) / N_X;
+      if (scenario.sliceInY) {
+        points.push([x, scenario.sliceInY(x)]);
+        continue;
+      }
       let acc = 0;
       for (let j = 0; j < N_Y; j++) {
         const y = (j + 0.5) / N_Y;
