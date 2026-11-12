@@ -85,6 +85,15 @@ export interface FubiniScenario {
   productIntegral: number | null;
   /** Whether ∫ |f| d(λ × λ) < ∞ (the integrability hypothesis of Fubini). */
   integrable: boolean;
+  /**
+   * Optional closed form for the inner slice x ↦ ∫₀¹ f(x, y) dy. When present,
+   * the explorer plots it instead of a midpoint-rule estimate. Supply it when
+   * the integrand is singular enough that a fixed-grid rule is wrong (e.g. the
+   * pathological scenario, whose mass concentrates along y = x near the origin).
+   */
+  sliceInY?: (x: number) => number;
+  /** Optional closed form for the other slice y ↦ ∫₀¹ f(x, y) dx. */
+  sliceInX?: (y: number) => number;
 }
 
 // ── Preset functions for the integral builder ──────────────
@@ -496,5 +505,11 @@ export function getFubiniData(
     iteratedYX: -Math.PI / 4,
     productIntegral: null,
     integrable: false,
+    // f = ∂/∂y [y / (x² + y²)], so ∫₀¹ f(x, y) dy = 1 / (1 + x²) for x > 0.
+    // A 50-point midpoint rule misses the sharp ridge along y = x near the
+    // origin (it returns ≈ −61.5 at x = 1/120, where the true value is 0.99993).
+    sliceInY: (x) => 1 / (1 + x * x),
+    // f = ∂/∂x [−x / (x² + y²)], so ∫₀¹ f(x, y) dx = −1 / (1 + y²) for y > 0.
+    sliceInX: (y) => -1 / (1 + y * y),
   };
 }

@@ -668,7 +668,7 @@ The full details for Steps 2 and 3 occupy several pages and use a careful applic
 The integrability hypothesis in Fubini is essential. Without it, the iterated integrals can disagree even when both exist as improper limits.
 
 <TheoremBlock type="example" number={11} title="Iterated integrals can disagree without absolute integrability">
-Let $f(x, y) = (x^2 - y^2) / (x^2 + y^2)^2$ on $(0, 1] \times (0, 1]$ (extend by $0$ at the origin). A direct computation (or a clever trick: $f = \partial / \partial x [-y / (x^2 + y^2)]$) gives
+Let $f(x, y) = (x^2 - y^2) / (x^2 + y^2)^2$ on $(0, 1] \times (0, 1]$ (extend by $0$ at the origin). A direct computation (or a clever trick: $f = \partial / \partial y [y / (x^2 + y^2)]$, and equally $f = \partial / \partial x [-x / (x^2 + y^2)]$) gives
 $$\int_0^1 \int_0^1 \frac{x^2 - y^2}{(x^2 + y^2)^2} \, dy \, dx \;=\; \int_0^1 \left[ \frac{y}{x^2 + y^2} \right]_{y=0}^{y=1} dx \;=\; \int_0^1 \frac{1}{1 + x^2} \, dx \;=\; \frac{\pi}{4},$$
 $$\int_0^1 \int_0^1 \frac{x^2 - y^2}{(x^2 + y^2)^2} \, dx \, dy \;=\; -\frac{\pi}{4} \quad \text{(by the same computation with $x \leftrightarrow y$, picking up a sign).}$$
 

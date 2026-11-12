@@ -6,6 +6,8 @@ import { functionColors, convergenceColors } from './shared/colorScales';
 
 const margin = { top: 20, right: 30, bottom: 40, left: 50 };
 const MAX_STEPS = 50;
+const ETA_MAX = 1.2; // past 1.0 so the diverging branch (η > 1) is reachable
+const DIVERGENCE_GUARD = 100;
 
 function computeGDPath(x0: number, eta: number, maxSteps: number): number[] {
   const path = [x0];
@@ -13,7 +15,7 @@ function computeGDPath(x0: number, eta: number, maxSteps: number): number[] {
   for (let i = 0; i < maxSteps; i++) {
     x = x - eta * 2 * x; // f(x) = x^2, f'(x) = 2x
     path.push(x);
-    if (Math.abs(x) > 100) break; // divergence guard
+    if (Math.abs(x) > DIVERGENCE_GUARD) break; // divergence guard
   }
   return path;
 }
@@ -110,8 +112,11 @@ export default function GradientDescentSequenceExplorer() {
         .style('stroke', 'var(--color-border-strong)')
         .style('stroke-width', 2);
 
-      // GD path — arrows and points
-      const clampedPath = visiblePath.filter((x) => Math.abs(x) <= xDomain);
+      // GD path — arrows and points. The plot window is fixed at |x| ≤ xDomain;
+      // once |xₜ| grows (η > 1) it never comes back, so the in-range iterates
+      // are a prefix of the path and the rest are flagged at the plot edge.
+      const escapeIdx = visiblePath.findIndex((x) => Math.abs(x) > xDomain);
+      const clampedPath = escapeIdx === -1 ? visiblePath : visiblePath.slice(0, escapeIdx);
 
       if (clampedPath.length > 1) {
         // Draw path on curve
@@ -141,6 +146,33 @@ export default function GradientDescentSequenceExplorer() {
         });
       }
 
+      // Off-scale marker: the first iterate that leaves the window is drawn as
+      // a dashed segment to the clamped edge, with a label instead of a point.
+      if (escapeIdx !== -1) {
+        const escaped = visiblePath[escapeIdx];
+        const edgeX = Math.sign(escaped) * xDomain;
+        const yTop = xDomain * xDomain;
+        if (clampedPath.length > 0) {
+          const prev = clampedPath[clampedPath.length - 1];
+          g.append('line')
+            .attr('x1', xScale(prev)).attr('y1', yScale(prev * prev))
+            .attr('x2', xScale(edgeX)).attr('y2', yScale(yTop))
+            .style('stroke', '#D97706')
+            .style('stroke-width', 1.5)
+            .style('stroke-dasharray', '4,3');
+        }
+        g.append('path')
+          .attr('d', d3.symbol().type(d3.symbolTriangle).size(60)())
+          .attr('transform', `translate(${xScale(edgeX)},${yScale(yTop) + 6})`)
+          .style('fill', '#D97706');
+        g.append('text')
+          .attr('x', xScale(edgeX) + (edgeX > 0 ? -8 : 8))
+          .attr('y', yScale(yTop) + 40)
+          .attr('text-anchor', edgeX > 0 ? 'end' : 'start')
+          .style('fill', '#D97706').style('font-size', '11px')
+          .text(`off-scale from step ${escapeIdx}: |xₜ| > ${xDomain}`);
+      }
+
       // Labels
       g.append('text')
         .attr('x', innerW / 2).attr('y', innerH + 35)
@@ -162,7 +194,11 @@ export default function GradientDescentSequenceExplorer() {
   const lastX = visiblePath[visiblePath.length - 1];
   const rate = Math.abs(1 - 2 * eta);
   const converges = rate < 1;
+  // r = 1 exactly at η = 1 (xₜ = (−1)ᵗ x₀); compare with a tolerance because the
+  // slider value is a float built from 0.05 steps.
+  const neutral = Math.abs(rate - 1) < 1e-9;
   const oscillates = (1 - 2 * eta) < 0; // negative factor means sign-alternating
+  const guardTripped = Math.abs(lastX) > DIVERGENCE_GUARD;
 
   return (
     <div ref={containerRef} className="w-full my-6">
@@ -174,7 +210,7 @@ export default function GradientDescentSequenceExplorer() {
           <input
             type="range"
             min={0.05}
-            max={1.0}
+            max={ETA_MAX}
             step={0.05}
             value={eta}
             onChange={(e) => {
@@ -220,12 +256,12 @@ export default function GradientDescentSequenceExplorer() {
         <span>Step: {Math.min(step, path.length - 1)}</span>
         <span>xₜ = {lastX.toFixed(4)}</span>
         <span>|xₜ| = {Math.abs(lastX).toFixed(4)}</span>
-        <span style={{ color: converges ? convergenceColors.linear : '#D97706' }}>
-          {converges
-            ? `Converges${oscillates ? ' (oscillating)' : ''} (r = ${rate.toFixed(2)})`
-            : rate === 1
-              ? 'Oscillates (does not converge)'
-              : 'Diverges!'}
+        <span style={{ color: converges && !neutral ? convergenceColors.linear : '#D97706' }}>
+          {neutral
+            ? 'Oscillates between ±x₀ (does not converge, r = 1.00)'
+            : converges
+              ? `Converges${oscillates ? ' (oscillating)' : ''} (r = ${rate.toFixed(2)})`
+              : `Diverges! (r = ${rate.toFixed(2)}${guardTripped ? `, stopped once |xₜ| > ${DIVERGENCE_GUARD}` : ''})`}
         </span>
       </div>
     </div>
