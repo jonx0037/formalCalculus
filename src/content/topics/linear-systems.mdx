@@ -50,7 +50,7 @@ connections:
   - topic: "jacobian"
     relationship: "The matrix A in y' = Ay is the Jacobian of the right-hand side — constant, so the linearization is exact. The eigendecomposition A = PDP⁻¹ is a change of basis that diagonalizes the linear map, the same operation introduced in Topic 10 for understanding how the Jacobian distorts neighborhoods."
   - topic: "power-taylor-series"
-    relationship: "The matrix exponential e^{At} = Σ (At)^k/k! is a power series in the matrix variable At. Convergence is proved using the operator norm and the ratio test, exactly as for scalar power series in Topic 18. The radius of convergence is infinite — the matrix exponential converges for all t and all A."
+    relationship: "The matrix exponential e^{At} = Σ (At)^k/k! is a power series in the matrix variable At. Convergence is proved using the operator norm and comparison with the scalar exponential series, exactly as for scalar power series in Topic 18. The radius of convergence is infinite — the matrix exponential converges for all t and all A."
   - topic: "hessian"
     relationship: "Phase portrait classification by eigenvalues of A mirrors the second-derivative test from Topic 11: the Hessian's eigenvalues classify critical points as minima, maxima, or saddle points; the system matrix's eigenvalues classify equilibria as stable nodes, unstable nodes, or saddles."
   - topic: "derivative"
@@ -166,11 +166,11 @@ where $A^0 = I$ (the identity matrix) and $A^k$ denotes the $k$-th matrix power.
 </TheoremBlock>
 
 <TheoremBlock type="theorem" number={1} title="Convergence of the Matrix Exponential">
-For any $A \in \mathbb{R}^{n \times n}$ and $t \in \mathbb{R}$, the series $\sum_{k=0}^{\infty} \frac{(At)^k}{k!}$ converges absolutely, and $\|e^{At}\| \leq e^{\|A\||t|}$.
+For any $A \in \mathbb{R}^{n \times n}$ and $t \in \mathbb{R}$, the series $\sum_{k=0}^{\infty} \frac{(At)^k}{k!}$ converges absolutely, and $\|e^{At}\| \leq e^{\|A\||t|}$ in the operator norm.
 </TheoremBlock>
 
 <TheoremBlock type="proof" title="Proof of Theorem 1">
-For any submultiplicative norm $\|\cdot\|$, we have
+For the operator norm (any submultiplicative norm with $\|I\| = 1$), we have
 
 $$\left\|\frac{(At)^k}{k!}\right\| \leq \frac{\|A\|^k |t|^k}{k!}.$$
 
@@ -211,7 +211,7 @@ If $N$ is nilpotent ($N^m = 0$ for some $m$), then $e^{Nt} = I + Nt + \frac{(Nt)
 
 <MatrixExponentialExplorer client:visible />
 
-![Partial sums of the matrix exponential converging, with entry-wise error on a log scale](/images/topics/linear-systems/matrix-exponential.png)
+![Partial sums of the matrix exponential converging, with Frobenius-norm error on a log scale](/images/topics/linear-systems/matrix-exponential.png)
 
 ## 3. Eigenvalue Methods — Diagonalizable Systems
 
