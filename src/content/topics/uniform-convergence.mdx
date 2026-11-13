@@ -31,7 +31,7 @@ formalmlConnections:
     relationship: "PAC learning is fundamentally a uniform convergence result: the empirical risk R_hat_n(h) converges uniformly to the true risk R(h) over the hypothesis class H as the sample size n grows. The VC dimension quantifies the complexity of H and controls the rate of uniform convergence — larger VC dimension means slower convergence and more data required for generalization."
   - topic: "concentration-inequalities"
     site: "formalml"
-    relationship: "Uniform convergence bounds like the Glivenko-Cantelli theorem and the Dvoretzky-Kiefer-Wolfowitz inequality are concentration inequalities applied uniformly over function classes. The DKW inequality bounds ||F_hat_n - F||_infinity — the sup-norm distance between empirical and true CDFs — at rate O(1/sqrt(n))."
+    relationship: "Uniform convergence bounds like the Glivenko-Cantelli theorem and the Dvoretzky-Kiefer-Wolfowitz inequality are concentration inequalities applied uniformly over function classes. The DKW inequality bounds ||F_hat_n - F||_infinity — the sup-norm distance between empirical and true CDFs — at rate O_P(1/sqrt(n)): with probability at least 1 - δ, the gap is at most sqrt(ln(2/δ)/(2n))."
   - topic: "measure-theoretic-probability"
     site: "formalml"
     relationship: "Modes of convergence in probability — almost sure convergence, convergence in probability, convergence in distribution — extend the pointwise/uniform distinction from deterministic function sequences to sequences of random variables. Uniform integrability, the probabilistic analog of equicontinuity, controls interchange of limits and expectations."
@@ -415,7 +415,7 @@ The oldest and most fundamental uniform convergence result in statistics: the em
 
 $$\|\hat{F}_n - F\|_\infty = \sup_{x \in \mathbb{R}} |\hat{F}_n(x) - F(x)| \to 0 \quad \text{almost surely.}$$
 
-The Dvoretzky-Kiefer-Wolfowitz (DKW) inequality gives the rate: $P\left(\|\hat{F}_n - F\|_\infty > t\right) \leq 2e^{-2nt^2}$, yielding $\|\hat{F}_n - F\|_\infty = O(1/\sqrt{n})$. The Kolmogorov-Smirnov test is built on this sup-norm. → <a href="https://formalml.com/topics/concentration-inequalities" class="formalml-badge" target="_blank" rel="noopener">formalML</a> **Concentration Inequalities**
+The Dvoretzky-Kiefer-Wolfowitz (DKW) inequality gives the rate: $P\left(\|\hat{F}_n - F\|_\infty > t\right) \leq 2e^{-2nt^2}$, so with probability at least $1 - \delta$, $\|\hat{F}_n - F\|_\infty \leq \sqrt{\ln(2/\delta)/(2n)}$ — that is, $\|\hat{F}_n - F\|_\infty = O_P(1/\sqrt{n})$ (the almost-sure rate is slower, of order $\sqrt{\log\log n / n}$). The Kolmogorov-Smirnov test is built on this sup-norm. → <a href="https://formalml.com/topics/concentration-inequalities" class="formalml-badge" target="_blank" rel="noopener">formalML</a> **Concentration Inequalities**
 
 ### VC dimension and complexity control
 
@@ -507,17 +507,22 @@ weierstrass_m_test(
 
 ```python
 def kolmogorov_smirnov(samples, cdf):
-    """Compute ||F_hat_n - F||_∞."""
+    """Compute ||F_hat_n - F||_∞.
+
+    F_hat_n jumps from (i-1)/n to i/n at the i-th order statistic x_(i),
+    so the sup is attained at a jump: check both the top of each step,
+    i/n - F(x_(i)), and its left limit, F(x_(i)) - (i-1)/n.
+    """
     n = len(samples)
-    sorted_samples = np.sort(samples)
-    ecdf = np.arange(1, n + 1) / n
-    sup_diff = np.max(np.abs(ecdf - cdf(sorted_samples)))
-    return sup_diff
+    F = cdf(np.sort(samples))
+    i = np.arange(1, n + 1)
+    return max((i / n - F).max(), (F - (i - 1) / n).max())
 
 # Standard normal: Glivenko-Cantelli in action
 from scipy.stats import norm
+rng = np.random.default_rng(42)
 for n in [100, 1000, 10000]:
-    samples = np.random.randn(n)
+    samples = rng.standard_normal(n)
     ks = kolmogorov_smirnov(samples, norm.cdf)
     dkw_bound = np.sqrt(np.log(2 / 0.05) / (2 * n))
     print(f"n={n:5d}: KS = {ks:.4f}, DKW 95% bound = {dkw_bound:.4f}")

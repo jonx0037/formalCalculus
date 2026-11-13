@@ -362,7 +362,7 @@ Since $f$ is decreasing, for all $k \geq 1$: $f(k+1) \leq \int_k^{k+1} f(x)\,dx 
 
 $$\sum_{k=2}^{n+1} f(k) \leq \int_1^{n+1} f(x)\,dx \leq \sum_{k=1}^n f(k).$$
 
-If $\int_1^\infty f(x)\,dx$ converges, the right inequality gives $S_n \leq f(1) + \int_1^\infty f(x)\,dx < \infty$, so $(S_n)$ is bounded and increasing, hence convergent by the Monotone Convergence Theorem. If $\int_1^\infty f(x)\,dx = \infty$, the left inequality gives $S_{n+1} - f(1) \geq \int_1^{n+1} f(x)\,dx \to \infty$, so the partial sums diverge.
+If $\int_1^\infty f(x)\,dx$ converges, the left inequality gives $S_{n+1} = f(1) + \sum_{k=2}^{n+1} f(k) \leq f(1) + \int_1^{n+1} f(x)\,dx \leq f(1) + \int_1^\infty f(x)\,dx < \infty$ (the last step uses $f > 0$), so $(S_n)$ is bounded and increasing, hence convergent by the Monotone Convergence Theorem. If $\int_1^\infty f(x)\,dx = \infty$, the right inequality gives $S_n \geq \int_1^{n+1} f(x)\,dx \to \infty$, so the partial sums diverge.
 </TheoremBlock>
 
 <TheoremBlock type="example" number={8} title="The integral test recovers p-series">
@@ -542,25 +542,25 @@ Edgeworth expansions give higher-order corrections to the CLT — asymptotic ser
 
 Series convergence appears in ML through four distinct paths.
 
-### 11.1 Learning Rate Schedules & the Robbins-Monro Conditions
+### 12.1 Learning Rate Schedules & the Robbins-Monro Conditions
 
 The Robbins-Monro conditions for SGD: $\sum_{t=1}^\infty \alpha_t = \infty$ and $\sum_{t=1}^\infty \alpha_t^2 < \infty$. The first condition ensures the algorithm can reach any point (the total step size is unbounded). The second ensures that the noise variance $\sum \alpha_t^2 \sigma^2$ remains finite (the iterates don't oscillate forever).
 
 For polynomial schedules $\alpha_t = c/t^p$: $\sum 1/t^p$ converges iff $p > 1$ (Theorem 3), and $\sum 1/t^{2p}$ converges iff $2p > 1$, i.e., $p > 1/2$. Both conditions are satisfied iff $p \in (1/2, 1]$. The canonical choice $\alpha_t = c/t$ ($p = 1$) satisfies both conditions exactly at the boundary.
 
-For exponential schedules $\alpha_t = \alpha_0 \gamma^t$ with $\gamma < 1$: $\sum \gamma^t = 1/(1-\gamma) < \infty$ (geometric series), so condition 1 fails — the algorithm stops exploring too soon. This is why exponential decay schedules require warmup or restarts in practice.
+For exponential schedules $\alpha_t = \alpha_0 \gamma^t$ with $\gamma < 1$: $\sum_{t=1}^\infty \gamma^t = \gamma/(1-\gamma) < \infty$ (geometric series), so condition 1 fails — the algorithm stops exploring too soon. This is why exponential decay schedules require warmup or restarts in practice.
 
 -> [Gradient Descent](https://formalml.com/topics/gradient-descent) -> formalML
 
-### 11.2 Gradient Accumulation & Momentum
+### 12.2 Gradient Accumulation & Momentum
 
 In momentum-based optimizers (SGD with momentum, Adam), the update at step $t$ is a weighted sum of all past gradients: $v_t = \sum_{k=0}^{t-1} \beta^k g_{t-k}$. The total weight is the partial sum of a geometric series: $\sum_{k=0}^{t-1} \beta^k = \frac{1 - \beta^t}{1 - \beta}$. As $t \to \infty$, this approaches $1/(1 - \beta)$. Adam's bias correction divides by $1 - \beta^t$ precisely to account for the finite partial sum being less than the infinite series sum.
 
-### 11.3 Discount Factors in Reinforcement Learning
+### 12.3 Discount Factors in Reinforcement Learning
 
 The discounted return $G_t = \sum_{k=0}^\infty \gamma^k R_{t+k+1}$ is a geometric series in the discount factor $\gamma \in [0, 1)$. The series converges because $\gamma < 1$, and the total weight is $1/(1 - \gamma)$. If rewards are bounded by $R_{\max}$, then $|G_t| \leq R_{\max}/(1-\gamma)$.
 
-### 11.4 The Borel-Cantelli Lemma in Online Learning
+### 12.4 The Borel-Cantelli Lemma in Online Learning
 
 The first Borel-Cantelli lemma: if $\sum_{n=1}^\infty P(A_n) < \infty$, then $P(\limsup A_n) = 0$ — only finitely many of the events $A_n$ occur almost surely. In online learning, if $A_n$ is the event "the algorithm makes an error at step $n$," and the error probabilities $P(A_n)$ decrease fast enough that their series converges, then the total number of errors is finite almost surely. The convergence test used to verify $\sum P(A_n) < \infty$ is typically comparison with a $p$-series.
 
