@@ -73,6 +73,9 @@ export default function EigenvalueExplorer() {
     [trialFn, trialDerivFn],
   );
 
+  // u = 0 is excluded from the minimization, so R[0] is undefined (NaN).
+  const uIsZero = !Number.isFinite(rayleighTrial);
+
   const rayleighExact = currentEigen.exactEigenvalue;
 
   // Sample curves
@@ -175,7 +178,11 @@ export default function EigenvalueExplorer() {
         .style('font-size', '13px')
         .style('fill', RED)
         .style('font-weight', '600')
-        .text(`R[u] = ${rayleighTrial.toFixed(4)} ≥ λ₁ = ${eigenData[0].exactEigenvalue}`);
+        .text(
+          uIsZero
+            ? 'u = 0 is excluded (R undefined)'
+            : `R[u] = ${rayleighTrial.toFixed(4)} ≥ λ₁ = ${eigenData[0].exactEigenvalue}`,
+        );
 
       // Legend
       const legendItems = [
@@ -272,7 +279,7 @@ export default function EigenvalueExplorer() {
         });
 
         // Rayleigh quotient marker
-        if (rayleighTrial <= maxEigen * 1.1) {
+        if (!uIsZero && rayleighTrial <= maxEigen * 1.1) {
           gRight
             .append('line')
             .attr('x1', 0)
@@ -300,6 +307,7 @@ export default function EigenvalueExplorer() {
       showEigenfunction,
       showSpectrum,
       rayleighTrial,
+      uIsZero,
       mode,
       yMax,
       eigenData,
@@ -373,7 +381,7 @@ export default function EigenvalueExplorer() {
         <div>
           <span className="text-gray-500 dark:text-gray-400">R[u] = </span>
           <span className="font-mono font-medium" style={{ color: RED }}>
-            {rayleighTrial.toFixed(4)}
+            {uIsZero ? 'undefined' : rayleighTrial.toFixed(4)}
           </span>
         </div>
         <div>
@@ -385,13 +393,13 @@ export default function EigenvalueExplorer() {
         <div>
           <span className="text-gray-500 dark:text-gray-400">Error = </span>
           <span className="font-mono font-medium" style={{ color: MUTED }}>
-            {((rayleighTrial / rayleighExact - 1) * 100).toFixed(2)}%
+            {uIsZero ? '—' : `${((rayleighTrial / rayleighExact - 1) * 100).toFixed(2)}%`}
           </span>
         </div>
         <div>
           <span className="text-gray-500 dark:text-gray-400">R[u] ≥ λ₁ = </span>
           <span className="font-mono font-medium" style={{ color: BLUE }}>
-            {rayleighTrial >= 1 - 0.01 ? 'Yes' : 'No'}
+            {uIsZero ? 'n/a (u = 0 excluded)' : rayleighTrial >= 1 - 0.01 ? 'Yes' : 'No'}
           </span>
         </div>
       </div>

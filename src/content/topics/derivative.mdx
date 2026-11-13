@@ -340,7 +340,7 @@ $$f(g(a) + k) = f(g(a)) + f'(g(a)) \cdot k + \varphi(k) \cdot k,$$
 
 where $\varphi(k) \to 0$ as $k \to 0$ (and we define $\varphi(0) = 0$).
 
-**The subtle point:** A naive proof would divide by $g(a+h) - g(a)$ and recombine, but this fails when $g(a+h) = g(a)$ for $h \neq 0$ (which can happen — for example, $g(x) = x^2\sin(1/x)$ with $g(0) = 0$). The linear approximation approach avoids division entirely.
+**The subtle point:** A naive proof would divide by $g(a+h) - g(a)$ and recombine, but this fails when $g(a+h) = g(a)$ for $h \neq 0$ (which can happen — for example, $g(x) = x^2\sin(1/x)$ with $g(0) = 0$, at $a = 0$, where $g'(0) = 0$ but $g(h) = 0$ at $h = 1/(m\pi)$ for every nonzero integer $m$). The linear approximation approach avoids division entirely.
 
 Set $k = g(a+h) - g(a)$. Then
 

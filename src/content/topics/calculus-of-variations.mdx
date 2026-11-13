@@ -680,7 +680,7 @@ $$
 </TheoremBlock>
 
 <TheoremBlock type="remark" number={9} title="Spectral Theory Connection">
-The variational characterization of eigenvalues is the bridge between the spectral theorem ([Topic 31](/topics/hilbert-spaces)) and the calculus of variations. The compact self-adjoint operator $T = (-d^2/dx^2)^{-1}$ on $L^2(0,\pi)$ has eigenvalues $\mu_n = 1/n^2$ and eigenfunctions $\sin(nx)$. The spectral theorem decomposes $T$ as $Tf = \sum \frac{1}{n^2}\langle f, u_n\rangle u_n$. The Rayleigh quotient $R[u] = \langle u, (-d^2/dx^2)u\rangle / \langle u, u\rangle$ is the inverse: $R = 1/\mu$. Minimizing $R$ is equivalent to maximizing $\mu$ — finding the largest eigenvalue of $T$.
+The variational characterization of eigenvalues is the bridge between the spectral theorem ([Topic 31](/topics/hilbert-spaces)) and the calculus of variations. The compact self-adjoint operator $T = (-d^2/dx^2)^{-1}$ on $L^2(0,\pi)$ has eigenvalues $\mu_n = 1/n^2$ and eigenfunctions $\sin(nx)$. The spectral theorem decomposes $T$ as $Tf = \sum \frac{1}{n^2}\langle f, u_n\rangle u_n$. The Rayleigh quotient $R[u] = \langle u, (-d^2/dx^2)u\rangle / \langle u, u\rangle$ inverts the spectrum of $T$ on eigenfunctions: $R[u_n] = n^2 = 1/\mu_n$, and $\min_{u \neq 0} R[u] = 1/\max_n \mu_n = 1/\mu_1 = 1$. Minimizing $R$ is therefore equivalent to maximizing $\mu$ — finding the largest eigenvalue of $T$.
 </TheoremBlock>
 
 <img src="/images/topics/calculus-of-variations/eigenvalue-problems.png" alt="First three eigenmodes, Rayleigh quotient values, and variational convergence." className="my-6 rounded-lg shadow-md" />
