@@ -203,10 +203,12 @@ export default function LineIntegralExplorer() {
           .attr('stroke-width', 1.5);
 
         // Force vector at particle
+        // The F arrow and its tangent projection share one pixel length so the
+        // projection's tip is the foot of the perpendicular from F's tip.
+        const arrowLen = 30;
         const [fx, fy] = F(px, py);
         const fMag = Math.sqrt(fx * fx + fy * fy);
         if (fMag > 1e-10 && isFinite(fMag)) {
-          const arrowLen = 30;
           const scale = arrowLen / fMag;
           const endX = xScale(px) + fx * scale;
           const endY = yScale(py) - fy * scale;
@@ -226,7 +228,7 @@ export default function LineIntegralExplorer() {
           const tMag = Math.sqrt(dx * dx + dy * dy);
           if (tMag > 1e-10) {
             const dotProduct = (fx * dx + fy * dy) / tMag;
-            const tangentLen = 25 * (dotProduct / (fMag || 1));
+            const tangentLen = arrowLen * (dotProduct / (fMag || 1));
             const tx = (dx / tMag) * tangentLen;
             const ty = (dy / tMag) * tangentLen;
             g.append('line')
