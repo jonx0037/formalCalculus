@@ -299,6 +299,10 @@ export function getEigenvalueData(nModes: number): EigenvalueData[] {
 /**
  * Compute the Rayleigh quotient R[u] = ∫ u'² dx / ∫ u² dx
  * for a continuous function on [a, b] via the trapezoidal rule.
+ *
+ * Returns `NaN` when u is (numerically) zero: u = 0 is excluded from the
+ * minimization, so R[0] is undefined rather than 0. Callers must check
+ * `Number.isFinite` before displaying or comparing the result.
  */
 export function computeRayleighQuotient(
   u: (x: number) => number,
@@ -316,7 +320,7 @@ export function computeRayleighQuotient(
     num += w * uPrime(x) ** 2 * dx;
     den += w * u(x) ** 2 * dx;
   }
-  if (den < 1e-14) return 0;
+  if (den < 1e-14) return NaN;
   return num / den;
 }
 
