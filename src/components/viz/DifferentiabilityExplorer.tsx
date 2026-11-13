@@ -194,18 +194,26 @@ export default function DifferentiabilityExplorer() {
     [curveData, width, height, h, zoomed, activeTab],
   );
 
-  // Determine status message
-  const slopeDiff = Math.abs(leftSlope - rightSlope);
-  const bothFinite = isFinite(leftSlope) && isFinite(rightSlope);
+  // Status message. Differentiability is a statement about the limit h → 0,
+  // so no test on the slopes at one finite h can decide it (at the default
+  // h ≈ 0.5 the x² secants are ∓0.5; the cusp secants are only about ±21.5
+  // even at h = 1e-4). Report the known limiting behavior of each preset and
+  // show the finite-h gap separately as a live readout.
+  const slopeGap = Math.abs(rightSlope - leftSlope);
   let status: string;
-  if (!bothFinite) {
-    status = 'Not differentiable: slope diverges to infinity';
-  } else if (preset.type === 'weierstrass') {
-    status = 'Not differentiable: slopes oscillate without settling';
-  } else if (slopeDiff < 0.05) {
-    status = 'Differentiable: slopes agree';
-  } else {
-    status = 'Not differentiable: slopes disagree';
+  switch (preset.type) {
+    case 'smooth':
+      status = `Differentiable: both one-sided slopes converge to f′(${preset.a}) = 0 as h → 0`;
+      break;
+    case 'corner':
+      status = 'Not differentiable: one-sided slopes converge to different limits (−1 and +1)';
+      break;
+    case 'cusp':
+      status = 'Not differentiable: one-sided slopes diverge to −∞ and +∞ as h → 0';
+      break;
+    case 'weierstrass':
+      status = 'Not differentiable: slopes oscillate without settling';
+      break;
   }
 
   return (
@@ -269,6 +277,9 @@ export default function DifferentiabilityExplorer() {
         </span>
         <span>
           <span style={{ color: '#059669' }}>●</span> Right slope: {isFinite(rightSlope) ? rightSlope.toFixed(4) : '±∞'}
+        </span>
+        <span>
+          Gap at this h: |m₊ − m₋| = {isFinite(slopeGap) ? slopeGap.toFixed(4) : '∞'}
         </span>
         <span className="font-medium" style={{ color: 'var(--color-text)' }}>
           {status}
