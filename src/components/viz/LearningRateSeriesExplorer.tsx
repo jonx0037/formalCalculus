@@ -85,7 +85,8 @@ export default function LearningRateSeriesExplorer() {
 
         if (data.length === 0) return;
 
-        const xScale = d3.scaleLinear().domain([1, maxT]).range([0, innerW]);
+        // Log-x: Σ 1/t ≈ ln t + γ plots as a straight line instead of looking flat
+        const xScale = d3.scaleLog().domain([1, maxT]).range([0, innerW]);
         const values = data.map((d) => d.Sn).filter((v) => v > 0);
         if (values.length === 0) return;
 
@@ -127,7 +128,7 @@ export default function LearningRateSeriesExplorer() {
         // Axes
         g.append('g')
           .attr('transform', `translate(0,${innerH})`)
-          .call(d3.axisBottom(xScale).ticks(5))
+          .call(d3.axisBottom(xScale).ticks(5, '~d'))
           .call((a) => {
             a.select('.domain').style('stroke', 'var(--color-border)');
             a.selectAll('.tick line').style('stroke', 'var(--color-border)');
@@ -147,7 +148,7 @@ export default function LearningRateSeriesExplorer() {
           .attr('x', innerW / 2).attr('y', innerH + 30)
           .attr('text-anchor', 'middle')
           .style('fill', 'var(--color-text-muted)').style('font-size', '10px')
-          .text('t');
+          .text('t (log scale)');
       };
 
       // Panel 1: Σ α_t (should diverge)

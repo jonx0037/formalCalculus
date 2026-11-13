@@ -350,7 +350,7 @@ export function getLearningRateSchedules(): LearningRateSchedule[] {
       sumDiverges: false,
       sumSquaresConverges: true,
       robbinsMonroValid: false,
-      description: 'Σ 0.99^t = 100 < ∞ ✗ — geometric decay too fast',
+      description: 'Σ 0.99^t = 99 < ∞ (t ≥ 1) ✗ — geometric decay too fast',
     },
     {
       name: 'cosine-annealing',
