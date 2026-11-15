@@ -377,9 +377,9 @@ Some regions (e.g., an annulus, or an L-shaped domain) cannot be described as a 
 
 ## Choosing Integration Order
 
-Sometimes one integration order leads to an impossible inner integral, while the other order is elementary. Recognizing this — and knowing how to reverse the order — is an essential computational skill.
+Sometimes one integration order leads to an inner integral with no elementary antiderivative, while the other order is elementary. Recognizing this — and knowing how to reverse the order — is an essential computational skill.
 
-<TheoremBlock type="example" number={8} title="e^{x³}: Impossible in One Order, Elementary in the Other">
+<TheoremBlock type="example" number={8} title="e^{x³}: Non-Elementary in One Order, Elementary in the Other">
 Compute $\int_0^4 \int_{\sqrt{y}}^2 e^{x^3} \, dx \, dy$.
 
 The inner integral $\int_{\sqrt{y}}^2 e^{x^3} \, dx$ has no closed-form antiderivative — $e^{x^3}$ cannot be integrated in terms of elementary functions. We are stuck.
@@ -401,7 +401,7 @@ Consider switching the integration order when:
 The procedure: (1) sketch the region, (2) re-describe it as the other type (Type I ↔ Type II), (3) write the new limits, (4) evaluate.
 </TheoremBlock>
 
-![Three-panel diagram: the original impossible integral, the region sketch, and the tractable reversed integral](/images/topics/multiple-integrals/order-reversal.png)
+![Three-panel diagram: the original order, whose inner integral has no elementary antiderivative; the region re-described for the reversed order; and the step-by-step reversal to (e⁸ − 1)/3](/images/topics/multiple-integrals/order-reversal.png)
 
 ## Properties of Double Integrals
 
