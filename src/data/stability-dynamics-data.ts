@@ -150,7 +150,7 @@ export function getNonlinearSystemPresets(): NonlinearSystemPreset[] {
       y1Label: 'S (susceptible)',
       y2Label: 'I (infected)',
       description:
-        'Epidemic model. R₀ = βS₀/γ determines whether the epidemic spreads (R₀ > 1) or dies out (R₀ < 1). The S-nullcline at S = γ/β is the threshold.',
+        'Epidemic model. R₀ = βS₀/γ determines whether the epidemic spreads (R₀ > 1) or dies out (R₀ < 1). The I-nullcline S = γ/β is the threshold.',
     },
     {
       name: 'saddle-node-2d',
