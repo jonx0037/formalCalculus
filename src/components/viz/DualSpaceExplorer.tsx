@@ -193,7 +193,7 @@ export default function DualSpaceExplorer() {
         .attr('x', panelW / 2).attr('y', -6)
         .attr('text-anchor', 'middle')
         .style('font-size', '12px').style('font-weight', '600').style('fill', '#374151')
-        .text(`Dual: ℓ${q === Infinity ? '∞' : Number.isFinite(q) ? q.toFixed(q === 2 ? 0 : 1) : '∞'} unit ball`);
+        .text(`Dual: ℓ${q === Infinity ? '∞' : Number.isInteger(q) ? String(q) : q.toFixed(1)} unit ball`);
 
       // Click handler on the dual panel
       const clickRect = gR.append('rect')
@@ -212,7 +212,7 @@ export default function DualSpaceExplorer() {
     [width, height, primalBall, dualBall, selectedY, maximizerResult, selectedDualNorm, normP, q],
   );
 
-  const qLabel = q === Infinity ? '∞' : Number.isFinite(q) ? (q === 2 ? '2' : q.toFixed(2)) : '∞';
+  const qLabel = q === Infinity ? '∞' : Number.isInteger(q) ? String(q) : q.toFixed(2);
 
   return (
     <div
@@ -277,7 +277,12 @@ export default function DualSpaceExplorer() {
 
       {/* Description */}
       <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-        The dual of ℓ{normP === Infinity ? '∞' : normP} is ℓ{qLabel}: the diamond (p = 1) pairs with the square (q = ∞), and the circle (p = 2) is self-dual.
+        In ℝ², the dual norm of ‖·‖<sub>{normP === Infinity ? '∞' : normP}</sub> is ‖·‖<sub>{qLabel}</sub>: the diamond (p = 1) pairs with the square (q = ∞), and the circle (p = 2) is self-dual.
+        {normP === Infinity && (
+          <>
+            {' '}For infinite sequences the symmetry breaks: (ℓ<sup>∞</sup>)* ⊋ ℓ<sup>1</sup>, so the dual of ℓ<sup>∞</sup> is strictly larger than ℓ<sup>1</sup>.
+          </>
+        )}
       </p>
     </div>
   );
