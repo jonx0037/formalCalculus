@@ -102,7 +102,7 @@ This is where the abstraction level increases. In the first two topics, we worke
 
 ### Why $\mathbb{Q}$ is not enough
 
-Consider the set $S = \{q \in \mathbb{Q} : q^2 < 2\}$. This set is nonempty ($1 \in S$) and bounded above ($2$ is an upper bound). Does $S$ have a *least* upper bound in $\mathbb{Q}$? If it did, that least upper bound would have to be $\sqrt{2}$ — but $\sqrt{2} \notin \mathbb{Q}$. The rationals have a "hole" right where the supremum should be.
+Consider the set $S = \{q \in \mathbb{Q} : q^2 < 2\}$. This set is nonempty ($1 \in S$) and bounded above ($2$ is an upper bound). Does $S$ have a *least* upper bound in $\mathbb{Q}$? No. Any rational upper bound $u$ must satisfy $u \geq \sqrt{2}$, because $S$ contains rationals arbitrarily close to $\sqrt{2}$ from below — the decimal truncations $1.4, 1.41, 1.414, \ldots$ all square to less than $2$. Since $\sqrt{2} \notin \mathbb{Q}$, in fact $u > \sqrt{2}$. But the decimal round-ups $1.5, 1.42, 1.415, \ldots$ are rationals that decrease toward $\sqrt{2}$ from above, so one of them lies strictly between $\sqrt{2}$ and $u$ — and it is a smaller rational upper bound, since every $q \in S$ satisfies $q < \sqrt{2}$. So no rational upper bound is least: the only candidate is $\sqrt{2}$, and $\sqrt{2} \notin \mathbb{Q}$. The rationals have a "hole" right where the supremum should be.
 
 This is not an isolated curiosity. The rationals are riddled with such holes — one for every irrational number. A number system with holes cannot support calculus: limits might not exist, monotone sequences might not converge, and continuous functions might not attain their extrema. The real numbers are constructed precisely to fill these holes.
 
