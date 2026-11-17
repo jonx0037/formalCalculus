@@ -289,7 +289,7 @@ export function getStiffSystemPresets(): StiffSystemPreset[] {
       ],
       y0: [2, 0],
       tRange: [0, 50],
-      stiffnessRatio: 50, // approximate; varies along the trajectory
+      stiffnessRatio: 5623, // |λ_max|/|λ_min| of the Jacobian at y0 = (2, 0); varies along the trajectory
       yDisplayRange: [-3, 3],
       description:
         'Self-sustained oscillator with relaxation dynamics. Spends most of its period in slow regimes punctuated by fast transitions — a textbook stiff oscillator.',
