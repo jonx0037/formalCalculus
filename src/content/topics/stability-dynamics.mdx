@@ -295,7 +295,7 @@ $$\dot{V} = \omega \cdot (-\sin\theta - b\omega) + \sin\theta \cdot \omega = -b\
 
 So $V$ is a Lyapunov function and the origin is stable. But $\dot{V} = 0$ on the set $E = \{\omega = 0\}$ — not just at the origin. Is it asymptotically stable?
 
-**LaSalle's principle to the rescue:** The largest invariant set in $E = \{\omega = 0\}$ is just $\{(0, 0)\}$, because if $\omega(t) = 0$ for all $t$ then $\dot{\omega}(t) = 0$, forcing $\sin\theta(t) = 0$, hence $\theta(t) = 0$ (near the origin). By LaSalle's principle, $(0, 0)$ is **asymptotically stable**.
+**LaSalle's principle to the rescue:** Fix any $c < 2$ (the energy $V(\pm\pi, 0) = 2$ of the upright saddles) and take $\Omega$ to be the connected component of the sublevel set $\{V \leq c\}$ that contains the origin — the energy well around $(0, 0)$. On $\Omega$ we have $1 - \cos\theta \leq c < 2$, so $\theta$ never reaches $\pm\pi$ and $\Omega$ lies in the strip $|\theta| < \pi$; it is closed and bounded ($\omega^2 \leq 2c$), hence compact. It is positively invariant: $\dot{V} \leq 0$ means $V$ cannot increase along a trajectory, and a continuous trajectory cannot jump to another component of $\{V \leq c\}$. Inside $\Omega$, $\dot{V} = 0$ exactly on $E = \{\omega = 0\} \cap \Omega$. The largest invariant set in $E$ is just $\{(0, 0)\}$: if $\omega(t) = 0$ for all $t$ then $\dot{\omega}(t) = 0$, forcing $\sin\theta(t) = 0$, and the only zero of $\sin\theta$ with $|\theta| < \pi$ is $\theta = 0$. By LaSalle's principle, every trajectory starting in $\Omega$ converges to $(0, 0)$, so the origin is **asymptotically stable**.
 </TheoremBlock>
 
 <TheoremBlock type="example" number={6} title="Computing the Orbital Derivative for a Quadratic Lyapunov Function">
