@@ -10,7 +10,11 @@ import rehypeExternalLinks from 'rehype-external-links';
 // https://astro.build/config
 export default defineConfig({
   site: 'https://formalcalculus.com',
-  integrations: [react(), mdx()],
+  // optimize: collapse static MDX subtrees (KaTeX output above all) into HTML strings.
+  // Without it every KaTeX span becomes a JSX call and the SSR bundle peaked at ~8.3 GB RSS,
+  // OOM-killing Vercel's 7 GB build machine; with it the build peaks at ~2.3 GB and the
+  // rendered pages are unchanged.
+  integrations: [react(), mdx({ optimize: true })],
   markdown: {
     remarkPlugins: [remarkMath],
     rehypePlugins: [
