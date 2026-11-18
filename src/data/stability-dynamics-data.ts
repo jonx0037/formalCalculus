@@ -211,7 +211,7 @@ export function getLyapunovPresets(): LyapunovPreset[] {
       VLabel: 'V(\\theta, \\omega) = \\tfrac{1}{2}\\omega^2 + (1 - \\cos\\theta)',
       domain: { y1: [-Math.PI, Math.PI], y2: [-3, 3] },
       description:
-        'Total mechanical energy of the damped pendulum. V̇ = -bω² ≤ 0. By LaSalle\'s principle, trajectories converge to (0, 0) since ω = 0 is not invariant.',
+        'Total mechanical energy of the damped pendulum. V̇ = -bω² ≤ 0. By LaSalle\'s principle, trajectories in the well V < 2 converge to (0, 0): there, the only invariant set on {ω = 0} is the origin.',
     },
     {
       name: 'lyapunov-equation',
