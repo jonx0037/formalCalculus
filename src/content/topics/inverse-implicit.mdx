@@ -152,7 +152,7 @@ has Jacobian
 
 $$J_f(r, \theta) = \begin{pmatrix} \cos\theta & -r\sin\theta \\ \sin\theta & r\cos\theta \end{pmatrix}$$
 
-with determinant $\det J_f = r\cos^2\theta + r\sin^2\theta = r$. This is non-zero when $r \neq 0$, so $f$ is a local diffeomorphism everywhere except at the origin. At $r = 0$, the Jacobian is singular — and geometrically, all angles $\theta$ map to the same point $(0, 0)$. The polar coordinate map collapses an entire line ($r = 0$, all $\theta$) to a single point, which is the geometric source of the singularity.
+with determinant $\det J_f = r\cos^2\theta + r\sin^2\theta = r$. This is non-zero when $r \neq 0$, so $f$ is a local diffeomorphism everywhere except on the line $r = 0$, which maps to the origin. At $r = 0$, the Jacobian is singular — and geometrically, all angles $\theta$ map to the same point $(0, 0)$. The polar coordinate map collapses an entire line ($r = 0$, all $\theta$) to a single point, which is the geometric source of the singularity.
 
 Restricting to $r > 0$ and $\theta \in (0, 2\pi)$, the map becomes a diffeomorphism onto $\mathbb{R}^2 \setminus \{(x, 0) : x \geq 0\}$. The restriction to $\theta \in (0, 2\pi)$ is necessary to prevent $\theta = 0$ and $\theta = 2\pi$ from mapping to the same point.
 </TheoremBlock>
