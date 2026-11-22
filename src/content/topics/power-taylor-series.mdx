@@ -508,7 +508,7 @@ Given a posterior $p(\theta \,|\, \text{data}) \propto e^{\ell(\theta)}$ where $
 
 $$\ell(\theta) \approx \ell(\hat{\theta}) - \frac{1}{2}(\theta - \hat{\theta})^T H (\theta - \hat{\theta})$$
 
-where $H = -\nabla^2 \ell(\hat{\theta})$. This yields the Gaussian approximation $p(\theta \,|\, \text{data}) \approx \mathcal{N}(\hat{\theta}, H^{-1})$ — replacing a complex posterior with a Gaussian centered at the mode. The quality of this approximation depends on how well the second-order Taylor expansion captures the log-posterior, which is exactly the analyticity question this topic addresses. (→ formalML: [Information Geometry](https://formalml.com/topics/information-geometry))
+where $H = -\nabla^2 \ell(\hat{\theta})$. This yields the Gaussian approximation $p(\theta \,|\, \text{data}) \approx \mathcal{N}(\hat{\theta}, H^{-1})$ — replacing a complex posterior with a Gaussian centered at the mode. The quality of this approximation depends on how well the second-order Taylor expansion captures the log-posterior near $\hat{\theta}$, which is a question about the size of the second-order remainder from [Mean Value Theorem & Taylor Expansion](/topics/mean-value-taylor), not about analyticity: an analytic log-posterior can be poorly approximated by its quadratic, and a non-analytic one can be well approximated. (→ formalML: [Information Geometry](https://formalml.com/topics/information-geometry))
 
 ### 9.3 GELU and activation function approximation
 
