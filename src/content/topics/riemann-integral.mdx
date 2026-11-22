@@ -377,9 +377,9 @@ Fix $x \in (a, b)$. For $h \neq 0$ with $x + h \in [a, b]$, the additivity of th
 
 $$\frac{F(x+h) - F(x)}{h} = \frac{1}{h} \int_x^{x+h} f(t) \, dt.$$
 
-Since $f$ is continuous at $x$: given $\varepsilon > 0$, choose $\delta > 0$ such that $|t - x| < \delta \implies |f(t) - f(x)| < \varepsilon$. For $|h| < \delta$, every $t$ between $x$ and $x + h$ satisfies $|t - x| \le |h| < \delta$, so $|f(t) - f(x)| < \varepsilon$. Therefore:
+Since $f$ is continuous at $x$: given $\varepsilon > 0$, choose $\delta > 0$ such that $|t - x| < \delta \implies |f(t) - f(x)| < \varepsilon$. For $|h| < \delta$, let $I_h$ be the closed interval with endpoints $x$ and $x + h$ (so $I_h = [x + h, x]$ when $h < 0$). Every $t \in I_h$ satisfies $|t - x| \le |h| < \delta$, so $|f(t) - f(x)| < \varepsilon$. Therefore:
 
-$$\left|\frac{F(x+h) - F(x)}{h} - f(x)\right| = \left|\frac{1}{h} \int_x^{x+h} [f(t) - f(x)] \, dt\right| \le \frac{1}{|h|} \int_x^{x+h} |f(t) - f(x)| \, dt < \frac{1}{|h|} \cdot \varepsilon \cdot |h| = \varepsilon.$$
+$$\left|\frac{F(x+h) - F(x)}{h} - f(x)\right| = \left|\frac{1}{h} \int_x^{x+h} [f(t) - f(x)] \, dt\right| \le \frac{1}{|h|} \int_{I_h} |f(t) - f(x)| \, dt < \frac{1}{|h|} \cdot \varepsilon \cdot |h| = \varepsilon.$$
 
 The integral bound uses $|f(t) - f(x)| < \varepsilon$ for all $t$ in the interval of length $|h|$, and the triangle inequality for integrals (Theorem 3(d)).
 
